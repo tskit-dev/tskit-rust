@@ -36,6 +36,10 @@ fn main() {
         .clang_arg("-Isubprojects/tskit/c/subprojects/kastore")
         .whitelist_type("tsk.*")
         .whitelist_function("tsk.*")
+        .whitelist_type("TSK_.*")
+        .whitelist_var("TSK_.*")
+        .whitelist_type("KAS_.*")
+        .whitelist_var("KAS_.*")
         .whitelist_type("kastore.*")
         .whitelist_function("kastore.*")
         // Tell cargo to invalidate the built crate whenever any of the
@@ -49,6 +53,6 @@ fn main() {
     // Write the bindings to the $OUT_DIR/bindings.rs file.
     //let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file("src/bindings.rs")
+        .write_to_file("src/auto_bindings.rs")
         .expect("Couldn't write bindings!");
 }
