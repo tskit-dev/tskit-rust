@@ -26,7 +26,7 @@
 /// }
 /// ```
 ///
-/// The best source for documentation with be the [tskit docs](https://tskit.readthedocs.io).
+/// The best source for documentation will be the [tskit docs](https://tskit.readthedocs.io).
 /// Those docs describe the most important parts of the C API.
 /// This module contains the same types/functions with the same names.
 pub mod bindings;
