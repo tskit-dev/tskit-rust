@@ -36,6 +36,8 @@ fn main() {
         .clang_arg("-Isubprojects/tskit/c/subprojects/kastore")
         .whitelist_type("tsk.*")
         .whitelist_function("tsk.*")
+        .whitelist_type("kastore.*")
+        .whitelist_function("kastore.*")
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
