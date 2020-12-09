@@ -53,6 +53,6 @@ fn main() {
     // Write the bindings to the $OUT_DIR/bindings.rs file.
     //let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file("src/bindings.rs")
+        .write_to_file("src/auto_bindings.rs")
         .expect("Couldn't write bindings!");
 }

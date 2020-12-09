@@ -31,5 +31,8 @@
 /// This module contains the same types/functions with the same names.
 pub mod bindings;
 
+mod auto_bindings;
+
 // Testing modules
 mod test_table_collection;
+mod test_tsk_variables;
