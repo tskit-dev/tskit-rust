@@ -1,2 +1,3 @@
 /target
 Cargo.lock
+auto_bindings.rs
