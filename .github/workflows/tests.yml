@@ -1,0 +1,75 @@
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+name: CI
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    #container:
+    #  image: ubuntu:20.10
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - nightly
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ secrets.ACTIONS }}
+
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACTIONS }}
+          submodules: recursive
+      - run: sudo apt-get update -y
+      - run: sudo apt-get install -y libgsl0-dev curl build-essential python3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - run: cargo check
+      - name: run tests
+        run: cargo test
+
+  build-osx:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - nightly
+    steps:
+      - run: brew update
+      - run: brew install gsl
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACTIONS }}
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - run: cargo check
+      - name: run tests
+        run: cargo test 
+
+  fmt:
+    name: rust fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.ACTIONS }}
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - run: |
+          /bin/bash -c "find src -type f | grep -v auto_bindings | xargs rustfmt --check"
