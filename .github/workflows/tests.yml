@@ -72,4 +72,4 @@ jobs:
           override: true
       - run: rustup component add rustfmt
       - run: |
-          /bin/bash -c "find src -type f | grep -v auto_bindings | xargs rustfmt --check"
+          /bin/bash -c "find src -type f | grep -v auto_bindings | grep -v lib | xargs rustfmt --check"
