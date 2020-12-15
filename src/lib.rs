@@ -4,35 +4,42 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-/// Low-level ("unsafe") bindings to the C API.
-///
-/// This module is a 1-to-1 mapping of C types
-/// and functions for both tskit and kastore.
-/// The bindings are generate via [bindgen](https://docs.rs/bindgen).
-///
-/// Using things from this module will be ``unsafe``.
-/// Further, as many of the types require ``init()`` methods
-/// to correctly set up the structs, one has to coerce ``rust``
-/// into allowing uninitialized variables:
-///
-/// ```
-/// use std::mem::MaybeUninit;
-/// let mut edges: MaybeUninit<tskit_rust::bindings::tsk_edge_table_t> = MaybeUninit::uninit();
-/// unsafe {
-///     let _ = tskit_rust::bindings::tsk_edge_table_init(edges.as_mut_ptr(), 0);
-///     let _ = tskit_rust::bindings::tsk_edge_table_add_row(edges.as_mut_ptr(), 0., 10., 0, 1, std::ptr::null(), 0);
-///     assert_eq!((*edges.as_ptr()).num_rows, 1);
-///     tskit_rust::bindings::tsk_edge_table_free(edges.as_mut_ptr());
-/// }
-/// ```
-///
-/// The best source for documentation will be the [tskit docs](https://tskit.readthedocs.io).
-/// Those docs describe the most important parts of the C API.
-/// This module contains the same types/functions with the same names.
 pub mod bindings;
 
 mod auto_bindings;
 
+mod _macros; // Starts w/_ to be sorted at front by rustfmt!
+mod edge_table;
+pub mod error;
+mod mutation_table;
+mod node_table;
+mod site_table;
+mod table_collection;
+pub mod types;
+
+// re-export fundamental constants that
+// we can't live without
+pub use bindings::TSK_NODE_IS_SAMPLE;
+pub use bindings::TSK_NO_BUILD_INDEXES;
+pub use bindings::TSK_NULL;
+pub use bindings::TSK_SAMPLE_LISTS;
+
+// re-export types, too
+pub use bindings::tsk_flags_t;
+pub use bindings::tsk_id_t;
+pub use bindings::tsk_size_t;
+
+pub use edge_table::EdgeTable;
+pub use error::TskitRustError;
+pub use mutation_table::MutationTable;
+pub use node_table::NodeTable;
+pub use site_table::SiteTable;
+pub use table_collection::TableCollection;
+/// Handles return codes from low-level tskit functions.
+///
+/// When an error from the tskit C API is detected,
+/// the error message is stored for diplay.
+pub type TskReturnValue = Result<i32, TskitRustError>;
+
 // Testing modules
-mod test_table_collection;
 mod test_tsk_variables;
