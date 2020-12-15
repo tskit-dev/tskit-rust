@@ -1,5 +1,7 @@
 # rust bindings for tskit
 
+![CI tests](https://github.com/molpopgen/tskit_rust/workflows/CI/badge.svg)
+
 This crate provides [rust](https://www.rust-lang.org/) bindings to [tskit](https://github.com/tskit-dev/tskit).
 
 Currently, we only provide low-level bindings to the C API of both `tskit` and `kastore`.
