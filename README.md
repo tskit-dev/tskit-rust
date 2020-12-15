@@ -4,8 +4,17 @@
 
 This crate provides [rust](https://www.rust-lang.org/) bindings to [tskit](https://github.com/tskit-dev/tskit).
 
-Currently, we only provide low-level bindings to the C API of both `tskit` and `kastore`.
-We use [bindgen](https://docs.rs/bindgen) to automatically generate the bindings.
+This package provides the following:
+
+1. Low-level bindings to the C API of both `tskit` and `kastore`.
+   We use [bindgen](https://docs.rs/bindgen) to automatically generate the bindings.
+2. The struct ``tskit_rust::TableCollection`, which wraps
+   `tsk_table_collection_t`. The wrapper is currently
+   incomplete, supporting only node, edge, site,
+   mutation, and population tables.  The remaining
+   tables will happen "soon".
+3. An error handling system that maps `tskit` error
+   codes to `rust` errors while preserving error messages.
 
 The overview is:
 
