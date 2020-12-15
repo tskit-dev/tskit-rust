@@ -13,6 +13,7 @@ mod edge_table;
 pub mod error;
 mod mutation_table;
 mod node_table;
+mod population_table;
 mod site_table;
 mod table_collection;
 pub mod types;
@@ -33,6 +34,7 @@ pub use edge_table::EdgeTable;
 pub use error::TskitRustError;
 pub use mutation_table::MutationTable;
 pub use node_table::NodeTable;
+pub use population_table::PopulationTable;
 pub use site_table::SiteTable;
 pub use table_collection::TableCollection;
 /// Handles return codes from low-level tskit functions.
