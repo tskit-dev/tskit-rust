@@ -4,6 +4,7 @@ use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::MutationTable;
 use crate::NodeTable;
+use crate::PopulationTable;
 use crate::SiteTable;
 use crate::TskReturnValue;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
@@ -159,6 +160,13 @@ impl TableCollection {
     /// parent object.
     pub fn mutations<'a>(&'a self) -> MutationTable<'a> {
         return MutationTable::<'a>::new_from_table(&self.tables.mutations);
+    }
+
+    /// Get reference to the [``PopulationTable``](crate::PopulationTable).
+    /// Lifetime of return value is tied to (this)
+    /// parent object.
+    pub fn populations<'a>(&'a self) -> PopulationTable<'a> {
+        return PopulationTable::<'a>::new_from_table(&self.tables.populations);
     }
 
     /// Add a row to the edge table
@@ -463,6 +471,13 @@ mod test {
             mutations.derived_state(2).unwrap().unwrap(),
             "more pajamas".as_bytes()
         );
+    }
+
+    #[test]
+    fn test_add_population() {
+        let mut tables = TableCollection::new(1000.).unwrap();
+        tables.add_population().unwrap();
+        assert_eq!(tables.populations().num_rows(), 1);
     }
 
     #[test]
