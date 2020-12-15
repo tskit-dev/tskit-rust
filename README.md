@@ -8,7 +8,7 @@ This package provides the following:
 
 1. Low-level bindings to the C API of both `tskit` and `kastore`.
    We use [bindgen](https://docs.rs/bindgen) to automatically generate the bindings.
-2. The struct ``tskit_rust::TableCollection`, which wraps
+2. The struct `tskit_rust::TableCollection`, which wraps
    `tsk_table_collection_t`. The wrapper is currently
    incomplete, supporting only node, edge, site,
    mutation, and population tables.  The remaining
