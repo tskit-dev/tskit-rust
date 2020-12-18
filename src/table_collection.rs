@@ -113,60 +113,60 @@ impl TableCollection {
         };
 
         if rv < 0 {
-            return Err(TskitRustError::ErrorCode { code: rv });
+            Err(TskitRustError::ErrorCode { code: rv })
+        } else {
+            Ok(tables)
         }
-
-        return Ok(tables);
     }
 
     /// Access to raw C pointer as const tsk_table_collection_t *.
     pub fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
-        return &*self.tables;
+        &*self.tables
     }
 
     /// Access to raw C pointer as tsk_table_collection_t *.
     pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
-        return &mut *self.tables;
+        &mut *self.tables
     }
 
     /// Length of the sequence/"genome".
     pub fn sequence_length(&self) -> f64 {
-        return unsafe { (*self.as_ptr()).sequence_length };
+        unsafe { (*self.as_ptr()).sequence_length }
     }
 
     /// Get reference to the [``EdgeTable``](crate::EdgeTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn edges<'a>(&'a self) -> EdgeTable<'a> {
-        return EdgeTable::<'a>::new_from_table(&self.tables.edges);
+        EdgeTable::<'a>::new_from_table(&self.tables.edges)
     }
 
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn nodes<'a>(&'a self) -> NodeTable<'a> {
-        return NodeTable::<'a>::new_from_table(&self.tables.nodes);
+        NodeTable::<'a>::new_from_table(&self.tables.nodes)
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn sites<'a>(&'a self) -> SiteTable<'a> {
-        return SiteTable::<'a>::new_from_table(&self.tables.sites);
+        SiteTable::<'a>::new_from_table(&self.tables.sites)
     }
 
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn mutations<'a>(&'a self) -> MutationTable<'a> {
-        return MutationTable::<'a>::new_from_table(&self.tables.mutations);
+        MutationTable::<'a>::new_from_table(&self.tables.mutations)
     }
 
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn populations<'a>(&'a self) -> PopulationTable<'a> {
-        return PopulationTable::<'a>::new_from_table(&self.tables.populations);
+        PopulationTable::<'a>::new_from_table(&self.tables.populations)
     }
 
     /// Add a row to the edge table
@@ -217,13 +217,9 @@ impl TableCollection {
 
     /// Add a row to the site table
     pub fn add_site(&mut self, position: f64, ancestral_state: Option<&[u8]>) -> TskReturnValue {
-        let astate = if ancestral_state.is_some() {
-            (
-                std::ffi::CString::new(ancestral_state.unwrap()).unwrap(),
-                ancestral_state.unwrap().len() as tsk_size_t,
-            )
-        } else {
-            (std::ffi::CString::new("".to_string()).unwrap(), 0)
+        let astate = match ancestral_state {
+            Some(x) => (std::ffi::CString::new(x).unwrap(), x.len() as tsk_size_t),
+            None => (std::ffi::CString::new("".to_string()).unwrap(), 0),
         };
 
         let rv = unsafe {
@@ -249,13 +245,9 @@ impl TableCollection {
         time: f64,
         derived_state: Option<&[u8]>,
     ) -> TskReturnValue {
-        let dstate = if derived_state.is_some() {
-            (
-                std::ffi::CString::new(derived_state.unwrap()).unwrap(),
-                derived_state.unwrap().len() as tsk_size_t,
-            )
-        } else {
-            (std::ffi::CString::new("".to_string()).unwrap(), 0)
+        let dstate = match derived_state {
+            Some(x) => (std::ffi::CString::new(x).unwrap(), x.len() as tsk_size_t),
+            None => (std::ffi::CString::new("".to_string()).unwrap(), 0),
         };
 
         let rv = unsafe {
@@ -312,7 +304,7 @@ impl TableCollection {
     /// Implemented via a call to [``sort``](crate::TableCollection::sort).
     pub fn full_sort(&mut self) -> TskReturnValue {
         let b = Bookmark::new();
-        return self.sort(&b, 0);
+        self.sort(&b, 0)
     }
 
     /// Dump the table collection to file.
@@ -350,10 +342,7 @@ impl TableCollection {
     /// Return ``true`` if ``self`` contains the same
     /// data as ``other``, and ``false`` otherwise.
     pub fn equals(&self, other: &TableCollection, options: tsk_flags_t) -> bool {
-        let rv = unsafe {
-            ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options)
-        };
-        return rv;
+        unsafe { ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options) }
     }
 }
 
@@ -371,7 +360,7 @@ mod test {
     #[test]
     fn test_sequence_length() {
         let tables = TableCollection::new(1000.).unwrap();
-        assert_eq!(tables.sequence_length(), 1000.);
+        assert!(close_enough(tables.sequence_length(), 1000.));
     }
 
     #[test]
@@ -402,7 +391,7 @@ mod test {
     #[test]
     fn test_add_site() {
         let mut tables = TableCollection::new(1000.).unwrap();
-        tables.add_site(0.3, Some("Eggnog".as_bytes())).unwrap();
+        tables.add_site(0.3, Some(b"Eggnog")).unwrap();
         tables.add_site(0.5, None).unwrap(); // No ancestral_state specified!!!
         let longer_metadata = "Hot Toddy";
         tables
@@ -410,24 +399,27 @@ mod test {
             .unwrap();
 
         let sites = tables.sites();
-        assert_eq!(sites.position(0).unwrap(), 0.3);
-        assert_eq!(sites.position(1).unwrap(), 0.5);
-        assert_eq!(sites.position(2).unwrap(), 0.9);
+        assert!(close_enough(sites.position(0).unwrap(), 0.3));
+        assert!(close_enough(sites.position(1).unwrap(), 0.5));
+        assert!(close_enough(sites.position(2).unwrap(), 0.9));
 
         match sites.ancestral_state(0).unwrap() {
-            Some(astate) => assert_eq!(astate, "Eggnog".as_bytes()),
-            None => assert!(false),
+            Some(astate) => assert_eq!(astate, b"Eggnog"),
+            None => panic!(),
         };
 
-        match sites.ancestral_state(1).unwrap() {
-            Some(_) => assert!(false),
-            None => assert!(true),
-        };
+        if sites.ancestral_state(1).unwrap().is_some() {
+            panic!()
+        }
 
         match sites.ancestral_state(2).unwrap() {
             Some(astate) => assert_eq!(astate, longer_metadata.as_bytes()),
-            None => assert!(false),
+            None => panic!(),
         };
+    }
+
+    fn close_enough(a: f64, b: f64) -> bool {
+        (a - b).abs() < f64::EPSILON
     }
 
     #[test]
@@ -435,41 +427,33 @@ mod test {
         let mut tables = TableCollection::new(1000.).unwrap();
 
         tables
-            .add_mutation(0, 0, crate::TSK_NULL, 1.123, Some("pajamas".as_bytes()))
+            .add_mutation(0, 0, crate::TSK_NULL, 1.123, Some(b"pajamas"))
             .unwrap();
         tables
             .add_mutation(1, 1, crate::TSK_NULL, 2.123, None)
             .unwrap();
         tables
-            .add_mutation(
-                2,
-                2,
-                crate::TSK_NULL,
-                3.123,
-                Some("more pajamas".as_bytes()),
-            )
+            .add_mutation(2, 2, crate::TSK_NULL, 3.123, Some(b"more pajamas"))
             .unwrap();
         let mutations = tables.mutations();
-        assert_eq!(mutations.time(0).unwrap(), 1.123);
-        assert_eq!(mutations.time(1).unwrap(), 2.123);
-        assert_eq!(mutations.time(2).unwrap(), 3.123);
+        assert!(close_enough(mutations.time(0).unwrap(), 1.123));
+        assert!(close_enough(mutations.time(1).unwrap(), 2.123));
+        assert!(close_enough(mutations.time(2).unwrap(), 3.123));
         assert_eq!(mutations.node(0).unwrap(), 0);
         assert_eq!(mutations.node(1).unwrap(), 1);
         assert_eq!(mutations.node(2).unwrap(), 2);
         assert_eq!(mutations.parent(0).unwrap(), crate::TSK_NULL);
         assert_eq!(mutations.parent(1).unwrap(), crate::TSK_NULL);
         assert_eq!(mutations.parent(2).unwrap(), crate::TSK_NULL);
-        assert_eq!(
-            mutations.derived_state(0).unwrap().unwrap(),
-            "pajamas".as_bytes()
-        );
-        match mutations.derived_state(1).unwrap() {
-            Some(_) => assert!(false),
-            None => assert!(true),
-        };
+        assert_eq!(mutations.derived_state(0).unwrap().unwrap(), b"pajamas");
+
+        if mutations.derived_state(1).unwrap().is_some() {
+            panic!()
+        }
+
         assert_eq!(
             mutations.derived_state(2).unwrap().unwrap(),
-            "more pajamas".as_bytes()
+            b"more pajamas"
         );
     }
 

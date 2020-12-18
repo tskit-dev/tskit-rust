@@ -12,12 +12,12 @@ pub struct NodeTable<'a> {
 
 impl<'a> NodeTable<'a> {
     pub(crate) fn new_from_table(nodes: &'a ll_bindings::tsk_node_table_t) -> Self {
-        return NodeTable { table_: nodes };
+        NodeTable { table_: nodes }
     }
 
     /// Return the number of rows
     pub fn num_rows(&'a self) -> ll_bindings::tsk_size_t {
-        return self.table_.num_rows;
+        self.table_.num_rows
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -57,7 +57,7 @@ impl<'a> NodeTable<'a> {
     /// Will return [``IndexError``](crate::TskitRustError::IndexError)
     /// if ``row`` is out of range.
     pub fn deme(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
-        return self.population(row);
+        self.population(row)
     }
 
     /// Return the ``individual`` value from row ``row`` of the table.

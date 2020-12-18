@@ -38,7 +38,7 @@ pub enum TskitRustError {
 /// let rv = -202; // "Node out of bounds error"
 /// tskit_rust::error::panic_on_tskit_error(rv);
 /// ```
-pub fn panic_on_tskit_error(code: i32) -> () {
+pub fn panic_on_tskit_error(code: i32) {
     panic_on_tskit_error!(code);
 }
 
@@ -68,15 +68,13 @@ pub fn panic_on_tskit_error(code: i32) -> () {
 /// ```
 pub fn get_tskit_error_message(code: i32) -> String {
     let c_str = unsafe { std::ffi::CStr::from_ptr(crate::bindings::tsk_strerror(code)) };
-    let str_slice: &str = c_str.to_str().unwrap();
-    let message: String = str_slice.to_owned();
-    return message;
+    c_str.to_str().unwrap().to_owned()
 }
 
 /// Given an instance of [``TskReturnValue``](crate::TskReturnValue),
 /// obtain the tskit error message if there is indeed an error.
 pub fn extract_error_message(x: TskReturnValue) -> Option<String> {
-    return x.map_or_else(|e: TskitRustError| Some(format!("{}", e)), |_| None);
+    x.map_or_else(|e: TskitRustError| Some(format!("{}", e)), |_| None)
 }
 
 #[cfg(test)]
@@ -95,7 +93,7 @@ mod test {
     }
 
     fn mock_success() -> TskReturnValue {
-        return Ok(0);
+        Ok(0)
     }
 
     #[test]
@@ -111,12 +109,11 @@ mod test {
         let x = mock_error();
         match extract_error_message(x) {
             Some(s) => assert_eq!(s, "Individual out of bounds"),
-            None => assert!(false),
+            None => panic!(),
         }
 
-        match extract_error_message(mock_success()) {
-            Some(_) => assert!(false),
-            None => assert!(true),
+        if extract_error_message(mock_success()).is_some() {
+            panic!();
         }
     }
 }

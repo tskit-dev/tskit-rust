@@ -12,12 +12,12 @@ pub struct MutationTable<'a> {
 
 impl<'a> MutationTable<'a> {
     pub(crate) fn new_from_table(mutations: &'a ll_bindings::tsk_mutation_table_t) -> Self {
-        return MutationTable { table_: mutations };
+        MutationTable { table_: mutations }
     }
 
     /// Return the number of rows.
     pub fn num_rows(&'a self) -> tsk_size_t {
-        return self.table_.num_rows;
+        self.table_.num_rows
     }
 
     /// Return the ``site`` value from row ``row`` of the table.
@@ -90,6 +90,6 @@ impl<'a> MutationTable<'a> {
         for i in start..stop {
             buffer.push(unsafe { *self.table_.derived_state.offset(i as isize) } as u8);
         }
-        return Ok(Some(buffer));
+        Ok(Some(buffer))
     }
 }

@@ -12,12 +12,12 @@ pub struct EdgeTable<'a> {
 
 impl<'a> EdgeTable<'a> {
     pub(crate) fn new_from_table(edges: &'a ll_bindings::tsk_edge_table_t) -> Self {
-        return EdgeTable { table_: edges };
+        EdgeTable { table_: edges }
     }
 
     /// Return the number of rows
     pub fn num_rows(&'a self) -> tsk_size_t {
-        return self.table_.num_rows;
+        self.table_.num_rows
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
