@@ -46,11 +46,11 @@ mod test {
     }
 
     fn must_not_error(x: TskReturnValue) -> bool {
-        return x.map_or_else(|_: TskitRustError| false, |_| true);
+        x.map_or_else(|_: TskitRustError| false, |_| true)
     }
 
     fn must_error(x: TskReturnValue) -> bool {
-        return x.map_or_else(|_: TskitRustError| true, |_| false);
+        x.map_or_else(|_: TskitRustError| true, |_| false)
     }
 
     #[test]

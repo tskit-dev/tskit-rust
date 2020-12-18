@@ -13,12 +13,12 @@ pub struct SiteTable<'a> {
 
 impl<'a> SiteTable<'a> {
     pub(crate) fn new_from_table(sites: &'a ll_bindings::tsk_site_table_t) -> Self {
-        return SiteTable { table_: sites };
+        SiteTable { table_: sites }
     }
 
     /// Return the number of rows
     pub fn num_rows(&'a self) -> tsk_size_t {
-        return self.table_.num_rows;
+        self.table_.num_rows
     }
 
     /// Return the ``position`` value from row ``row`` of the table.
@@ -66,6 +66,6 @@ impl<'a> SiteTable<'a> {
         for i in start..stop {
             buffer.push(unsafe { *self.table_.ancestral_state.offset(i as isize) } as u8);
         }
-        return Ok(Some(buffer));
+        Ok(Some(buffer))
     }
 }

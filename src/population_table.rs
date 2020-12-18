@@ -12,11 +12,11 @@ pub struct PopulationTable<'a> {
 
 impl<'a> PopulationTable<'a> {
     pub(crate) fn new_from_table(mutations: &'a ll_bindings::tsk_population_table_t) -> Self {
-        return PopulationTable { table_: mutations };
+        PopulationTable { table_: mutations }
     }
 
     /// Return the number of rows.
     pub fn num_rows(&'a self) -> tsk_size_t {
-        return self.table_.num_rows;
+        self.table_.num_rows
     }
 }

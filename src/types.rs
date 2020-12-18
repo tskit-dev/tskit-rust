@@ -18,7 +18,7 @@ pub struct Bookmark {
 
 impl Bookmark {
     pub const fn new() -> Self {
-        return Bookmark {
+        Bookmark {
             offsets: ll_bindings::tsk_bookmark_t {
                 individuals: 0,
                 nodes: 0,
@@ -29,7 +29,7 @@ impl Bookmark {
                 populations: 0,
                 provenances: 0,
             },
-        };
+        }
     }
 }
 
