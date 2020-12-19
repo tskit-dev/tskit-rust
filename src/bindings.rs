@@ -24,10 +24,6 @@
 //! Those docs describe the most important parts of the C API.
 //! This module contains the same types/functions with the same names.
 
-include!(concat!(env!("OUT_DIR"), "/auto_bindings.rs"));
+#![allow(clippy::all)]
 
-// tskit defines this via a type cast
-// in a macro. bindgen thus misses it.
-// See bindgen issue 316.
-/// "Null" identifier value.
-pub const TSK_NULL: tsk_id_t = -1;
+include!(concat!(env!("OUT_DIR"), "/auto_bindings.rs"));

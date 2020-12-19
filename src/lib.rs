@@ -20,13 +20,18 @@ pub mod types;
 // we can't live without
 pub use bindings::TSK_NODE_IS_SAMPLE;
 pub use bindings::TSK_NO_BUILD_INDEXES;
-pub use bindings::TSK_NULL;
 pub use bindings::TSK_SAMPLE_LISTS;
 
 // re-export types, too
 pub use bindings::tsk_flags_t;
 pub use bindings::tsk_id_t;
 pub use bindings::tsk_size_t;
+
+// tskit defines this via a type cast
+// in a macro. bindgen thus misses it.
+// See bindgen issue 316.
+/// "Null" identifier value.
+pub const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_table::EdgeTable;
 pub use error::TskitRustError;
