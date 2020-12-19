@@ -24,8 +24,7 @@
 //! Those docs describe the most important parts of the C API.
 //! This module contains the same types/functions with the same names.
 
-// re-export the auto-generate bindings
-pub use crate::auto_bindings::*;
+include!(concat!(env!("OUT_DIR"), "/auto_bindings.rs"));
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.

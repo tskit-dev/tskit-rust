@@ -18,7 +18,7 @@ This package provides the following:
 
 The overview is:
 
-1. `tskit` and `kastore` are submodules.
+1. `tskit` and `kastore` source from `tskit 0.3.4` are include in `subprojects/`
 2. These two tools are compiled into the `rust` package.
 3. Then `bindgen` generates the bindings.
 4. Finally, the entire rust package is generated.

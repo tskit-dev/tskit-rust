@@ -5,18 +5,18 @@ fn main() {
     pkg_config::Config::new().atleast_version("1.2");
 
     let src = [
-        "subprojects/tskit/c/tskit/convert.c",
-        "subprojects/tskit/c/tskit/core.c",
-        "subprojects/tskit/c/tskit/genotypes.c",
-        "subprojects/tskit/c/tskit/haplotype_matching.c",
-        "subprojects/tskit/c/tskit/stats.c",
-        "subprojects/tskit/c/tskit/tables.c",
-        "subprojects/tskit/c/tskit/trees.c",
-        "subprojects/tskit/c/subprojects/kastore/kastore.c",
+        "subprojects/tskit/tskit/convert.c",
+        "subprojects/tskit/tskit/core.c",
+        "subprojects/tskit/tskit/genotypes.c",
+        "subprojects/tskit/tskit/haplotype_matching.c",
+        "subprojects/tskit/tskit/stats.c",
+        "subprojects/tskit/tskit/tables.c",
+        "subprojects/tskit/tskit/trees.c",
+        "subprojects/kastore/kastore.c",
     ];
 
-    let tskit_path = Path::new("subprojects/tskit/c");
-    let kastore_path = Path::new("subprojects/tskit/c/subprojects/kastore");
+    let tskit_path = Path::new("subprojects/tskit/");
+    let kastore_path = Path::new("subprojects/kastore/");
     let mut builder = cc::Build::new();
     let build = builder
         .files(src.iter())
@@ -32,8 +32,8 @@ fn main() {
         // The input header we would like to generate
         // bindings for.
         .header("wrapper.h")
-        .clang_arg("-Isubprojects/tskit/c")
-        .clang_arg("-Isubprojects/tskit/c/subprojects/kastore")
+        .clang_arg("-Isubprojects/tskit")
+        .clang_arg("-Isubprojects/kastore")
         .whitelist_type("tsk.*")
         .whitelist_function("tsk.*")
         .whitelist_type("TSK_.*")
@@ -51,8 +51,8 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    //let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let out_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file("src/auto_bindings.rs")
+        .write_to_file(out_path.join("auto_bindings.rs"))
         .expect("Couldn't write bindings!");
 }
