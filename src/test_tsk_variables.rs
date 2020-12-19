@@ -13,6 +13,6 @@ mod tests {
 
     #[test]
     fn test_tsk_null() {
-        assert_eq!(bindings::TSK_NULL, -1);
+        assert_eq!(TSK_NULL, -1);
     }
 }
