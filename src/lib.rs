@@ -46,5 +46,11 @@ pub use table_collection::TableCollection;
 /// the error message is stored for diplay.
 pub type TskReturnValue = Result<i32, TskitRustError>;
 
+/// Get the tskit_rust version number.
+pub fn version() -> &'static str {
+    return env!("CARGO_PKG_VERSION");
+}
+
 // Testing modules
 mod test_tsk_variables;
+
