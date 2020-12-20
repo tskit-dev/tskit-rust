@@ -333,6 +333,7 @@ impl TableCollection {
 
     /// Free all memory allocated on the C side.
     /// Not public b/c not very safe.
+    #[allow(dead_code)]
     fn free(&mut self) -> TskReturnValue {
         let rv = unsafe { ll_bindings::tsk_table_collection_free(self.as_mut_ptr()) };
 
