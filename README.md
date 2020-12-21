@@ -35,7 +35,6 @@ Help wanted!
 ```sh
 git clone https://github.com/molpopgen/tskit_rust
 cd tskit_rust
-git submodule update --init --recursive
 cargo build
 cargo test
 ```
