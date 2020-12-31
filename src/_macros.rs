@@ -30,6 +30,34 @@ macro_rules! unsafe_tsk_column_access {
     }};
 }
 
+macro_rules! build_tskit_type {
+    ($name: ident, $ll_name: ty, $drop: ident) => {
+        impl Drop for $name {
+            fn drop(&mut self) {
+                let rv = unsafe { $drop(&mut *self.inner) };
+                panic_on_tskit_error!(rv);
+            }
+        }
+
+        impl crate::ffi::TskitType<$ll_name> for $name {
+            fn wrap() -> Self {
+                let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
+                $name {
+                    inner: unsafe { Box::<$ll_name>::new(temp.assume_init()) },
+                }
+            }
+
+            fn as_ptr(&self) -> *const $ll_name {
+                &*self.inner
+            }
+
+            fn as_mut_ptr(&mut self) -> *mut $ll_name {
+                &mut *self.inner
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitRustError;

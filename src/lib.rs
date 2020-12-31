@@ -9,6 +9,7 @@ pub mod bindings;
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_table;
 pub mod error;
+pub mod ffi;
 mod mutation_table;
 mod node_table;
 mod population_table;
@@ -53,4 +54,3 @@ pub fn version() -> &'static str {
 
 // Testing modules
 mod test_tsk_variables;
-
