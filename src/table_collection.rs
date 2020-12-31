@@ -1,5 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitRustError;
+use crate::ffi::TskitType;
 use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::MutationTable;
@@ -8,19 +9,7 @@ use crate::PopulationTable;
 use crate::SiteTable;
 use crate::TskReturnValue;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
-
-/// Handle allocation details.
-fn new_tsk_table_collection_t() -> Result<Box<ll_bindings::tsk_table_collection_t>, TskitRustError>
-{
-    let mut tsk_tables: std::mem::MaybeUninit<ll_bindings::tsk_table_collection_t> =
-        std::mem::MaybeUninit::uninit();
-    let rv = unsafe { ll_bindings::tsk_table_collection_init(tsk_tables.as_mut_ptr(), 0) };
-    if rv < 0 {
-        return Err(TskitRustError::ErrorCode { code: rv });
-    }
-    let rv = unsafe { Box::<ll_bindings::tsk_table_collection_t>::new(tsk_tables.assume_init()) };
-    Ok(rv)
-}
+use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
 ///
@@ -69,8 +58,14 @@ fn new_tsk_table_collection_t() -> Result<Box<ll_bindings::tsk_table_collection_
 ///
 /// Addressing point 3 may require API breakage.
 pub struct TableCollection {
-    tables: Box<ll_bindings::tsk_table_collection_t>,
+    inner: Box<ll_bindings::tsk_table_collection_t>,
 }
+
+build_tskit_type!(
+    TableCollection,
+    ll_bindings::tsk_table_collection_t,
+    tsk_table_collection_free
+);
 
 impl TableCollection {
     /// Create a new table collection with a sequence length.
@@ -81,16 +76,13 @@ impl TableCollection {
                 expected: "sequence_length >= 0.0".to_string(),
             });
         }
-        let tables = new_tsk_table_collection_t();
-        match tables {
-            Ok(_) => (),
-            Err(e) => return Err(e),
+        let mut tables = Self::wrap();
+        let rv = unsafe { ll_bindings::tsk_table_collection_init(tables.as_mut_ptr(), 0) };
+        if rv < 0 {
+            return Err(crate::error::TskitRustError::ErrorCode { code: rv });
         }
-        let mut rv = TableCollection {
-            tables: tables.unwrap(),
-        };
-        rv.tables.sequence_length = sequence_length;
-        Ok(rv)
+        tables.inner.sequence_length = sequence_length;
+        Ok(tables)
     }
 
     /// Load a table collection from a file.
@@ -119,16 +111,6 @@ impl TableCollection {
         }
     }
 
-    /// Access to raw C pointer as const tsk_table_collection_t *.
-    pub fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
-        &*self.tables
-    }
-
-    /// Access to raw C pointer as tsk_table_collection_t *.
-    pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
-        &mut *self.tables
-    }
-
     /// Length of the sequence/"genome".
     pub fn sequence_length(&self) -> f64 {
         unsafe { (*self.as_ptr()).sequence_length }
@@ -138,35 +120,35 @@ impl TableCollection {
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn edges<'a>(&'a self) -> EdgeTable<'a> {
-        EdgeTable::<'a>::new_from_table(&self.tables.edges)
+        EdgeTable::<'a>::new_from_table(&self.inner.edges)
     }
 
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn nodes<'a>(&'a self) -> NodeTable<'a> {
-        NodeTable::<'a>::new_from_table(&self.tables.nodes)
+        NodeTable::<'a>::new_from_table(&self.inner.nodes)
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn sites<'a>(&'a self) -> SiteTable<'a> {
-        SiteTable::<'a>::new_from_table(&self.tables.sites)
+        SiteTable::<'a>::new_from_table(&self.inner.sites)
     }
 
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn mutations<'a>(&'a self) -> MutationTable<'a> {
-        MutationTable::<'a>::new_from_table(&self.tables.mutations)
+        MutationTable::<'a>::new_from_table(&self.inner.mutations)
     }
 
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn populations<'a>(&'a self) -> PopulationTable<'a> {
-        PopulationTable::<'a>::new_from_table(&self.tables.populations)
+        PopulationTable::<'a>::new_from_table(&self.inner.populations)
     }
 
     /// Add a row to the edge table
@@ -344,13 +326,6 @@ impl TableCollection {
     /// data as ``other``, and ``false`` otherwise.
     pub fn equals(&self, other: &TableCollection, options: tsk_flags_t) -> bool {
         unsafe { ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options) }
-    }
-}
-
-impl Drop for TableCollection {
-    fn drop(&mut self) {
-        let rv = unsafe { ll_bindings::tsk_table_collection_free(&mut *self.tables) };
-        panic_on_tskit_error!(rv);
     }
 }
 
