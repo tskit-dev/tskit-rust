@@ -10,6 +10,7 @@ mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_table;
 pub mod error;
 pub mod ffi;
+pub mod metadata;
 mod mutation_table;
 mod node_table;
 mod population_table;

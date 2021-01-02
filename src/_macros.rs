@@ -58,6 +58,42 @@ macro_rules! build_tskit_type {
     };
 }
 
+macro_rules! metadata_to_vector {
+    ($T: ty, $self: expr, $row: expr) => {
+        crate::metadata::char_column_to_vector(
+            $self.table_.metadata,
+            $self.table_.metadata_offset,
+            $row,
+            $self.table_.num_rows,
+            $self.table_.metadata_length,
+        )?
+    };
+}
+
+macro_rules! decode_metadata_row {
+    ($T: ty, $buffer: expr) => {
+        match $buffer {
+            None => Ok(None),
+            Some(v) => Ok(Some(<$T as crate::metadata::MetadataRoundtrip>::decode(
+                &v,
+            )?)),
+        }
+    };
+}
+
+macro_rules! process_state_input {
+    ($state: expr) => {
+        match $state {
+            Some(x) => (
+                x.as_ptr() as *const libc::c_char,
+                x.len() as crate::bindings::tsk_size_t,
+                $state,
+            ),
+            None => (std::ptr::null(), 0, $state),
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitRustError;
