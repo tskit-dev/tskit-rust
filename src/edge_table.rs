@@ -1,4 +1,5 @@
 use crate::bindings as ll_bindings;
+use crate::metadata;
 use crate::{tsk_id_t, tsk_size_t, TskitRustError};
 
 /// An immutable view of an edge table.
@@ -58,5 +59,13 @@ impl<'a> EdgeTable<'a> {
     /// if ``row`` is out of range.
     pub fn right(&'a self, row: tsk_id_t) -> Result<f64, TskitRustError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.right);
+    }
+
+    pub fn metadata<T: metadata::MetadataRoundtrip>(
+        &'a self,
+        row: tsk_id_t,
+    ) -> Result<Option<T>, TskitRustError> {
+        let buffer = metadata_to_vector!(T, self, row);
+        decode_metadata_row!(T, buffer)
     }
 }
