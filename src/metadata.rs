@@ -79,22 +79,8 @@ pub(crate) fn char_column_to_vector(
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
-
-    #[test]
-    fn test_vec8_cast_to_c_string() {
-        let v: Vec<u8> = vec![0, 1, b'\0', 2, 3];
-        let c = v.as_ptr() as *const libc::c_char;
-        for (i, vi) in v.iter().enumerate() {
-            assert_eq!(*vi as i8, unsafe { *c.add(i) });
-        }
-
-        let _ = match Some(&v) {
-            Some(x) => x.as_ptr() as *const libc::c_char,
-            None => std::ptr::null(),
-        };
-    }
 
     struct F {
         x: i32,
