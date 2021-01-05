@@ -1,7 +1,6 @@
 use tskit::*;
 
-#[cfg(test)]
-mod test {
+mod test_error {
 
     use super::*;
 
