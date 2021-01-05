@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::TskitRustError;
+use crate::TskitError;
 use crate::{tsk_id_t, tsk_size_t};
 
 /// An immutable view of site table.
@@ -25,7 +25,7 @@ impl<'a> PopulationTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: tsk_id_t,
-    ) -> Result<Option<T>, TskitRustError> {
+    ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(T, self, row);
         decode_metadata_row!(T, buffer)
     }

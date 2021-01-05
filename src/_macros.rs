@@ -4,7 +4,7 @@
 macro_rules! handle_tsk_return_value {
     ($code: expr) => {{
         if $code < 0 {
-            return Err(crate::error::TskitRustError::ErrorCode { code: $code });
+            return Err(crate::error::TskitError::ErrorCode { code: $code });
         }
         return Ok($code);
     }};
@@ -24,7 +24,7 @@ macro_rules! panic_on_tskit_error {
 macro_rules! unsafe_tsk_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
         if $i < $lo || ($i as crate::tsk_size_t) >= $hi {
-            return Err(crate::error::TskitRustError::IndexError {});
+            return Err(crate::error::TskitError::IndexError {});
         }
         return Ok(unsafe { *$array.offset($i as isize) });
     }};
@@ -96,7 +96,7 @@ macro_rules! process_state_input {
 
 #[cfg(test)]
 mod test {
-    use crate::error::TskitRustError;
+    use crate::error::TskitError;
     use crate::TskReturnValue;
 
     #[test]
@@ -110,11 +110,11 @@ mod test {
     }
 
     fn must_not_error(x: TskReturnValue) -> bool {
-        x.map_or_else(|_: TskitRustError| false, |_| true)
+        x.map_or_else(|_: TskitError| false, |_| true)
     }
 
     fn must_error(x: TskReturnValue) -> bool {
-        x.map_or_else(|_: TskitRustError| true, |_| false)
+        x.map_or_else(|_: TskitError| true, |_| false)
     }
 
     #[test]

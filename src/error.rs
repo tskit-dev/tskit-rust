@@ -4,7 +4,7 @@ use crate::TskReturnValue;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
-pub enum TskitRustError {
+pub enum TskitError {
     /// Used when bad input is encountered.
     #[error("we received {} but expected {}",*got, *expected)]
     ValueError { got: String, expected: String },
@@ -34,16 +34,16 @@ pub enum TskitRustError {
 ///
 /// ```
 /// let rv = 0;  // All good!
-/// tskit_rust::error::panic_on_tskit_error(rv);
+/// tskit::error::panic_on_tskit_error(rv);
 /// let rv = 1;  // Probably something like a new node id.
-/// tskit_rust::error::panic_on_tskit_error(rv);
+/// tskit::error::panic_on_tskit_error(rv);
 /// ```
 ///
 /// This will panic:
 ///
 /// ```should_panic
 /// let rv = -202; // "Node out of bounds error"
-/// tskit_rust::error::panic_on_tskit_error(rv);
+/// tskit::error::panic_on_tskit_error(rv);
 /// ```
 pub fn panic_on_tskit_error(code: i32) {
     panic_on_tskit_error!(code);
@@ -54,7 +54,7 @@ pub fn panic_on_tskit_error(code: i32) {
 ///
 /// tskit returns 0 when there's no error:
 /// ```
-/// let x = tskit_rust::error::get_tskit_error_message(0);
+/// let x = tskit::error::get_tskit_error_message(0);
 /// assert_eq!(x, "Normal exit condition. This is not an error!");
 /// ```
 ///
@@ -63,14 +63,14 @@ pub fn panic_on_tskit_error(code: i32) {
 /// to ever do so by client code.
 ///
 /// ```
-/// let x = tskit_rust::error::get_tskit_error_message(1);
+/// let x = tskit::error::get_tskit_error_message(1);
 /// assert_eq!(x, "Unknown error");
 /// ```
 ///
 /// Values < 0 may have known causes:
 ///
 /// ```
-/// let x = tskit_rust::error::get_tskit_error_message(-207);
+/// let x = tskit::error::get_tskit_error_message(-207);
 /// assert_eq!(x, "Individual out of bounds");
 /// ```
 pub fn get_tskit_error_message(code: i32) -> String {
@@ -81,7 +81,7 @@ pub fn get_tskit_error_message(code: i32) -> String {
 /// Given an instance of [``TskReturnValue``](crate::TskReturnValue),
 /// obtain the tskit error message if there is indeed an error.
 pub fn extract_error_message(x: TskReturnValue) -> Option<String> {
-    x.map_or_else(|e: TskitRustError| Some(format!("{}", e)), |_| None)
+    x.map_or_else(|e: TskitError| Some(format!("{}", e)), |_| None)
 }
 
 #[cfg(test)]
@@ -107,7 +107,7 @@ mod test {
     fn test_error_formatting() {
         let x = mock_error();
         let mut s: String = "nope!".to_string();
-        x.map_or_else(|e: TskitRustError| s = format!("{}", e), |_| ());
+        x.map_or_else(|e: TskitError| s = format!("{}", e), |_| ());
         assert_eq!(s, "Individual out of bounds");
     }
 

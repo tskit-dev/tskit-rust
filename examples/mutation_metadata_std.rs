@@ -1,5 +1,5 @@
-use tskit_rust::metadata;
-use tskit_rust::*;
+use tskit::metadata;
+use tskit::*;
 mod mutation;
 
 use mutation::Mutation;
