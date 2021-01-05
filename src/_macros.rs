@@ -1,6 +1,6 @@
 #![macro_use]
 
-#[doc(hidden)]
+#[macro_export]
 macro_rules! handle_tsk_return_value {
     ($code: expr) => {{
         if $code < 0 {
@@ -10,6 +10,7 @@ macro_rules! handle_tsk_return_value {
     }};
 }
 
+#[macro_export]
 macro_rules! panic_on_tskit_error {
     ($code: expr) => {
         if $code < 0 {
