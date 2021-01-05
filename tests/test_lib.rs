@@ -1,9 +1,9 @@
-// These tests basically make sure that we
-// can actually bind these things
+use tskit::*;
 
-#[cfg(test)]
-mod tests {
-    use crate::*;
+mod test_variables {
+    // These tests basically make sure that we
+    // can actually bind these things
+    use super::*;
 
     #[test]
     fn test_node_is_sample() {
