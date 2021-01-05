@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::{tsk_flags_t, tsk_id_t, TskitRustError};
+use crate::{tsk_flags_t, tsk_id_t, TskitError};
 
 /// An immtable view of a node table.
 ///
@@ -25,9 +25,9 @@ impl<'a> NodeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitRustError> {
+    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time);
     }
 
@@ -35,9 +35,9 @@ impl<'a> NodeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn flags(&'a self, row: tsk_id_t) -> Result<tsk_flags_t, TskitRustError> {
+    pub fn flags(&'a self, row: tsk_id_t) -> Result<tsk_flags_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.flags);
     }
 
@@ -45,9 +45,9 @@ impl<'a> NodeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn population(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn population(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.population);
     }
 
@@ -55,9 +55,9 @@ impl<'a> NodeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn deme(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn deme(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         self.population(row)
     }
 
@@ -65,16 +65,16 @@ impl<'a> NodeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn individual(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn individual(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.individual);
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: tsk_id_t,
-    ) -> Result<Option<T>, TskitRustError> {
+    ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(T, self, row);
         decode_metadata_row!(T, buffer)
     }

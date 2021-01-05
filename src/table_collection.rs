@@ -1,5 +1,5 @@
 use crate::bindings as ll_bindings;
-use crate::error::TskitRustError;
+use crate::error::TskitError;
 use crate::ffi::TskitType;
 use crate::metadata::*;
 use crate::types::Bookmark;
@@ -29,7 +29,7 @@ use ll_bindings::tsk_table_collection_free;
 /// # Examples
 ///
 /// ```
-/// let mut tables = tskit_rust::TableCollection::new(100.).unwrap();
+/// let mut tables = tskit::TableCollection::new(100.).unwrap();
 /// assert_eq!(tables.sequence_length(), 100.);
 ///
 /// // Adding edges:
@@ -38,7 +38,7 @@ use ll_bindings::tsk_table_collection_free;
 ///
 /// // Add node:
 ///
-/// let rv = tables.add_node(0, 3.2, tskit_rust::TSK_NULL, tskit_rust::TSK_NULL).unwrap();
+/// let rv = tables.add_node(0, 3.2, tskit::TSK_NULL, tskit::TSK_NULL).unwrap();
 ///
 /// // Get immutable reference to edge table
 /// let edges = tables.edges();
@@ -70,9 +70,9 @@ build_tskit_type!(
 
 impl TableCollection {
     /// Create a new table collection with a sequence length.
-    pub fn new(sequence_length: f64) -> Result<Self, TskitRustError> {
+    pub fn new(sequence_length: f64) -> Result<Self, TskitError> {
         if sequence_length <= 0. {
-            return Err(TskitRustError::ValueError {
+            return Err(TskitError::ValueError {
                 got: sequence_length.to_string(),
                 expected: "sequence_length >= 0.0".to_string(),
             });
@@ -80,14 +80,14 @@ impl TableCollection {
         let mut tables = Self::wrap();
         let rv = unsafe { ll_bindings::tsk_table_collection_init(tables.as_mut_ptr(), 0) };
         if rv < 0 {
-            return Err(crate::error::TskitRustError::ErrorCode { code: rv });
+            return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
         tables.inner.sequence_length = sequence_length;
         Ok(tables)
     }
 
     /// Load a table collection from a file.
-    pub fn new_from_file(filename: &str) -> Result<Self, TskitRustError> {
+    pub fn new_from_file(filename: &str) -> Result<Self, TskitError> {
         let tables = TableCollection::new(1.0); // Arbitrary sequence_length.
         match tables {
             Ok(_) => (),
@@ -106,7 +106,7 @@ impl TableCollection {
         };
 
         if rv < 0 {
-            Err(TskitRustError::ErrorCode { code: rv })
+            Err(TskitError::ErrorCode { code: rv })
         } else {
             Ok(tables)
         }

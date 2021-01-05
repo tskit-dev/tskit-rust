@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::{tsk_id_t, tsk_size_t, TskitRustError};
+use crate::{tsk_id_t, tsk_size_t, TskitError};
 
 /// An immutable view of an edge table.
 ///
@@ -25,9 +25,9 @@ impl<'a> EdgeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent);
     }
 
@@ -35,9 +35,9 @@ impl<'a> EdgeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn child(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn child(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.child);
     }
 
@@ -45,9 +45,9 @@ impl<'a> EdgeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn left(&'a self, row: tsk_id_t) -> Result<f64, TskitRustError> {
+    pub fn left(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.left);
     }
 
@@ -55,16 +55,16 @@ impl<'a> EdgeTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn right(&'a self, row: tsk_id_t) -> Result<f64, TskitRustError> {
+    pub fn right(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.right);
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: tsk_id_t,
-    ) -> Result<Option<T>, TskitRustError> {
+    ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(T, self, row);
         decode_metadata_row!(T, buffer)
     }

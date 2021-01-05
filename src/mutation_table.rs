@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::{tsk_id_t, tsk_size_t, TskitRustError};
+use crate::{tsk_id_t, tsk_size_t, TskitError};
 
 /// An immutable view of site table.
 ///
@@ -25,9 +25,9 @@ impl<'a> MutationTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn site(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn site(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.site);
     }
 
@@ -35,9 +35,9 @@ impl<'a> MutationTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn node(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn node(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node);
     }
 
@@ -45,9 +45,9 @@ impl<'a> MutationTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
+    pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent);
     }
 
@@ -55,9 +55,9 @@ impl<'a> MutationTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitRustError> {
+    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time);
     }
 
@@ -69,9 +69,9 @@ impl<'a> MutationTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn derived_state(&'a self, row: tsk_id_t) -> Result<Option<Vec<u8>>, TskitRustError> {
+    pub fn derived_state(&'a self, row: tsk_id_t) -> Result<Option<Vec<u8>>, TskitError> {
         metadata::char_column_to_vector(
             self.table_.derived_state,
             self.table_.derived_state_offset,
@@ -84,7 +84,7 @@ impl<'a> MutationTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: tsk_id_t,
-    ) -> Result<Option<T>, TskitRustError> {
+    ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(T, self, row);
         decode_metadata_row!(T, buffer)
     }

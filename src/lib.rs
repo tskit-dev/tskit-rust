@@ -36,7 +36,7 @@ pub use bindings::tsk_size_t;
 pub const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_table::EdgeTable;
-pub use error::TskitRustError;
+pub use error::TskitError;
 pub use mutation_table::MutationTable;
 pub use node_table::NodeTable;
 pub use population_table::PopulationTable;
@@ -46,9 +46,9 @@ pub use table_collection::TableCollection;
 ///
 /// When an error from the tskit C API is detected,
 /// the error message is stored for diplay.
-pub type TskReturnValue = Result<i32, TskitRustError>;
+pub type TskReturnValue = Result<i32, TskitError>;
 
-/// Get the tskit_rust version number.
+/// Get the tskit version number.
 pub fn version() -> &'static str {
     return env!("CARGO_PKG_VERSION");
 }

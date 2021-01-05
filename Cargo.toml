@@ -1,5 +1,5 @@
 [package]
-name = "tskit_rust"
+name = "tskit"
 version = "0.1.0"
 authors = ["molpopgen <krthornt@uci.edu>"]
 build = "build.rs"

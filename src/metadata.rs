@@ -52,9 +52,9 @@ pub(crate) fn char_column_to_vector(
     row: tsk_id_t,
     num_rows: tsk_size_t,
     column_length: tsk_size_t,
-) -> Result<Option<Vec<u8>>, crate::TskitRustError> {
+) -> Result<Option<Vec<u8>>, crate::TskitError> {
     if row < 0 || (row as tsk_size_t) >= num_rows {
-        return Err(crate::TskitRustError::IndexError {});
+        return Err(crate::TskitError::IndexError {});
     }
     if column_length == 0 {
         return Ok(None);

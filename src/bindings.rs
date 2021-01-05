@@ -11,12 +11,12 @@
 //!
 //! ```
 //! use std::mem::MaybeUninit;
-//! let mut edges: MaybeUninit<tskit_rust::bindings::tsk_edge_table_t> = MaybeUninit::uninit();
+//! let mut edges: MaybeUninit<tskit::bindings::tsk_edge_table_t> = MaybeUninit::uninit();
 //! unsafe {
-//!     let _ = tskit_rust::bindings::tsk_edge_table_init(edges.as_mut_ptr(), 0);
-//!     let _ = tskit_rust::bindings::tsk_edge_table_add_row(edges.as_mut_ptr(), 0., 10., 0, 1, std::ptr::null(), 0);
+//!     let _ = tskit::bindings::tsk_edge_table_init(edges.as_mut_ptr(), 0);
+//!     let _ = tskit::bindings::tsk_edge_table_add_row(edges.as_mut_ptr(), 0., 10., 0, 1, std::ptr::null(), 0);
 //!     assert_eq!((*edges.as_ptr()).num_rows, 1);
-//!     tskit_rust::bindings::tsk_edge_table_free(edges.as_mut_ptr());
+//!     tskit::bindings::tsk_edge_table_free(edges.as_mut_ptr());
 //! }
 //! ```
 //!

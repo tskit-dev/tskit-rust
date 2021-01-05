@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::TskitRustError;
+use crate::TskitError;
 use crate::{tsk_id_t, tsk_size_t};
 
 /// An immutable view of site table.
@@ -26,9 +26,9 @@ impl<'a> SiteTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn position(&'a self, row: tsk_id_t) -> Result<f64, TskitRustError> {
+    pub fn position(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.position);
     }
 
@@ -40,9 +40,9 @@ impl<'a> SiteTable<'a> {
     ///
     /// # Errors
     ///
-    /// Will return [``IndexError``](crate::TskitRustError::IndexError)
+    /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn ancestral_state(&'a self, row: tsk_id_t) -> Result<Option<Vec<u8>>, TskitRustError> {
+    pub fn ancestral_state(&'a self, row: tsk_id_t) -> Result<Option<Vec<u8>>, TskitError> {
         crate::metadata::char_column_to_vector(
             self.table_.ancestral_state,
             self.table_.ancestral_state_offset,
@@ -55,7 +55,7 @@ impl<'a> SiteTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: tsk_id_t,
-    ) -> Result<Option<T>, TskitRustError> {
+    ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(T, self, row);
         decode_metadata_row!(T, buffer)
     }
