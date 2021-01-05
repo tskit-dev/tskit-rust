@@ -44,3 +44,16 @@ Then, to look at the docs:
 ```
 cargo doc --open
 ```
+
+### Code coverage
+
+Use [tarpaulin](https://docs.rs/crate/cargo-tarpaulin/0.3.12).
+We need to exclude the `tskit` C code and the code in `tests/`:
+
+```
+cargo tarpaulin --exclude-files subprojects/* --exclude-files tests/* -o html
+```
+
+This command will run the tests and generate a nice `html` report.
+This command will not run the doc tests!
+However, that is okay, as it seems that tarpaulin has an issue with doc tests that should `panic!`.
