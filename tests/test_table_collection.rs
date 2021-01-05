@@ -1,26 +1,8 @@
 use tskit::metadata::*;
 use tskit::*;
 
-mod test_table_collection {
+mod test_adding_table_rows {
     use super::*;
-
-    #[test]
-    fn test_sequence_length() {
-        let tables = TableCollection::new(1000.).unwrap();
-        assert!(close_enough(tables.sequence_length(), 1000.));
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_zero_sequence_length() {
-        let _ = TableCollection::new(0.).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_negative_sequence_length() {
-        let _ = TableCollection::new(-1.).unwrap();
-    }
 
     #[test]
     fn test_add_edges() {
@@ -153,6 +135,11 @@ mod test_table_collection {
         tables.add_population().unwrap();
         assert_eq!(tables.populations().num_rows(), 1);
     }
+}
+
+mod test_table_functions {
+
+    use super::*;
 
     #[test]
     fn test_dump_tables() {

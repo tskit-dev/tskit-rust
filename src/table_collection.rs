@@ -389,6 +389,24 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_sequence_length() {
+        let tables = TableCollection::new(1000.).unwrap();
+        assert!((tables.sequence_length()- 1000.).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_zero_sequence_length() {
+        let _ = TableCollection::new(0.).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_negative_sequence_length() {
+        let _ = TableCollection::new(-1.).unwrap();
+    }
+
+    #[test]
     fn test_free() {
         let mut tables = TableCollection::new(1000.).unwrap();
         tables.free().unwrap();
