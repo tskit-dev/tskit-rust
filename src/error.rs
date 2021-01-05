@@ -16,6 +16,13 @@ pub enum TskitRustError {
     /// Wrapper around tskit C API error codes.
     #[error("{}", get_tskit_error_message(*code))]
     ErrorCode { code: i32 },
+    /// A redirection of [``crate::metadata::MetadataError``]
+    #[error("{value:?}")]
+    MetadataError {
+        /// The redirected error
+        #[from]
+        value: crate::metadata::MetadataError,
+    },
 }
 
 /// Takes the return code from a tskit

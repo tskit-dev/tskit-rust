@@ -1,5 +1,7 @@
 use crate::bindings as ll_bindings;
-use crate::tsk_size_t;
+use crate::metadata;
+use crate::TskitRustError;
+use crate::{tsk_id_t, tsk_size_t};
 
 /// An immutable view of site table.
 ///
@@ -18,5 +20,13 @@ impl<'a> PopulationTable<'a> {
     /// Return the number of rows.
     pub fn num_rows(&'a self) -> tsk_size_t {
         self.table_.num_rows
+    }
+
+    pub fn metadata<T: metadata::MetadataRoundtrip>(
+        &'a self,
+        row: tsk_id_t,
+    ) -> Result<Option<T>, TskitRustError> {
+        let buffer = metadata_to_vector!(T, self, row);
+        decode_metadata_row!(T, buffer)
     }
 }

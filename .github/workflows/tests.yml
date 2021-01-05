@@ -33,7 +33,9 @@ jobs:
           override: true
       - run: cargo check
       - name: run tests
-        run: cargo test
+        run: |
+            cargo test
+            cargo test --examples
 
   build-osx:
     runs-on: macos-latest
@@ -53,7 +55,9 @@ jobs:
           override: true
       - run: cargo check
       - name: run tests
-        run: cargo test 
+        run: |
+            cargo test
+            cargo test --examples
 
   fmt:
     name: rust fmt

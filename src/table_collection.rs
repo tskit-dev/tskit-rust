@@ -1,6 +1,7 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitRustError;
 use crate::ffi::TskitType;
+use crate::metadata::*;
 use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::MutationTable;
@@ -8,7 +9,7 @@ use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SiteTable;
 use crate::TskReturnValue;
-use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
+use crate::{tsk_flags_t, tsk_id_t};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -159,6 +160,19 @@ impl TableCollection {
         parent: tsk_id_t,
         child: tsk_id_t,
     ) -> TskReturnValue {
+        self.add_edge_with_metadata(left, right, parent, child, None)
+    }
+
+    /// Add a row with metadata to the edge table
+    pub fn add_edge_with_metadata(
+        &mut self,
+        left: f64,
+        right: f64,
+        parent: tsk_id_t,
+        child: tsk_id_t,
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_edge_table_add_row(
                 &mut (*self.as_mut_ptr()).edges,
@@ -166,8 +180,8 @@ impl TableCollection {
                 right,
                 parent,
                 child,
-                std::ptr::null(),
-                0,
+                md.as_ptr(),
+                md.len(),
             )
         };
 
@@ -182,6 +196,19 @@ impl TableCollection {
         population: tsk_id_t,
         individual: tsk_id_t,
     ) -> TskReturnValue {
+        self.add_node_witha_metadata(flags, time, population, individual, None)
+    }
+
+    /// Add a row with metadata to the node table
+    pub fn add_node_witha_metadata(
+        &mut self,
+        flags: ll_bindings::tsk_flags_t,
+        time: f64,
+        population: tsk_id_t,
+        individual: tsk_id_t,
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_node_table_add_row(
                 &mut (*self.as_mut_ptr()).nodes,
@@ -189,8 +216,8 @@ impl TableCollection {
                 time,
                 population,
                 individual,
-                std::ptr::null(),
-                0,
+                md.as_ptr(),
+                md.len(),
             )
         };
 
@@ -199,19 +226,27 @@ impl TableCollection {
 
     /// Add a row to the site table
     pub fn add_site(&mut self, position: f64, ancestral_state: Option<&[u8]>) -> TskReturnValue {
-        let astate = match ancestral_state {
-            Some(x) => (std::ffi::CString::new(x).unwrap(), x.len() as tsk_size_t),
-            None => (std::ffi::CString::new("".to_string()).unwrap(), 0),
-        };
+        self.add_site_with_metadata(position, ancestral_state, None)
+    }
+
+    /// Add a row with metadata to the site table
+    pub fn add_site_with_metadata(
+        &mut self,
+        position: f64,
+        ancestral_state: Option<&[u8]>,
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let astate = process_state_input!(ancestral_state);
+        let md = EncodedMetadata::new(metadata)?;
 
         let rv = unsafe {
             ll_bindings::tsk_site_table_add_row(
                 &mut (*self.as_mut_ptr()).sites,
                 position,
-                astate.0.as_ptr(),
+                astate.0,
                 astate.1,
-                std::ptr::null(),
-                0,
+                md.as_ptr(),
+                md.len(),
             )
         };
 
@@ -227,10 +262,21 @@ impl TableCollection {
         time: f64,
         derived_state: Option<&[u8]>,
     ) -> TskReturnValue {
-        let dstate = match derived_state {
-            Some(x) => (std::ffi::CString::new(x).unwrap(), x.len() as tsk_size_t),
-            None => (std::ffi::CString::new("".to_string()).unwrap(), 0),
-        };
+        self.add_mutation_with_metadata(site, node, parent, time, derived_state, None)
+    }
+
+    /// Add a row with metadata to the mutation table.
+    pub fn add_mutation_with_metadata(
+        &mut self,
+        site: tsk_id_t,
+        node: tsk_id_t,
+        parent: tsk_id_t,
+        time: f64,
+        derived_state: Option<&[u8]>,
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let dstate = process_state_input!(derived_state);
+        let md = EncodedMetadata::new(metadata)?;
 
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_add_row(
@@ -239,10 +285,10 @@ impl TableCollection {
                 node,
                 parent,
                 time,
-                dstate.0.as_ptr(),
+                dstate.0,
                 dstate.1,
-                std::ptr::null(),
-                0,
+                md.as_ptr(),
+                md.len(),
             )
         };
 
@@ -251,11 +297,20 @@ impl TableCollection {
 
     /// Add a row to the population_table
     pub fn add_population(&mut self) -> TskReturnValue {
+        self.add_population_with_metadata(None)
+    }
+
+    /// Add a row with metadata to the population_table
+    pub fn add_population_with_metadata(
+        &mut self,
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_population_table_add_row(
                 &mut (*self.as_mut_ptr()).populations,
-                std::ptr::null(),
-                0,
+                md.as_ptr(),
+                md.len(),
             )
         };
 
@@ -431,6 +486,49 @@ mod test {
             mutations.derived_state(2).unwrap().unwrap(),
             b"more pajamas"
         );
+    }
+
+    struct F {
+        x: i32,
+        y: u32,
+    }
+
+    impl MetadataRoundtrip for F {
+        fn encode(&self) -> Result<Vec<u8>, MetadataError> {
+            let mut rv = vec![];
+            rv.extend(self.x.to_le_bytes().iter().copied());
+            rv.extend(self.y.to_le_bytes().iter().copied());
+            Ok(rv)
+        }
+        fn decode(md: &[u8]) -> Result<Self, MetadataError> {
+            use std::convert::TryInto;
+            let (x_int_bytes, rest) = md.split_at(std::mem::size_of::<i32>());
+            let (y_int_bytes, _) = rest.split_at(std::mem::size_of::<u32>());
+            Ok(Self {
+                x: i32::from_le_bytes(x_int_bytes.try_into().unwrap()),
+                y: u32::from_le_bytes(y_int_bytes.try_into().unwrap()),
+            })
+        }
+    }
+
+    #[test]
+    fn test_add_mutation_with_metadata() {
+        let mut tables = TableCollection::new(1000.).unwrap();
+        tables
+            .add_mutation_with_metadata(
+                0,
+                0,
+                crate::TSK_NULL,
+                1.123,
+                None,
+                Some(&F { x: -3, y: 666 }),
+            )
+            .unwrap();
+        // The double unwrap is to first check for error
+        // and then to process the Option.
+        let md = tables.mutations().metadata::<F>(0).unwrap().unwrap();
+        assert_eq!(md.x, -3);
+        assert_eq!(md.y, 666);
     }
 
     #[test]

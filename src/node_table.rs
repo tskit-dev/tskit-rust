@@ -1,4 +1,5 @@
 use crate::bindings as ll_bindings;
+use crate::metadata;
 use crate::{tsk_flags_t, tsk_id_t, TskitRustError};
 
 /// An immtable view of a node table.
@@ -68,5 +69,13 @@ impl<'a> NodeTable<'a> {
     /// if ``row`` is out of range.
     pub fn individual(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitRustError> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.individual);
+    }
+
+    pub fn metadata<T: metadata::MetadataRoundtrip>(
+        &'a self,
+        row: tsk_id_t,
+    ) -> Result<Option<T>, TskitRustError> {
+        let buffer = metadata_to_vector!(T, self, row);
+        decode_metadata_row!(T, buffer)
     }
 }
