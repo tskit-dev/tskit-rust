@@ -52,6 +52,3 @@ pub type TskReturnValue = Result<i32, TskitError>;
 pub fn version() -> &'static str {
     return env!("CARGO_PKG_VERSION");
 }
-
-// Testing modules
-mod test_tsk_variables;
