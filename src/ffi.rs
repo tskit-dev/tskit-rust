@@ -16,7 +16,7 @@ pub trait TskitType<T>: Drop {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use crate::bindings as ll_bindings;
     use ll_bindings::tsk_table_collection_free;

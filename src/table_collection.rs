@@ -385,7 +385,7 @@ impl TableCollection {
 }
 
 #[cfg(test)]
-mod test_private {
+mod test {
     use super::*;
 
     #[test]
