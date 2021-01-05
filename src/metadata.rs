@@ -84,10 +84,10 @@ mod tests {
 
     #[test]
     fn test_vec8_cast_to_c_string() {
-        let v: Vec<u8> = vec![0, 1, '\0' as u8, 2, 3];
+        let v: Vec<u8> = vec![0, 1, b'\0', 2, 3];
         let c = v.as_ptr() as *const libc::c_char;
-        for i in 0..v.len() {
-            assert_eq!(v[i] as i8, unsafe { *c.offset(i as isize) });
+        for (i, vi) in v.iter().enumerate() {
+            assert_eq!(*vi as i8, unsafe { *c.add(i) });
         }
 
         let _ = match Some(&v) {
@@ -104,8 +104,8 @@ mod tests {
     impl MetadataRoundtrip for F {
         fn encode(&self) -> Result<Vec<u8>, MetadataError> {
             let mut rv = vec![];
-            rv.extend(self.x.to_le_bytes().iter().map(|&i| i));
-            rv.extend(self.y.to_le_bytes().iter().map(|&i| i));
+            rv.extend(self.x.to_le_bytes().iter().copied());
+            rv.extend(self.y.to_le_bytes().iter().copied());
             Ok(rv)
         }
         fn decode(md: &[u8]) -> Result<Self, MetadataError> {
@@ -126,7 +126,7 @@ mod tests {
         let c = v.as_ptr() as *const libc::c_char;
         let mut d = vec![];
         for i in 0..v.len() {
-            d.push(unsafe { *c.offset(i as isize) as u8 });
+            d.push(unsafe { *c.add(i as usize) as u8 });
         }
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
@@ -140,7 +140,7 @@ mod tests {
         let p = enc.as_ptr();
         let mut d = vec![];
         for i in 0..enc.len() {
-            d.push(unsafe { *p.offset(i as isize) as u8 });
+            d.push(unsafe { *p.add(i as usize) as u8 });
         }
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);

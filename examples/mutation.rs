@@ -39,5 +39,4 @@ macro_rules! make_mutation_metadata_run {
 }
 
 #[allow(dead_code)]
-fn main() {
-}
+fn main() {}

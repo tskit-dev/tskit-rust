@@ -496,8 +496,8 @@ mod test {
     impl MetadataRoundtrip for F {
         fn encode(&self) -> Result<Vec<u8>, MetadataError> {
             let mut rv = vec![];
-            rv.extend(self.x.to_le_bytes().iter().map(|&i| i));
-            rv.extend(self.y.to_le_bytes().iter().map(|&i| i));
+            rv.extend(self.x.to_le_bytes().iter().copied());
+            rv.extend(self.y.to_le_bytes().iter().copied());
             Ok(rv)
         }
         fn decode(md: &[u8]) -> Result<Self, MetadataError> {
