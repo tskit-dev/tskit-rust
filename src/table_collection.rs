@@ -18,14 +18,6 @@ use ll_bindings::tsk_table_collection_free;
 ///
 /// # Current limitations
 ///
-/// 1. No support for adding metadata to tables.
-///    In later versions, we will add separate
-///    "add row" functions to allow metadata.
-///
-/// The issue with metadata is just a temporary
-/// uncertainty in how best to handle the ``char *``
-/// round trips to/from ``rust``.
-///
 /// # Examples
 ///
 /// ```
@@ -49,13 +41,14 @@ use ll_bindings::tsk_table_collection_free;
 /// assert_eq!(nodes.num_rows(), 1);
 /// ```
 ///
+/// See the examples/ directory of the repository for examples of metadata encoding
+/// and decoding.
+///
 /// # Future road map
 ///
 /// 1. Support all table types.  Currently, we only support
 ///    those needed for current goals in ongoing projects.
-/// 2. For all ``add_foo`` functions, add an additional
-///    ``add_foo_with_metadata``. (See above)
-/// 3. Strengthen some of the error handling.
+/// 2. Strengthen some of the error handling.
 ///
 /// Addressing point 3 may require API breakage.
 pub struct TableCollection {
