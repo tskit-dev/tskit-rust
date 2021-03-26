@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019-2020 Tskit Developers
+ * Copyright (c) 2019-2021 Tskit Developers
  * Copyright (c) 2017-2018 University of Oxford
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -243,6 +243,11 @@ tsk_individual_table_expand_main_columns(
             goto out;
         }
         ret = expand_column(
+            (void **) &self->parents_offset, new_size + 1, sizeof(tsk_size_t));
+        if (ret != 0) {
+            goto out;
+        }
+        ret = expand_column(
             (void **) &self->metadata_offset, new_size + 1, sizeof(tsk_size_t));
         if (ret != 0) {
             goto out;
@@ -272,6 +277,30 @@ tsk_individual_table_expand_location(
             goto out;
         }
         self->max_location_length = new_size;
+    }
+out:
+    return ret;
+}
+
+static int
+tsk_individual_table_expand_parents(
+    tsk_individual_table_t *self, tsk_size_t additional_length)
+{
+    int ret = 0;
+    tsk_size_t increment
+        = TSK_MAX(additional_length, self->max_parents_length_increment);
+    tsk_size_t new_size = self->max_parents_length + increment;
+
+    if (check_offset_overflow(self->parents_length, increment)) {
+        ret = TSK_ERR_COLUMN_OVERFLOW;
+        goto out;
+    }
+    if ((self->parents_length + additional_length) > self->max_parents_length) {
+        ret = expand_column((void **) &self->parents, new_size, sizeof(tsk_id_t));
+        if (ret != 0) {
+            goto out;
+        }
+        self->max_parents_length = new_size;
     }
 out:
     return ret;
@@ -335,6 +364,17 @@ tsk_individual_table_set_max_location_length_increment(
 }
 
 int
+tsk_individual_table_set_max_parents_length_increment(
+    tsk_individual_table_t *self, tsk_size_t max_parents_length_increment)
+{
+    if (max_parents_length_increment == 0) {
+        max_parents_length_increment = DEFAULT_SIZE_INCREMENT;
+    }
+    self->max_parents_length_increment = (tsk_size_t) max_parents_length_increment;
+    return 0;
+}
+
+int
 tsk_individual_table_init(tsk_individual_table_t *self, tsk_flags_t TSK_UNUSED(options))
 {
     int ret = 0;
@@ -344,6 +384,7 @@ tsk_individual_table_init(tsk_individual_table_t *self, tsk_flags_t TSK_UNUSED(o
      * even if the table is empty */
     self->max_rows_increment = 1;
     self->max_location_length_increment = 1;
+    self->max_parents_length_increment = 1;
     self->max_metadata_length_increment = 1;
     ret = tsk_individual_table_expand_main_columns(self, 1);
     if (ret != 0) {
@@ -354,6 +395,11 @@ tsk_individual_table_init(tsk_individual_table_t *self, tsk_flags_t TSK_UNUSED(o
         goto out;
     }
     self->location_offset[0] = 0;
+    ret = tsk_individual_table_expand_parents(self, 1);
+    if (ret != 0) {
+        goto out;
+    }
+    self->parents_offset[0] = 0;
     ret = tsk_individual_table_expand_metadata(self, 1);
     if (ret != 0) {
         goto out;
@@ -361,6 +407,7 @@ tsk_individual_table_init(tsk_individual_table_t *self, tsk_flags_t TSK_UNUSED(o
     self->metadata_offset[0] = 0;
     self->max_rows_increment = DEFAULT_SIZE_INCREMENT;
     self->max_location_length_increment = DEFAULT_SIZE_INCREMENT;
+    self->max_parents_length_increment = DEFAULT_SIZE_INCREMENT;
     self->max_metadata_length_increment = DEFAULT_SIZE_INCREMENT;
     tsk_individual_table_set_metadata_schema(self, NULL, 0);
 out:
@@ -380,7 +427,8 @@ tsk_individual_table_copy(const tsk_individual_table_t *self,
         }
     }
     ret = tsk_individual_table_set_columns(dest, self->num_rows, self->flags,
-        self->location, self->location_offset, self->metadata, self->metadata_offset);
+        self->location, self->location_offset, self->parents, self->parents_offset,
+        self->metadata, self->metadata_offset);
     if (ret != 0) {
         goto out;
     }
@@ -393,7 +441,8 @@ out:
 int TSK_WARN_UNUSED
 tsk_individual_table_set_columns(tsk_individual_table_t *self, tsk_size_t num_rows,
     const tsk_flags_t *flags, const double *location, const tsk_size_t *location_offset,
-    const char *metadata, const tsk_size_t *metadata_offset)
+    const tsk_id_t *parents, const tsk_size_t *parents_offset, const char *metadata,
+    const tsk_size_t *metadata_offset)
 {
     int ret;
 
@@ -401,8 +450,8 @@ tsk_individual_table_set_columns(tsk_individual_table_t *self, tsk_size_t num_ro
     if (ret != 0) {
         goto out;
     }
-    ret = tsk_individual_table_append_columns(
-        self, num_rows, flags, location, location_offset, metadata, metadata_offset);
+    ret = tsk_individual_table_append_columns(self, num_rows, flags, location,
+        location_offset, parents, parents_offset, metadata, metadata_offset);
 out:
     return ret;
 }
@@ -410,16 +459,21 @@ out:
 int
 tsk_individual_table_append_columns(tsk_individual_table_t *self, tsk_size_t num_rows,
     const tsk_flags_t *flags, const double *location, const tsk_size_t *location_offset,
-    const char *metadata, const tsk_size_t *metadata_offset)
+    const tsk_id_t *parents, const tsk_size_t *parents_offset, const char *metadata,
+    const tsk_size_t *metadata_offset)
 {
     int ret;
-    tsk_size_t j, metadata_length, location_length;
+    tsk_size_t j, metadata_length, location_length, parents_length;
 
     if (flags == NULL) {
         ret = TSK_ERR_BAD_PARAM_VALUE;
         goto out;
     }
     if ((location == NULL) != (location_offset == NULL)) {
+        ret = TSK_ERR_BAD_PARAM_VALUE;
+        goto out;
+    }
+    if ((parents == NULL) != (parents_offset == NULL)) {
         ret = TSK_ERR_BAD_PARAM_VALUE;
         goto out;
     }
@@ -455,6 +509,29 @@ tsk_individual_table_append_columns(tsk_individual_table_t *self, tsk_size_t num
             location_length * sizeof(double));
         self->location_length += location_length;
     }
+    if (parents == NULL) {
+        for (j = 0; j < num_rows; j++) {
+            self->parents_offset[self->num_rows + j + 1]
+                = (tsk_size_t) self->parents_length;
+        }
+    } else {
+        ret = check_offsets(num_rows, parents_offset, 0, false);
+        if (ret != 0) {
+            goto out;
+        }
+        for (j = 0; j < num_rows; j++) {
+            self->parents_offset[self->num_rows + j]
+                = (tsk_size_t) self->parents_length + parents_offset[j];
+        }
+        parents_length = parents_offset[num_rows];
+        ret = tsk_individual_table_expand_parents(self, parents_length);
+        if (ret != 0) {
+            goto out;
+        }
+        memcpy(self->parents + self->parents_length, parents,
+            parents_length * sizeof(tsk_id_t));
+        self->parents_length += parents_length;
+    }
     if (metadata == NULL) {
         for (j = 0; j < num_rows; j++) {
             self->metadata_offset[self->num_rows + j + 1]
@@ -480,6 +557,7 @@ tsk_individual_table_append_columns(tsk_individual_table_t *self, tsk_size_t num
     }
     self->num_rows += (tsk_size_t) num_rows;
     self->location_offset[self->num_rows] = self->location_length;
+    self->parents_offset[self->num_rows] = self->parents_length;
     self->metadata_offset[self->num_rows] = self->metadata_length;
 out:
     return ret;
@@ -487,10 +565,12 @@ out:
 
 static tsk_id_t
 tsk_individual_table_add_row_internal(tsk_individual_table_t *self, tsk_flags_t flags,
-    const double *location, tsk_size_t location_length, const char *metadata,
-    tsk_size_t metadata_length)
+    const double *location, tsk_size_t location_length, const tsk_id_t *parents,
+    const tsk_size_t parents_length, const char *metadata, tsk_size_t metadata_length)
 {
+
     tsk_bug_assert(self->num_rows < self->max_rows);
+    tsk_bug_assert(self->parents_length + parents_length <= self->max_parents_length);
     tsk_bug_assert(self->metadata_length + metadata_length <= self->max_metadata_length);
     tsk_bug_assert(self->location_length + location_length <= self->max_location_length);
     self->flags[self->num_rows] = flags;
@@ -498,6 +578,10 @@ tsk_individual_table_add_row_internal(tsk_individual_table_t *self, tsk_flags_t 
         location_length * sizeof(double));
     self->location_offset[self->num_rows + 1] = self->location_length + location_length;
     self->location_length += location_length;
+    memcpy(self->parents + self->parents_length, parents,
+        parents_length * sizeof(tsk_id_t));
+    self->parents_offset[self->num_rows + 1] = self->parents_length + parents_length;
+    self->parents_length += parents_length;
     memcpy(self->metadata + self->metadata_length, metadata,
         metadata_length * sizeof(char));
     self->metadata_offset[self->num_rows + 1] = self->metadata_length + metadata_length;
@@ -508,8 +592,8 @@ tsk_individual_table_add_row_internal(tsk_individual_table_t *self, tsk_flags_t 
 
 tsk_id_t
 tsk_individual_table_add_row(tsk_individual_table_t *self, tsk_flags_t flags,
-    const double *location, tsk_size_t location_length, const char *metadata,
-    tsk_size_t metadata_length)
+    const double *location, tsk_size_t location_length, const tsk_id_t *parents,
+    tsk_size_t parents_length, const char *metadata, tsk_size_t metadata_length)
 {
     int ret = 0;
 
@@ -521,12 +605,17 @@ tsk_individual_table_add_row(tsk_individual_table_t *self, tsk_flags_t flags,
     if (ret != 0) {
         goto out;
     }
+    ret = tsk_individual_table_expand_parents(self, (tsk_size_t) parents_length);
+    if (ret != 0) {
+        goto out;
+    }
     ret = tsk_individual_table_expand_metadata(self, (tsk_size_t) metadata_length);
     if (ret != 0) {
         goto out;
     }
     ret = tsk_individual_table_add_row_internal(self, flags, location,
-        (tsk_size_t) location_length, metadata, (tsk_size_t) metadata_length);
+        (tsk_size_t) location_length, parents, (tsk_size_t) parents_length, metadata,
+        (tsk_size_t) metadata_length);
 out:
     return ret;
 }
@@ -548,6 +637,7 @@ tsk_individual_table_truncate(tsk_individual_table_t *self, tsk_size_t num_rows)
     }
     self->num_rows = num_rows;
     self->location_length = self->location_offset[num_rows];
+    self->parents_length = self->parents_offset[num_rows];
     self->metadata_length = self->metadata_offset[num_rows];
 out:
     return ret;
@@ -559,6 +649,8 @@ tsk_individual_table_free(tsk_individual_table_t *self)
     tsk_safe_free(self->flags);
     tsk_safe_free(self->location);
     tsk_safe_free(self->location_offset);
+    tsk_safe_free(self->parents);
+    tsk_safe_free(self->parents_offset);
     tsk_safe_free(self->metadata);
     tsk_safe_free(self->metadata_offset);
     tsk_safe_free(self->metadata_schema);
@@ -583,6 +675,7 @@ tsk_individual_table_print_state(const tsk_individual_table_t *self, FILE *out)
     write_metadata_schema_header(
         out, self->metadata_schema, self->metadata_schema_length);
     fprintf(out, "id\tflags\tlocation_offset\tlocation\t");
+    fprintf(out, "parents_offset\tparents\n");
     fprintf(out, "metadata_offset\tmetadata\n");
     for (j = 0; j < self->num_rows; j++) {
         fprintf(out, "%d\t%d\t", (int) j, self->flags[j]);
@@ -590,6 +683,14 @@ tsk_individual_table_print_state(const tsk_individual_table_t *self, FILE *out)
         for (k = self->location_offset[j]; k < self->location_offset[j + 1]; k++) {
             fprintf(out, "%f", self->location[k]);
             if (k + 1 < self->location_offset[j + 1]) {
+                fprintf(out, ",");
+            }
+        }
+        fprintf(out, "\t");
+        fprintf(out, "%d\t", self->parents_offset[j]);
+        for (k = self->parents_offset[j]; k < self->parents_offset[j + 1]; k++) {
+            fprintf(out, "%d", self->parents[k]);
+            if (k + 1 < self->parents_offset[j + 1]) {
                 fprintf(out, ",");
             }
         }
@@ -611,6 +712,8 @@ tsk_individual_table_get_row_unsafe(
     row->location_length
         = self->location_offset[index + 1] - self->location_offset[index];
     row->location = self->location + self->location_offset[index];
+    row->parents_length = self->parents_offset[index + 1] - self->parents_offset[index];
+    row->parents = self->parents + self->parents_offset[index];
     row->metadata_length
         = self->metadata_offset[index + 1] - self->metadata_offset[index];
     row->metadata = self->metadata + self->metadata_offset[index];
@@ -656,7 +759,7 @@ tsk_individual_table_dump_text(const tsk_individual_table_t *self, FILE *out)
     if (err < 0) {
         goto out;
     }
-    err = fprintf(out, "id\tflags\tlocation\tmetadata\n");
+    err = fprintf(out, "id\tflags\tlocation\tparents\tmetadata\n");
     if (err < 0) {
         goto out;
     }
@@ -672,6 +775,18 @@ tsk_individual_table_dump_text(const tsk_individual_table_t *self, FILE *out)
                 goto out;
             }
             if (k + 1 < self->location_offset[j + 1]) {
+                err = fprintf(out, ",");
+                if (err < 0) {
+                    goto out;
+                }
+            }
+        }
+        for (k = self->parents_offset[j]; k < self->parents_offset[j + 1]; k++) {
+            err = fprintf(out, "%d", self->parents[k]);
+            if (err < 0) {
+                goto out;
+            }
+            if (k + 1 < self->parents_offset[j + 1]) {
                 err = fprintf(out, ",");
                 if (err < 0) {
                     goto out;
@@ -701,7 +816,14 @@ tsk_individual_table_equals(const tsk_individual_table_t *self,
                  == 0
           && memcmp(
                  self->location, other->location, self->location_length * sizeof(double))
+                 == 0
+          && memcmp(self->parents_offset, other->parents_offset,
+                 (self->num_rows + 1) * sizeof(tsk_size_t))
+                 == 0
+          && memcmp(
+                 self->parents, other->parents, self->parents_length * sizeof(tsk_id_t))
                  == 0;
+
     if (!(options & TSK_CMP_IGNORE_METADATA)) {
         ret = ret && self->metadata_length == other->metadata_length
               && self->metadata_schema_length == other->metadata_schema_length
@@ -727,6 +849,10 @@ tsk_individual_table_dump(const tsk_individual_table_t *self, kastore_t *store)
             KAS_FLOAT64 },
         { "individuals/location_offset", (void *) self->location_offset,
             self->num_rows + 1, KAS_UINT32 },
+        { "individuals/parents", (void *) self->parents, self->parents_length,
+            KAS_INT32 },
+        { "individuals/parents_offset", (void *) self->parents_offset,
+            self->num_rows + 1, KAS_UINT32 },
         { "individuals/metadata", (void *) self->metadata, self->metadata_length,
             KAS_UINT8 },
         { "individuals/metadata_offset", (void *) self->metadata_offset,
@@ -744,10 +870,13 @@ tsk_individual_table_load(tsk_individual_table_t *self, kastore_t *store)
     tsk_flags_t *flags = NULL;
     double *location = NULL;
     tsk_size_t *location_offset = NULL;
+    tsk_id_t *parents = NULL;
+    tsk_size_t *parents_offset = NULL;
     char *metadata = NULL;
     tsk_size_t *metadata_offset = NULL;
     char *metadata_schema = NULL;
-    tsk_size_t num_rows, location_length, metadata_length, metadata_schema_length;
+    tsk_size_t num_rows, location_length, parents_length, metadata_length,
+        metadata_schema_length;
 
     read_table_col_t read_cols[] = {
         { "individuals/flags", (void **) &flags, &num_rows, 0, KAS_UINT32, 0 },
@@ -755,6 +884,10 @@ tsk_individual_table_load(tsk_individual_table_t *self, kastore_t *store)
             0 },
         { "individuals/location_offset", (void **) &location_offset, &num_rows, 1,
             KAS_UINT32, 0 },
+        { "individuals/parents", (void **) &parents, &parents_length, 0, KAS_INT32,
+            TSK_COL_OPTIONAL },
+        { "individuals/parents_offset", (void **) &parents_offset, &num_rows, 1,
+            KAS_UINT32, TSK_COL_OPTIONAL },
         { "individuals/metadata", (void **) &metadata, &metadata_length, 0, KAS_UINT8,
             0 },
         { "individuals/metadata_offset", (void **) &metadata_offset, &num_rows, 1,
@@ -767,7 +900,15 @@ tsk_individual_table_load(tsk_individual_table_t *self, kastore_t *store)
     if (ret != 0) {
         goto out;
     }
+    if ((parents == NULL) != (parents_offset == NULL)) {
+        ret = TSK_ERR_BOTH_COLUMNS_REQUIRED;
+        goto out;
+    }
     if (location_offset[num_rows] != location_length) {
+        ret = TSK_ERR_BAD_OFFSET;
+        goto out;
+    }
+    if (parents != NULL && parents_offset[num_rows] != parents_length) {
         ret = TSK_ERR_BAD_OFFSET;
         goto out;
     }
@@ -775,8 +916,8 @@ tsk_individual_table_load(tsk_individual_table_t *self, kastore_t *store)
         ret = TSK_ERR_BAD_OFFSET;
         goto out;
     }
-    ret = tsk_individual_table_set_columns(
-        self, num_rows, flags, location, location_offset, metadata, metadata_offset);
+    ret = tsk_individual_table_set_columns(self, num_rows, flags, location,
+        location_offset, parents, parents_offset, metadata, metadata_offset);
     if (ret != 0) {
         goto out;
     }
@@ -3371,9 +3512,8 @@ tsk_migration_table_dump_text(const tsk_migration_table_t *self, FILE *out)
     for (j = 0; j < self->num_rows; j++) {
         metadata_len = self->metadata_offset[j + 1] - self->metadata_offset[j];
         err = fprintf(out, "%.3f\t%.3f\t%d\t%d\t%d\t%f\t%.*s\n", self->left[j],
-            self->right[j], (int) self->node[j], (int) self->source[j],
-            (int) self->dest[j], self->time[j], metadata_len,
-            self->metadata + self->metadata_offset[j]);
+            self->right[j], self->node[j], self->source[j], self->dest[j], self->time[j],
+            metadata_len, self->metadata + self->metadata_offset[j]);
         if (err < 0) {
             goto out;
         }
@@ -3395,7 +3535,6 @@ tsk_migration_table_equals(const tsk_migration_table_t *self,
           && memcmp(self->source, other->source, self->num_rows * sizeof(tsk_id_t)) == 0
           && memcmp(self->dest, other->dest, self->num_rows * sizeof(tsk_id_t)) == 0
           && memcmp(self->time, other->time, self->num_rows * sizeof(double)) == 0;
-
     if (!(options & TSK_CMP_IGNORE_METADATA)) {
         ret = ret && self->metadata_length == other->metadata_length
               && self->metadata_schema_length == other->metadata_schema_length
@@ -4404,6 +4543,28 @@ typedef struct {
     tsk_size_t metadata_length;
 } edge_sort_t;
 
+typedef struct {
+    tsk_mutation_t mut;
+    int num_descendants;
+} mutation_canonical_sort_t;
+
+typedef struct {
+    tsk_individual_t ind;
+    tsk_id_t first_node;
+    tsk_size_t num_descendants;
+} individual_canonical_sort_t;
+
+typedef struct {
+    double left;
+    double right;
+    tsk_id_t node;
+    tsk_id_t source;
+    tsk_id_t dest;
+    double time;
+    tsk_size_t metadata_offset;
+    tsk_size_t metadata_length;
+} migration_sort_t;
+
 static int
 cmp_site(const void *a, const void *b)
 {
@@ -4442,6 +4603,46 @@ cmp_mutation(const void *a, const void *b)
 }
 
 static int
+cmp_mutation_canonical(const void *a, const void *b)
+{
+    const mutation_canonical_sort_t *ia = (const mutation_canonical_sort_t *) a;
+    const mutation_canonical_sort_t *ib = (const mutation_canonical_sort_t *) b;
+    /* Compare mutations by site */
+    int ret = (ia->mut.site > ib->mut.site) - (ia->mut.site < ib->mut.site);
+    if (ret == 0 && !tsk_is_unknown_time(ia->mut.time)
+        && !tsk_is_unknown_time(ib->mut.time)) {
+        ret = (ia->mut.time < ib->mut.time) - (ia->mut.time > ib->mut.time);
+    }
+    if (ret == 0) {
+        ret = (ia->num_descendants < ib->num_descendants)
+              - (ia->num_descendants > ib->num_descendants);
+    }
+    if (ret == 0) {
+        ret = (ia->mut.node > ib->mut.node) - (ia->mut.node < ib->mut.node);
+    }
+    if (ret == 0) {
+        ret = (ia->mut.id > ib->mut.id) - (ia->mut.id < ib->mut.id);
+    }
+    return ret;
+}
+
+static int
+cmp_individual_canonical(const void *a, const void *b)
+{
+    const individual_canonical_sort_t *ia = (const individual_canonical_sort_t *) a;
+    const individual_canonical_sort_t *ib = (const individual_canonical_sort_t *) b;
+    int ret = (ia->num_descendants < ib->num_descendants)
+              - (ia->num_descendants > ib->num_descendants);
+    if (ret == 0) {
+        ret = (ia->first_node > ib->first_node) - (ia->first_node < ib->first_node);
+    }
+    if (ret == 0) {
+        ret = (ia->ind.id > ib->ind.id) - (ia->ind.id < ib->ind.id);
+    }
+    return ret;
+}
+
+static int
 cmp_edge(const void *a, const void *b)
 {
     const edge_sort_t *ca = (const edge_sort_t *) a;
@@ -4457,6 +4658,32 @@ cmp_edge(const void *a, const void *b)
             /* If the child nodes are equal, sort by the left coordinate. */
             if (ret == 0) {
                 ret = (ca->left > cb->left) - (ca->left < cb->left);
+            }
+        }
+    }
+    return ret;
+}
+
+static int
+cmp_migration(const void *a, const void *b)
+{
+    const migration_sort_t *ca = (const migration_sort_t *) a;
+    const migration_sort_t *cb = (const migration_sort_t *) b;
+
+    int ret = (ca->time > cb->time) - (ca->time < cb->time);
+    /* If time values are equal, sort by the source population */
+    if (ret == 0) {
+        ret = (ca->source > cb->source) - (ca->source < cb->source);
+        /* If the source populations are equal, sort by the dest */
+        if (ret == 0) {
+            ret = (ca->dest > cb->dest) - (ca->dest < cb->dest);
+            /* If the dest populations are equal, sort by the left coordinate. */
+            if (ret == 0) {
+                ret = (ca->left > cb->left) - (ca->left < cb->left);
+                /* If everything else is equal, compare by node */
+                if (ret == 0) {
+                    ret = (ca->node > cb->node) - (ca->node < cb->node);
+                }
             }
         }
     }
@@ -4514,6 +4741,58 @@ tsk_table_sorter_sort_edges(tsk_table_sorter_t *self, tsk_size_t start)
     }
 out:
     tsk_safe_free(sorted_edges);
+    tsk_safe_free(old_metadata);
+    return ret;
+}
+
+static int
+tsk_table_sorter_sort_migrations(tsk_table_sorter_t *self, tsk_size_t start)
+{
+    int ret = 0;
+    const tsk_migration_table_t *migrations = &self->tables->migrations;
+    migration_sort_t *m;
+    tsk_size_t j, k, metadata_offset;
+    tsk_size_t n = migrations->num_rows - start;
+    migration_sort_t *sorted_migrations = malloc(n * sizeof(*sorted_migrations));
+    char *old_metadata = malloc(migrations->metadata_length);
+
+    if (sorted_migrations == NULL || old_metadata == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+    memcpy(old_metadata, migrations->metadata, migrations->metadata_length);
+    for (j = 0; j < n; j++) {
+        m = sorted_migrations + j;
+        k = start + j;
+        m->left = migrations->left[k];
+        m->right = migrations->right[k];
+        m->node = migrations->node[k];
+        m->source = migrations->source[k];
+        m->dest = migrations->dest[k];
+        m->time = migrations->time[k];
+        m->metadata_offset = migrations->metadata_offset[k];
+        m->metadata_length
+            = migrations->metadata_offset[k + 1] - migrations->metadata_offset[k];
+    }
+    qsort(sorted_migrations, n, sizeof(migration_sort_t), cmp_migration);
+    /* Copy the migrations back into the table. */
+    metadata_offset = 0;
+    for (j = 0; j < n; j++) {
+        m = sorted_migrations + j;
+        k = start + j;
+        migrations->left[k] = m->left;
+        migrations->right[k] = m->right;
+        migrations->node[k] = m->node;
+        migrations->source[k] = m->source;
+        migrations->dest[k] = m->dest;
+        migrations->time[k] = m->time;
+        memcpy(migrations->metadata + metadata_offset, old_metadata + m->metadata_offset,
+            m->metadata_length);
+        migrations->metadata_offset[k] = metadata_offset;
+        metadata_offset += m->metadata_length;
+    }
+out:
+    tsk_safe_free(sorted_migrations);
     tsk_safe_free(old_metadata);
     return ret;
 }
@@ -4623,12 +4902,335 @@ out:
     return ret;
 }
 
+static int
+tsk_table_sorter_sort_mutations_canonical(tsk_table_sorter_t *self)
+{
+    int ret = 0;
+    tsk_size_t j;
+    tsk_id_t parent, mapped_parent, p;
+    tsk_mutation_table_t *mutations = &self->tables->mutations;
+    tsk_size_t num_mutations = mutations->num_rows;
+    tsk_mutation_table_t copy;
+    mutation_canonical_sort_t *sorted_mutations
+        = malloc(num_mutations * sizeof(*sorted_mutations));
+    tsk_id_t *mutation_id_map = malloc(num_mutations * sizeof(*mutation_id_map));
+
+    ret = tsk_mutation_table_copy(mutations, &copy, 0);
+    if (ret != 0) {
+        goto out;
+    }
+    if (mutation_id_map == NULL || sorted_mutations == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+
+    /* compute numbers of descendants for each mutation */
+    for (j = 0; j < num_mutations; j++) {
+        sorted_mutations[j].num_descendants = 0;
+    }
+    for (j = 0; j < num_mutations; j++) {
+        p = mutations->parent[j];
+        while (p != TSK_NULL) {
+            sorted_mutations[p].num_descendants += 1;
+            if (sorted_mutations[p].num_descendants > (int) num_mutations) {
+                ret = TSK_ERR_MUTATION_PARENT_INCONSISTENT;
+                goto out;
+            }
+            p = mutations->parent[p];
+        }
+    }
+
+    for (j = 0; j < num_mutations; j++) {
+        tsk_mutation_table_get_row_unsafe(&copy, (tsk_id_t) j, &sorted_mutations[j].mut);
+        sorted_mutations[j].mut.site = self->site_id_map[sorted_mutations[j].mut.site];
+    }
+    ret = tsk_mutation_table_clear(mutations);
+    if (ret != 0) {
+        goto out;
+    }
+
+    qsort(sorted_mutations, num_mutations, sizeof(*sorted_mutations),
+        cmp_mutation_canonical);
+
+    /* Make a first pass through the sorted mutations to build the ID map. */
+    for (j = 0; j < num_mutations; j++) {
+        mutation_id_map[sorted_mutations[j].mut.id] = (tsk_id_t) j;
+    }
+
+    for (j = 0; j < num_mutations; j++) {
+        mapped_parent = TSK_NULL;
+        parent = sorted_mutations[j].mut.parent;
+        if (parent != TSK_NULL) {
+            mapped_parent = mutation_id_map[parent];
+        }
+        ret = tsk_mutation_table_add_row(mutations, sorted_mutations[j].mut.site,
+            sorted_mutations[j].mut.node, mapped_parent, sorted_mutations[j].mut.time,
+            sorted_mutations[j].mut.derived_state,
+            sorted_mutations[j].mut.derived_state_length,
+            sorted_mutations[j].mut.metadata, sorted_mutations[j].mut.metadata_length);
+        if (ret < 0) {
+            goto out;
+        }
+    }
+    ret = 0;
+
+out:
+    tsk_safe_free(mutation_id_map);
+    tsk_safe_free(sorted_mutations);
+    tsk_mutation_table_free(&copy);
+    return ret;
+}
+
+static int
+tsk_individual_table_topological_sort(
+    tsk_individual_table_t *self, tsk_id_t *traversal_order, tsk_size_t *num_descendants)
+{
+    int ret = 0;
+    tsk_id_t i, j, p;
+    tsk_individual_t individual;
+    tsk_size_t num_individuals = self->num_rows;
+    tsk_size_t current_todo = 0;
+    tsk_size_t todo_insertion_point = 0;
+    tsk_size_t *incoming_edge_count
+        = malloc(num_individuals * sizeof(*incoming_edge_count));
+    bool count_descendants = (num_descendants != NULL);
+
+    if (incoming_edge_count == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+
+    for (i = 0; i < (tsk_id_t) num_individuals; i++) {
+        incoming_edge_count[i] = 0;
+        traversal_order[i] = TSK_NULL;
+        if (count_descendants) {
+            num_descendants[i] = 0;
+        }
+    }
+
+    /* First find the set of individuals that have no children by creating
+     * an array of incoming edge counts */
+    for (i = 0; i < (tsk_id_t) self->parents_length; i++) {
+        if (self->parents[i] != TSK_NULL) {
+            incoming_edge_count[self->parents[i]]++;
+        }
+    }
+    /* Use these as the starting points for checking all individuals,
+     * doing this in reverse makes the sort stable */
+    for (i = (tsk_id_t) num_individuals - 1; i >= 0; i--) {
+        if (incoming_edge_count[i] == 0) {
+            traversal_order[todo_insertion_point] = i;
+            todo_insertion_point++;
+        }
+    }
+
+    /* Now process individuals from the set that have no children, updating their
+     * parents' information as we go, and adding their parents to the list if
+     * this was their last child */
+    while (current_todo < todo_insertion_point) {
+        j = traversal_order[current_todo];
+        tsk_individual_table_get_row_unsafe(self, j, &individual);
+        for (i = 0; i < (tsk_id_t) individual.parents_length; i++) {
+            p = individual.parents[i];
+            if (p != TSK_NULL) {
+                incoming_edge_count[p]--;
+                if (count_descendants) {
+                    num_descendants[p] += 1 + num_descendants[j];
+                }
+                if (incoming_edge_count[p] == 0) {
+                    traversal_order[todo_insertion_point] = p;
+                    todo_insertion_point++;
+                }
+            }
+        }
+        current_todo++;
+    }
+
+    /* Any edges left are parts of cycles */
+    for (i = 0; i < (tsk_id_t) num_individuals; i++) {
+        if (incoming_edge_count[i] > 0) {
+            ret = TSK_ERR_INDIVIDUAL_PARENT_CYCLE;
+            goto out;
+        }
+    }
+
+out:
+    tsk_safe_free(incoming_edge_count);
+    return ret;
+}
+
+static int
+tsk_table_sorter_sort_individuals(tsk_table_sorter_t *self)
+{
+    int ret = 0;
+    tsk_id_t i;
+    tsk_individual_table_t copy;
+    tsk_individual_t individual;
+    tsk_individual_table_t *individuals = &self->tables->individuals;
+    tsk_node_table_t *nodes = &self->tables->nodes;
+    tsk_size_t num_individuals = individuals->num_rows;
+    tsk_id_t *traversal_order = malloc(num_individuals * sizeof(*traversal_order));
+    tsk_id_t *new_id_map = malloc(num_individuals * sizeof(*new_id_map));
+
+    if (new_id_map == NULL || traversal_order == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+    memset(new_id_map, 0xff, num_individuals * sizeof(*new_id_map));
+
+    ret = tsk_individual_table_copy(individuals, &copy, 0);
+    if (ret != 0) {
+        goto out;
+    }
+
+    ret = tsk_individual_table_clear(individuals);
+    if (ret != 0) {
+        goto out;
+    }
+
+    ret = tsk_individual_table_topological_sort(&copy, traversal_order, NULL);
+    if (ret != 0) {
+        goto out;
+    }
+
+    /* The sorted individuals are in reverse order */
+    for (i = (tsk_id_t) num_individuals - 1; i >= 0; i--) {
+        tsk_individual_table_get_row_unsafe(&copy, traversal_order[i], &individual);
+        ret = tsk_individual_table_add_row(individuals, individual.flags,
+            individual.location, individual.location_length, individual.parents,
+            individual.parents_length, individual.metadata, individual.metadata_length);
+        if (ret < 0) {
+            goto out;
+        }
+        new_id_map[traversal_order[i]] = ret;
+    }
+
+    /* Rewrite the parent ids */
+    for (i = 0; i < (tsk_id_t) individuals->parents_length; i++) {
+        if (individuals->parents[i] != TSK_NULL) {
+            individuals->parents[i] = new_id_map[individuals->parents[i]];
+        }
+    }
+    /* Rewrite the node individual ids */
+    for (i = 0; i < (tsk_id_t) nodes->num_rows; i++) {
+        if (nodes->individual[i] != TSK_NULL) {
+            nodes->individual[i] = new_id_map[nodes->individual[i]];
+        }
+    }
+
+    ret = 0;
+out:
+    tsk_safe_free(traversal_order);
+    tsk_safe_free(new_id_map);
+    tsk_individual_table_free(&copy);
+    return ret;
+}
+
+static int
+tsk_table_sorter_sort_individuals_canonical(tsk_table_sorter_t *self)
+{
+    int ret = 0;
+    tsk_id_t i, j, parent, mapped_parent;
+    tsk_individual_table_t *individuals = &self->tables->individuals;
+    tsk_node_table_t *nodes = &self->tables->nodes;
+    tsk_individual_table_t copy;
+    tsk_size_t num_individuals = individuals->num_rows;
+    individual_canonical_sort_t *sorted_individuals
+        = malloc(num_individuals * sizeof(*sorted_individuals));
+    tsk_id_t *individual_id_map = malloc(num_individuals * sizeof(*individual_id_map));
+    tsk_size_t *num_descendants = malloc(num_individuals * sizeof(*num_descendants));
+    tsk_id_t *traversal_order = malloc(num_individuals * sizeof(*traversal_order));
+
+    if (individual_id_map == NULL || sorted_individuals == NULL
+        || traversal_order == NULL || num_descendants == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+
+    ret = tsk_individual_table_copy(individuals, &copy, 0);
+    if (ret != 0) {
+        goto out;
+    }
+    ret = tsk_individual_table_clear(individuals);
+    if (ret != 0) {
+        goto out;
+    }
+
+    ret = tsk_individual_table_topological_sort(&copy, traversal_order, num_descendants);
+    if (ret != 0) {
+        goto out;
+    }
+
+    for (i = 0; i < (tsk_id_t) num_individuals; i++) {
+        sorted_individuals[i].num_descendants = num_descendants[i];
+        sorted_individuals[i].first_node = (tsk_id_t) nodes->num_rows;
+    }
+
+    /* find first referring node */
+    for (j = 0; j < (tsk_id_t) nodes->num_rows; j++) {
+        if (nodes->individual[j] != TSK_NULL) {
+            sorted_individuals[nodes->individual[j]].first_node
+                = TSK_MIN(j, sorted_individuals[nodes->individual[j]].first_node);
+        }
+    }
+
+    for (j = 0; j < (tsk_id_t) num_individuals; j++) {
+        tsk_individual_table_get_row_unsafe(
+            &copy, (tsk_id_t) j, &sorted_individuals[j].ind);
+    }
+
+    qsort(sorted_individuals, num_individuals, sizeof(*sorted_individuals),
+        cmp_individual_canonical);
+
+    /* Make a first pass through the sorted individuals to build the ID map. */
+    for (j = 0; j < (tsk_id_t) num_individuals; j++) {
+        individual_id_map[sorted_individuals[j].ind.id] = (tsk_id_t) j;
+    }
+
+    for (i = 0; i < (tsk_id_t) num_individuals; i++) {
+        for (j = 0; j < (tsk_id_t) sorted_individuals[i].ind.parents_length; j++) {
+            parent = sorted_individuals[i].ind.parents[j];
+            if (parent != TSK_NULL) {
+                mapped_parent = individual_id_map[parent];
+                sorted_individuals[i].ind.parents[j] = mapped_parent;
+            }
+        }
+        ret = tsk_individual_table_add_row(individuals, sorted_individuals[i].ind.flags,
+            sorted_individuals[i].ind.location,
+            sorted_individuals[i].ind.location_length, sorted_individuals[i].ind.parents,
+            sorted_individuals[i].ind.parents_length, sorted_individuals[i].ind.metadata,
+            sorted_individuals[i].ind.metadata_length);
+        if (ret < 0) {
+            goto out;
+        }
+    }
+    ret = 0;
+
+    /* remap individuals in the node table */
+    for (i = 0; i < (tsk_id_t) nodes->num_rows; i++) {
+        j = nodes->individual[i];
+        if (j != TSK_NULL) {
+            nodes->individual[i] = individual_id_map[j];
+        }
+    }
+
+out:
+    tsk_safe_free(sorted_individuals);
+    tsk_safe_free(individual_id_map);
+    tsk_safe_free(traversal_order);
+    tsk_safe_free(num_descendants);
+    tsk_individual_table_free(&copy);
+    return ret;
+}
+
 int
 tsk_table_sorter_run(tsk_table_sorter_t *self, const tsk_bookmark_t *start)
 {
     int ret = 0;
     tsk_size_t edge_start = 0;
+    tsk_size_t migration_start = 0;
     bool skip_sites = false;
+    bool skip_individuals = false;
 
     if (start != NULL) {
         if (start->edges > self->tables->edges.num_rows) {
@@ -4636,11 +5238,12 @@ tsk_table_sorter_run(tsk_table_sorter_t *self, const tsk_bookmark_t *start)
             goto out;
         }
         edge_start = start->edges;
-
-        if (start->migrations != 0) {
-            ret = TSK_ERR_MIGRATIONS_NOT_SUPPORTED;
+        if (start->migrations > self->tables->migrations.num_rows) {
+            ret = TSK_ERR_MIGRATION_OUT_OF_BOUNDS;
             goto out;
         }
+        migration_start = start->migrations;
+
         /* We only allow sites and mutations to be specified as a way to
          * skip sorting them entirely. Both sites and mutations must be
          * equal to the number of rows */
@@ -4651,14 +5254,30 @@ tsk_table_sorter_run(tsk_table_sorter_t *self, const tsk_bookmark_t *start)
             ret = TSK_ERR_SORT_OFFSET_NOT_SUPPORTED;
             goto out;
         }
+
+        /* Individuals also must be all sorted or skipped entirely */
+        if (start->individuals == self->tables->individuals.num_rows) {
+            skip_individuals = true;
+        } else if (start->individuals != 0) {
+            ret = TSK_ERR_SORT_OFFSET_NOT_SUPPORTED;
+            goto out;
+        }
     }
     /* The indexes will be invalidated, so drop them */
     ret = tsk_table_collection_drop_index(self->tables, 0);
     if (ret != 0) {
         goto out;
     }
+
     if (self->sort_edges != NULL) {
         ret = self->sort_edges(self, edge_start);
+        if (ret != 0) {
+            goto out;
+        }
+    }
+    /* Avoid calling sort_migrations in the common case when it's a no-op */
+    if (self->tables->migrations.num_rows > 0) {
+        ret = tsk_table_sorter_sort_migrations(self, migration_start);
         if (ret != 0) {
             goto out;
         }
@@ -4668,7 +5287,13 @@ tsk_table_sorter_run(tsk_table_sorter_t *self, const tsk_bookmark_t *start)
         if (ret != 0) {
             goto out;
         }
-        ret = tsk_table_sorter_sort_mutations(self);
+        ret = self->sort_mutations(self);
+        if (ret != 0) {
+            goto out;
+        }
+    }
+    if (!skip_individuals) {
+        ret = self->sort_individuals(self);
         if (ret != 0) {
             goto out;
         }
@@ -4684,10 +5309,6 @@ tsk_table_sorter_init(
     int ret = 0;
 
     memset(self, 0, sizeof(tsk_table_sorter_t));
-    if (tables->migrations.num_rows != 0) {
-        ret = TSK_ERR_SORT_MIGRATIONS_NOT_SUPPORTED;
-        goto out;
-    }
     if (!(options & TSK_NO_CHECK_INTEGRITY)) {
         ret = tsk_table_collection_check_integrity(tables, 0);
         if (ret != 0) {
@@ -4702,8 +5323,10 @@ tsk_table_sorter_init(
         goto out;
     }
 
-    /* Set the sort_edges method to the default. */
+    /* Set the sort_edges and sort_mutations methods to the default. */
     self->sort_edges = tsk_table_sorter_sort_edges;
+    self->sort_mutations = tsk_table_sorter_sort_mutations;
+    self->sort_individuals = tsk_table_sorter_sort_individuals;
 out:
     return ret;
 }
@@ -6094,6 +6717,8 @@ simplifier_print_state(simplifier_t *self, FILE *out)
     fprintf(out, "\tkeep_unary              : %d\n", !!(self->options & TSK_KEEP_UNARY));
     fprintf(out, "\tkeep_input_roots        : %d\n",
         !!(self->options & TSK_KEEP_INPUT_ROOTS));
+    fprintf(out, "\tkeep_unary_in_individuals : %d\n",
+        !!(self->options & TSK_KEEP_UNARY_IN_INDIVIDUALS));
 
     fprintf(out, "===\nInput tables\n==\n");
     tsk_table_collection_print_state(&self->input_tables, out);
@@ -6635,8 +7260,16 @@ simplifier_merge_ancestors(simplifier_t *self, tsk_id_t input_id)
     double left, right, prev_right;
     tsk_id_t ancestry_node;
     tsk_id_t output_id = self->node_id_map[input_id];
+
     bool is_sample = output_id != TSK_NULL;
-    bool keep_unary = !!(self->options & TSK_KEEP_UNARY);
+    bool keep_unary = false;
+    if (self->options & TSK_KEEP_UNARY) {
+        keep_unary = true;
+    }
+    if ((self->options & TSK_KEEP_UNARY_IN_INDIVIDUALS)
+        && (self->input_tables.nodes.individual[input_id] != TSK_NULL)) {
+        keep_unary = true;
+    }
 
     if (is_sample) {
         /* Free up the existing ancestry mapping. */
@@ -6995,12 +7628,21 @@ simplifier_finalise_references(simplifier_t *self)
         individual_id_map[j] = TSK_NULL;
         if (keep) {
             ret = tsk_individual_table_add_row(&self->tables->individuals, ind.flags,
-                ind.location, ind.location_length, ind.metadata, ind.metadata_length);
+                ind.location, ind.location_length, ind.parents, ind.parents_length,
+                ind.metadata, ind.metadata_length);
             if (ret < 0) {
                 goto out;
             }
             individual_id_map[j] = (tsk_id_t) ret;
         }
+    }
+
+    /* Remap parent IDs */
+    for (j = 0; j < self->tables->individuals.parents_length; j++) {
+        self->tables->individuals.parents[j]
+            = self->tables->individuals.parents[j] == TSK_NULL
+                  ? TSK_NULL
+                  : individual_id_map[self->tables->individuals.parents[j]];
     }
 
     /* Remap node IDs referencing the above */
@@ -7594,6 +8236,43 @@ out:
     return ret;
 }
 
+static int TSK_WARN_UNUSED
+tsk_table_collection_check_individual_integrity(
+    const tsk_table_collection_t *self, tsk_flags_t options)
+{
+    int ret = 0;
+    tsk_size_t j, k;
+    const tsk_individual_table_t individuals = self->individuals;
+    const tsk_id_t num_individuals = (tsk_id_t) individuals.num_rows;
+    const bool check_individual_ordering = options & TSK_CHECK_INDIVIDUAL_ORDERING;
+
+    for (j = 0; j < (tsk_size_t) num_individuals; j++) {
+        for (k = individuals.parents_offset[j]; k < individuals.parents_offset[j + 1];
+             k++) {
+            /* Check parent references are valid */
+            if (individuals.parents[k] != TSK_NULL
+                && (individuals.parents[k] < 0
+                       || individuals.parents[k] >= num_individuals)) {
+                ret = TSK_ERR_INDIVIDUAL_OUT_OF_BOUNDS;
+                goto out;
+            }
+            /* Check no-one is their own parent */
+            if (individuals.parents[k] == (tsk_id_t) j) {
+                ret = TSK_ERR_INDIVIDUAL_SELF_PARENT;
+                goto out;
+            }
+            /* Check parents are ordered */
+            if (check_individual_ordering && individuals.parents[k] != TSK_NULL
+                && individuals.parents[k] >= (tsk_id_t) j) {
+                ret = TSK_ERR_UNSORTED_INDIVIDUALS;
+                goto out;
+            }
+        }
+    }
+out:
+    return ret;
+}
+
 static tsk_id_t TSK_WARN_UNUSED
 tsk_table_collection_check_tree_integrity(const tsk_table_collection_t *self)
 {
@@ -7725,7 +8404,7 @@ tsk_table_collection_check_integrity(
         /* Checking the trees implies all the other checks */
         options |= TSK_CHECK_EDGE_ORDERING | TSK_CHECK_SITE_ORDERING
                    | TSK_CHECK_SITE_DUPLICATES | TSK_CHECK_MUTATION_ORDERING
-                   | TSK_CHECK_INDEXES;
+                   | TSK_CHECK_INDEXES | TSK_CHECK_INDIVIDUAL_ORDERING;
     }
 
     if (self->sequence_length <= 0) {
@@ -7756,6 +8435,11 @@ tsk_table_collection_check_integrity(
     if (ret != 0) {
         goto out;
     }
+    ret = tsk_table_collection_check_individual_integrity(self, options);
+    if (ret != 0) {
+        goto out;
+    }
+
     if (options & TSK_CHECK_INDEXES) {
         ret = tsk_table_collection_check_index_integrity(self);
         if (ret != 0) {
@@ -8546,6 +9230,11 @@ tsk_table_collection_simplify(tsk_table_collection_t *self, const tsk_id_t *samp
     /* Avoid calling to simplifier_free with uninit'd memory on error branches */
     memset(&simplifier, 0, sizeof(simplifier_t));
 
+    if ((options & TSK_KEEP_UNARY) && (options & TSK_KEEP_UNARY_IN_INDIVIDUALS)) {
+        ret = TSK_ERR_KEEP_UNARY_MUTUALLY_EXCLUSIVE;
+        goto out;
+    }
+
     /* For now we don't bother with edge metadata, but it can easily be
      * implemented. */
     if (self->edges.metadata_length > 0) {
@@ -8634,6 +9323,44 @@ tsk_table_collection_sort(
         goto out;
     }
 out:
+    tsk_table_sorter_free(&sorter);
+    return ret;
+}
+
+int TSK_WARN_UNUSED
+tsk_table_collection_canonicalise(tsk_table_collection_t *self, tsk_flags_t options)
+{
+    int ret = 0;
+    tsk_id_t k;
+    tsk_id_t *nodes = NULL;
+    tsk_table_sorter_t sorter;
+    tsk_flags_t subset_options = options & TSK_KEEP_UNREFERENCED;
+
+    ret = tsk_table_sorter_init(&sorter, self, 0);
+    if (ret != 0) {
+        goto out;
+    }
+    sorter.sort_mutations = tsk_table_sorter_sort_mutations_canonical;
+    sorter.sort_individuals = tsk_table_sorter_sort_individuals_canonical;
+
+    nodes = malloc(self->nodes.num_rows * sizeof(*nodes));
+    if (nodes == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+    for (k = 0; k < (tsk_id_t) self->nodes.num_rows; k++) {
+        nodes[k] = k;
+    }
+    ret = tsk_table_collection_subset(self, nodes, self->nodes.num_rows, subset_options);
+    if (ret != 0) {
+        goto out;
+    }
+    ret = tsk_table_sorter_run(&sorter, NULL);
+    if (ret != 0) {
+        goto out;
+    }
+out:
+    tsk_safe_free(nodes);
     tsk_table_sorter_free(&sorter);
     return ret;
 }
@@ -9097,7 +9824,8 @@ tsk_table_collection_add_and_remap_node(tsk_table_collection_t *self,
                 goto out;
             }
             ret = tsk_individual_table_add_row(&self->individuals, ind.flags,
-                ind.location, ind.location_length, ind.metadata, ind.metadata_length);
+                ind.location, ind.location_length, ind.parents, ind.parents_length,
+                ind.metadata, ind.metadata_length);
             if (ret < 0) {
                 goto out;
             }
@@ -9138,20 +9866,25 @@ out:
 }
 
 int TSK_WARN_UNUSED
-tsk_table_collection_subset(
-    tsk_table_collection_t *self, const tsk_id_t *nodes, tsk_size_t num_nodes)
+tsk_table_collection_subset(tsk_table_collection_t *self, const tsk_id_t *nodes,
+    tsk_size_t num_nodes, tsk_flags_t options)
 {
     int ret = 0;
-    tsk_id_t k, i, new_parent, new_child, new_node;
+    tsk_id_t j, k, parent_ind, new_parent, new_child, new_node, site_id;
+    tsk_size_t num_parents;
+    tsk_individual_t ind;
     tsk_edge_t edge;
-    tsk_mutation_t mut;
-    tsk_site_t site;
     tsk_id_t *node_map = NULL;
     tsk_id_t *individual_map = NULL;
     tsk_id_t *population_map = NULL;
     tsk_id_t *site_map = NULL;
     tsk_id_t *mutation_map = NULL;
     tsk_table_collection_t tables;
+    tsk_population_t pop;
+    tsk_site_t site;
+    tsk_mutation_t mut;
+    bool keep_unreferenced = !!(options & TSK_KEEP_UNREFERENCED);
+    bool no_change_populations = !!(options & TSK_NO_CHANGE_POPULATIONS);
 
     ret = tsk_table_collection_copy(self, &tables, 0);
     if (ret != 0) {
@@ -9182,7 +9915,73 @@ tsk_table_collection_subset(
     memset(site_map, 0xff, tables.sites.num_rows * sizeof(*site_map));
     memset(mutation_map, 0xff, tables.mutations.num_rows * sizeof(*mutation_map));
 
-    // nodes, individuals, populations
+    if (no_change_populations) {
+        ret = tsk_population_table_copy(
+            &tables.populations, &self->populations, TSK_NO_INIT);
+        if (ret < 0) {
+            goto out;
+        }
+        for (k = 0; k < (tsk_id_t) tables.populations.num_rows; k++) {
+            population_map[k] = k;
+        }
+    }
+
+    // First do individuals so they stay in the same order.
+    // So we can remap individual parents and not rely on sortedness,
+    // we first check who to keep; then build the individual map, and
+    // finally populate the tables.
+    if (keep_unreferenced) {
+        for (k = 0; k < (tsk_id_t) tables.individuals.num_rows; k++) {
+            // put a non-NULL value here; fill in the actual order next
+            individual_map[k] = 0;
+        }
+    } else {
+        for (k = 0; k < (tsk_id_t) num_nodes; k++) {
+            if (nodes[k] < 0 || nodes[k] >= (tsk_id_t) tables.nodes.num_rows) {
+                ret = TSK_ERR_NODE_OUT_OF_BOUNDS;
+                goto out;
+            }
+            j = tables.nodes.individual[nodes[k]];
+            if (j != TSK_NULL) {
+                individual_map[j] = 0;
+            }
+        }
+    }
+    j = 0;
+    for (k = 0; k < (tsk_id_t) tables.individuals.num_rows; k++) {
+        if (individual_map[k] != TSK_NULL) {
+            individual_map[k] = j;
+            j++;
+        }
+    }
+    for (k = 0; k < (tsk_id_t) tables.individuals.num_rows; k++) {
+        if (individual_map[k] != TSK_NULL) {
+            tsk_individual_table_get_row_unsafe(&tables.individuals, k, &ind);
+            num_parents = 0;
+            for (j = 0; j < (tsk_id_t) ind.parents_length; j++) {
+                parent_ind = ind.parents[j];
+                new_parent = parent_ind;
+                if (parent_ind != TSK_NULL) {
+                    new_parent = individual_map[parent_ind];
+                }
+                if ((parent_ind == TSK_NULL) || (new_parent != TSK_NULL)) {
+                    /* Beware: this modifies the parents column of tables.individuals
+                     * in-place! But it's OK as we don't use it again. */
+                    ind.parents[num_parents] = new_parent;
+                    num_parents++;
+                }
+            }
+            ret = tsk_individual_table_add_row(&self->individuals, ind.flags,
+                ind.location, ind.location_length, ind.parents, num_parents,
+                ind.metadata, ind.metadata_length);
+            if (ret < 0) {
+                goto out;
+            }
+            tsk_bug_assert(individual_map[k] == ret);
+        }
+    }
+
+    // Nodes and populations
     for (k = 0; k < (tsk_id_t) num_nodes; k++) {
         ret = tsk_table_collection_add_and_remap_node(
             self, &tables, nodes[k], individual_map, population_map, node_map, true);
@@ -9191,7 +9990,29 @@ tsk_table_collection_subset(
         }
     }
 
-    // edges
+    /* TODO: Subset the migrations table. We would need to make sure
+     * that we don't remove populations that are referenced, so it would
+     * need to be done before the next code block. */
+    if (tables.migrations.num_rows != 0) {
+        ret = TSK_ERR_MIGRATIONS_NOT_SUPPORTED;
+        goto out;
+    }
+
+    if (keep_unreferenced) {
+        // Keep unused populations
+        for (k = 0; k < (tsk_id_t) tables.populations.num_rows; k++) {
+            if (population_map[k] == TSK_NULL) {
+                tsk_population_table_get_row_unsafe(&tables.populations, k, &pop);
+                ret = tsk_population_table_add_row(
+                    &self->populations, pop.metadata, pop.metadata_length);
+                if (ret < 0) {
+                    goto out;
+                }
+            }
+        }
+    }
+
+    // Edges
     for (k = 0; k < (tsk_id_t) tables.edges.num_rows; k++) {
         tsk_edge_table_get_row_unsafe(&tables.edges, k, &edge);
         new_parent = node_map[edge.parent];
@@ -9205,49 +10026,58 @@ tsk_table_collection_subset(
         }
     }
 
-    // mutations and sites
-    i = 0;
-    for (k = 0; k < (tsk_id_t) tables.sites.num_rows; k++) {
-        tsk_site_table_get_row_unsafe(&tables.sites, k, &site);
-        while ((i < (tsk_id_t) tables.mutations.num_rows)
-               && (tables.mutations.site[i] == site.id)) {
-            tsk_mutation_table_get_row_unsafe(&tables.mutations, i, &mut);
-            new_node = node_map[mut.node];
-            if (new_node != TSK_NULL) {
-                if (site_map[site.id] == TSK_NULL) {
-                    ret = tsk_site_table_add_row(&self->sites, site.position,
-                        site.ancestral_state, site.ancestral_state_length, site.metadata,
-                        site.metadata_length);
-                    if (ret < 0) {
-                        goto out;
-                    }
-                    site_map[site.id] = ret;
-                }
-                new_parent = TSK_NULL;
-                if (mut.parent != TSK_NULL) {
-                    new_parent = mutation_map[mut.parent];
-                }
-                ret = tsk_mutation_table_add_row(&self->mutations, site_map[site.id],
-                    new_node, new_parent, mut.time, mut.derived_state,
-                    mut.derived_state_length, mut.metadata, mut.metadata_length);
-                if (ret < 0) {
-                    goto out;
-                }
-                mutation_map[mut.id] = ret;
+    // Mutations and sites
+    // Make a first pass through to build the mutation_map so that
+    // mutation parent can be remapped even if the table is not in order.
+    j = 0;
+    for (k = 0; k < (tsk_id_t) tables.mutations.num_rows; k++) {
+        if (node_map[tables.mutations.node[k]] != TSK_NULL) {
+            mutation_map[k] = j;
+            j++;
+            site_id = tables.mutations.site[k];
+            if (site_map[site_id] == TSK_NULL) {
+                // Insert a temporary non-NULL value
+                site_map[site_id] = 1;
             }
-            i++;
+        }
+    }
+    // Keep retained sites in their original order
+    j = 0;
+    for (k = 0; k < (tsk_id_t) tables.sites.num_rows; k++) {
+        if (keep_unreferenced || site_map[k] != TSK_NULL) {
+            tsk_site_table_get_row_unsafe(&tables.sites, k, &site);
+            ret = tsk_site_table_add_row(&self->sites, site.position,
+                site.ancestral_state, site.ancestral_state_length, site.metadata,
+                site.metadata_length);
+            if (ret < 0) {
+                goto out;
+            }
+            site_map[k] = j;
+            j++;
+        }
+    }
+    for (k = 0; k < (tsk_id_t) tables.mutations.num_rows; k++) {
+        tsk_mutation_table_get_row_unsafe(&tables.mutations, k, &mut);
+        new_node = node_map[mut.node];
+        if (new_node != TSK_NULL) {
+            new_parent = TSK_NULL;
+            if (mut.parent != TSK_NULL) {
+                new_parent = mutation_map[mut.parent];
+            }
+            ret = tsk_mutation_table_add_row(&self->mutations, site_map[mut.site],
+                new_node, new_parent, mut.time, mut.derived_state,
+                mut.derived_state_length, mut.metadata, mut.metadata_length);
+            if (ret < 0) {
+                goto out;
+            }
+            tsk_bug_assert(mutation_map[mut.id] == ret);
+        }
+        if (ret < 0) {
+            goto out;
         }
     }
 
-    /* TODO: Subset of the Migrations Table. The way to do this properly is not
-     * well-defined, mostly because migrations might contain events from/to
-     * populations that have not been kept in after the subset. */
-    if (tables.migrations.num_rows != 0) {
-        ret = TSK_ERR_MIGRATIONS_NOT_SUPPORTED;
-        goto out;
-    }
     ret = 0;
-
 out:
     tsk_safe_free(node_map);
     tsk_safe_free(individual_map);
@@ -9288,7 +10118,6 @@ tsk_check_subset_equality(tsk_table_collection_t *self,
         }
     }
 
-    // TODO: strict sort before checking equality
     ret = tsk_table_collection_copy(self, &self_copy, 0);
     if (ret != 0) {
         goto out;
@@ -9297,11 +10126,19 @@ tsk_check_subset_equality(tsk_table_collection_t *self,
     if (ret != 0) {
         goto out;
     }
-    ret = tsk_table_collection_subset(&self_copy, self_nodes, num_shared_nodes);
+    ret = tsk_table_collection_subset(&self_copy, self_nodes, num_shared_nodes, 0);
     if (ret != 0) {
         goto out;
     }
-    ret = tsk_table_collection_subset(&other_copy, other_nodes, num_shared_nodes);
+    ret = tsk_table_collection_subset(&other_copy, other_nodes, num_shared_nodes, 0);
+    if (ret != 0) {
+        goto out;
+    }
+    ret = tsk_table_collection_canonicalise(&self_copy, 0);
+    if (ret != 0) {
+        goto out;
+    }
+    ret = tsk_table_collection_canonicalise(&other_copy, 0);
     if (ret != 0) {
         goto out;
     }
@@ -9327,6 +10164,7 @@ tsk_table_collection_union(tsk_table_collection_t *self,
     int ret = 0;
     tsk_id_t k, i, new_parent, new_child;
     tsk_size_t num_shared_nodes = 0;
+    tsk_size_t num_individuals_self = self->individuals.num_rows;
     tsk_edge_t edge;
     tsk_mutation_t mut;
     tsk_site_t site;
@@ -9379,6 +10217,18 @@ tsk_table_collection_union(tsk_table_collection_t *self,
     memset(population_map, 0xff, other->populations.num_rows * sizeof(*population_map));
     memset(site_map, 0xff, other->sites.num_rows * sizeof(*site_map));
 
+    /* We have to map the individuals who are linked to nodes in the intersection first
+       as otherwise an individual linked to one node in the intersection and one in
+       `other` would be duplicated. We assume that the individual in `self` takes
+       priority.
+     */
+    for (k = 0; k < (tsk_id_t) other->nodes.num_rows; k++) {
+        if (other_node_mapping[k] != TSK_NULL
+            && other->nodes.individual[k] != TSK_NULL) {
+            individual_map[other->nodes.individual[k]]
+                = self->nodes.individual[other_node_mapping[k]];
+        }
+    }
     // nodes, individuals, populations
     for (k = 0; k < (tsk_id_t) other->nodes.num_rows; k++) {
         if (other_node_mapping[k] != TSK_NULL) {
@@ -9392,20 +10242,20 @@ tsk_table_collection_union(tsk_table_collection_t *self,
         }
     }
 
+    /* Now we know the full individual map we can remap the parents of the new
+     * individuals*/
+    for (k = (tsk_id_t) self->individuals.parents_offset[num_individuals_self];
+         k < (tsk_id_t) self->individuals.parents_length; k++) {
+        if (self->individuals.parents[k] != TSK_NULL) {
+            self->individuals.parents[k] = individual_map[self->individuals.parents[k]];
+        }
+    }
+
     // edges
     for (k = 0; k < (tsk_id_t) other->edges.num_rows; k++) {
         tsk_edge_table_get_row_unsafe(&other->edges, k, &edge);
         if ((other_node_mapping[edge.parent] == TSK_NULL)
             || (other_node_mapping[edge.child] == TSK_NULL)) {
-            /* TODO: union does not support case where non-shared bits of
-             * other are above the shared bits of self and other. This will be
-             * resolved when the Mutation Table has a time attribute and
-             * the Mutation Table is sorted on time. */
-            if (other_node_mapping[edge.parent] == TSK_NULL
-                && other_node_mapping[edge.child] != TSK_NULL) {
-                ret = TSK_ERR_UNION_NOT_SUPPORTED;
-                goto out;
-            }
             new_parent = node_map[edge.parent];
             new_child = node_map[edge.child];
             ret = tsk_edge_table_add_row(&self->edges, edge.left, edge.right, new_parent,
@@ -9454,15 +10304,20 @@ tsk_table_collection_union(tsk_table_collection_t *self,
         goto out;
     }
 
-    // provenance (new record is added in python)
-
-    // deduplicating, sorting, and computing parents
+    // sorting, deduplicating, and computing parents
     ret = tsk_table_collection_sort(self, 0, 0);
     if (ret < 0) {
         goto out;
     }
 
     ret = tsk_table_collection_deduplicate_sites(self, 0);
+    if (ret < 0) {
+        goto out;
+    }
+
+    // need to sort again since after deduplicating sites, mutations
+    // may not be sorted by time within sites
+    ret = tsk_table_collection_sort(self, 0, 0);
     if (ret < 0) {
         goto out;
     }

@@ -159,6 +159,7 @@ tsk_vargen_init(tsk_vargen_t *self, const tsk_treeseq_t *tree_sequence,
     memset(self, 0, sizeof(tsk_vargen_t));
 
     if (samples == NULL) {
+        self->samples = tsk_treeseq_get_samples(tree_sequence);
         self->num_samples = tsk_treeseq_get_num_samples(tree_sequence);
         self->sample_index_map = tsk_treeseq_get_sample_index_map(tree_sequence);
         num_samples_alloc = self->num_samples;
@@ -171,6 +172,7 @@ tsk_vargen_init(tsk_vargen_t *self, const tsk_treeseq_t *tree_sequence,
         if (ret != 0) {
             goto out;
         }
+        self->samples = samples;
         self->num_samples = num_samples;
         self->sample_index_map = self->alt_sample_index_map;
     }
@@ -319,10 +321,7 @@ tsk_vargen_update_genotypes_i8_sample_list(
     if (index != TSK_NULL) {
         stop = list_right[node];
         while (true) {
-            if (genotypes[index] == (int8_t) derived) {
-                ret = TSK_ERR_INCONSISTENT_MUTATIONS;
-                goto out;
-            }
+
             ret += genotypes[index] == TSK_MISSING_DATA;
             genotypes[index] = (int8_t) derived;
             if (index == stop) {
@@ -331,7 +330,7 @@ tsk_vargen_update_genotypes_i8_sample_list(
             index = list_next[index];
         }
     }
-out:
+
     return ret;
 }
 
@@ -352,10 +351,7 @@ tsk_vargen_update_genotypes_i16_sample_list(
     if (index != TSK_NULL) {
         stop = list_right[node];
         while (true) {
-            if (genotypes[index] == (int16_t) derived) {
-                ret = TSK_ERR_INCONSISTENT_MUTATIONS;
-                goto out;
-            }
+
             ret += genotypes[index] == TSK_MISSING_DATA;
             genotypes[index] = (int16_t) derived;
             if (index == stop) {
@@ -364,7 +360,7 @@ tsk_vargen_update_genotypes_i16_sample_list(
             index = list_next[index];
         }
     }
-out:
+
     return ret;
 }
 
@@ -420,13 +416,10 @@ tsk_vargen_visit_i8(tsk_vargen_t *self, tsk_id_t sample_index, tsk_id_t derived)
 
     tsk_bug_assert(derived < INT8_MAX);
     tsk_bug_assert(sample_index != -1);
-    if (genotypes[sample_index] == (int8_t) derived) {
-        ret = TSK_ERR_INCONSISTENT_MUTATIONS;
-        goto out;
-    }
+
     ret = genotypes[sample_index] == TSK_MISSING_DATA;
     genotypes[sample_index] = (int8_t) derived;
-out:
+
     return ret;
 }
 
@@ -438,13 +431,10 @@ tsk_vargen_visit_i16(tsk_vargen_t *self, tsk_id_t sample_index, tsk_id_t derived
 
     tsk_bug_assert(derived < INT16_MAX);
     tsk_bug_assert(sample_index != -1);
-    if (genotypes[sample_index] == (int16_t) derived) {
-        ret = TSK_ERR_INCONSISTENT_MUTATIONS;
-        goto out;
-    }
+
     ret = genotypes[sample_index] == TSK_MISSING_DATA;
     genotypes[sample_index] = (int16_t) derived;
-out:
+
     return ret;
 }
 
