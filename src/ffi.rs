@@ -1,10 +1,10 @@
 //! Define traits related to wrapping tskit stuff
 
 /// Define what it means to wrap a tskit struct.
-/// The implementation of Drop should call the
-/// tsk_foo_free() function corresponding
-/// to tsk_foo_t.
-pub trait TskitType<T>: Drop {
+/// In practice, one needs to implement Drop for
+/// test types, calling the tsk_foo_free() function
+/// corresponding to tsk_foo_t.
+pub trait TskitType<T> {
     /// Encapsulate tsk_foo_t and return rust
     /// object.  Best practices seem to
     /// suggest using Box for this.
