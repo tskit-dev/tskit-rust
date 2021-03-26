@@ -8,7 +8,7 @@ This package provides the following:
 
 1. Low-level bindings to the C API of both `tskit` and `kastore`.
    We use [bindgen](https://docs.rs/bindgen) to automatically generate the bindings.
-2. The struct `tskit_rust::TableCollection`, which wraps
+2. The struct `tskit::TableCollection`, which wraps
    `tsk_table_collection_t`. The wrapper is currently
    incomplete, supporting only node, edge, site,
    mutation, and population tables.  The remaining
@@ -24,7 +24,7 @@ The overview is:
 4. Finally, the entire rust package is generated.
 
 The result is a `rust` library with all of these two C libraries statically compiled in.
-Further, `rust` types and functions exist in the module name `tskit_rust::bindings`, allowing `unsafe` access to the low-level API.
+Further, `rust` types and functions exist in the module name `tskit::bindings`, allowing `unsafe` access to the low-level API.
 
 In the future, we hope to develop a more "rusty" front-end, hiding the `unsafe` bits from client code.
 
