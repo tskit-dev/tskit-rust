@@ -281,8 +281,8 @@ tsk_strerror_internal(int err)
         case TSK_ERR_MUTATION_PARENT_AFTER_CHILD:
             ret = "Parent mutation ID must be < current ID";
             break;
-        case TSK_ERR_INCONSISTENT_MUTATIONS:
-            ret = "Inconsistent mutations: state already equal to derived state";
+        case TSK_ERR_MUTATION_PARENT_INCONSISTENT:
+            ret = "Mutation parent references form a loop.";
             break;
         case TSK_ERR_UNSORTED_MUTATIONS:
             ret = "Mutations must be provided in non-decreasing site order and "
@@ -356,10 +356,6 @@ tsk_strerror_internal(int err)
             break;
         case TSK_ERR_NONBINARY_MUTATIONS_UNSUPPORTED:
             ret = "Only binary mutations are supported for this operation";
-            break;
-        case TSK_ERR_UNION_NOT_SUPPORTED:
-            ret = "Union is not supported for cases where there is non-shared"
-                  "history older than the shared history of the two Table Collections";
             break;
 
         /* Stats errors */
@@ -469,6 +465,25 @@ tsk_strerror_internal(int err)
 
         case TSK_ERR_DUPLICATE_SAMPLE_PAIRS:
             ret = "There are duplicate sample pairs.";
+            break;
+
+        /* Simplify errors */
+        case TSK_ERR_KEEP_UNARY_MUTUALLY_EXCLUSIVE:
+            ret = "You cannot specify both KEEP_UNARY and KEEP_UNARY_IN_INDIVDUALS.";
+            break;
+
+        /* Individual errors */
+        case TSK_ERR_UNSORTED_INDIVIDUALS:
+            ret = "Individuals must be provided in an order where children are after "
+                  "their parent individuals";
+            break;
+
+        case TSK_ERR_INDIVIDUAL_SELF_PARENT:
+            ret = "Individuals cannot be their own parents.";
+            break;
+
+        case TSK_ERR_INDIVIDUAL_PARENT_CYCLE:
+            ret = "Individuals cannot be their own ancestor.";
             break;
     }
     return ret;
