@@ -375,11 +375,44 @@ impl TableCollection {
     pub fn equals(&self, other: &TableCollection, options: tsk_flags_t) -> bool {
         unsafe { ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options) }
     }
+
+    /// Return a "deep" copy of the tables.
+    pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
+        let mut copy = TableCollection::new(1.)?;
+
+        let rv =
+            unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), copy.as_mut_ptr(), 0) };
+
+        if rv < 0 {
+            return Err(crate::error::TskitError::ErrorCode { code: rv });
+        }
+
+        Ok(copy)
+    }
+
+    /// Return a [`crate::TreeSequence`] based on the tables.
+    /// This function will raise errors if tables are not sorted,
+    /// not indexed, or invalid in any way.
+    pub fn tree_sequence(self) -> Result<crate::TreeSequence, TskitError> {
+        crate::TreeSequence::new(self)
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::TSK_NULL;
+
+    fn make_small_table_collection() -> TableCollection {
+        let mut tables = TableCollection::new(1000.).unwrap();
+        tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
+        tables.add_node(0, 0.0, TSK_NULL, TSK_NULL).unwrap();
+        tables.add_node(0, 0.0, TSK_NULL, TSK_NULL).unwrap();
+        tables.add_edge(0., 1000., 0, 1).unwrap();
+        tables.add_edge(0., 1000., 0, 2).unwrap();
+        tables.build_index(0).unwrap();
+        tables
+    }
 
     #[test]
     fn test_sequence_length() {
@@ -576,5 +609,12 @@ mod test {
     fn test_free() {
         let mut tables = TableCollection::new(1000.).unwrap();
         tables.free().unwrap();
+    }
+
+    #[test]
+    fn test_deepcopy() {
+        let tables = make_small_table_collection();
+        let dumps = tables.deepcopy().unwrap();
+        assert!(tables.equals(&dumps, 0));
     }
 }
