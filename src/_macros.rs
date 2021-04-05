@@ -6,7 +6,13 @@ macro_rules! handle_tsk_return_value {
         if $code < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: $code });
         }
-        return Ok($code);
+        Ok($code)
+    }};
+    ($code: expr, $return_value: expr) => {{
+        if $code < 0 {
+            return Err(crate::error::TskitError::ErrorCode { code: $code });
+        }
+        Ok($return_value)
     }};
 }
 
@@ -135,7 +141,7 @@ mod test {
     }
 
     fn return_value_mock(rv: i32) -> TskReturnValue {
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     fn must_not_error(x: TskReturnValue) -> bool {

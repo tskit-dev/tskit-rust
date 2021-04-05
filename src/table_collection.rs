@@ -98,11 +98,7 @@ impl TableCollection {
             )
         };
 
-        if rv < 0 {
-            Err(TskitError::ErrorCode { code: rv })
-        } else {
-            Ok(tables)
-        }
+        handle_tsk_return_value!(rv, tables)
     }
 
     /// Length of the sequence/"genome".
@@ -178,7 +174,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Add a row to the node table
@@ -214,7 +210,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Add a row to the site table
@@ -243,7 +239,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Add a row to the mutation table.
@@ -285,7 +281,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Add a row to the population_table
@@ -307,7 +303,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Build the "input" and "output"
@@ -316,7 +312,7 @@ impl TableCollection {
     /// `flags` is currently unused, so pass in `0`.
     pub fn build_index(&mut self, flags: tsk_flags_t) -> TskReturnValue {
         let rv = unsafe { ll_bindings::tsk_table_collection_build_index(self.as_mut_ptr(), flags) };
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Sort the tables.  
@@ -327,7 +323,7 @@ impl TableCollection {
             ll_bindings::tsk_table_collection_sort(self.as_mut_ptr(), &start.offsets, options)
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Fully sort all functions.
@@ -348,7 +344,7 @@ impl TableCollection {
             ll_bindings::tsk_table_collection_dump(self.as_mut_ptr(), c_str.as_ptr(), options)
         };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Clear the contents of all tables.
@@ -358,7 +354,7 @@ impl TableCollection {
     pub fn clear(&mut self, options: tsk_flags_t) -> TskReturnValue {
         let rv = unsafe { ll_bindings::tsk_table_collection_clear(self.as_mut_ptr(), options) };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Free all memory allocated on the C side.
@@ -367,7 +363,7 @@ impl TableCollection {
     fn free(&mut self) -> TskReturnValue {
         let rv = unsafe { ll_bindings::tsk_table_collection_free(self.as_mut_ptr()) };
 
-        handle_tsk_return_value!(rv);
+        handle_tsk_return_value!(rv)
     }
 
     /// Return ``true`` if ``self`` contains the same
@@ -383,11 +379,7 @@ impl TableCollection {
         let rv =
             unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), copy.as_mut_ptr(), 0) };
 
-        if rv < 0 {
-            return Err(crate::error::TskitError::ErrorCode { code: rv });
-        }
-
-        Ok(copy)
+        handle_tsk_return_value!(rv, copy)
     }
 
     /// Return a [`crate::TreeSequence`] based on the tables.
