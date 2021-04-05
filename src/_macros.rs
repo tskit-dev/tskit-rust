@@ -36,24 +36,19 @@ macro_rules! unsafe_tsk_column_access {
     }};
 }
 
-macro_rules! build_tskit_type {
-    ($name: ident, $ll_name: ty, $drop: ident) => {
+macro_rules! drop_for_tskit_type {
+    ($name: ident, $drop: ident) => {
         impl Drop for $name {
             fn drop(&mut self) {
                 let rv = unsafe { $drop(&mut *self.inner) };
                 panic_on_tskit_error!(rv);
             }
         }
+    };
+}
 
-        impl crate::ffi::WrapTskitType<$ll_name> for $name {
-            fn wrap() -> Self {
-                let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
-                $name {
-                    inner: unsafe { Box::<$ll_name>::new(temp.assume_init()) },
-                }
-            }
-        }
-
+macro_rules! tskit_type_access {
+    ($name: ident, $ll_name: ty) => {
         impl crate::ffi::TskitTypeAccess<$ll_name> for $name {
             fn as_ptr(&self) -> *const $ll_name {
                 &*self.inner
@@ -66,15 +61,23 @@ macro_rules! build_tskit_type {
     };
 }
 
-macro_rules! build_consuming_tskit_type {
-    ($name: ident, $ll_name: ty, $drop: ident, $consumed: ty) => {
-        impl Drop for $name {
-            fn drop(&mut self) {
-                let rv = unsafe { $drop(&mut *self.inner) };
-                panic_on_tskit_error!(rv);
+macro_rules! build_tskit_type {
+    ($name: ident, $ll_name: ty, $drop: ident) => {
+        impl crate::ffi::WrapTskitType<$ll_name> for $name {
+            fn wrap() -> Self {
+                let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
+                $name {
+                    inner: unsafe { Box::<$ll_name>::new(temp.assume_init()) },
+                }
             }
         }
+        drop_for_tskit_type!($name, $drop);
+        tskit_type_access!($name, $ll_name);
+    };
+}
 
+macro_rules! build_consuming_tskit_type {
+    ($name: ident, $ll_name: ty, $drop: ident, $consumed: ty) => {
         impl crate::ffi::WrapTskitConsumingType<$ll_name, $consumed> for $name {
             fn wrap(consumed: $consumed) -> Self {
                 let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
@@ -84,16 +87,8 @@ macro_rules! build_consuming_tskit_type {
                 }
             }
         }
-
-        impl crate::ffi::TskitTypeAccess<$ll_name> for $name {
-            fn as_ptr(&self) -> *const $ll_name {
-                &*self.inner
-            }
-
-            fn as_mut_ptr(&mut self) -> *mut $ll_name {
-                &mut *self.inner
-            }
-        }
+        tskit_type_access!($name, $ll_name);
+        drop_for_tskit_type!($name, $drop);
     };
 }
 
