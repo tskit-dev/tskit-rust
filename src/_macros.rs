@@ -58,6 +58,35 @@ macro_rules! build_tskit_type {
     };
 }
 
+macro_rules! build_consuming_tskit_type {
+    ($name: ident, $ll_name: ty, $drop: ident, $consumed: ty) => {
+        impl Drop for $name {
+            fn drop(&mut self) {
+                let rv = unsafe { $drop(&mut *self.inner) };
+                panic_on_tskit_error!(rv);
+            }
+        }
+
+        impl crate::ffi::TskitConsumingType<$ll_name, $consumed> for $name {
+            fn wrap(consumed: $consumed) -> Self {
+                let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
+                $name {
+                    consumed,
+                    inner: unsafe { Box::<$ll_name>::new(temp.assume_init()) },
+                }
+            }
+
+            fn as_ptr(&self) -> *const $ll_name {
+                &*self.inner
+            }
+
+            fn as_mut_ptr(&mut self) -> *mut $ll_name {
+                &mut *self.inner
+            }
+        }
+    };
+}
+
 macro_rules! metadata_to_vector {
     ($T: ty, $self: expr, $row: expr) => {
         crate::metadata::char_column_to_vector(

@@ -16,6 +16,7 @@ mod node_table;
 mod population_table;
 mod site_table;
 mod table_collection;
+mod trees;
 pub mod types;
 
 // re-export fundamental constants that
@@ -42,6 +43,8 @@ pub use node_table::NodeTable;
 pub use population_table::PopulationTable;
 pub use site_table::SiteTable;
 pub use table_collection::TableCollection;
+pub use trees::TreeSequence;
+
 /// Handles return codes from low-level tskit functions.
 ///
 /// When an error from the tskit C API is detected,
