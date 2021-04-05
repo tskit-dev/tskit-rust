@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::TskitType;
+use crate::ffi::{TskitTypeAccess, WrapTskitType};
 use crate::metadata::*;
 use crate::types::Bookmark;
 use crate::EdgeTable;
