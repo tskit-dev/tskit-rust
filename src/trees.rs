@@ -44,10 +44,7 @@ impl TreeSequence {
         let rv = unsafe {
             ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), treeseq.consumed.as_ptr(), 0)
         };
-        if rv < 0 {
-            return Err(crate::error::TskitError::ErrorCode { code: rv });
-        }
-        Ok(treeseq)
+        handle_tsk_return_value!(rv, treeseq)
     }
 
     /// Obtain a copy of the [`TableCollection`]
