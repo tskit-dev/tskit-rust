@@ -45,14 +45,16 @@ macro_rules! build_tskit_type {
             }
         }
 
-        impl crate::ffi::TskitType<$ll_name> for $name {
+        impl crate::ffi::WrapTskitType<$ll_name> for $name {
             fn wrap() -> Self {
                 let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
                 $name {
                     inner: unsafe { Box::<$ll_name>::new(temp.assume_init()) },
                 }
             }
+        }
 
+        impl crate::ffi::TskitTypeAccess<$ll_name> for $name {
             fn as_ptr(&self) -> *const $ll_name {
                 &*self.inner
             }
@@ -73,7 +75,7 @@ macro_rules! build_consuming_tskit_type {
             }
         }
 
-        impl crate::ffi::TskitConsumingType<$ll_name, $consumed> for $name {
+        impl crate::ffi::WrapTskitConsumingType<$ll_name, $consumed> for $name {
             fn wrap(consumed: $consumed) -> Self {
                 let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
                 $name {
@@ -81,7 +83,9 @@ macro_rules! build_consuming_tskit_type {
                     inner: unsafe { Box::<$ll_name>::new(temp.assume_init()) },
                 }
             }
+        }
 
+        impl crate::ffi::TskitTypeAccess<$ll_name> for $name {
             fn as_ptr(&self) -> *const $ll_name {
                 &*self.inner
             }

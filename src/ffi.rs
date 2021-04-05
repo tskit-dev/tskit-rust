@@ -1,40 +1,28 @@
 //! Define traits related to wrapping tskit stuff
 
-/// Define what it means to wrap a tskit struct.
-/// In practice, one needs to implement Drop for
-/// test types, calling the tsk_foo_free() function
-/// corresponding to tsk_foo_t.
-pub trait TskitType<T> {
-    /// Encapsulate tsk_foo_t and return rust
-    /// object.  Best practices seem to
-    /// suggest using Box for this.
-    fn wrap() -> Self;
+/// Provide pointer access to underlying C types
+pub trait TskitTypeAccess<T> {
     /// Return const pointer
     fn as_ptr(&self) -> *const T;
     /// Return mutable pointer
     fn as_mut_ptr(&mut self) -> *mut T;
 }
 
-/// Define what it means to wrap a tskit struct
-/// that contains another tskit type C (the
-/// "consumed" type).
-/// This trait models a type that takes another
-/// type as input for initialization and effectively
-/// owns it.
-/// A key example of such a type is a [`crate::TreeSequence`],
-/// which owns the underying [`crate::TableCollection`].
-/// In practice, one needs to implement Drop for
-/// test types, calling the tsk_foo_free() function
-/// corresponding to tsk_foo_t.
-pub trait TskitConsumingType<T, C> {
+/// Wrap a tskit type
+pub(crate) trait WrapTskitType<T> {
+    /// Encapsulate tsk_foo_t and return rust
+    /// object.  Best practices seem to
+    /// suggest using Box for this.
+    fn wrap() -> Self;
+}
+
+/// Wrap a tskit type that consumes another
+/// tskit type.  The tree sequence is an example.
+pub(crate) trait WrapTskitConsumingType<T, C> {
     /// Encapsulate tsk_foo_t and return rust
     /// object.  Best practices seem to
     /// suggest using Box for this.
     fn wrap(consumed: C) -> Self;
-    /// Return const pointer
-    fn as_ptr(&self) -> *const T;
-    /// Return mutable pointer
-    fn as_mut_ptr(&mut self) -> *mut T;
 }
 
 #[cfg(test)]

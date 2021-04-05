@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::{TskitConsumingType, TskitType};
+use crate::ffi::{TskitTypeAccess, WrapTskitConsumingType};
 use crate::{tsk_flags_t, TableCollection, TSK_NULL};
 use ll_bindings::tsk_treeseq_free;
 
