@@ -36,6 +36,9 @@ jobs:
         run: |
             cargo test
             cargo test --examples
+      - name: check examples
+        working-directory: tskit_rust_examples
+        run: cargo check
 
   build-osx:
     runs-on: macos-latest
@@ -58,6 +61,9 @@ jobs:
         run: |
             cargo test
             cargo test --examples
+      - name: check examples
+        working-directory: tskit_rust_examples
+        run: cargo check
 
   fmt:
     name: rust fmt

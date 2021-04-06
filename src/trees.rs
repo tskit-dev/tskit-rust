@@ -49,6 +49,31 @@ impl Tree {
         }
     }
 
+    fn left_sib_array(&self) -> crate::ffi::TskIdArray {
+        crate::ffi::TskIdArray::new(self.inner.left_sib, self.inner.num_nodes)
+    }
+
+    fn right_sib_array(&self) -> crate::ffi::TskIdArray {
+        crate::ffi::TskIdArray::new(self.inner.right_sib, self.inner.num_nodes)
+    }
+
+    fn left_child_array(&self) -> crate::ffi::TskIdArray {
+        crate::ffi::TskIdArray::new(self.inner.left_child, self.inner.num_nodes)
+    }
+
+    fn right_child_array(&self) -> crate::ffi::TskIdArray {
+        crate::ffi::TskIdArray::new(self.inner.right_child, self.inner.num_nodes)
+    }
+
+    pub fn interval(&self) -> (f64, f64) {
+        unsafe { ((*self.as_ptr()).left, (*self.as_ptr()).right) }
+    }
+
+    pub fn span(&self) -> f64 {
+        let i = self.interval();
+        i.1 - i.0
+    }
+
     pub fn left_root(&self) -> tsk_id_t {
         self.inner.left_root
     }
@@ -84,6 +109,73 @@ impl Tree {
         }
         rv
     }
+
+    pub fn traverse_to_root(
+        &self,
+        u: tsk_id_t,
+        mut f: impl FnMut(tsk_id_t) -> (),
+    ) -> Result<(), TskitError> {
+        let mut p = u;
+        while p != TSK_NULL {
+            f(p);
+            p = self.parent(p)?;
+        }
+        Ok(())
+    }
+
+    pub fn process_children(
+        &self,
+        u: tsk_id_t,
+        mut f: impl FnMut(tsk_id_t) -> (),
+    ) -> Result<(), TskitError> {
+        let mut c = self.left_child(u)?;
+        while c != TSK_NULL {
+            f(c);
+            c = self.right_sib(c)?;
+        }
+        Ok(())
+    }
+
+    pub fn roots(&self) -> Result<Vec<tsk_id_t>, TskitError> {
+        let mut v = vec![];
+
+        let mut r = self.inner.left_root;
+
+        while r != TSK_NULL {
+            v.push(r);
+            r = self.right_sib(r)?;
+        }
+
+        Ok(v)
+    }
+
+    pub fn nodes(&self, order: NodeTraversalOrder) -> Box<dyn NodeIteration> {
+        match order {
+            NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
+        }
+    }
+
+    pub fn node_table<'a>(&'a self) -> crate::NodeTable<'a> {
+        crate::NodeTable::new_from_table(unsafe {
+            &(*(*(*self.as_ptr()).tree_sequence).tables).nodes
+        })
+    }
+
+    pub fn total_branch_length(&self, by_span: bool) -> Result<f64, TskitError> {
+        let nt = self.node_table();
+        let mut b = 0.;
+        for n in self.nodes(NodeTraversalOrder::Preorder) {
+            let p = self.parent(n)?;
+            if p != TSK_NULL {
+                b += nt.time(p)? - nt.time(n)?;
+            }
+        }
+
+        match by_span {
+            true => Ok(b * self.span()),
+            false => Ok(b),
+        }
+    }
 }
 
 impl streaming_iterator::StreamingIterator for Tree {
@@ -97,6 +189,77 @@ impl streaming_iterator::StreamingIterator for Tree {
             true => Some(&self),
             false => None,
         }
+    }
+}
+
+pub enum NodeTraversalOrder {
+    Preorder,
+}
+
+struct PreorderNodeIterator {
+    root_stack: Vec<i32>,
+    node_stack: Vec<i32>,
+    left_child: crate::ffi::TskIdArray,
+    right_sib: crate::ffi::TskIdArray,
+    current_node_: Option<tsk_id_t>,
+}
+
+impl PreorderNodeIterator {
+    fn new(tree: &Tree) -> Self {
+        let mut rv = PreorderNodeIterator {
+            root_stack: tree.roots().unwrap(),
+            node_stack: vec![],
+            left_child: tree.left_child_array(),
+            right_sib: tree.right_sib_array(),
+            current_node_: None,
+        };
+        rv.root_stack.reverse();
+        let root = rv.root_stack.pop();
+        match root {
+            Some(x) => rv.node_stack.push(x),
+            None => (),
+        };
+
+        rv
+    }
+}
+
+pub trait NodeIteration {
+    fn next_node(&mut self);
+    fn current_node(&mut self) -> Option<tsk_id_t>;
+}
+
+impl NodeIteration for PreorderNodeIterator {
+    fn next_node(&mut self) {
+        self.current_node_ = self.node_stack.pop();
+        match self.current_node_ {
+            Some(u) => {
+                let mut c = self.left_child[u];
+                while c != TSK_NULL {
+                    self.node_stack.push(c);
+                    c = self.right_sib[c];
+                }
+            }
+            None => match self.root_stack.pop() {
+                Some(r) => {
+                    self.current_node_ = Some(r);
+                }
+                None => (),
+            },
+        };
+    }
+
+    fn current_node(&mut self) -> Option<tsk_id_t> {
+        self.current_node_
+    }
+}
+
+impl Iterator for dyn NodeIteration {
+    type Item = tsk_id_t;
+
+    fn next(&mut self) -> Option<tsk_id_t> {
+        self.next_node();
+        self.current_node()
     }
 }
 
@@ -143,6 +306,12 @@ impl TreeSequence {
         handle_tsk_return_value!(rv, treeseq)
     }
 
+    pub fn load(filename: &str) -> Result<Self, TskitError> {
+        let tables = TableCollection::new_from_file(filename)?;
+
+        Self::new(tables)
+    }
+
     /// Obtain a copy of the [`TableCollection`]
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
         self.consumed.deepcopy()
@@ -163,6 +332,10 @@ impl TreeSequence {
             rv.push(u);
         }
         rv
+    }
+
+    pub fn num_trees(&self) -> tsk_size_t {
+        unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }
     }
 }
 
@@ -216,6 +389,22 @@ mod test_trees {
             assert_eq!(samples.len(), 2);
             for i in 1..3 {
                 assert_eq!(samples[i - 1], i as tsk_id_t);
+
+                let mut nsteps = 0;
+                tree.traverse_to_root(samples[i - 1], |_x: tsk_id_t| {
+                    nsteps += 1;
+                })
+                .unwrap();
+                assert_eq!(nsteps, 2);
+            }
+            let roots = tree.roots().unwrap();
+            for r in roots.iter() {
+                let mut num_children = 0;
+                tree.process_children(*r, |_x: tsk_id_t| {
+                    num_children += 1;
+                })
+                .unwrap();
+                assert_eq!(num_children, 2);
             }
         }
         assert_eq!(ntrees, 1);
