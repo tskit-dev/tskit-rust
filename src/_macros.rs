@@ -128,6 +128,50 @@ macro_rules! process_state_input {
     };
 }
 
+macro_rules! index_for_wrapped_tsk_array_type {
+    ($name: ty, $index:ty, $output: ty) => {
+        impl std::ops::Index<$index> for $name {
+            type Output = $output;
+
+            fn index(&self, index: $index) -> &Self::Output {
+                if index >= self.len() as $index {
+                    panic!("fatal: index out of range");
+                }
+                let rv = unsafe { self.array.offset(index as isize) };
+                unsafe { &*rv }
+            }
+        }
+    };
+}
+
+macro_rules! iterator_for_wrapped_tsk_array_type {
+    ($name: ty, $item: ty) => {
+        impl Iterator for $name {
+            type Item = $item;
+
+            fn next(&mut self) -> Option<$item> {
+                if self.idx_ >= self.len_ as crate::tsk_id_t {
+                    self.idx_ = -1;
+                }
+                self.idx_ += 1;
+
+                if self.idx_ < self.len_ as crate::tsk_id_t {
+                    Some(unsafe { *self.array.offset(self.idx_ as isize) })
+                } else {
+                    None
+                }
+            }
+        }
+    };
+}
+
+macro_rules! wrapped_tsk_array_traits {
+    ($name: ty, $index:ty, $output: ty) => {
+        index_for_wrapped_tsk_array_type!($name, $index, $output);
+        iterator_for_wrapped_tsk_array_type!($name, $output);
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
