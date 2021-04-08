@@ -172,6 +172,15 @@ macro_rules! wrapped_tsk_array_traits {
     };
 }
 
+macro_rules! err_if_not_tracking_samples {
+    ($flags: expr, $rv: expr) => {
+        match $flags.contains(crate::TreeFlags::SAMPLE_LISTS) {
+            false => Err(TskitError::NotTrackingSamples),
+            true => Ok($rv),
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
