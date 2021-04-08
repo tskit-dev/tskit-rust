@@ -43,7 +43,7 @@ pub use node_table::NodeTable;
 pub use population_table::PopulationTable;
 pub use site_table::SiteTable;
 pub use table_collection::TableCollection;
-pub use trees::{NodeIteration, NodeTraversalOrder, Tree, TreeSequence};
+pub use trees::{NodeIterator, NodeTraversalOrder, Tree, TreeSequence};
 
 /// Handles return codes from low-level tskit functions.
 ///
