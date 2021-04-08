@@ -30,9 +30,10 @@ macro_rules! panic_on_tskit_error {
 macro_rules! unsafe_tsk_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
         if $i < $lo || ($i as crate::tsk_size_t) >= $hi {
-            return Err(crate::error::TskitError::IndexError {});
+            Err(crate::error::TskitError::IndexError {})
+        } else {
+            Ok(unsafe { *$array.offset($i as isize) })
         }
-        return Ok(unsafe { *$array.offset($i as isize) });
     }};
 }
 

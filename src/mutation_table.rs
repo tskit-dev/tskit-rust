@@ -28,7 +28,7 @@ impl<'a> MutationTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn site(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.site);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.site)
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -38,7 +38,7 @@ impl<'a> MutationTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn node(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node)
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -48,7 +48,7 @@ impl<'a> MutationTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent)
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -58,7 +58,7 @@ impl<'a> MutationTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time)
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.

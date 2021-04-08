@@ -28,7 +28,7 @@ impl<'a> EdgeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent)
     }
 
     /// Return the ``child`` value from row ``row`` of the table.
@@ -38,7 +38,7 @@ impl<'a> EdgeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn child(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.child);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.child)
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -48,7 +48,7 @@ impl<'a> EdgeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn left(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.left);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.left)
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
@@ -58,7 +58,7 @@ impl<'a> EdgeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn right(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.right);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.right)
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
