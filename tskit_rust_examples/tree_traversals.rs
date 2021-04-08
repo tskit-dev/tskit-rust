@@ -1,7 +1,7 @@
 use clap::{value_t_or_exit, App, Arg};
 use streaming_iterator::StreamingIterator; // Required for tree iteration
 use tskit;
-use tskit::NodeIteration;
+use tskit::NodeIterator;
 
 // "Manual" traversal from samples to root
 fn traverse_upwards(tree: &tskit::Tree) -> () {
@@ -15,18 +15,15 @@ fn traverse_upwards(tree: &tskit::Tree) -> () {
     }
 }
 
-// Travere from samples to root, applying a function to each
-// node
+// Iterate from each node up to its root.
 fn traverse_upwards_with_closure(tree: &tskit::Tree) -> () {
     let samples = tree.sample_list();
 
     for s in samples.iter() {
         let mut steps_to_root = 0;
-        tree.traverse_to_root(*s, |u: tskit::tsk_id_t| {
-            assert!(u != tskit::TSK_NULL);
+        for _ in tree.path_to_root(*s).unwrap() {
             steps_to_root += 1;
-        })
-        .unwrap();
+        }
     }
 }
 
