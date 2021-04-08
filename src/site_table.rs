@@ -29,7 +29,7 @@ impl<'a> SiteTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn position(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.position);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.position)
     }
 
     /// Get the ``ancestral_state`` value from row ``row`` of the table.

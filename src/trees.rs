@@ -114,17 +114,17 @@ impl Tree {
     }
 
     fn left_sample(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        if !self.flags.contains(TreeFlags::SAMPLE_LISTS) {
-            return Err(TskitError::NotTrackingSamples);
-        }
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sample);
+        err_if_not_tracking_samples!(
+            self.flags,
+            unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sample).unwrap()
+        )
     }
 
     fn right_sample(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        if !self.flags.contains(TreeFlags::SAMPLE_LISTS) {
-            return Err(TskitError::NotTrackingSamples);
-        }
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sample);
+        err_if_not_tracking_samples!(
+            self.flags,
+            unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sample).unwrap()
+        )
     }
 
     pub fn interval(&self) -> (f64, f64) {
@@ -141,23 +141,23 @@ impl Tree {
     }
 
     pub fn parent(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.parent);
+        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.parent)
     }
 
     pub fn left_child(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_child);
+        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_child)
     }
 
     pub fn right_child(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_child);
+        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_child)
     }
 
     pub fn left_sib(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sib);
+        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sib)
     }
 
     pub fn right_sib(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sib);
+        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sib)
     }
 
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {

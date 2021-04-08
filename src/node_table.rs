@@ -28,7 +28,7 @@ impl<'a> NodeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time)
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -38,7 +38,7 @@ impl<'a> NodeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn flags(&'a self, row: tsk_id_t) -> Result<tsk_flags_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.flags);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.flags)
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
@@ -48,7 +48,7 @@ impl<'a> NodeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn population(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.population);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.population)
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
@@ -68,7 +68,7 @@ impl<'a> NodeTable<'a> {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn individual(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.individual);
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.individual)
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
