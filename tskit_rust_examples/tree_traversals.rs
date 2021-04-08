@@ -5,7 +5,7 @@ use tskit::NodeIterator;
 
 // "Manual" traversal from samples to root
 fn traverse_upwards(tree: &tskit::Tree) -> () {
-    let samples = tree.sample_list();
+    let samples = tree.samples_to_vec();
 
     for s in samples.iter() {
         let mut u = *s;
@@ -17,7 +17,7 @@ fn traverse_upwards(tree: &tskit::Tree) -> () {
 
 // Iterate from each node up to its root.
 fn traverse_upwards_with_closure(tree: &tskit::Tree) -> () {
-    let samples = tree.sample_list();
+    let samples = tree.samples_to_vec();
 
     for s in samples.iter() {
         let mut steps_to_root = 0;
@@ -48,7 +48,7 @@ fn main() {
 
     let treeseq = tskit::TreeSequence::load(&treefile).unwrap();
 
-    let mut tree_iterator = treeseq.tree_iterator().unwrap();
+    let mut tree_iterator = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
 
     while let Some(tree) = tree_iterator.next() {
         traverse_upwards(&tree);

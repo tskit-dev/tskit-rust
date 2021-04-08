@@ -13,6 +13,11 @@ pub enum TskitError {
     /// arrays allocated on the C side.
     #[error("Invalid index")]
     IndexError,
+    /// Raised when samples are requested from
+    /// [`Tree`] objects, but sample lists are
+    /// not being updated.
+    #[error("Not tracking samples in Trees")]
+    NotTrackingSamples,
     /// Wrapper around tskit C API error codes.
     #[error("{}", get_tskit_error_message(*code))]
     ErrorCode { code: i32 },

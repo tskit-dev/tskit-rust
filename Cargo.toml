@@ -15,6 +15,7 @@ repository = "https://github.com/molpopgen/tskit_rust"
 thiserror = "1.0"
 libc = "0.2.81"
 streaming-iterator = "0.1.5"
+bitflags = "1.2.1"
 
 [dev-dependencies]
 serde = {version = "1.0.118", features = ["derive"]}
