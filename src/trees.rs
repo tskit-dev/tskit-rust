@@ -542,6 +542,15 @@ impl TreeSequence {
     pub fn num_trees(&self) -> tsk_size_t {
         unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }
     }
+
+    pub fn kc_distance(&self, other: &TreeSequence, lambda: f64) -> Result<f64, TskitError> {
+        let mut kc: f64 = f64::NAN;
+        let kcp: *mut f64 = &mut kc;
+        let code = unsafe {
+            ll_bindings::tsk_treeseq_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp)
+        };
+        handle_tsk_return_value!(code, kc)
+    }
 }
 
 #[cfg(test)]
@@ -562,6 +571,11 @@ mod test_trees {
         tables.add_edge(0., 1000., 0, 2).unwrap();
         tables.build_index(0).unwrap();
         tables
+    }
+
+    fn treeseq_from_small_table_collection() -> TreeSequence {
+        let tables = make_small_table_collection();
+        tables.tree_sequence().unwrap()
     }
 
     #[test]
@@ -668,5 +682,15 @@ mod test_trees {
         } else {
             panic!("Expected a tree");
         }
+    }
+
+    #[test]
+    fn test_kc_distance_naive_test() {
+        let ts1 = treeseq_from_small_table_collection();
+        let ts2 = treeseq_from_small_table_collection();
+
+        let kc = ts1.kc_distance(&ts2, 0.0).unwrap();
+        assert!(kc.is_finite());
+        assert!((kc - 0.).abs() < f64::EPSILON);
     }
 }
