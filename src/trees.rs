@@ -6,14 +6,24 @@ use bitflags::bitflags;
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
 
 bitflags! {
+    /// Specify the behavior of iterating over [`Tree`] objects.
+    /// See [`TreeSequence::tree_iterator`].
     #[derive(Default)]
     pub struct TreeFlags: tsk_flags_t {
+        /// Default behavior.
         const NONE = 0;
+        /// Update sample lists, enabling [`Tree::samples`].
         const SAMPLE_LISTS = ll_bindings::TSK_SAMPLE_LISTS;
+        /// Do *not* update the number of samples descending
+        /// from each node. The default is to update these
+        /// counts.
         const NO_SAMPLE_COUNTS = ll_bindings::TSK_NO_SAMPLE_COUNTS;
     }
 }
 
+/// A Tree.
+///
+/// Wrapper around `tsk_tree_t`.
 pub struct Tree {
     inner: Box<ll_bindings::tsk_tree_t>,
     current_tree: i32,
@@ -130,39 +140,65 @@ impl Tree {
         )
     }
 
+    /// Return the `[left, right)` coordinates of the tree.
     pub fn interval(&self) -> (f64, f64) {
         unsafe { ((*self.as_ptr()).left, (*self.as_ptr()).right) }
     }
 
+    /// Return the length of the genome for which this
+    /// tree is the ancestry.
     pub fn span(&self) -> f64 {
         let i = self.interval();
         i.1 - i.0
     }
 
-    pub fn left_root(&self) -> tsk_id_t {
-        self.inner.left_root
-    }
-
+    /// Get the parent of node `u`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] if `u` is out of range.
     pub fn parent(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.parent)
     }
 
+    /// Get the left child of node `u`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] if `u` is out of range.
     pub fn left_child(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_child)
     }
 
+    /// Get the right child of node `u`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] if `u` is out of range.
     pub fn right_child(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_child)
     }
 
+    /// Get the left sib of node `u`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] if `u` is out of range.
     pub fn left_sib(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sib)
     }
 
+    /// Get the right sib of node `u`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `u` is out of range.
     pub fn right_sib(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
         unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sib)
     }
 
+    /// Obtain the list of samples for the current tree/tree sequence
+    /// as a vector.
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
@@ -175,25 +211,86 @@ impl Tree {
         rv
     }
 
+    /// Return a [`NodeIterator`] from the node `u` to the root of the tree.
+    ///
+    /// # Note
+    ///
+    /// The values iterated over include `u`.
+    ///
+    /// You must include the following code in order to use this iterator:
+    ///
+    /// ```no_run
+    /// use tskit::NodeIterator;
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `u` is out of range.
     pub fn path_to_root(&self, u: tsk_id_t) -> Result<BoxedNodeIterator, TskitError> {
         let iter = PathToRootIterator::new(self, u)?;
         Ok(Box::new(iter))
     }
 
+    /// Return a [`NodeIterator`] over the children of node `u`.
+    ///
+    /// # Note
+    ///
+    /// The iteration direction if from left child to right child.
+    ///
+    /// You must include the following code in order to use this iterator:
+    ///
+    /// ```no_run
+    /// use tskit::NodeIterator;
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `u` is out of range.
     pub fn children(&self, u: tsk_id_t) -> Result<BoxedNodeIterator, TskitError> {
         let iter = ChildIterator::new(self, u)?;
         Ok(Box::new(iter))
     }
-
+    /// Return a [`NodeIterator`] over the sample nodes descending from node `u`.
+    ///
+    /// # Note
+    ///
+    /// If `u` is itself a sample, then it is included in the values returned.
+    ///
+    /// You must include the following code in order to use this iterator:
+    ///
+    /// ```no_run
+    /// use tskit::NodeIterator;
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `u` is out of range.
+    ///
+    /// [`TskitError::NotTrackingSamples`] if [`TreeFlags::SAMPLE_LISTS`] was not used
+    /// to initialize `self`.
     pub fn samples(&self, u: tsk_id_t) -> Result<BoxedNodeIterator, TskitError> {
         let iter = SamplesIterator::new(self, u)?;
         Ok(Box::new(iter))
     }
 
+    /// Return a [`NodeIterator`] over the roots of the tree.
+    ///
+    /// # Note
+    ///
+    /// For a tree with multiple roots, the iteration starts
+    /// at the left root.
+    ///
+    /// You must include the following code in order to use this iterator:
+    ///
+    /// ```no_run
+    /// use tskit::NodeIterator;
+    /// ```
+    ///
     pub fn roots(&self) -> BoxedNodeIterator {
         Box::new(RootIterator::new(self))
     }
 
+    /// Return all roots as a vector.
     pub fn roots_to_vec(&self) -> Vec<tsk_id_t> {
         let mut v = vec![];
 
@@ -204,18 +301,45 @@ impl Tree {
         v
     }
 
+    /// Return a [`NodeIterator`] over all nodes in the tree.
+    ///
+    /// # Note
+    ///
+    /// You must include the following code in order to use this iterator:
+    ///
+    /// ```no_run
+    /// use tskit::NodeIterator;
+    /// ```
+    ///
+    /// # Parameters
+    ///
+    /// * `order`: A value from [`NodeTraversalOrder`] specifying the
+    ///   iteration order.
     pub fn nodes(&self, order: NodeTraversalOrder) -> BoxedNodeIterator {
         match order {
             NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
         }
     }
 
+    /// Return the [`crate::NodeTable`] for this current tree
+    /// (and the tree sequence from which it came).
+    ///
+    /// This is a convenience function for accessing node times, etc..
     pub fn node_table<'a>(&'a self) -> crate::NodeTable<'a> {
         crate::NodeTable::<'a>::new_from_table(unsafe {
             &(*(*(*self.as_ptr()).tree_sequence).tables).nodes
         })
     }
 
+    /// Calculate the total length of the tree via a preorder traversal.
+    ///
+    /// # Parameters
+    ///
+    /// * `by_span`: if `true`, multiply the return value by [`Tree::span`].
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] may be returned via [`Tree::nodes`].
     pub fn total_branch_length(&self, by_span: bool) -> Result<f64, TskitError> {
         let nt = self.node_table();
         let mut b = 0.;
@@ -247,10 +371,16 @@ impl streaming_iterator::StreamingIterator for Tree {
     }
 }
 
+/// Specify the traversal order used by
+/// [`Tree::nodes`].
 pub enum NodeTraversalOrder {
+    ///Preorder traversal, starting at the root(s) of a [`Tree`].
+    ///For trees with multiple roots, start at the left root,
+    ///traverse to tips, proceeed to the next root, etc..
     Preorder,
 }
 
+/// Trait defining iteration over nodes.
 pub trait NodeIterator {
     fn next_node(&mut self);
     fn current_node(&mut self) -> Option<tsk_id_t>;
@@ -473,6 +603,7 @@ impl NodeIterator for SamplesIterator {
 ///
 /// When created from a [`TableCollection`], the input tables are
 /// moved into the `TreeSequence` object.
+///
 /// # Examples
 ///
 /// ```
@@ -483,8 +614,11 @@ impl NodeIterator for SamplesIterator {
 /// tables.add_edge(0., 1000., 0, 1).unwrap();
 /// tables.add_edge(0., 1000., 0, 2).unwrap();
 ///
+/// // index
+/// tables.build_index(0);
+///
 /// // tables gets moved into our treeseq variable:
-/// let treeseq = tables.tree_sequence();
+/// let treeseq = tables.tree_sequence().unwrap();
 /// ```
 pub struct TreeSequence {
     consumed: TableCollection,
@@ -502,6 +636,38 @@ impl TreeSequence {
     /// Create a tree sequence from a [`TableCollection`].
     /// In general, [`TableCollection::tree_sequence`] may be preferred.
     /// The table collection is moved/consumed.
+    ///
+    /// # Parameters
+    ///
+    /// * `tables`, a [`TableCollection`]
+    ///
+    /// # Errors
+    ///
+    /// * [`TskitError`] if the tables are not indexed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// tables.build_index(0);
+    /// let tree_sequence = tskit::TreeSequence::new(tables).unwrap();
+    /// ```
+    ///
+    /// The following may be preferred to the previous example, and more closely
+    /// mimics the Python `tskit` interface:
+    ///
+    /// ```
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// tables.build_index(0);
+    /// let tree_sequence = tables.tree_sequence().unwrap();
+    /// ```
+    ///
+    /// The following raises an error because the tables are not indexed:
+    ///
+    /// ```should_panic
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// let tree_sequence = tskit::TreeSequence::new(tables).unwrap();
+    /// ```
     pub fn new(tables: TableCollection) -> Result<Self, TskitError> {
         let mut treeseq = Self::wrap(tables);
         let rv = unsafe {
@@ -510,23 +676,67 @@ impl TreeSequence {
         handle_tsk_return_value!(rv, treeseq)
     }
 
+    /// Load from a file.
     pub fn load(filename: &str) -> Result<Self, TskitError> {
         let tables = TableCollection::new_from_file(filename)?;
 
         Self::new(tables)
     }
 
-    /// Obtain a copy of the [`TableCollection`]
+    /// Obtain a copy of the [`TableCollection`].
+    /// The result is a "deep" copy of the tables.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] will be raised if the underlying C library returns an error code.
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
         self.consumed.deepcopy()
     }
 
+    /// Create an iterator over trees.
+    ///
+    /// # Parameters
+    ///
+    /// * `flags` A [`TreeFlags`] bit field.
+    ///
+    /// # Errors
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // You must include streaming_iterator as a dependency
+    /// // and import this type.
+    /// use streaming_iterator::StreamingIterator;
+    ///
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// tables.build_index(0);
+    /// let tree_sequence = tables.tree_sequence().unwrap();
+    /// let mut tree_iterator = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iterator.next() {
+    /// }
+    /// ```
+    ///
+    /// # Warning
+    ///
+    /// The following code results in an infinite loop.
+    /// Be sure to note the difference from the previous example.
+    ///
+    /// ```no_run
+    /// use streaming_iterator::StreamingIterator;
+    ///
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// tables.build_index(0);
+    /// let tree_sequence = tables.tree_sequence().unwrap();
+    /// while let Some(tree) = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap().next() {
+    /// }
+    /// ```
     pub fn tree_iterator(&self, flags: TreeFlags) -> Result<Tree, TskitError> {
         let tree = Tree::new(self, flags)?;
 
         Ok(tree)
     }
 
+    /// Get the list of samples as a vector.
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         let mut rv = vec![];
@@ -538,10 +748,21 @@ impl TreeSequence {
         rv
     }
 
+    /// Get the number of trees.
     pub fn num_trees(&self) -> tsk_size_t {
         unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }
     }
 
+    /// Calculate the average Kendall-Colijn (`K-C`) distance between
+    /// pairs of trees whose intervals overlap.
+    ///
+    /// # Note
+    ///
+    /// * [Citation](https://doi.org/10.1093/molbev/msw124)
+    ///
+    /// # Parameters
+    ///
+    /// * `lambda` specifies the relative weight of topology and branch length.
     pub fn kc_distance(&self, other: &TreeSequence, lambda: f64) -> Result<f64, TskitError> {
         let mut kc: f64 = f64::NAN;
         let kcp: *mut f64 = &mut kc;

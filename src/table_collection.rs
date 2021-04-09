@@ -185,11 +185,11 @@ impl TableCollection {
         population: tsk_id_t,
         individual: tsk_id_t,
     ) -> TskReturnValue {
-        self.add_node_witha_metadata(flags, time, population, individual, None)
+        self.add_node_with_metadata(flags, time, population, individual, None)
     }
 
     /// Add a row with metadata to the node table
-    pub fn add_node_witha_metadata(
+    pub fn add_node_with_metadata(
         &mut self,
         flags: ll_bindings::tsk_flags_t,
         time: f64,
