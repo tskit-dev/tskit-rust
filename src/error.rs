@@ -105,7 +105,7 @@ mod test {
     }
 
     fn mock_success() -> TskReturnValue {
-        Ok(0)
+        handle_tsk_return_value!(0)
     }
 
     #[test]
