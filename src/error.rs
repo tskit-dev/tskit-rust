@@ -14,7 +14,7 @@ pub enum TskitError {
     #[error("Invalid index")]
     IndexError,
     /// Raised when samples are requested from
-    /// [`Tree`] objects, but sample lists are
+    /// [`crate::Tree`] objects, but sample lists are
     /// not being updated.
     #[error("Not tracking samples in Trees")]
     NotTrackingSamples,

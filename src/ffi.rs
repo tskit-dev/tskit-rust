@@ -8,6 +8,8 @@ pub trait TskitTypeAccess<T> {
     fn as_mut_ptr(&mut self) -> *mut T;
 }
 
+/// Indexable, iterable wrapper around C
+/// arrays.
 #[derive(Copy, Clone)]
 pub(crate) struct WrappedTskArray<T> {
     array: T,
