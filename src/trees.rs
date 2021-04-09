@@ -4,7 +4,6 @@ use crate::ffi::{TskitTypeAccess, WrapTskitConsumingType};
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
 use bitflags::bitflags;
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
-use streaming_iterator::StreamingIterator;
 
 bitflags! {
     #[derive(Default)]
@@ -83,6 +82,7 @@ impl Tree {
         )
     }
 
+    #[allow(dead_code)]
     fn left_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
@@ -90,6 +90,7 @@ impl Tree {
         )
     }
 
+    #[allow(dead_code)]
     fn right_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
@@ -97,6 +98,7 @@ impl Tree {
         )
     }
 
+    #[allow(dead_code)]
     fn left_sib_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.left_sib, self.inner.num_nodes)
     }
@@ -109,6 +111,7 @@ impl Tree {
         crate::ffi::TskIdArray::new(self.inner.left_child, self.inner.num_nodes)
     }
 
+    #[allow(dead_code)]
     fn right_child_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.right_child, self.inner.num_nodes)
     }
@@ -208,7 +211,7 @@ impl Tree {
     }
 
     pub fn node_table<'a>(&'a self) -> crate::NodeTable<'a> {
-        crate::NodeTable::new_from_table(unsafe {
+        crate::NodeTable::<'a>::new_from_table(unsafe {
             &(*(*(*self.as_ptr()).tree_sequence).tables).nodes
         })
     }
@@ -280,12 +283,9 @@ impl PreorderNodeIterator {
             current_node_: None,
         };
         rv.root_stack.reverse();
-        let root = rv.root_stack.pop();
-        match root {
-            Some(x) => rv.node_stack.push(x),
-            None => (),
-        };
-
+        if let Some(root) = rv.root_stack.pop() {
+            rv.node_stack.push(root);
+        }
         rv
     }
 }
@@ -301,12 +301,11 @@ impl NodeIterator for PreorderNodeIterator {
                     c = self.right_sib[c];
                 }
             }
-            None => match self.root_stack.pop() {
-                Some(r) => {
+            None => {
+                if let Some(r) = self.root_stack.pop() {
                     self.current_node_ = Some(r);
                 }
-                None => (),
-            },
+            }
         };
     }
 
@@ -557,6 +556,7 @@ impl TreeSequence {
 mod test_trees {
     use super::*;
     use crate::TSK_NODE_IS_SAMPLE;
+    use streaming_iterator::StreamingIterator;
 
     fn make_small_table_collection() -> TableCollection {
         let mut tables = TableCollection::new(1000.).unwrap();
