@@ -44,3 +44,8 @@ Then, to look at the docs:
 ```
 cargo doc --open
 ```
+
+## Change log
+
+See [here](https://github.com/molpopgen/tskit_rust/blob/main/CHANGELOG.md).
+
