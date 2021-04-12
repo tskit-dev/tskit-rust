@@ -41,7 +41,7 @@ jobs:
       - name: check examples
         working-directory: tskit_rust_examples
         run: cargo check
-        if: matrix.rust == "nightly"
+        if: strategy.matrix.rust == "nightly"
         continue-on-error: true
 
   build-osx:
