@@ -15,7 +15,6 @@ jobs:
         rust:
           - stable
           - nightly
-    continue-on-error: ${{ strategy.matrix.rust.nightly }}
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -27,7 +26,7 @@ jobs:
           token: ${{ secrets.ACTIONS }}
           submodules: recursive
       - run: sudo apt-get update -y
-      - run: sudo apt-get install -y curl build-essential python3
+      # - run: sudo apt-get install -y curl build-essential python3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
@@ -37,9 +36,13 @@ jobs:
         run: |
             cargo test
             cargo test --examples
+        if: matrix.rust == "nightly"
+        continue-on-error: true
       - name: check examples
         working-directory: tskit_rust_examples
         run: cargo check
+        if: matrix.rust == "nightly"
+        continue-on-error: true
 
   build-osx:
     runs-on: macos-latest
