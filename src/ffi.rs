@@ -44,7 +44,7 @@ impl<T: Copy> WrappedTskArray<T> {
         self.len_
     }
 
-    pub fn iter<'a>(&'a self) -> WrappedTskArrayIter<'a, T> {
+    pub fn iter(&self) -> WrappedTskArrayIter<T> {
         WrappedTskArrayIter {
             inner: self,
             pos: 0,

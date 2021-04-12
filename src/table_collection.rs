@@ -41,8 +41,56 @@ use ll_bindings::tsk_table_collection_free;
 /// assert_eq!(nodes.num_rows(), 1);
 /// ```
 ///
-/// See the examples/ directory of the repository for examples of metadata encoding
-/// and decoding.
+/// ## Metadata round trips and table iteration
+///
+/// ```
+/// use tskit;
+/// use tskit::metadata::MetadataRoundtrip;
+///
+/// // Define a type for metadata
+/// struct F {
+///     x: i32,
+/// }
+///
+/// // Implement our metadata trait for type F.
+/// // NOTE: this is hard because we are only using the
+/// // rust standard library here.  See the examples/
+/// // directory of the repository for examples using
+/// // other, more convenient, crates.
+/// impl tskit::metadata::MetadataRoundtrip for F {
+///     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+///         let mut rv = vec![];
+///         rv.extend(self.x.to_le_bytes().iter().copied());
+///         Ok(rv)
+///     }
+///     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
+///         use std::convert::TryInto;
+///         let (x_int_bytes, rest) = md.split_at(std::mem::size_of::<i32>());
+///         Ok(Self {
+///             x: i32::from_le_bytes(x_int_bytes.try_into().unwrap()),
+///         })
+///     }
+/// }
+///
+/// // Crate a table and add a mutation with metadata
+/// let mut tables = tskit::TableCollection::new(100.).unwrap();
+///
+/// // The metadata takes a reference in the event that it could
+/// // be data store in some container somewhere, and you don't want
+/// // it moved.
+/// tables.add_mutation_with_metadata(0, 0, 0, 0., None, Some(&F{x: -33})).unwrap();
+///
+/// // Iterate over each row in the table.
+/// // The "true" means to include (a copy of) the
+/// // encoded metadata, if any exist.
+/// for row in tables.mutations().iter(true) {
+///     // Decode the metadata if any exists.
+///     if !row.metadata.is_none() {
+///         let md = F::decode(&row.metadata.unwrap()).unwrap();
+///         assert_eq!(md.x, -33);
+///     }
+/// }
+/// ```
 ///
 /// # Future road map
 ///
@@ -438,6 +486,45 @@ mod test {
     }
 
     #[test]
+    fn test_node_iteration() {
+        let tables = make_small_table_collection();
+        for (i, row) in tables.nodes().iter(true).enumerate() {
+            assert!(close_enough(
+                tables.nodes().time(i as tsk_id_t).unwrap(),
+                row.time
+            ));
+            assert_eq!(tables.nodes().flags(i as tsk_id_t).unwrap(), row.flags);
+            assert_eq!(
+                tables.nodes().population(i as tsk_id_t).unwrap(),
+                row.population
+            );
+            assert_eq!(
+                tables.nodes().individual(i as tsk_id_t).unwrap(),
+                row.individual
+            );
+            assert!(row.metadata.is_none());
+        }
+    }
+
+    #[test]
+    fn test_edge_iteration() {
+        let tables = make_small_table_collection();
+        for (i, row) in tables.edges().iter(true).enumerate() {
+            assert!(close_enough(
+                tables.edges().left(i as tsk_id_t).unwrap(),
+                row.left
+            ));
+            assert!(close_enough(
+                tables.edges().right(i as tsk_id_t).unwrap(),
+                row.right
+            ));
+            assert_eq!(tables.edges().parent(i as tsk_id_t).unwrap(), row.parent);
+            assert_eq!(tables.edges().child(i as tsk_id_t).unwrap(), row.child);
+            assert!(row.metadata.is_none());
+        }
+    }
+
+    #[test]
     fn test_add_site() {
         let mut tables = TableCollection::new(1000.).unwrap();
         tables.add_site(0.3, Some(b"Eggnog")).unwrap();
@@ -465,6 +552,25 @@ mod test {
             Some(astate) => assert_eq!(astate, longer_metadata.as_bytes()),
             None => panic!(),
         };
+
+        // NOTE: this is a useful test as not all rows have ancestral_state
+        let mut no_anc_state = 0;
+        for (i, row) in sites.iter(true).enumerate() {
+            assert!(close_enough(
+                sites.position(i as tsk_id_t).unwrap(),
+                row.position
+            ));
+            if row.ancestral_state.is_some() {
+                if i == 0 {
+                    assert_eq!(row.ancestral_state.unwrap(), b"Eggnog");
+                } else if i == 2 {
+                    assert_eq!(row.ancestral_state.unwrap(), longer_metadata.as_bytes());
+                }
+            } else {
+                no_anc_state += 1;
+            }
+        }
+        assert_eq!(no_anc_state, 1);
     }
 
     fn close_enough(a: f64, b: f64) -> bool {
@@ -504,6 +610,34 @@ mod test {
             mutations.derived_state(2).unwrap().unwrap(),
             b"more pajamas"
         );
+
+        let mut nmuts = 0;
+        for (i, row) in tables.mutations().iter(true).enumerate() {
+            assert_eq!(row.site, tables.mutations().site(i as tsk_id_t).unwrap());
+            assert_eq!(row.node, tables.mutations().node(i as tsk_id_t).unwrap());
+            assert_eq!(
+                row.parent,
+                tables.mutations().parent(i as tsk_id_t).unwrap()
+            );
+            assert!(close_enough(
+                row.time,
+                tables.mutations().time(i as tsk_id_t).unwrap()
+            ));
+            assert!(row.metadata.is_none());
+            nmuts += 1;
+        }
+        assert_eq!(nmuts, tables.mutations().num_rows());
+        assert_eq!(nmuts, 3);
+
+        for row in tables.mutations().iter(false) {
+            assert!(row.metadata.is_none());
+        }
+
+        nmuts = 0;
+        for _ in tables.mutations().iter(true).skip(1) {
+            nmuts += 1;
+        }
+        assert_eq!(nmuts, tables.mutations().num_rows() - 1);
     }
 
     struct F {
@@ -547,6 +681,13 @@ mod test {
         let md = tables.mutations().metadata::<F>(0).unwrap().unwrap();
         assert_eq!(md.x, -3);
         assert_eq!(md.y, 666);
+
+        for row in tables.mutations().iter(true) {
+            assert!(!row.metadata.is_none());
+            let md = F::decode(&row.metadata.unwrap()).unwrap();
+            assert_eq!(md.x, -3);
+            assert_eq!(md.y, 666);
+        }
     }
 
     #[test]

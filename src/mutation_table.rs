@@ -2,6 +2,45 @@ use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
 
+/// Row of a [`MutationTable`]
+pub struct MutationTableRow {
+    pub site: tsk_id_t,
+    pub node: tsk_id_t,
+    pub parent: tsk_id_t,
+    pub time: f64,
+    pub derived_state: Option<Vec<u8>>,
+    pub metadata: Option<Vec<u8>>,
+}
+
+pub type MutationTableIterator<'a> = crate::table_iterator::TableIterator<'a, MutationTable<'a>>;
+
+impl<'a> Iterator for MutationTableIterator<'a> {
+    type Item = MutationTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos < self.table.num_rows() as tsk_id_t {
+            let rv = MutationTableRow {
+                site: self.table.site(self.pos).unwrap(),
+                node: self.table.node(self.pos).unwrap(),
+                parent: self.table.parent(self.pos).unwrap(),
+                time: self.table.time(self.pos).unwrap(),
+                derived_state: self.table.derived_state(self.pos).unwrap(),
+                metadata: match self.decode_metadata {
+                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
+                        Some(x) => Some(x),
+                        None => None,
+                    },
+                    false => None,
+                },
+            };
+            self.pos += 1;
+            Some(rv)
+        } else {
+            None
+        }
+    }
+}
+
 /// An immutable view of site table.
 ///
 /// These are not created directly.
@@ -87,5 +126,19 @@ impl<'a> MutationTable<'a> {
     ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(self, row)?;
         decode_metadata_row!(T, buffer)
+    }
+
+    /// Return an iterator over rows of the table.
+    /// The value of the iterator is [`MutationTableRow`].
+    ///
+    /// # Parameters
+    ///
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`MutationTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    pub fn iter(&self, decode_metadata: bool) -> MutationTableIterator {
+        crate::table_iterator::make_table_iterator(self, decode_metadata)
     }
 }
