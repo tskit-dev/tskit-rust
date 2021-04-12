@@ -1,5 +1,48 @@
 # Change log
 
+## 2021-04-12, Version 0.1.2
+
+### Commits
+- [[`f475a5c624`](https://github.com/molpopgen/tskit_rust/commit/f475a5c6241b39690a5b18a8f2fc3af22606ad28)] Bump version to 0.1.2 (molpopgen)
+- [[`f1887d55e0`](https://github.com/molpopgen/tskit_rust/commit/f1887d55e0c77c3d0cd647817cc7843711638ba2)] Merge pull request #46 from molpopgen/add_important_missing_functions (Kevin R. Thornton)
+- [[`f5598256dd`](https://github.com/molpopgen/tskit_rust/commit/f5598256dd70bac04167c1eaea7f26711477036e)] Merge pull request #47 from molpopgen/add_changelog (Kevin R. Thornton)
+- [[`fb85ba9606`](https://github.com/molpopgen/tskit_rust/commit/fb85ba9606258484c24f394254a0cd3d5694bd78)] Add Tree::num_tracked_samples and Tree::kc_distance. (molpopogen)
+- [[`08febd5062`](https://github.com/molpopgen/tskit_rust/commit/08febd50625407a3fb0e37475180840bfd176772)] Add change log (molpopogen)
+- [[`e6495a959a`](https://github.com/molpopgen/tskit_rust/commit/e6495a959a9392e01febaf8c592727432fac2609)] Merge pull request #51 from molpopgen/test_beta_instead_of_nightly (Kevin R. Thornton)
+- [[`fa7cca91a5`](https://github.com/molpopgen/tskit_rust/commit/fa7cca91a5e503200e99321608257310a7d35289)] Test beta instead of nightly. (molpopgen)
+- [[`bd7185eef2`](https://github.com/molpopgen/tskit_rust/commit/bd7185eef2ff6cd4f45f9ccb220c0c32c0f7e394)] Merge pull request #45 from molpopgen/documentation (Kevin R. Thornton)
+- [[`2400906762`](https://github.com/molpopgen/tskit_rust/commit/24009067621b02c88547a0d6d19641e095b5d477)] Add documentation related to Tree/TreeSequence (molpopogen)
+- [[`550aa76597`](https://github.com/molpopgen/tskit_rust/commit/550aa76597515b76de42d705f8bfcf1b3a3f23a4)] Fix typo in function name. (molpopogen)
+- [[`56eaf875b6`](https://github.com/molpopgen/tskit_rust/commit/56eaf875b6844fd21c07bb360f437638d1b28bdf)] Merge pull request #44 from molpopgen/fix_clippy_warnings (Kevin R. Thornton)
+- [[`20ffe557ca`](https://github.com/molpopgen/tskit_rust/commit/20ffe557ca1834d158151bc3a46e947f1e40a9ed)] Fix warnings from clippy (molpopogen)
+- [[`0bf1dada4d`](https://github.com/molpopgen/tskit_rust/commit/0bf1dada4d8a9be5b35c04936b1b13bf423e6899)] Merge pull request #43 from molpopgen/kc_distance (Kevin R. Thornton)
+- [[`2e8b4c1cfc`](https://github.com/molpopgen/tskit_rust/commit/2e8b4c1cfc3ab543453904f0ab9606d6e8becd15)] Add TreeSequence::kc_distance (molpopogen)
+- [[`efe5ce2b0b`](https://github.com/molpopgen/tskit_rust/commit/efe5ce2b0b65a81dd8d45c6eb2005b3f2b2a2b3f)] Merge pull request #42 from molpopgen/fix_tskit_array_access_macro (Kevin R. Thornton)
+- [[`82bb6ec6a1`](https://github.com/molpopgen/tskit_rust/commit/82bb6ec6a12ed080d9e9e0ebc5c4cd42fe14c61f)] Modify unsafe_tsk_column_access to support idiomatic fall-through. (molpopogen)
+- [[`40e898910d`](https://github.com/molpopgen/tskit_rust/commit/40e898910df0e11dcb4a433c360bfc7790e260c9)] Merge pull request #41 from molpopgen/sample_list_traversal (Kevin R. Thornton)
+- [[`cb0e9a4355`](https://github.com/molpopgen/tskit_rust/commit/cb0e9a435505a9f7bd7981e5a634edfcfd6ea1a6)] Add support for samples iteration: (molpopogen)
+- [[`f1acfb06f2`](https://github.com/molpopgen/tskit_rust/commit/f1acfb06f2e81c81c3012eacb44da5ddce4764d4)] Merge pull request #40 from molpopgen/more_node_iteration (Kevin R. Thornton)
+- [[`22684248d1`](https://github.com/molpopgen/tskit_rust/commit/22684248d10a8ad959af054f3ecb07b6a9277739)] * Rename NodeIteration to NodeIterator (molpopogen)
+- [[`faa105d577`](https://github.com/molpopgen/tskit_rust/commit/faa105d5777158963af1a47ec6c8e5caa8b8384f)] Merge pull request #38 from molpopgen/Tree_API (Kevin R. Thornton)
+- [[`896f921e91`](https://github.com/molpopgen/tskit_rust/commit/896f921e912a59dd5d66a9f251c9c6b5e6af8a76)] Several changes to Tree and TreeSequence: (molpopogen)
+- [[`683ba84b10`](https://github.com/molpopgen/tskit_rust/commit/683ba84b1033c5a16a74faaaa080ecae5ff62949)] Merge pull request #39 from molpopgen/ffi_array_wrapper (Kevin R. Thornton)
+- [[`dd3df03ca3`](https://github.com/molpopgen/tskit_rust/commit/dd3df03ca34858ee14db429bbfd2c01922509149)] Add non-owning wrappers to C arrays. (molpopogen)
+- [[`85cc4a591f`](https://github.com/molpopgen/tskit_rust/commit/85cc4a591f09760d9f86ebd5cd5b4b1030254eac)] Merge pull request #37 from molpopgen/add_tree (Kevin R. Thornton)
+- [[`be97490641`](https://github.com/molpopgen/tskit_rust/commit/be97490641125290e6da3372a58b1d9f4bf03b11)] Add minimial Tree interface. (molpopgen)
+- [[`4b6257ed2c`](https://github.com/molpopgen/tskit_rust/commit/4b6257ed2ca52596ee8ad2f5e355ea24c3ff02bc)] Merge pull request #36 from molpopgen/streamline_macros (Kevin R. Thornton)
+- [[`238f652d24`](https://github.com/molpopgen/tskit_rust/commit/238f652d249953d1449075983dd5fc5e3866dfda)] Remove macro redundancy. (molpopgen)
+- [[`85505887e1`](https://github.com/molpopgen/tskit_rust/commit/85505887e16d273d46cdc4715a1f23dc331eb706)] Merge pull request #35 from molpopgen/refine_ffi (Kevin R. Thornton)
+- [[`2cb4993f07`](https://github.com/molpopgen/tskit_rust/commit/2cb4993f07217fcc8ddce1472a935b594ab43f70)] Refactor the ffi module: (molpopgen)
+- [[`1b9a054ff0`](https://github.com/molpopgen/tskit_rust/commit/1b9a054ff0a356d556d7719623404ab542b5f393)] Merge pull request #34 from molpopgen/improve_error_handling_macro (Kevin R. Thornton)
+- [[`20a5486132`](https://github.com/molpopgen/tskit_rust/commit/20a5486132bc79e7aab9eb0e3481e8e7afbc9e73)] Add overload of handle_tsk_return_value. (molpopgen)
+- [[`eae11b4c8a`](https://github.com/molpopgen/tskit_rust/commit/eae11b4c8abe3ccde66acb06ddc14856f27cd83a)] Merge pull request #33 from molpopgen/add_tree_sequence (Kevin R. Thornton)
+- [[`a57b947352`](https://github.com/molpopgen/tskit_rust/commit/a57b9473522f2052a0160e0936a39986f64514c1)] Add TskitConsumingType, macro to build one, and convert TreeSequence (molpopgen)
+- [[`dcb5a02f3c`](https://github.com/molpopgen/tskit_rust/commit/dcb5a02f3c998ecff7f3a05e1d1cc16d9bd3ecf8)] change dependabot to monthly (molpopgen)
+- [[`4eb407ac61`](https://github.com/molpopgen/tskit_rust/commit/4eb407ac6142658984b6fc065a959c6dddbb797b)] Merge pull request #31 from molpopgen/dependabot/add-v2-config-file (Kevin R. Thornton)
+- [[`a759e0441b`](https://github.com/molpopgen/tskit_rust/commit/a759e0441b2d50bd4515ff8ce3c1d7a71c681f2f)] Merge pull request #32 from molpopgen/dependabot/cargo/bindgen-0.57.0 (dependabot-preview[bot])
+- [[`fb2a56c868`](https://github.com/molpopgen/tskit_rust/commit/fb2a56c868192c1a4249cff9850639c7c862dad4)] Update bindgen requirement from 0.56.0 to 0.57.0 (dependabot-preview[bot])
+- [[`a8a0b1aabf`](https://github.com/molpopgen/tskit_rust/commit/a8a0b1aabf9d86c09022574ce010ff5d9682ba05)] Create Dependabot config file (dependabot-preview[bot])
+
 ## 2021-03-26, Version 0.1.1
 
 ### Commits
