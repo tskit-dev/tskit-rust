@@ -15,6 +15,7 @@ jobs:
         rust:
           - stable
           - nightly
+    continue-on-error: ${{ strategy.matrix.rust.nightly }}
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
