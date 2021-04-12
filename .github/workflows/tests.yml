@@ -14,7 +14,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - nightly
+          - beta
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -26,7 +26,6 @@ jobs:
           token: ${{ secrets.ACTIONS }}
           submodules: recursive
       - run: sudo apt-get update -y
-      - run: sudo apt-get install -y curl build-essential python3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
@@ -46,7 +45,7 @@ jobs:
       matrix:
         rust:
           - stable
-          - nightly
+          - beta
     steps:
       - uses: actions/checkout@v2
         with:
