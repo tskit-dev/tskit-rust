@@ -12,27 +12,48 @@ pub trait TskitTypeAccess<T> {
 /// arrays.
 #[derive(Copy, Clone)]
 pub(crate) struct WrappedTskArray<T> {
-    array: T,
+    array: *const T,
     len_: crate::tsk_size_t,
-    idx_: crate::tsk_id_t,
 }
 
-impl<T> WrappedTskArray<T> {
-    pub fn new(array: T, len: crate::tsk_size_t) -> Self {
-        Self {
-            array,
-            len_: len,
-            idx_: -1,
+pub(crate) struct WrappedTskArrayIter<'a, T: Copy + 'a> {
+    inner: &'a WrappedTskArray<T>,
+    pos: crate::tsk_size_t,
+}
+
+impl<'a, T: Copy> Iterator for WrappedTskArrayIter<'a, T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.inner.len_ {
+            None
+        } else {
+            let rv = Some(unsafe { *self.inner.array.offset(self.pos as isize) as T });
+            self.pos += 1;
+            rv
         }
+    }
+}
+
+impl<T: Copy> WrappedTskArray<T> {
+    pub fn new(array: *const T, len: crate::tsk_size_t) -> Self {
+        Self { array, len_: len }
     }
 
     pub fn len(&self) -> crate::tsk_size_t {
         self.len_
     }
+
+    pub fn iter<'a>(&'a self) -> WrappedTskArrayIter<'a, T> {
+        WrappedTskArrayIter {
+            inner: self,
+            pos: 0,
+        }
+    }
 }
 
-pub(crate) type TskIdArray = WrappedTskArray<*const crate::tsk_id_t>;
-pub(crate) type Tskf64Array = WrappedTskArray<*const f64>;
+pub(crate) type TskIdArray = WrappedTskArray<crate::tsk_id_t>;
+pub(crate) type Tskf64Array = WrappedTskArray<f64>;
 
 wrapped_tsk_array_traits!(TskIdArray, crate::tsk_id_t, crate::tsk_id_t);
 wrapped_tsk_array_traits!(Tskf64Array, crate::tsk_id_t, f64);
@@ -58,6 +79,7 @@ pub(crate) trait WrapTskitConsumingType<T, C> {
 mod tests {
     use super::*;
     use crate::bindings as ll_bindings;
+    use crate::tsk_size_t;
     use ll_bindings::tsk_table_collection_free;
 
     pub struct TableCollectionMock {
@@ -110,25 +132,15 @@ mod tests {
         };
         panic_on_tskit_error!(rv);
 
-        let mut a = TskIdArray::new(unsafe { (*t.as_ptr()).edges.child }, 1);
+        let a = TskIdArray::new(unsafe { (*t.as_ptr()).edges.child }, 1);
         assert_eq!(a.len(), 1);
         assert_eq!(a[0], 17);
 
-        assert_eq!(a.next(), Some(17));
-        assert_eq!(a.next(), None);
-
         let mut v = vec![];
-        for i in &mut a {
+        for i in a.iter() {
             v.push(i);
         }
-        assert_eq!(v.len(), 1);
-        assert_eq!(v[0], 17);
-
-        v = vec![];
-        for i in &mut a {
-            v.push(i);
-        }
-        assert_eq!(v.len(), 1);
+        assert_eq!(v.len() as tsk_size_t, a.len());
         assert_eq!(v[0], 17);
     }
 
