@@ -145,31 +145,9 @@ macro_rules! index_for_wrapped_tsk_array_type {
     };
 }
 
-macro_rules! iterator_for_wrapped_tsk_array_type {
-    ($name: ty, $item: ty) => {
-        impl Iterator for $name {
-            type Item = $item;
-
-            fn next(&mut self) -> Option<$item> {
-                if self.idx_ >= self.len_ as crate::tsk_id_t {
-                    self.idx_ = -1;
-                }
-                self.idx_ += 1;
-
-                if self.idx_ < self.len_ as crate::tsk_id_t {
-                    Some(unsafe { *self.array.offset(self.idx_ as isize) })
-                } else {
-                    None
-                }
-            }
-        }
-    };
-}
-
 macro_rules! wrapped_tsk_array_traits {
     ($name: ty, $index:ty, $output: ty) => {
         index_for_wrapped_tsk_array_type!($name, $index, $output);
-        iterator_for_wrapped_tsk_array_type!($name, $output);
     };
 }
 
