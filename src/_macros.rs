@@ -101,7 +101,7 @@ macro_rules! metadata_to_vector {
             $row,
             $self.table_.num_rows,
             $self.table_.metadata_length,
-        )?
+        )
     };
 }
 
