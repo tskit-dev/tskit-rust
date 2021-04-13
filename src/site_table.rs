@@ -3,6 +3,39 @@ use crate::metadata;
 use crate::TskitError;
 use crate::{tsk_id_t, tsk_size_t};
 
+/// Row of a [`SiteTable`]
+pub struct SiteTableRow {
+    pub position: f64,
+    pub ancestral_state: Option<Vec<u8>>,
+    pub metadata: Option<Vec<u8>>,
+}
+
+pub type SiteTableIterator<'a> = crate::table_iterator::TableIterator<'a, SiteTable<'a>>;
+
+impl<'a> Iterator for SiteTableIterator<'a> {
+    type Item = SiteTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos < self.table.num_rows() as tsk_id_t {
+            let rv = SiteTableRow {
+                position: self.table.position(self.pos).unwrap(),
+                ancestral_state: self.table.ancestral_state(self.pos).unwrap(),
+                metadata: match self.decode_metadata {
+                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
+                        Some(x) => Some(x),
+                        None => None,
+                    },
+                    false => None,
+                },
+            };
+            self.pos += 1;
+            Some(rv)
+        } else {
+            None
+        }
+    }
+}
+
 /// An immutable view of site table.
 ///
 /// These are not created directly.
@@ -58,5 +91,19 @@ impl<'a> SiteTable<'a> {
     ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(self, row)?;
         decode_metadata_row!(T, buffer)
+    }
+
+    /// Return an iterator over rows of the table.
+    /// The value of the iterator is [`SiteTableRow`].
+    ///
+    /// # Parameters
+    ///
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`SiteTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    pub fn iter(&self, decode_metadata: bool) -> SiteTableIterator {
+        crate::table_iterator::make_table_iterator(self, decode_metadata)
     }
 }

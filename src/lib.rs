@@ -16,6 +16,7 @@ mod node_table;
 mod population_table;
 mod site_table;
 mod table_collection;
+mod table_iterator;
 mod trees;
 pub mod types;
 
@@ -36,12 +37,12 @@ pub use bindings::tsk_size_t;
 /// "Null" identifier value.
 pub const TSK_NULL: tsk_id_t = -1;
 
-pub use edge_table::EdgeTable;
+pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
-pub use mutation_table::MutationTable;
-pub use node_table::NodeTable;
-pub use population_table::PopulationTable;
-pub use site_table::SiteTable;
+pub use mutation_table::{MutationTable, MutationTableRow};
+pub use node_table::{NodeTable, NodeTableRow};
+pub use population_table::{PopulationTable, PopulationTableRow};
+pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
 pub use trees::{NodeIterator, NodeTraversalOrder, Tree, TreeFlags, TreeSequence};
 

@@ -2,6 +2,42 @@ use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
 
+pub struct EdgeTableRow {
+    pub left: f64,
+    pub right: f64,
+    pub parent: tsk_id_t,
+    pub child: tsk_id_t,
+    pub metadata: Option<Vec<u8>>,
+}
+
+pub type EdgeTableIterator<'a> = crate::table_iterator::TableIterator<'a, EdgeTable<'a>>;
+
+impl<'a> Iterator for EdgeTableIterator<'a> {
+    type Item = EdgeTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.pos < self.table.num_rows() as tsk_id_t {
+            let rv = EdgeTableRow {
+                left: self.table.left(self.pos).unwrap(),
+                right: self.table.right(self.pos).unwrap(),
+                parent: self.table.parent(self.pos).unwrap(),
+                child: self.table.child(self.pos).unwrap(),
+                metadata: match self.decode_metadata {
+                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
+                        Some(x) => Some(x),
+                        None => None,
+                    },
+                    false => None,
+                },
+            };
+            self.pos += 1;
+            Some(rv)
+        } else {
+            None
+        }
+    }
+}
+
 /// An immutable view of an edge table.
 ///
 /// These are not created directly.
@@ -67,5 +103,19 @@ impl<'a> EdgeTable<'a> {
     ) -> Result<Option<T>, TskitError> {
         let buffer = metadata_to_vector!(self, row)?;
         decode_metadata_row!(T, buffer)
+    }
+
+    /// Return an iterator over rows of the table.
+    /// The value of the iterator is [`EdgeTableRow`].
+    ///
+    /// # Parameters
+    ///
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`EdgeTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    pub fn iter(&self, decode_metadata: bool) -> EdgeTableIterator {
+        crate::table_iterator::make_table_iterator(self, decode_metadata)
     }
 }
