@@ -26,7 +26,7 @@ impl<'a> PopulationTable<'a> {
         &'a self,
         row: tsk_id_t,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(T, self, row);
+        let buffer = metadata_to_vector!(self, row);
         decode_metadata_row!(T, buffer)
     }
 }

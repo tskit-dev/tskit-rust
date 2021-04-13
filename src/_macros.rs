@@ -94,7 +94,7 @@ macro_rules! build_consuming_tskit_type {
 }
 
 macro_rules! metadata_to_vector {
-    ($T: ty, $self: expr, $row: expr) => {
+    ($self: expr, $row: expr) => {
         crate::metadata::char_column_to_vector(
             $self.table_.metadata,
             $self.table_.metadata_offset,
