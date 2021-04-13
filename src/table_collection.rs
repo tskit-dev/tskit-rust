@@ -161,11 +161,29 @@ impl TableCollection {
         EdgeTable::<'a>::new_from_table(&self.inner.edges)
     }
 
+    /// Return an iterator over the edges.
+    /// See [`EdgeTable::iter`] for details.
+    pub fn edges_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::edge_table::EdgeTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<EdgeTable<'a>>(self.edges(), decode_metadata)
+    }
+
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn nodes<'a>(&'a self) -> NodeTable<'a> {
         NodeTable::<'a>::new_from_table(&self.inner.nodes)
+    }
+
+    /// Return an iterator over the nodes.
+    /// See [`NodeTable::iter`] for details.
+    pub fn nodes_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::node_table::NodeTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<NodeTable<'a>>(self.nodes(), decode_metadata)
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).
@@ -175,6 +193,15 @@ impl TableCollection {
         SiteTable::<'a>::new_from_table(&self.inner.sites)
     }
 
+    /// Return an iterator over the sites.
+    /// See [`SiteTable::iter`] for details.
+    pub fn sites_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::site_table::SiteTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<SiteTable<'a>>(self.sites(), decode_metadata)
+    }
+
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
@@ -182,11 +209,35 @@ impl TableCollection {
         MutationTable::<'a>::new_from_table(&self.inner.mutations)
     }
 
+    /// Return an iterator over the mutations.
+    /// See [`MutationTable::iter`] for details.
+    pub fn mutations_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::mutation_table::MutationTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<MutationTable<'a>>(
+            self.mutations(),
+            decode_metadata,
+        )
+    }
+
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
     pub fn populations<'a>(&'a self) -> PopulationTable<'a> {
         PopulationTable::<'a>::new_from_table(&self.inner.populations)
+    }
+
+    /// Return an iterator over the populations.
+    /// See [`PopulationTable::iter`] for details.
+    pub fn populations_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::population_table::PopulationTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<PopulationTable<'a>>(
+            self.populations(),
+            decode_metadata,
+        )
     }
 
     /// Add a row to the edge table
@@ -504,12 +555,42 @@ mod test {
             );
             assert!(row.metadata.is_none());
         }
+
+        for (i, row) in tables.nodes_iter(true).enumerate() {
+            assert!(close_enough(
+                tables.nodes().time(i as tsk_id_t).unwrap(),
+                row.time
+            ));
+            assert_eq!(tables.nodes().flags(i as tsk_id_t).unwrap(), row.flags);
+            assert_eq!(
+                tables.nodes().population(i as tsk_id_t).unwrap(),
+                row.population
+            );
+            assert_eq!(
+                tables.nodes().individual(i as tsk_id_t).unwrap(),
+                row.individual
+            );
+            assert!(row.metadata.is_none());
+        }
     }
 
     #[test]
     fn test_edge_iteration() {
         let tables = make_small_table_collection();
         for (i, row) in tables.edges().iter(true).enumerate() {
+            assert!(close_enough(
+                tables.edges().left(i as tsk_id_t).unwrap(),
+                row.left
+            ));
+            assert!(close_enough(
+                tables.edges().right(i as tsk_id_t).unwrap(),
+                row.right
+            ));
+            assert_eq!(tables.edges().parent(i as tsk_id_t).unwrap(), row.parent);
+            assert_eq!(tables.edges().child(i as tsk_id_t).unwrap(), row.child);
+            assert!(row.metadata.is_none());
+        }
+        for (i, row) in tables.edges_iter(true).enumerate() {
             assert!(close_enough(
                 tables.edges().left(i as tsk_id_t).unwrap(),
                 row.left
@@ -556,6 +637,23 @@ mod test {
         // NOTE: this is a useful test as not all rows have ancestral_state
         let mut no_anc_state = 0;
         for (i, row) in sites.iter(true).enumerate() {
+            assert!(close_enough(
+                sites.position(i as tsk_id_t).unwrap(),
+                row.position
+            ));
+            if row.ancestral_state.is_some() {
+                if i == 0 {
+                    assert_eq!(row.ancestral_state.unwrap(), b"Eggnog");
+                } else if i == 2 {
+                    assert_eq!(row.ancestral_state.unwrap(), longer_metadata.as_bytes());
+                }
+            } else {
+                no_anc_state += 1;
+            }
+        }
+        assert_eq!(no_anc_state, 1);
+        no_anc_state = 0;
+        for (i, row) in tables.sites_iter(true).enumerate() {
             assert!(close_enough(
                 sites.position(i as tsk_id_t).unwrap(),
                 row.position
@@ -629,6 +727,23 @@ mod test {
         assert_eq!(nmuts, tables.mutations().num_rows());
         assert_eq!(nmuts, 3);
 
+        nmuts = 0;
+        for (i, row) in tables.mutations_iter(true).enumerate() {
+            assert_eq!(row.site, tables.mutations().site(i as tsk_id_t).unwrap());
+            assert_eq!(row.node, tables.mutations().node(i as tsk_id_t).unwrap());
+            assert_eq!(
+                row.parent,
+                tables.mutations().parent(i as tsk_id_t).unwrap()
+            );
+            assert!(close_enough(
+                row.time,
+                tables.mutations().time(i as tsk_id_t).unwrap()
+            ));
+            assert!(row.metadata.is_none());
+            nmuts += 1;
+        }
+        assert_eq!(nmuts, tables.mutations().num_rows());
+        assert_eq!(nmuts, 3);
         for row in tables.mutations().iter(false) {
             assert!(row.metadata.is_none());
         }

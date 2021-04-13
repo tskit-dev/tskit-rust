@@ -11,31 +11,50 @@ pub struct NodeTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
-pub type NodeTableIterator<'a> = crate::table_iterator::TableIterator<'a, NodeTable<'a>>;
+fn make_node_table_row(
+    table: &NodeTable,
+    pos: tsk_id_t,
+    decode_metadata: bool,
+) -> Option<NodeTableRow> {
+    if pos < table.num_rows() as tsk_id_t {
+        Some(NodeTableRow {
+            time: table.time(pos).unwrap(),
+            flags: table.flags(pos).unwrap(),
+            population: table.population(pos).unwrap(),
+            individual: table.individual(pos).unwrap(),
+            metadata: match decode_metadata {
+                true => match metadata_to_vector!(table, pos).unwrap() {
+                    Some(x) => Some(x),
+                    None => None,
+                },
+                false => None,
+            },
+        })
+    } else {
+        None
+    }
+}
 
-impl<'a> Iterator for NodeTableIterator<'a> {
+pub type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable<'a>>;
+pub type NodeTableIterator<'a> = crate::table_iterator::TableIterator<NodeTable<'a>>;
+
+impl<'a> Iterator for NodeTableRefIterator<'a> {
     type Item = NodeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.table.num_rows() as tsk_id_t {
-            let rv = NodeTableRow {
-                time: self.table.time(self.pos).unwrap(),
-                flags: self.table.flags(self.pos).unwrap(),
-                population: self.table.population(self.pos).unwrap(),
-                individual: self.table.individual(self.pos).unwrap(),
-                metadata: match self.decode_metadata {
-                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
-                        Some(x) => Some(x),
-                        None => None,
-                    },
-                    false => None,
-                },
-            };
-            self.pos += 1;
-            Some(rv)
-        } else {
-            None
-        }
+        let rv = make_node_table_row(self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
+    }
+}
+
+impl<'a> Iterator for NodeTableIterator<'a> {
+    type Item = crate::node_table::NodeTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_node_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
     }
 }
 
@@ -126,7 +145,7 @@ impl<'a> NodeTable<'a> {
     ///    The meta data are *not* decoded.
     ///    Rows with no metadata will contain the value `None`.
     ///
-    pub fn iter(&self, decode_metadata: bool) -> NodeTableIterator {
-        crate::table_iterator::make_table_iterator(self, decode_metadata)
+    pub fn iter(&self, decode_metadata: bool) -> NodeTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(&self, decode_metadata)
     }
 }

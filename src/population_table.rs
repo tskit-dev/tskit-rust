@@ -8,28 +8,48 @@ pub struct PopulationTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
-pub type PopulationTableIterator<'a> =
-    crate::table_iterator::TableIterator<'a, PopulationTable<'a>>;
+fn make_population_table_row(
+    table: &PopulationTable,
+    pos: tsk_id_t,
+    decode_metadata: bool,
+) -> Option<PopulationTableRow> {
+    if pos < table.num_rows() as tsk_id_t {
+        let rv = PopulationTableRow {
+            metadata: match decode_metadata {
+                true => match metadata_to_vector!(table, pos).unwrap() {
+                    Some(x) => Some(x),
+                    None => None,
+                },
+                false => None,
+            },
+        };
+        Some(rv)
+    } else {
+        None
+    }
+}
+
+pub type PopulationTableRefIterator<'a> =
+    crate::table_iterator::TableIterator<&'a PopulationTable<'a>>;
+pub type PopulationTableIterator<'a> = crate::table_iterator::TableIterator<PopulationTable<'a>>;
+
+impl<'a> Iterator for PopulationTableRefIterator<'a> {
+    type Item = PopulationTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_population_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
+    }
+}
 
 impl<'a> Iterator for PopulationTableIterator<'a> {
     type Item = PopulationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.table.num_rows() as tsk_id_t {
-            let rv = PopulationTableRow {
-                metadata: match self.decode_metadata {
-                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
-                        Some(x) => Some(x),
-                        None => None,
-                    },
-                    false => None,
-                },
-            };
-            self.pos += 1;
-            Some(rv)
-        } else {
-            None
-        }
+        let rv = make_population_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
     }
 }
 
@@ -70,7 +90,7 @@ impl<'a> PopulationTable<'a> {
     ///    The meta data are *not* decoded.
     ///    Rows with no metadata will contain the value `None`.
     ///
-    pub fn iter(&self, decode_metadata: bool) -> PopulationTableIterator {
-        crate::table_iterator::make_table_iterator(self, decode_metadata)
+    pub fn iter(&self, decode_metadata: bool) -> PopulationTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(&self, decode_metadata)
     }
 }

@@ -10,29 +10,49 @@ pub struct SiteTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
-pub type SiteTableIterator<'a> = crate::table_iterator::TableIterator<'a, SiteTable<'a>>;
+fn make_site_table_row(
+    table: &SiteTable,
+    pos: tsk_id_t,
+    decode_metadata: bool,
+) -> Option<SiteTableRow> {
+    if pos < table.num_rows() as tsk_id_t {
+        let rv = SiteTableRow {
+            position: table.position(pos).unwrap(),
+            ancestral_state: table.ancestral_state(pos).unwrap(),
+            metadata: match decode_metadata {
+                true => match metadata_to_vector!(table, pos).unwrap() {
+                    Some(x) => Some(x),
+                    None => None,
+                },
+                false => None,
+            },
+        };
+        Some(rv)
+    } else {
+        None
+    }
+}
+
+pub type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable<'a>>;
+pub type SiteTableIterator<'a> = crate::table_iterator::TableIterator<SiteTable<'a>>;
+
+impl<'a> Iterator for SiteTableRefIterator<'a> {
+    type Item = SiteTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_site_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
+    }
+}
 
 impl<'a> Iterator for SiteTableIterator<'a> {
     type Item = SiteTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.table.num_rows() as tsk_id_t {
-            let rv = SiteTableRow {
-                position: self.table.position(self.pos).unwrap(),
-                ancestral_state: self.table.ancestral_state(self.pos).unwrap(),
-                metadata: match self.decode_metadata {
-                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
-                        Some(x) => Some(x),
-                        None => None,
-                    },
-                    false => None,
-                },
-            };
-            self.pos += 1;
-            Some(rv)
-        } else {
-            None
-        }
+        let rv = make_site_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
     }
 }
 
@@ -103,7 +123,7 @@ impl<'a> SiteTable<'a> {
     ///    The meta data are *not* decoded.
     ///    Rows with no metadata will contain the value `None`.
     ///
-    pub fn iter(&self, decode_metadata: bool) -> SiteTableIterator {
-        crate::table_iterator::make_table_iterator(self, decode_metadata)
+    pub fn iter(&self, decode_metadata: bool) -> SiteTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(&self, decode_metadata)
     }
 }
