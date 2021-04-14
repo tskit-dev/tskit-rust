@@ -52,9 +52,49 @@ pub use trees::{NodeIterator, NodeTraversalOrder, Tree, TreeFlags, TreeSequence}
 /// the error message is stored for diplay.
 pub type TskReturnValue = Result<i32, TskitError>;
 
-/// Get the tskit version number.
+/// Version of the rust crate.
+///
+/// To get the C API version, see:
+/// * [`c_api_major_version`]
+/// * [`c_api_minor_version`]
+/// * [`c_api_patch_version`]
 pub fn version() -> &'static str {
     return env!("CARGO_PKG_VERSION");
+}
+
+/// C API major version
+pub fn c_api_major_version() -> u32 {
+    bindings::TSK_VERSION_MAJOR
+}
+
+/// C API minor version
+pub fn c_api_minor_version() -> u32 {
+    bindings::TSK_VERSION_MINOR
+}
+
+/// C API patch version
+pub fn c_api_patch_version() -> u32 {
+    bindings::TSK_VERSION_PATCH
+}
+
+/// The C API version in MAJOR.MINOR.PATCH format
+pub fn c_api_version() -> String {
+    String::from(format!(
+        "{}.{}.{}",
+        c_api_major_version(),
+        c_api_minor_version(),
+        c_api_patch_version()
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::c_api_version;
+
+    #[test]
+    fn test_c_api_version() {
+        let _ = c_api_version();
+    }
 }
 
 // Testing modules
