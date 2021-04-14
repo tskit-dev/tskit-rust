@@ -4,8 +4,15 @@ use crate::TskitError;
 use crate::{tsk_id_t, tsk_size_t};
 
 /// Row of a [`PopulationTable`]
+#[derive(Eq)]
 pub struct PopulationTableRow {
     pub metadata: Option<Vec<u8>>,
+}
+
+impl PartialEq for PopulationTableRow {
+    fn eq(&self, other: &Self) -> bool {
+        crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+    }
 }
 
 fn make_population_table_row(
@@ -92,5 +99,26 @@ impl<'a> PopulationTable<'a> {
     ///
     pub fn iter(&self, decode_metadata: bool) -> PopulationTableRefIterator {
         crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(&self, decode_metadata)
+    }
+
+    /// Return row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`PopulationTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `r` is out of range.
+    pub fn row(
+        &self,
+        r: tsk_id_t,
+        decode_metadata: bool,
+    ) -> Result<PopulationTableRow, TskitError> {
+        table_row_access!(r, decode_metadata, self, make_population_table_row)
     }
 }

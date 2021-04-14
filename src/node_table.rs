@@ -11,6 +11,16 @@ pub struct NodeTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
+impl PartialEq for NodeTableRow {
+    fn eq(&self, other: &Self) -> bool {
+        self.flags == other.flags
+            && self.population == other.population
+            && self.individual == other.individual
+            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+            && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
+    }
+}
+
 fn make_node_table_row(
     table: &NodeTable,
     pos: tsk_id_t,
@@ -147,5 +157,22 @@ impl<'a> NodeTable<'a> {
     ///
     pub fn iter(&self, decode_metadata: bool) -> NodeTableRefIterator {
         crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(&self, decode_metadata)
+    }
+
+    /// Return row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`NodeTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `r` is out of range.
+    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<NodeTableRow, TskitError> {
+        table_row_access!(r, decode_metadata, self, make_node_table_row)
     }
 }
