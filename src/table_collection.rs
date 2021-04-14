@@ -806,6 +806,42 @@ mod test {
     }
 
     #[test]
+    fn test_add_mutation_with_metadata_for_some_columns() {
+        let mut tables = TableCollection::new(1000.).unwrap();
+        tables
+            .add_mutation_with_metadata(
+                0,
+                0,
+                crate::TSK_NULL,
+                1.123,
+                None,
+                Some(&F { x: -3, y: 666 }),
+            )
+            .unwrap();
+
+        tables
+            .add_mutation_with_metadata(1, 2, crate::TSK_NULL, 2.0, None, None)
+            .unwrap();
+
+        let mut num_with_metadata = 0;
+        let mut num_without_metadata = 0;
+        for i in 0..tables.mutations().num_rows() {
+            match tables.mutations().metadata::<F>(i as tsk_id_t).unwrap() {
+                Some(x) => {
+                    num_with_metadata += 1;
+                    assert_eq!(x.x, -3);
+                    assert_eq!(x.y, 666);
+                }
+                None => {
+                    num_without_metadata += 1;
+                }
+            }
+        }
+        assert_eq!(num_with_metadata, 1);
+        assert_eq!(num_without_metadata, 1);
+    }
+
+    #[test]
     fn test_add_population() {
         let mut tables = TableCollection::new(1000.).unwrap();
         tables.add_population().unwrap();
