@@ -12,32 +12,51 @@ pub struct MutationTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
-pub type MutationTableIterator<'a> = crate::table_iterator::TableIterator<'a, MutationTable<'a>>;
+fn make_mutation_table_row(
+    table: &MutationTable,
+    pos: tsk_id_t,
+    decode_metadata: bool,
+) -> Option<MutationTableRow> {
+    if pos < table.num_rows() as tsk_id_t {
+        let rv = MutationTableRow {
+            site: table.site(pos).unwrap(),
+            node: table.node(pos).unwrap(),
+            parent: table.parent(pos).unwrap(),
+            time: table.time(pos).unwrap(),
+            derived_state: table.derived_state(pos).unwrap(),
+            metadata: match decode_metadata {
+                true => match metadata_to_vector!(table, pos).unwrap() {
+                    Some(x) => Some(x),
+                    None => None,
+                },
+                false => None,
+            },
+        };
+        Some(rv)
+    } else {
+        None
+    }
+}
+pub type MutationTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a MutationTable<'a>>;
+pub type MutationTableIterator<'a> = crate::table_iterator::TableIterator<MutationTable<'a>>;
+
+impl<'a> Iterator for MutationTableRefIterator<'a> {
+    type Item = MutationTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_mutation_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
+    }
+}
 
 impl<'a> Iterator for MutationTableIterator<'a> {
     type Item = MutationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.table.num_rows() as tsk_id_t {
-            let rv = MutationTableRow {
-                site: self.table.site(self.pos).unwrap(),
-                node: self.table.node(self.pos).unwrap(),
-                parent: self.table.parent(self.pos).unwrap(),
-                time: self.table.time(self.pos).unwrap(),
-                derived_state: self.table.derived_state(self.pos).unwrap(),
-                metadata: match self.decode_metadata {
-                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
-                        Some(x) => Some(x),
-                        None => None,
-                    },
-                    false => None,
-                },
-            };
-            self.pos += 1;
-            Some(rv)
-        } else {
-            None
-        }
+        let rv = make_mutation_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
     }
 }
 
@@ -138,7 +157,7 @@ impl<'a> MutationTable<'a> {
     ///    The meta data are *not* decoded.
     ///    Rows with no metadata will contain the value `None`.
     ///
-    pub fn iter(&self, decode_metadata: bool) -> MutationTableIterator {
-        crate::table_iterator::make_table_iterator(self, decode_metadata)
+    pub fn iter(&self, decode_metadata: bool) -> MutationTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(&self, decode_metadata)
     }
 }

@@ -10,31 +10,51 @@ pub struct EdgeTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
-pub type EdgeTableIterator<'a> = crate::table_iterator::TableIterator<'a, EdgeTable<'a>>;
+fn make_edge_table_row(
+    table: &EdgeTable,
+    pos: tsk_id_t,
+    decode_metadata: bool,
+) -> Option<EdgeTableRow> {
+    if pos < table.num_rows() as tsk_id_t {
+        let rv = EdgeTableRow {
+            left: table.left(pos).unwrap(),
+            right: table.right(pos).unwrap(),
+            parent: table.parent(pos).unwrap(),
+            child: table.child(pos).unwrap(),
+            metadata: match decode_metadata {
+                true => match metadata_to_vector!(table, pos).unwrap() {
+                    Some(x) => Some(x),
+                    None => None,
+                },
+                false => None,
+            },
+        };
+        Some(rv)
+    } else {
+        None
+    }
+}
+
+pub type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable<'a>>;
+pub type EdgeTableIterator<'a> = crate::table_iterator::TableIterator<EdgeTable<'a>>;
+
+impl<'a> Iterator for EdgeTableRefIterator<'a> {
+    type Item = EdgeTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_edge_table_row(self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
+    }
+}
 
 impl<'a> Iterator for EdgeTableIterator<'a> {
     type Item = EdgeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.pos < self.table.num_rows() as tsk_id_t {
-            let rv = EdgeTableRow {
-                left: self.table.left(self.pos).unwrap(),
-                right: self.table.right(self.pos).unwrap(),
-                parent: self.table.parent(self.pos).unwrap(),
-                child: self.table.child(self.pos).unwrap(),
-                metadata: match self.decode_metadata {
-                    true => match metadata_to_vector!(self.table, self.pos).unwrap() {
-                        Some(x) => Some(x),
-                        None => None,
-                    },
-                    false => None,
-                },
-            };
-            self.pos += 1;
-            Some(rv)
-        } else {
-            None
-        }
+        let rv = make_edge_table_row(&self.table, self.pos, self.decode_metadata);
+        self.pos += 1;
+        rv
     }
 }
 
@@ -115,7 +135,7 @@ impl<'a> EdgeTable<'a> {
     ///    The meta data are *not* decoded.
     ///    Rows with no metadata will contain the value `None`.
     ///
-    pub fn iter(&self, decode_metadata: bool) -> EdgeTableIterator {
-        crate::table_iterator::make_table_iterator(self, decode_metadata)
+    pub fn iter(&self, decode_metadata: bool) -> EdgeTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(&self, decode_metadata)
     }
 }
