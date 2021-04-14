@@ -10,7 +10,9 @@ mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_table;
 pub mod error;
 pub mod ffi;
+mod individual_table;
 pub mod metadata;
+mod migration_table;
 mod mutation_table;
 mod node_table;
 mod population_table;
@@ -40,6 +42,8 @@ pub const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
+pub use individual_table::{IndividualTable, IndividualTableRow};
+pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow};
 pub use node_table::{NodeTable, NodeTableRow};
 pub use population_table::{PopulationTable, PopulationTableRow};
