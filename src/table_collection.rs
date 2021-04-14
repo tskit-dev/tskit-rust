@@ -865,4 +865,27 @@ mod test {
         let dumps = tables.deepcopy().unwrap();
         assert!(tables.equals(&dumps, 0));
     }
+
+    #[test]
+    fn test_edge_table_row_equality() {
+        let tables = make_small_table_collection();
+        for (i, row) in tables.edges_iter(true).enumerate() {
+            assert!(row == tables.edges().row(i as tsk_id_t, true).unwrap());
+            assert!(!(row != tables.edges().row(i as tsk_id_t, true).unwrap()));
+            if i > 0 {
+                assert!(row != tables.edges().row(i as tsk_id_t - 1, true).unwrap());
+            }
+        }
+    }
+
+    #[test]
+    fn test_node_table_row_equality() {
+        let tables = make_small_table_collection();
+        for (i, row) in tables.nodes_iter(true).enumerate() {
+            assert!(row == tables.nodes().row(i as tsk_id_t, true).unwrap());
+            assert!(!(row != tables.nodes().row(i as tsk_id_t, true).unwrap()));
+        }
+        assert!(tables.nodes().row(0, true) != tables.nodes().row(1, true));
+        assert!(tables.nodes().row(1, true) == tables.nodes().row(2, true));
+    }
 }

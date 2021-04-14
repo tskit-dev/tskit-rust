@@ -2,12 +2,23 @@ use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
 
+/// Row of an [`EdgeTable`]
 pub struct EdgeTableRow {
     pub left: f64,
     pub right: f64,
     pub parent: tsk_id_t,
     pub child: tsk_id_t,
     pub metadata: Option<Vec<u8>>,
+}
+
+impl PartialEq for EdgeTableRow {
+    fn eq(&self, other: &Self) -> bool {
+        self.parent == other.parent
+            && self.child == other.child
+            && crate::util::f64_partial_cmp_equal(&self.left, &other.left)
+            && crate::util::f64_partial_cmp_equal(&self.right, &other.right)
+            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+    }
 }
 
 fn make_edge_table_row(
@@ -137,5 +148,22 @@ impl<'a> EdgeTable<'a> {
     ///
     pub fn iter(&self, decode_metadata: bool) -> EdgeTableRefIterator {
         crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(&self, decode_metadata)
+    }
+
+    /// Return row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`EdgeTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `r` is out of range.
+    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<EdgeTableRow, TskitError> {
+        table_row_access!(r, decode_metadata, self, make_edge_table_row)
     }
 }

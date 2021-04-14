@@ -10,6 +10,14 @@ pub struct SiteTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
+impl PartialEq for SiteTableRow {
+    fn eq(&self, other: &Self) -> bool {
+        crate::util::f64_partial_cmp_equal(&self.position, &other.position)
+            && crate::util::metadata_like_are_equal(&self.ancestral_state, &other.ancestral_state)
+            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+    }
+}
+
 fn make_site_table_row(
     table: &SiteTable,
     pos: tsk_id_t,
@@ -125,5 +133,22 @@ impl<'a> SiteTable<'a> {
     ///
     pub fn iter(&self, decode_metadata: bool) -> SiteTableRefIterator {
         crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(&self, decode_metadata)
+    }
+
+    /// Return row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`SiteTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `r` is out of range.
+    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<SiteTableRow, TskitError> {
+        table_row_access!(r, decode_metadata, self, make_site_table_row)
     }
 }

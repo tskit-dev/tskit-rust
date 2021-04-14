@@ -19,6 +19,7 @@ mod table_collection;
 mod table_iterator;
 mod trees;
 pub mod types;
+mod util;
 
 // re-export fundamental constants that
 // we can't live without

@@ -160,6 +160,23 @@ macro_rules! err_if_not_tracking_samples {
     };
 }
 
+// This macro assumes that table row access helper
+// functions have a standard interface.
+// Here, we convert the None type to an Error,
+// as it applies $row is out of range.
+macro_rules! table_row_access {
+    ($row: expr, $decode_metadata: expr, $table: expr, $row_fn: ident) => {
+        if $row < 0 {
+            Err(TskitError::IndexError)
+        } else {
+            match $row_fn($table, $row, $decode_metadata) {
+                Some(x) => Ok(x),
+                None => Err(TskitError::IndexError),
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;

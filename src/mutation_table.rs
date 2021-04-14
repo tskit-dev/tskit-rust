@@ -12,6 +12,17 @@ pub struct MutationTableRow {
     pub metadata: Option<Vec<u8>>,
 }
 
+impl PartialEq for MutationTableRow {
+    fn eq(&self, other: &Self) -> bool {
+        self.site == other.site
+            && self.node == other.node
+            && self.parent == other.parent
+            && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
+            && crate::util::metadata_like_are_equal(&self.derived_state, &other.derived_state)
+            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+    }
+}
+
 fn make_mutation_table_row(
     table: &MutationTable,
     pos: tsk_id_t,
@@ -159,5 +170,22 @@ impl<'a> MutationTable<'a> {
     ///
     pub fn iter(&self, decode_metadata: bool) -> MutationTableRefIterator {
         crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(&self, decode_metadata)
+    }
+
+    /// Return row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
+    ///    will be provided in [`MutationTableRow::metadata`].
+    ///    The meta data are *not* decoded.
+    ///    Rows with no metadata will contain the value `None`.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `r` is out of range.
+    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<MutationTableRow, TskitError> {
+        table_row_access!(r, decode_metadata, self, make_mutation_table_row)
     }
 }
