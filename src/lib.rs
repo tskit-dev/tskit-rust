@@ -84,12 +84,12 @@ pub fn c_api_patch_version() -> u32 {
 
 /// The C API version in MAJOR.MINOR.PATCH format
 pub fn c_api_version() -> String {
-    String::from(format!(
+    format!(
         "{}.{}.{}",
         c_api_major_version(),
         c_api_minor_version(),
         c_api_patch_version()
-    ))
+    )
 }
 
 #[cfg(test)]
