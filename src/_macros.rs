@@ -37,6 +37,32 @@ macro_rules! unsafe_tsk_column_access {
     }};
 }
 
+macro_rules! unsafe_tsk_ragged_column_access {
+    ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
+        if $i < $lo || $i >= ($hi as tsk_id_t) {
+            Err(TskitError::IndexError {})
+        } else if $offset_array_len == 0 {
+            Ok(None)
+        } else {
+            let start = unsafe { *$offset_array.offset($i as isize) };
+            let stop = if $i < ($hi as tsk_id_t) {
+                unsafe { *$offset_array.offset(($i + 1) as isize) }
+            } else {
+                $offset_array_len as tsk_size_t
+            };
+            if start == stop {
+                Ok(None)
+            } else {
+                let mut buffer = vec![];
+                for i in start..stop {
+                    buffer.push(unsafe { *$array.offset(i as isize) });
+                }
+                Ok(Some(buffer))
+            }
+        }
+    }};
+}
+
 macro_rules! drop_for_tskit_type {
     ($name: ident, $drop: ident) => {
         impl Drop for $name {

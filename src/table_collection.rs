@@ -4,12 +4,14 @@ use crate::ffi::{TskitTypeAccess, WrapTskitType};
 use crate::metadata::*;
 use crate::types::Bookmark;
 use crate::EdgeTable;
+use crate::IndividualTable;
+use crate::MigrationTable;
 use crate::MutationTable;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SiteTable;
 use crate::TskReturnValue;
-use crate::{tsk_flags_t, tsk_id_t};
+use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -170,6 +172,44 @@ impl TableCollection {
         crate::table_iterator::make_table_iterator::<EdgeTable<'a>>(self.edges(), decode_metadata)
     }
 
+    /// Get reference to the [``IndividualTable``](crate::IndividualTable).
+    /// Lifetime of return value is tied to (this)
+    /// parent object.
+    pub fn individuals<'a>(&'a self) -> IndividualTable<'a> {
+        IndividualTable::<'a>::new_from_table(&self.inner.individuals)
+    }
+
+    /// Return an iterator over the individuals.
+    /// See [`IndividualTable::iter`] for details.
+    pub fn individuals_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::individual_table::IndividualTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<IndividualTable<'a>>(
+            self.individuals(),
+            decode_metadata,
+        )
+    }
+
+    /// Get reference to the [``MigrationTable``](crate::MigrationTable).
+    /// Lifetime of return value is tied to (this)
+    /// parent object.
+    pub fn migrations<'a>(&'a self) -> MigrationTable<'a> {
+        MigrationTable::<'a>::new_from_table(&self.inner.migrations)
+    }
+
+    /// Return an iterator over the migration events.
+    /// See [`MigrationTable::iter`] for details.
+    pub fn migrations_iter<'a>(
+        &'a self,
+        decode_metadata: bool,
+    ) -> crate::migration_table::MigrationTableIterator<'a> {
+        crate::table_iterator::make_table_iterator::<MigrationTable<'a>>(
+            self.migrations(),
+            decode_metadata,
+        )
+    }
+
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     /// Lifetime of return value is tied to (this)
     /// parent object.
@@ -273,6 +313,87 @@ impl TableCollection {
             )
         };
 
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Add a row to the individual table
+    pub fn add_individual(
+        &mut self,
+        flags: tsk_flags_t,
+        location: &[f64],
+        parents: &[tsk_id_t],
+    ) -> TskReturnValue {
+        self.add_individual_with_metadata(flags, location, parents, None)
+    }
+
+    /// Add a row with metadata to the individual table
+    pub fn add_individual_with_metadata(
+        &mut self,
+        flags: tsk_flags_t,
+        location: &[f64],
+        parents: &[tsk_id_t],
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let md = EncodedMetadata::new(metadata)?;
+        let rv = unsafe {
+            ll_bindings::tsk_individual_table_add_row(
+                &mut (*self.as_mut_ptr()).individuals,
+                flags,
+                location.as_ptr(),
+                location.len() as tsk_size_t,
+                parents.as_ptr(),
+                parents.len() as tsk_size_t,
+                md.as_ptr(),
+                md.len(),
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Add a row to the migration table
+    ///
+    /// # Warnings
+    ///
+    /// Migration tables are not currently supported
+    /// by tree sequence simplification.
+    pub fn add_migration(
+        &mut self,
+        span: (f64, f64),
+        node: tsk_id_t,
+        source_dest: (tsk_id_t, tsk_id_t),
+        time: f64,
+    ) -> TskReturnValue {
+        self.add_migration_with_metadata(span, node, source_dest, time, None)
+    }
+
+    /// Add a row with metadata to the migration table
+    ///
+    /// # Warnings
+    ///
+    /// Migration tables are not currently supported
+    /// by tree sequence simplification.
+    pub fn add_migration_with_metadata(
+        &mut self,
+        span: (f64, f64),
+        node: tsk_id_t,
+        source_dest: (tsk_id_t, tsk_id_t),
+        time: f64,
+        metadata: Option<&dyn MetadataRoundtrip>,
+    ) -> TskReturnValue {
+        let md = EncodedMetadata::new(metadata)?;
+        let rv = unsafe {
+            ll_bindings::tsk_migration_table_add_row(
+                &mut (*self.as_mut_ptr()).migrations,
+                span.0,
+                span.1,
+                node,
+                source_dest.0,
+                source_dest.1,
+                time,
+                md.as_ptr(),
+                md.len(),
+            )
+        };
         handle_tsk_return_value!(rv)
     }
 
@@ -923,5 +1044,39 @@ mod test {
         }
         assert!(tables.nodes().row(0, true) != tables.nodes().row(1, true));
         assert!(tables.nodes().row(1, true) == tables.nodes().row(2, true));
+    }
+
+    #[test]
+    fn test_add_migration() {
+        let mut tables = TableCollection::new(1.).unwrap();
+        tables.add_migration((0., 0.25), 0, (0, 1), 0.).unwrap();
+    }
+
+    #[test]
+    fn test_add_individual_with_location_and_parents() {
+        let mut tables = TableCollection::new(1.).unwrap();
+        let location = vec![0., 1., 2.];
+        let parents = [0, 1, 2, 3, 4];
+        tables.add_individual(0, &location, &parents).unwrap();
+
+        match tables.individuals().parents(0).unwrap() {
+            Some(x) => assert!(x == parents),
+            None => panic!("expected some parents"),
+        }
+
+        match tables.individuals().location(0).unwrap() {
+            Some(x) => {
+                assert_eq!(x.len(), location.len());
+                for (i, l) in x.iter().enumerate() {
+                    assert!(crate::util::f64_partial_cmp_equal(&l, &location[i]));
+                }
+            }
+            None => panic!("expected some locations"),
+        }
+
+        assert!(
+            tables.individuals().row(0, true).unwrap()
+                == tables.individuals().row(0, true).unwrap()
+        );
     }
 }
