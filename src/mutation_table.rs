@@ -18,8 +18,8 @@ impl PartialEq for MutationTableRow {
             && self.node == other.node
             && self.parent == other.parent
             && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
-            && crate::util::metadata_like_are_equal(&self.derived_state, &other.derived_state)
-            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+            && self.derived_state == other.derived_state
+            && self.metadata == other.metadata
     }
 }
 

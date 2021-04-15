@@ -17,7 +17,7 @@ impl PartialEq for EdgeTableRow {
             && self.child == other.child
             && crate::util::f64_partial_cmp_equal(&self.left, &other.left)
             && crate::util::f64_partial_cmp_equal(&self.right, &other.right)
-            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+            && self.metadata == other.metadata
     }
 }
 

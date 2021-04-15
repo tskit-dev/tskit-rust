@@ -16,8 +16,8 @@ impl PartialEq for NodeTableRow {
         self.flags == other.flags
             && self.population == other.population
             && self.individual == other.individual
-            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
             && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
+            && self.metadata == other.metadata
     }
 }
 

@@ -11,7 +11,7 @@ pub struct PopulationTableRow {
 
 impl PartialEq for PopulationTableRow {
     fn eq(&self, other: &Self) -> bool {
-        crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+        self.metadata == other.metadata
     }
 }
 
