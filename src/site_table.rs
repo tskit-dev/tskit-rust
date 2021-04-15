@@ -13,8 +13,8 @@ pub struct SiteTableRow {
 impl PartialEq for SiteTableRow {
     fn eq(&self, other: &Self) -> bool {
         crate::util::f64_partial_cmp_equal(&self.position, &other.position)
-            && crate::util::metadata_like_are_equal(&self.ancestral_state, &other.ancestral_state)
-            && crate::util::metadata_like_are_equal(&self.metadata, &other.metadata)
+            && self.ancestral_state == other.ancestral_state
+            && self.metadata == other.metadata
     }
 }
 
