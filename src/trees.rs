@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::{TskitTypeAccess, WrapTskitConsumingType};
+use crate::ffi::{TskitTypeAccess, WrapTskitType};
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
 use bitflags::bitflags;
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
@@ -50,7 +50,7 @@ impl Tree {
     }
 
     fn new(ts: &TreeSequence, flags: TreeFlags) -> Result<Self, TskitError> {
-        let mut tree = Self::wrap(ts.consumed.nodes().num_rows(), flags);
+        let mut tree = Self::wrap(unsafe { (*(*ts.inner).tables).nodes.num_rows }, flags);
         let mut rv =
             unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), ts.as_ptr(), flags.bits) };
         if rv < 0 {
@@ -669,16 +669,10 @@ impl NodeIterator for SamplesIterator {
 /// let treeseq = tables.tree_sequence().unwrap();
 /// ```
 pub struct TreeSequence {
-    consumed: TableCollection,
     inner: Box<ll_bindings::tsk_treeseq_t>,
 }
 
-build_consuming_tskit_type!(
-    TreeSequence,
-    ll_bindings::tsk_treeseq_t,
-    tsk_treeseq_free,
-    TableCollection
-);
+build_tskit_type!(TreeSequence, ll_bindings::tsk_treeseq_t, tsk_treeseq_free);
 
 impl TreeSequence {
     /// Create a tree sequence from a [`TableCollection`].
@@ -717,10 +711,8 @@ impl TreeSequence {
     /// let tree_sequence = tskit::TreeSequence::new(tables).unwrap();
     /// ```
     pub fn new(tables: TableCollection) -> Result<Self, TskitError> {
-        let mut treeseq = Self::wrap(tables);
-        let rv = unsafe {
-            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), treeseq.consumed.as_ptr(), 0)
-        };
+        let mut treeseq = Self::wrap();
+        let rv = unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), tables.as_ptr(), 0) };
         handle_tsk_return_value!(rv, treeseq)
     }
 
@@ -738,7 +730,13 @@ impl TreeSequence {
     ///
     /// [`TskitError`] will be raised if the underlying C library returns an error code.
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
-        self.consumed.deepcopy()
+        let mut copy = TableCollection::new(1.)?;
+
+        let rv = unsafe {
+            ll_bindings::tsk_table_collection_copy(self.inner.tables, copy.as_mut_ptr(), 0)
+        };
+
+        handle_tsk_return_value!(rv, copy)
     }
 
     /// Create an iterator over trees.
@@ -1058,5 +1056,15 @@ mod test_trees {
         let kc = ts1.kc_distance(&ts2, 0.0).unwrap();
         assert!(kc.is_finite());
         assert!((kc - 0.).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_dump_tables() {
+        let tables = make_small_table_collection_two_trees();
+        // Have to make b/c tables will no longer exist after making the treeseq
+        let tables_copy = tables.deepcopy().unwrap();
+        let ts = tables.tree_sequence().unwrap();
+        let dumped = ts.dump_tables().unwrap();
+        assert!(tables_copy.equals(&dumped, 0));
     }
 }
