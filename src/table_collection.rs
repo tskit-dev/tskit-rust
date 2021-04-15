@@ -9,10 +9,11 @@ use crate::MigrationTable;
 use crate::MutationTable;
 use crate::NodeTable;
 use crate::PopulationTable;
+use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
 use crate::TskReturnValue;
-use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
+use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -486,6 +487,50 @@ impl TableCollection {
     /// not indexed, or invalid in any way.
     pub fn tree_sequence(self) -> Result<crate::TreeSequence, TskitError> {
         crate::TreeSequence::new(self)
+    }
+
+    /// Simplify tables in place.
+    ///
+    /// # Parameters
+    ///
+    /// * `samples`: a slice containing non-null node ids.
+    ///   The tables are simplified with respect to the ancestry
+    ///   of these nodes.
+    /// * `options`: A [`SimplificationOptions`] bit field controlling
+    ///   the behavior of simplification.
+    /// * `idmap`: if `true`, the return value contains a vector equal
+    ///   in length to the input node table.  For each input node,
+    ///   this vector either contains the node's new index or [`TSK_NULL`]
+    ///   if the input node is not part of the simplified history.
+    pub fn simplify(
+        &mut self,
+        samples: &[tsk_id_t],
+        options: SimplificationOptions,
+        idmap: bool,
+    ) -> Result<Option<Vec<tsk_id_t>>, TskitError> {
+        let mut output_node_map: Vec<tsk_id_t> = vec![];
+        if idmap {
+            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL);
+        }
+        let rv = unsafe {
+            ll_bindings::tsk_table_collection_simplify(
+                self.as_mut_ptr(),
+                samples.as_ptr(),
+                samples.len() as tsk_size_t,
+                options.bits(),
+                match idmap {
+                    true => output_node_map.as_mut_ptr(),
+                    false => std::ptr::null_mut(),
+                },
+            )
+        };
+        handle_tsk_return_value!(
+            rv,
+            match idmap {
+                true => Some(output_node_map),
+                false => None,
+            }
+        )
     }
 }
 
