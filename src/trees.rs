@@ -1,6 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::ffi::{TskitTypeAccess, WrapTskitType};
+use crate::EdgeTable;
+use crate::IndividualTable;
+use crate::MigrationTable;
+use crate::MutationTable;
+use crate::NodeTable;
+use crate::PopulationTable;
+use crate::SiteTable;
+use crate::TableAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
 use bitflags::bitflags;
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
@@ -822,6 +830,36 @@ impl TreeSequence {
     // FIXME: document
     pub fn num_samples(&self) -> tsk_size_t {
         unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) }
+    }
+}
+
+impl TableAccess for TreeSequence {
+    fn edges(&self) -> EdgeTable {
+        EdgeTable::new_from_table(unsafe { &(*self.inner.tables).edges })
+    }
+
+    fn individuals(&self) -> IndividualTable {
+        IndividualTable::new_from_table(unsafe { &(*self.inner.tables).individuals })
+    }
+
+    fn migrations(&self) -> MigrationTable {
+        MigrationTable::new_from_table(unsafe { &(*self.inner.tables).migrations })
+    }
+
+    fn nodes(&self) -> NodeTable {
+        NodeTable::new_from_table(unsafe { &(*self.inner.tables).nodes })
+    }
+
+    fn sites(&self) -> SiteTable {
+        SiteTable::new_from_table(unsafe { &(*self.inner.tables).sites })
+    }
+
+    fn mutations(&self) -> MutationTable {
+        MutationTable::new_from_table(unsafe { &(*self.inner.tables).mutations })
+    }
+
+    fn populations(&self) -> PopulationTable {
+        PopulationTable::new_from_table(unsafe { &(*self.inner.tables).populations })
     }
 }
 

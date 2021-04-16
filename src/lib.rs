@@ -19,6 +19,7 @@ mod population_table;
 mod site_table;
 mod table_collection;
 mod table_iterator;
+mod traits;
 mod trees;
 pub mod types;
 mod util;
@@ -49,6 +50,7 @@ pub use node_table::{NodeTable, NodeTableRow};
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
+pub use traits::TableAccess;
 pub use trees::{NodeIterator, NodeTraversalOrder, Tree, TreeFlags, TreeSequence};
 
 /// Handles return codes from low-level tskit functions.
