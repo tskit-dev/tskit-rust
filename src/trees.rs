@@ -96,11 +96,11 @@ impl Tree {
         }
     }
 
-    fn parent_array(&self) -> crate::ffi::TskIdArray {
+    pub fn parent_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.parent, self.inner.num_nodes)
     }
 
-    fn samples_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    pub fn samples_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
         err_if_not_tracking_samples!(
@@ -109,44 +109,40 @@ impl Tree {
         )
     }
 
-    fn next_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    pub fn next_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
             crate::ffi::TskIdArray::new(self.inner.next_sample, self.inner.num_nodes)
         )
     }
 
-    #[allow(dead_code)]
-    fn left_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    pub fn left_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
             crate::ffi::TskIdArray::new(self.inner.left_sample, self.inner.num_nodes)
         )
     }
 
-    #[allow(dead_code)]
-    fn right_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    pub fn right_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
             crate::ffi::TskIdArray::new(self.inner.right_sample, self.inner.num_nodes)
         )
     }
 
-    #[allow(dead_code)]
-    fn left_sib_array(&self) -> crate::ffi::TskIdArray {
+    pub fn left_sib_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.left_sib, self.inner.num_nodes)
     }
 
-    fn right_sib_array(&self) -> crate::ffi::TskIdArray {
+    pub fn right_sib_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.right_sib, self.inner.num_nodes)
     }
 
-    fn left_child_array(&self) -> crate::ffi::TskIdArray {
+    pub fn left_child_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.left_child, self.inner.num_nodes)
     }
 
-    #[allow(dead_code)]
-    fn right_child_array(&self) -> crate::ffi::TskIdArray {
+    pub fn right_child_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.right_child, self.inner.num_nodes)
     }
 

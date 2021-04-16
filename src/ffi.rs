@@ -11,12 +11,12 @@ pub trait TskitTypeAccess<T> {
 /// Indexable, iterable wrapper around C
 /// arrays.
 #[derive(Copy, Clone)]
-pub(crate) struct WrappedTskArray<T> {
+pub struct WrappedTskArray<T> {
     array: *const T,
     len_: crate::tsk_size_t,
 }
 
-pub(crate) struct WrappedTskArrayIter<'a, T: Copy + 'a> {
+pub struct WrappedTskArrayIter<'a, T: Copy + 'a> {
     inner: &'a WrappedTskArray<T>,
     pos: crate::tsk_size_t,
 }
@@ -36,12 +36,24 @@ impl<'a, T: Copy> Iterator for WrappedTskArrayIter<'a, T> {
 }
 
 impl<T: Copy> WrappedTskArray<T> {
-    pub fn new(array: *const T, len: crate::tsk_size_t) -> Self {
+    pub(crate) fn new(array: *const T, len: crate::tsk_size_t) -> Self {
         Self { array, len_: len }
     }
 
     pub fn len(&self) -> crate::tsk_size_t {
         self.len_
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len_ == 0
+    }
+
+    /// # Safety
+    ///
+    /// This function returns the raw C pointer,
+    /// and is thus unsafe.
+    pub unsafe fn as_ptr(&self) -> *const T {
+        self.array
     }
 
     pub fn iter(&self) -> WrappedTskArrayIter<T> {
