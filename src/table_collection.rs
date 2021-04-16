@@ -10,6 +10,7 @@ use crate::MutationTable;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SiteTable;
+use crate::TableAccess;
 use crate::TskReturnValue;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
 use ll_bindings::tsk_table_collection_free;
@@ -23,6 +24,7 @@ use ll_bindings::tsk_table_collection_free;
 /// # Examples
 ///
 /// ```
+/// use tskit::TableAccess;
 /// let mut tables = tskit::TableCollection::new(100.).unwrap();
 /// assert_eq!(tables.sequence_length(), 100.);
 ///
@@ -47,6 +49,7 @@ use ll_bindings::tsk_table_collection_free;
 ///
 /// ```
 /// use tskit;
+/// use tskit::TableAccess;
 /// use tskit::metadata::MetadataRoundtrip;
 ///
 /// // Define a type for metadata
@@ -154,130 +157,6 @@ impl TableCollection {
     /// Length of the sequence/"genome".
     pub fn sequence_length(&self) -> f64 {
         unsafe { (*self.as_ptr()).sequence_length }
-    }
-
-    /// Get reference to the [``EdgeTable``](crate::EdgeTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn edges<'a>(&'a self) -> EdgeTable<'a> {
-        EdgeTable::<'a>::new_from_table(&self.inner.edges)
-    }
-
-    /// Return an iterator over the edges.
-    /// See [`EdgeTable::iter`] for details.
-    pub fn edges_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::edge_table::EdgeTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<EdgeTable<'a>>(self.edges(), decode_metadata)
-    }
-
-    /// Get reference to the [``IndividualTable``](crate::IndividualTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn individuals<'a>(&'a self) -> IndividualTable<'a> {
-        IndividualTable::<'a>::new_from_table(&self.inner.individuals)
-    }
-
-    /// Return an iterator over the individuals.
-    /// See [`IndividualTable::iter`] for details.
-    pub fn individuals_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::individual_table::IndividualTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<IndividualTable<'a>>(
-            self.individuals(),
-            decode_metadata,
-        )
-    }
-
-    /// Get reference to the [``MigrationTable``](crate::MigrationTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn migrations<'a>(&'a self) -> MigrationTable<'a> {
-        MigrationTable::<'a>::new_from_table(&self.inner.migrations)
-    }
-
-    /// Return an iterator over the migration events.
-    /// See [`MigrationTable::iter`] for details.
-    pub fn migrations_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::migration_table::MigrationTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<MigrationTable<'a>>(
-            self.migrations(),
-            decode_metadata,
-        )
-    }
-
-    /// Get reference to the [``NodeTable``](crate::NodeTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn nodes<'a>(&'a self) -> NodeTable<'a> {
-        NodeTable::<'a>::new_from_table(&self.inner.nodes)
-    }
-
-    /// Return an iterator over the nodes.
-    /// See [`NodeTable::iter`] for details.
-    pub fn nodes_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::node_table::NodeTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<NodeTable<'a>>(self.nodes(), decode_metadata)
-    }
-
-    /// Get reference to the [``SiteTable``](crate::SiteTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn sites<'a>(&'a self) -> SiteTable<'a> {
-        SiteTable::<'a>::new_from_table(&self.inner.sites)
-    }
-
-    /// Return an iterator over the sites.
-    /// See [`SiteTable::iter`] for details.
-    pub fn sites_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::site_table::SiteTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<SiteTable<'a>>(self.sites(), decode_metadata)
-    }
-
-    /// Get reference to the [``MutationTable``](crate::MutationTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn mutations<'a>(&'a self) -> MutationTable<'a> {
-        MutationTable::<'a>::new_from_table(&self.inner.mutations)
-    }
-
-    /// Return an iterator over the mutations.
-    /// See [`MutationTable::iter`] for details.
-    pub fn mutations_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::mutation_table::MutationTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<MutationTable<'a>>(
-            self.mutations(),
-            decode_metadata,
-        )
-    }
-
-    /// Get reference to the [``PopulationTable``](crate::PopulationTable).
-    /// Lifetime of return value is tied to (this)
-    /// parent object.
-    pub fn populations<'a>(&'a self) -> PopulationTable<'a> {
-        PopulationTable::<'a>::new_from_table(&self.inner.populations)
-    }
-
-    /// Return an iterator over the populations.
-    /// See [`PopulationTable::iter`] for details.
-    pub fn populations_iter<'a>(
-        &'a self,
-        decode_metadata: bool,
-    ) -> crate::population_table::PopulationTableIterator<'a> {
-        crate::table_iterator::make_table_iterator::<PopulationTable<'a>>(
-            self.populations(),
-            decode_metadata,
-        )
     }
 
     /// Add a row to the edge table
@@ -607,6 +486,36 @@ impl TableCollection {
     /// not indexed, or invalid in any way.
     pub fn tree_sequence(self) -> Result<crate::TreeSequence, TskitError> {
         crate::TreeSequence::new(self)
+    }
+}
+
+impl TableAccess for TableCollection {
+    fn edges(&self) -> EdgeTable {
+        EdgeTable::new_from_table(&self.inner.edges)
+    }
+
+    fn individuals(&self) -> IndividualTable {
+        IndividualTable::new_from_table(&self.inner.individuals)
+    }
+
+    fn migrations(&self) -> MigrationTable {
+        MigrationTable::new_from_table(&self.inner.migrations)
+    }
+
+    fn nodes(&self) -> NodeTable {
+        NodeTable::new_from_table(&self.inner.nodes)
+    }
+
+    fn sites(&self) -> SiteTable {
+        SiteTable::new_from_table(&self.inner.sites)
+    }
+
+    fn mutations(&self) -> MutationTable {
+        MutationTable::new_from_table(&self.inner.mutations)
+    }
+
+    fn populations(&self) -> PopulationTable {
+        PopulationTable::new_from_table(&self.inner.populations)
     }
 }
 
