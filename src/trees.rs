@@ -7,6 +7,7 @@ use crate::MigrationTable;
 use crate::MutationTable;
 use crate::NodeTable;
 use crate::PopulationTable;
+use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
@@ -831,6 +832,57 @@ impl TreeSequence {
     pub fn num_samples(&self) -> tsk_size_t {
         unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) }
     }
+
+    /// Simplify tables and return a new tree sequence.
+    ///
+    /// # Parameters
+    ///
+    /// * `samples`: a slice containing non-null node ids.
+    ///   The tables are simplified with respect to the ancestry
+    ///   of these nodes.
+    /// * `options`: A [`SimplificationOptions`] bit field controlling
+    ///   the behavior of simplification.
+    /// * `idmap`: if `true`, the return value contains a vector equal
+    ///   in length to the input node table.  For each input node,
+    ///   this vector either contains the node's new index or [`TSK_NULL`]
+    ///   if the input node is not part of the simplified history.
+    pub fn simplify(
+        &self,
+        samples: &[tsk_id_t],
+        options: SimplificationOptions,
+        idmap: bool,
+    ) -> Result<(Self, Option<Vec<tsk_id_t>>), TskitError> {
+        let mut tables = TableCollection::new(unsafe { (*self.inner.tables).sequence_length })?;
+        tables.build_index(0).unwrap();
+        let mut ts = tables.tree_sequence()?;
+        let mut output_node_map: Vec<tsk_id_t> = vec![];
+        if idmap {
+            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL);
+        }
+        let rv = unsafe {
+            ll_bindings::tsk_treeseq_simplify(
+                self.as_ptr(),
+                samples.as_ptr(),
+                samples.len() as tsk_size_t,
+                options.bits(),
+                ts.as_mut_ptr(),
+                match idmap {
+                    true => output_node_map.as_mut_ptr(),
+                    false => std::ptr::null_mut(),
+                },
+            )
+        };
+        handle_tsk_return_value!(
+            rv,
+            (
+                ts,
+                match idmap {
+                    true => Some(output_node_map),
+                    false => None,
+                }
+            )
+        )
+    }
 }
 
 impl TableAccess for TreeSequence {
@@ -864,7 +916,7 @@ impl TableAccess for TreeSequence {
 }
 
 #[cfg(test)]
-mod test_trees {
+pub(crate) mod test_trees {
     use super::*;
     use crate::TSK_NODE_IS_SAMPLE;
     use streaming_iterator::StreamingIterator;
@@ -889,7 +941,7 @@ mod test_trees {
         tables.tree_sequence().unwrap()
     }
 
-    fn make_small_table_collection_two_trees() -> TableCollection {
+    pub(crate) fn make_small_table_collection_two_trees() -> TableCollection {
         // The two trees are:
         //  0
         // +++
@@ -929,7 +981,7 @@ mod test_trees {
         tables
     }
 
-    fn treeseq_from_small_table_collection_two_trees() -> TreeSequence {
+    pub(crate) fn treeseq_from_small_table_collection_two_trees() -> TreeSequence {
         let tables = make_small_table_collection_two_trees();
         tables.tree_sequence().unwrap()
     }
