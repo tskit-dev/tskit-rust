@@ -52,6 +52,7 @@ pub use node_table::{NodeTable, NodeTableRow};
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
+pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
 pub use trees::{NodeIterator, NodeTraversalOrder, Tree, TreeFlags, TreeSequence};
 
