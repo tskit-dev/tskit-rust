@@ -335,7 +335,7 @@ impl Tree {
     ///
     /// * `order`: A value from [`NodeTraversalOrder`] specifying the
     ///   iteration order.
-    pub fn nodes(&self, order: NodeTraversalOrder) -> BoxedNodeIterator {
+    pub fn traverse_nodes(&self, order: NodeTraversalOrder) -> BoxedNodeIterator {
         match order {
             NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
         }
@@ -363,7 +363,7 @@ impl Tree {
     pub fn total_branch_length(&self, by_span: bool) -> Result<f64, TskitError> {
         let nt = self.node_table();
         let mut b = 0.;
-        for n in self.nodes(NodeTraversalOrder::Preorder) {
+        for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self.parent(n)?;
             if p != TSK_NULL {
                 b += nt.time(p)? - nt.time(n)?;
@@ -1056,7 +1056,7 @@ pub(crate) mod test_trees {
 
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         if let Some(tree) = tree_iter.next() {
-            for n in tree.nodes(NodeTraversalOrder::Preorder) {
+            for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
                 for _ in tree.samples(n).unwrap() {}
             }
         }
@@ -1125,7 +1125,7 @@ pub(crate) mod test_trees {
         assert_eq!(treeseq.inner.num_trees, 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::SAMPLE_LISTS).unwrap();
         while let Some(tree) = tree_iter.next() {
-            for n in tree.nodes(NodeTraversalOrder::Preorder) {
+            for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
                 let mut nsamples = 0;
                 for _ in tree.samples(n).unwrap() {
                     nsamples += 1;
