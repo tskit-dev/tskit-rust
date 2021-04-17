@@ -911,6 +911,8 @@ impl TableAccess for TreeSequence {
     }
 }
 
+impl crate::traits::NodeListGenerator for TreeSequence {}
+
 #[cfg(test)]
 pub(crate) mod test_trees {
     use super::*;

@@ -178,4 +178,32 @@ impl<'a> NodeTable<'a> {
     pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<NodeTableRow, TskitError> {
         table_row_access!(r, decode_metadata, self, make_node_table_row)
     }
+
+    /// Obtain a vector containing the indexes ("ids")
+    /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
+    /// is `true`.
+    pub fn samples_as_vector(&self) -> Vec<tsk_id_t> {
+        let mut samples: Vec<tsk_id_t> = vec![];
+        for row in self.iter(false) {
+            if row.flags & crate::TSK_NODE_IS_SAMPLE > 0 {
+                samples.push(row.id);
+            }
+        }
+        samples
+    }
+
+    /// Obtain a vector containing the indexes ("ids") of all nodes
+    /// satisfying a certain criterion.
+    pub fn create_node_id_vector(
+        &self,
+        mut f: impl FnMut(&crate::NodeTableRow) -> bool,
+    ) -> Vec<tsk_id_t> {
+        let mut samples: Vec<tsk_id_t> = vec![];
+        for row in self.iter(true) {
+            if f(&row) {
+                samples.push(row.id);
+            }
+        }
+        samples
+    }
 }

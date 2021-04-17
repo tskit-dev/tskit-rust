@@ -564,6 +564,8 @@ impl TableAccess for TableCollection {
     }
 }
 
+impl crate::traits::NodeListGenerator for TableCollection {}
+
 #[cfg(test)]
 mod test {
     use super::*;
