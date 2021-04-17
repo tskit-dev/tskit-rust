@@ -631,20 +631,11 @@ mod test {
             assert!(row.metadata.is_none());
         }
 
-        for (i, row) in tables.nodes_iter(true).enumerate() {
-            assert!(close_enough(
-                tables.nodes().time(i as tsk_id_t).unwrap(),
-                row.time
-            ));
-            assert_eq!(tables.nodes().flags(i as tsk_id_t).unwrap(), row.flags);
-            assert_eq!(
-                tables.nodes().population(i as tsk_id_t).unwrap(),
-                row.population
-            );
-            assert_eq!(
-                tables.nodes().individual(i as tsk_id_t).unwrap(),
-                row.individual
-            );
+        for row in tables.nodes_iter(true) {
+            assert!(close_enough(tables.nodes().time(row.id).unwrap(), row.time));
+            assert_eq!(tables.nodes().flags(row.id).unwrap(), row.flags);
+            assert_eq!(tables.nodes().population(row.id).unwrap(), row.population);
+            assert_eq!(tables.nodes().individual(row.id).unwrap(), row.individual);
             assert!(row.metadata.is_none());
         }
     }
@@ -665,17 +656,14 @@ mod test {
             assert_eq!(tables.edges().child(i as tsk_id_t).unwrap(), row.child);
             assert!(row.metadata.is_none());
         }
-        for (i, row) in tables.edges_iter(true).enumerate() {
+        for row in tables.edges_iter(true) {
+            assert!(close_enough(tables.edges().left(row.id).unwrap(), row.left));
             assert!(close_enough(
-                tables.edges().left(i as tsk_id_t).unwrap(),
-                row.left
-            ));
-            assert!(close_enough(
-                tables.edges().right(i as tsk_id_t).unwrap(),
+                tables.edges().right(row.id).unwrap(),
                 row.right
             ));
-            assert_eq!(tables.edges().parent(i as tsk_id_t).unwrap(), row.parent);
-            assert_eq!(tables.edges().child(i as tsk_id_t).unwrap(), row.child);
+            assert_eq!(tables.edges().parent(row.id).unwrap(), row.parent);
+            assert_eq!(tables.edges().child(row.id).unwrap(), row.child);
             assert!(row.metadata.is_none());
         }
     }
@@ -728,15 +716,12 @@ mod test {
         }
         assert_eq!(no_anc_state, 1);
         no_anc_state = 0;
-        for (i, row) in tables.sites_iter(true).enumerate() {
-            assert!(close_enough(
-                sites.position(i as tsk_id_t).unwrap(),
-                row.position
-            ));
+        for row in tables.sites_iter(true) {
+            assert!(close_enough(sites.position(row.id).unwrap(), row.position));
             if row.ancestral_state.is_some() {
-                if i == 0 {
+                if row.id == 0 {
                     assert_eq!(row.ancestral_state.unwrap(), b"Eggnog");
-                } else if i == 2 {
+                } else if row.id == 2 {
                     assert_eq!(row.ancestral_state.unwrap(), longer_metadata.as_bytes());
                 }
             } else {
@@ -803,16 +788,13 @@ mod test {
         assert_eq!(nmuts, 3);
 
         nmuts = 0;
-        for (i, row) in tables.mutations_iter(true).enumerate() {
-            assert_eq!(row.site, tables.mutations().site(i as tsk_id_t).unwrap());
-            assert_eq!(row.node, tables.mutations().node(i as tsk_id_t).unwrap());
-            assert_eq!(
-                row.parent,
-                tables.mutations().parent(i as tsk_id_t).unwrap()
-            );
+        for row in tables.mutations_iter(true) {
+            assert_eq!(row.site, tables.mutations().site(row.id).unwrap());
+            assert_eq!(row.node, tables.mutations().node(row.id).unwrap());
+            assert_eq!(row.parent, tables.mutations().parent(row.id).unwrap());
             assert!(close_enough(
                 row.time,
-                tables.mutations().time(i as tsk_id_t).unwrap()
+                tables.mutations().time(row.id).unwrap()
             ));
             assert!(row.metadata.is_none());
             nmuts += 1;
@@ -981,6 +963,7 @@ mod test {
     fn test_edge_table_row_equality() {
         let tables = make_small_table_collection();
         for (i, row) in tables.edges_iter(true).enumerate() {
+            assert!(row.id == i as tsk_id_t);
             assert!(row == tables.edges().row(i as tsk_id_t, true).unwrap());
             assert!(!(row != tables.edges().row(i as tsk_id_t, true).unwrap()));
             if i > 0 {
@@ -993,11 +976,12 @@ mod test {
     fn test_node_table_row_equality() {
         let tables = make_small_table_collection();
         for (i, row) in tables.nodes_iter(true).enumerate() {
+            assert!(row.id == i as tsk_id_t);
             assert!(row == tables.nodes().row(i as tsk_id_t, true).unwrap());
             assert!(!(row != tables.nodes().row(i as tsk_id_t, true).unwrap()));
         }
         assert!(tables.nodes().row(0, true) != tables.nodes().row(1, true));
-        assert!(tables.nodes().row(1, true) == tables.nodes().row(2, true));
+        assert!(tables.nodes().row(1, true) != tables.nodes().row(2, true));
     }
 
     #[test]

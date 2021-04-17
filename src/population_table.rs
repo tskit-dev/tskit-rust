@@ -6,12 +6,13 @@ use crate::{tsk_id_t, tsk_size_t};
 /// Row of a [`PopulationTable`]
 #[derive(Eq)]
 pub struct PopulationTableRow {
+    pub id: tsk_id_t,
     pub metadata: Option<Vec<u8>>,
 }
 
 impl PartialEq for PopulationTableRow {
     fn eq(&self, other: &Self) -> bool {
-        self.metadata == other.metadata
+        self.id == other.id && self.metadata == other.metadata
     }
 }
 
@@ -22,6 +23,7 @@ fn make_population_table_row(
 ) -> Option<PopulationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = PopulationTableRow {
+            id: pos,
             metadata: match decode_metadata {
                 true => match metadata_to_vector!(table, pos).unwrap() {
                     Some(x) => Some(x),

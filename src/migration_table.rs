@@ -4,6 +4,7 @@ use crate::{tsk_id_t, TskitError};
 
 /// Row of a [`MigrationTable`]
 pub struct MigrationTableRow {
+    pub id: tsk_id_t,
     pub left: f64,
     pub right: f64,
     pub node: tsk_id_t,
@@ -15,7 +16,8 @@ pub struct MigrationTableRow {
 
 impl PartialEq for MigrationTableRow {
     fn eq(&self, other: &Self) -> bool {
-        self.node == other.node
+        self.id == other.id
+            && self.node == other.node
             && self.source == other.source
             && self.dest == other.dest
             && crate::util::f64_partial_cmp_equal(&self.left, &other.left)
@@ -32,6 +34,7 @@ fn make_migration_table_row(
 ) -> Option<MigrationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(MigrationTableRow {
+            id: pos,
             left: table.left(pos).unwrap(),
             right: table.right(pos).unwrap(),
             node: table.node(pos).unwrap(),

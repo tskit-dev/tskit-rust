@@ -4,6 +4,7 @@ use crate::{tsk_flags_t, tsk_id_t, TskitError};
 
 /// Row of a [`NodeTable`]
 pub struct NodeTableRow {
+    pub id: tsk_id_t,
     pub time: f64,
     pub flags: tsk_flags_t,
     pub population: tsk_id_t,
@@ -13,7 +14,8 @@ pub struct NodeTableRow {
 
 impl PartialEq for NodeTableRow {
     fn eq(&self, other: &Self) -> bool {
-        self.flags == other.flags
+        self.id == other.id
+            && self.flags == other.flags
             && self.population == other.population
             && self.individual == other.individual
             && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
@@ -28,6 +30,7 @@ fn make_node_table_row(
 ) -> Option<NodeTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(NodeTableRow {
+            id: pos,
             time: table.time(pos).unwrap(),
             flags: table.flags(pos).unwrap(),
             population: table.population(pos).unwrap(),

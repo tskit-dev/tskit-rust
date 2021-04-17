@@ -4,6 +4,7 @@ use crate::{tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of an [`EdgeTable`]
 pub struct EdgeTableRow {
+    pub id: tsk_id_t,
     pub left: f64,
     pub right: f64,
     pub parent: tsk_id_t,
@@ -13,7 +14,8 @@ pub struct EdgeTableRow {
 
 impl PartialEq for EdgeTableRow {
     fn eq(&self, other: &Self) -> bool {
-        self.parent == other.parent
+        self.id == other.id
+            && self.parent == other.parent
             && self.child == other.child
             && crate::util::f64_partial_cmp_equal(&self.left, &other.left)
             && crate::util::f64_partial_cmp_equal(&self.right, &other.right)
@@ -28,6 +30,7 @@ fn make_edge_table_row(
 ) -> Option<EdgeTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = EdgeTableRow {
+            id: pos,
             left: table.left(pos).unwrap(),
             right: table.right(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
