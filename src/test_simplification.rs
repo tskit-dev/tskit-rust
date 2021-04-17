@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::trees::test_trees::make_small_table_collection_two_trees;
-    use crate::trees::test_trees::treeseq_from_small_table_collection_two_trees;
+    use crate::test_fixtures::make_small_table_collection_two_trees;
+    use crate::test_fixtures::treeseq_from_small_table_collection_two_trees;
     use crate::tsk_id_t;
     use crate::SimplificationOptions;
     use crate::TableAccess;

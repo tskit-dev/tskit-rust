@@ -916,73 +916,11 @@ impl crate::traits::NodeListGenerator for TreeSequence {}
 #[cfg(test)]
 pub(crate) mod test_trees {
     use super::*;
-    use crate::TSK_NODE_IS_SAMPLE;
+    use crate::test_fixtures::{
+        make_small_table_collection, make_small_table_collection_two_trees,
+        treeseq_from_small_table_collection, treeseq_from_small_table_collection_two_trees,
+    };
     use streaming_iterator::StreamingIterator;
-
-    fn make_small_table_collection() -> TableCollection {
-        let mut tables = TableCollection::new(1000.).unwrap();
-        tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
-        tables
-            .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
-            .unwrap();
-        tables
-            .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
-            .unwrap();
-        tables.add_edge(0., 1000., 0, 1).unwrap();
-        tables.add_edge(0., 1000., 0, 2).unwrap();
-        tables.build_index(0).unwrap();
-        tables
-    }
-
-    fn treeseq_from_small_table_collection() -> TreeSequence {
-        let tables = make_small_table_collection();
-        tables.tree_sequence().unwrap()
-    }
-
-    pub(crate) fn make_small_table_collection_two_trees() -> TableCollection {
-        // The two trees are:
-        //  0
-        // +++
-        // | |  1
-        // | | +++
-        // 2 3 4 5
-
-        //     0
-        //   +-+-+
-        //   1   |
-        // +-+-+ |
-        // 2 4 5 3
-
-        let mut tables = TableCollection::new(1000.).unwrap();
-        tables.add_node(0, 2.0, TSK_NULL, TSK_NULL).unwrap();
-        tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
-        tables
-            .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
-            .unwrap();
-        tables
-            .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
-            .unwrap();
-        tables
-            .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
-            .unwrap();
-        tables
-            .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
-            .unwrap();
-        tables.add_edge(500., 1000., 0, 1).unwrap();
-        tables.add_edge(0., 500., 0, 2).unwrap();
-        tables.add_edge(0., 1000., 0, 3).unwrap();
-        tables.add_edge(500., 1000., 1, 2).unwrap();
-        tables.add_edge(0., 1000., 1, 4).unwrap();
-        tables.add_edge(0., 1000., 1, 5).unwrap();
-        tables.full_sort().unwrap();
-        tables.build_index(0).unwrap();
-        tables
-    }
-
-    pub(crate) fn treeseq_from_small_table_collection_two_trees() -> TreeSequence {
-        let tables = make_small_table_collection_two_trees();
-        tables.tree_sequence().unwrap()
-    }
 
     #[test]
     fn test_create_treeseq_new_from_tables() {

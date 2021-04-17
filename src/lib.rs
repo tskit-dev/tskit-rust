@@ -108,5 +108,6 @@ mod tests {
 }
 
 // Testing modules
+mod test_fixtures;
 mod test_tsk_variables;
 mod test_simplification;
