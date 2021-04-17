@@ -80,3 +80,22 @@ jobs:
       - run: rustup component add rustfmt
       - run: |
           /bin/bash -c "find src -type f | grep -v auto_bindings | grep -v lib | xargs rustfmt --check"
+
+  clippy:
+    name: clippy!!
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - run: |
+          cargo clippy -- -D warnings
+      - run: |
+          cargo clippy --tests -- -D warnings
+      - name: Run clippy on the examples
+        working-directory: tskit_rust_examples
+        run: cargo clippy -- -D warnings
