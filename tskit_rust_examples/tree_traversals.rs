@@ -25,9 +25,7 @@ fn traverse_upwards_with_iterator(tree: &tskit::Tree) {
 }
 
 fn preorder_traversal(tree: &tskit::Tree) {
-    for c in tree.nodes(tskit::NodeTraversalOrder::Preorder) {
-        println!("{}", c);
-    }
+    for _ in tree.traverse_nodes(tskit::NodeTraversalOrder::Preorder) {}
 }
 
 fn main() {
