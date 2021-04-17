@@ -5,6 +5,7 @@ use crate::{tsk_id_t, tsk_size_t};
 
 /// Row of a [`SiteTable`]
 pub struct SiteTableRow {
+    pub id: tsk_id_t,
     pub position: f64,
     pub ancestral_state: Option<Vec<u8>>,
     pub metadata: Option<Vec<u8>>,
@@ -12,7 +13,8 @@ pub struct SiteTableRow {
 
 impl PartialEq for SiteTableRow {
     fn eq(&self, other: &Self) -> bool {
-        crate::util::f64_partial_cmp_equal(&self.position, &other.position)
+        self.id == other.id
+            && crate::util::f64_partial_cmp_equal(&self.position, &other.position)
             && self.ancestral_state == other.ancestral_state
             && self.metadata == other.metadata
     }
@@ -25,6 +27,7 @@ fn make_site_table_row(
 ) -> Option<SiteTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = SiteTableRow {
+            id: pos,
             position: table.position(pos).unwrap(),
             ancestral_state: table.ancestral_state(pos).unwrap(),
             metadata: match decode_metadata {

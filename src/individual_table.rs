@@ -4,7 +4,8 @@ use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of a [`IndividualTable`]
 pub struct IndividualTableRow {
-    pub flags: u32,
+    pub id: tsk_id_t,
+    pub flags: tsk_flags_t,
     pub location: Option<Vec<f64>>,
     pub parents: Option<Vec<tsk_id_t>>,
     pub metadata: Option<Vec<u8>>,
@@ -12,7 +13,8 @@ pub struct IndividualTableRow {
 
 impl PartialEq for IndividualTableRow {
     fn eq(&self, other: &Self) -> bool {
-        self.flags == other.flags
+        self.id == other.id
+            && self.flags == other.flags
             && self.parents == other.parents
             && self.metadata == other.metadata
             && match &self.location {
@@ -52,6 +54,7 @@ fn make_individual_table_row(
 ) -> Option<IndividualTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = IndividualTableRow {
+            id: pos,
             flags: table.flags(pos).unwrap(),
             location: table.location(pos).unwrap(),
             parents: table.parents(pos).unwrap(),

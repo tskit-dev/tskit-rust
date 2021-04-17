@@ -4,6 +4,7 @@ use crate::{tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of a [`MutationTable`]
 pub struct MutationTableRow {
+    pub id: tsk_id_t,
     pub site: tsk_id_t,
     pub node: tsk_id_t,
     pub parent: tsk_id_t,
@@ -14,7 +15,8 @@ pub struct MutationTableRow {
 
 impl PartialEq for MutationTableRow {
     fn eq(&self, other: &Self) -> bool {
-        self.site == other.site
+        self.id == other.id
+            && self.site == other.site
             && self.node == other.node
             && self.parent == other.parent
             && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
@@ -30,6 +32,7 @@ fn make_mutation_table_row(
 ) -> Option<MutationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = MutationTableRow {
+            id: pos,
             site: table.site(pos).unwrap(),
             node: table.node(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
