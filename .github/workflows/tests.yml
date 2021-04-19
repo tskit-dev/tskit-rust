@@ -30,14 +30,14 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-      - run: cargo check
+      - name: cargo check
+        run: cargo check
+      - name: cargo check examples
+        run: cargo check --examples
       - name: run tests
         run: |
             cargo test
             cargo test --examples
-      - name: check examples
-        working-directory: tskit_rust_examples
-        run: cargo check
 
   build-osx:
     runs-on: macos-latest
@@ -55,14 +55,14 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-      - run: cargo check
+      - name: cargo check
+        run: cargo check
+      - name: cargo check examples
+        run: cargo check --examples
       - name: run tests
         run: |
             cargo test
             cargo test --examples
-      - name: check examples
-        working-directory: tskit_rust_examples
-        run: cargo check
 
   fmt:
     name: rust fmt
@@ -92,10 +92,5 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add clippy
-      - run: |
-          cargo clippy -- -D warnings
-      - run: |
-          cargo clippy --tests -- -D warnings
-      - name: Run clippy on the examples
-        working-directory: tskit_rust_examples
-        run: cargo clippy -- -D warnings
+      - name: clippy (all targets)
+        run: cargo clippy --all-targets -- -D warnings
