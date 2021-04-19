@@ -44,7 +44,7 @@ pub const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
-pub use flags:: SimplificationOptions;
+pub use flags::SimplificationOptions;
 pub use individual_table::{IndividualTable, IndividualTableRow};
 pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow};
@@ -52,9 +52,11 @@ pub use node_table::{NodeTable, NodeTableRow};
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
+pub use traits::NodeIterator;
 pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
-pub use trees::{NodeIterator, NodeTraversalOrder, Tree, TreeFlags, TreeSequence};
+pub use traits::TskitTypeAccess;
+pub use trees::{NodeTraversalOrder, Tree, TreeFlags, TreeSequence};
 
 /// Handles return codes from low-level tskit functions.
 ///
@@ -109,5 +111,5 @@ mod tests {
 
 // Testing modules
 mod test_fixtures;
-mod test_tsk_variables;
 mod test_simplification;
+mod test_tsk_variables;

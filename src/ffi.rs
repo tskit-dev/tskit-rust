@@ -1,13 +1,5 @@
 //! Define traits related to wrapping tskit stuff
 
-/// Provide pointer access to underlying C types
-pub trait TskitTypeAccess<T> {
-    /// Return const pointer
-    fn as_ptr(&self) -> *const T;
-    /// Return mutable pointer
-    fn as_mut_ptr(&mut self) -> *mut T;
-}
-
 /// Indexable, iterable wrapper around C
 /// arrays.
 #[derive(Copy, Clone)]
@@ -92,6 +84,7 @@ mod tests {
     use super::*;
     use crate::bindings as ll_bindings;
     use crate::tsk_size_t;
+    use crate::TskitTypeAccess;
     use ll_bindings::tsk_table_collection_free;
 
     pub struct TableCollectionMock {

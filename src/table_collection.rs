@@ -1,6 +1,6 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::{TskitTypeAccess, WrapTskitType};
+use crate::ffi::WrapTskitType;
 use crate::metadata::*;
 use crate::types::Bookmark;
 use crate::EdgeTable;
@@ -13,6 +13,7 @@ use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
 use crate::TskReturnValue;
+use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
 use ll_bindings::tsk_table_collection_free;
 
