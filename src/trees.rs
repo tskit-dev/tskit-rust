@@ -233,16 +233,6 @@ impl Tree {
 
     /// Return a [`NodeIterator`] from the node `u` to the root of the tree.
     ///
-    /// # Note
-    ///
-    /// The values iterated over include `u`.
-    ///
-    /// You must include the following code in order to use this iterator:
-    ///
-    /// ```no_run
-    /// use tskit::NodeIterator;
-    /// ```
-    ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
@@ -252,16 +242,6 @@ impl Tree {
     }
 
     /// Return a [`NodeIterator`] over the children of node `u`.
-    ///
-    /// # Note
-    ///
-    /// The iteration direction if from left child to right child.
-    ///
-    /// You must include the following code in order to use this iterator:
-    ///
-    /// ```no_run
-    /// use tskit::NodeIterator;
-    /// ```
     ///
     /// # Errors
     ///
@@ -275,12 +255,6 @@ impl Tree {
     /// # Note
     ///
     /// If `u` is itself a sample, then it is included in the values returned.
-    ///
-    /// You must include the following code in order to use this iterator:
-    ///
-    /// ```no_run
-    /// use tskit::NodeIterator;
-    /// ```
     ///
     /// # Errors
     ///
@@ -299,13 +273,6 @@ impl Tree {
     ///
     /// For a tree with multiple roots, the iteration starts
     /// at the left root.
-    ///
-    /// You must include the following code in order to use this iterator:
-    ///
-    /// ```no_run
-    /// use tskit::NodeIterator;
-    /// ```
-    ///
     pub fn roots(&self) -> BoxedNodeIterator {
         Box::new(RootIterator::new(self))
     }
@@ -322,14 +289,6 @@ impl Tree {
     }
 
     /// Return a [`NodeIterator`] over all nodes in the tree.
-    ///
-    /// # Note
-    ///
-    /// You must include the following code in order to use this iterator:
-    ///
-    /// ```no_run
-    /// use tskit::NodeIterator;
-    /// ```
     ///
     /// # Parameters
     ///
