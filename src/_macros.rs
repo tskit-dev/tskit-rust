@@ -76,7 +76,7 @@ macro_rules! drop_for_tskit_type {
 
 macro_rules! tskit_type_access {
     ($name: ident, $ll_name: ty) => {
-        impl crate::ffi::TskitTypeAccess<$ll_name> for $name {
+        impl crate::TskitTypeAccess<$ll_name> for $name {
             fn as_ptr(&self) -> *const $ll_name {
                 &*self.inner
             }

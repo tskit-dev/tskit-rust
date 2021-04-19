@@ -1,15 +1,17 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::{TskitTypeAccess, WrapTskitType};
+use crate::ffi::WrapTskitType;
 use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;
 use crate::MutationTable;
+use crate::NodeIterator;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
+use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
 use bitflags::bitflags;
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
@@ -431,21 +433,6 @@ pub enum NodeTraversalOrder {
     ///For trees with multiple roots, start at the left root,
     ///traverse to tips, proceeed to the next root, etc..
     Preorder,
-}
-
-/// Trait defining iteration over nodes.
-pub trait NodeIterator {
-    fn next_node(&mut self);
-    fn current_node(&mut self) -> Option<tsk_id_t>;
-}
-
-impl Iterator for dyn NodeIterator {
-    type Item = tsk_id_t;
-
-    fn next(&mut self) -> Option<tsk_id_t> {
-        self.next_node();
-        self.current_node()
-    }
 }
 
 struct PreorderNodeIterator {

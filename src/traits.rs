@@ -17,6 +17,14 @@ use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SiteTable;
 
+/// Provide pointer access to underlying C types
+pub trait TskitTypeAccess<T> {
+    /// Return const pointer
+    fn as_ptr(&self) -> *const T;
+    /// Return mutable pointer
+    fn as_mut_ptr(&mut self) -> *mut T;
+}
+
 /// Immutable access to tables.
 ///
 /// For objects that contain the full suite of tables,
@@ -187,5 +195,20 @@ pub trait NodeListGenerator: TableAccess {
 
     fn create_node_id_vector(&self, f: impl FnMut(&crate::NodeTableRow) -> bool) -> Vec<tsk_id_t> {
         self.nodes().create_node_id_vector(f)
+    }
+}
+
+/// Trait defining iteration over nodes.
+pub trait NodeIterator {
+    fn next_node(&mut self);
+    fn current_node(&mut self) -> Option<tsk_id_t>;
+}
+
+impl Iterator for dyn NodeIterator {
+    type Item = tsk_id_t;
+
+    fn next(&mut self) -> Option<tsk_id_t> {
+        self.next_node();
+        self.current_node()
     }
 }
