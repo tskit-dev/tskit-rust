@@ -11,6 +11,7 @@ use crate::PopulationTable;
 use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
+use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
 use bitflags::bitflags;
@@ -665,6 +666,19 @@ impl TreeSequence {
         let mut treeseq = Self::wrap();
         let rv = unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), tables.as_ptr(), 0) };
         handle_tsk_return_value!(rv, treeseq)
+    }
+
+    /// Dump the tree sequence to file.
+    ///
+    /// # Note
+    ///
+    /// * `flags` is currently not used.  Set to 0.
+    pub fn dump(&mut self, filename: &str, options: tsk_flags_t) -> TskReturnValue {
+        let c_str = std::ffi::CString::new(filename).unwrap();
+        let rv =
+            unsafe { ll_bindings::tsk_treeseq_dump(self.as_mut_ptr(), c_str.as_ptr(), options) };
+
+        handle_tsk_return_value!(rv)
     }
 
     /// Load from a file.
