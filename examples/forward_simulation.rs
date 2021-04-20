@@ -316,7 +316,7 @@ fn simplify(
         samples.push(a.node1);
     }
 
-    tables.full_sort()?;
+    tables.full_sort(tskit::TableSortOptions::default())?;
 
     match tables.simplify(&samples, tskit::SimplificationOptions::KEEP_UNARY, true)? {
         Some(idmap) => {
@@ -375,13 +375,16 @@ fn main() {
     let params = SimParams::new();
     params.validate().unwrap();
 
-    let mut tables = match runsim(&params) {
+    let tables = match runsim(&params) {
         Ok(t) => t,
         Err(e) => panic!("{}", e),
     };
-    tables.build_index(0).unwrap();
-    let mut treeseq = tables.tree_sequence().unwrap();
-    treeseq.dump(&params.treefile, 0).unwrap();
+    let treeseq = tables
+        .tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES)
+        .unwrap();
+    treeseq
+        .dump(&params.treefile, tskit::TableOutputOptions::default())
+        .unwrap();
 }
 
 #[test]

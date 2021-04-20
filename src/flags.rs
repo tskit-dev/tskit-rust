@@ -12,6 +12,32 @@ bitflags! {
     ///
     /// The documentation for each field is taken from the `tskit` primary
     /// docs.
+    ///
+    /// # Examples
+    ///
+    /// ## Building up flags
+    ///
+    /// ```
+    /// // Initial flags set to 0:
+    /// let mut flags = tskit::SimplificationOptions::default();
+    ///
+    /// // Add some options:
+    /// flags.insert(tskit::SimplificationOptions::KEEP_UNARY);
+    /// flags.insert(tskit::SimplificationOptions::FILTER_POPULATIONS);
+    ///
+    /// assert!(flags.contains(tskit::SimplificationOptions::KEEP_UNARY));
+    /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_POPULATIONS));
+    /// ```
+    ///
+    /// ## All-in-one initialization
+    ///
+    /// ```
+    /// use tskit::SimplificationOptions as SO;
+    /// let flags = SO::FILTER_SITES | SO::KEEP_UNARY;
+    /// assert!(flags.contains(SO::FILTER_SITES));
+    /// assert!(flags.contains(SO::KEEP_UNARY));
+    /// assert!(!flags.contains(SO::FILTER_POPULATIONS));
+    /// ```
     #[derive(Default)]
     pub struct SimplificationOptions: tsk_flags_t {
         /// Default behavior
@@ -38,5 +64,86 @@ bitflags! {
         ///  in the individuals table.
         ///  Cannot be specified at the same time as `KEEP_UNARY`.
         const KEEP_UNARY_IN_INDIVIDUALS  = ll_bindings::TSK_KEEP_UNARY_IN_INDIVIDUALS;
+    }
+}
+
+bitflags! {
+    /// Modify behavior of [`crate::TableCollection::clear`].
+    #[derive(Default)]
+    pub struct TableClearOptions : tsk_flags_t {
+        /// Default behavior.
+        const NONE = 0;
+        const CLEAR_METADATA_SCHEMAS = ll_bindings::TSK_CLEAR_METADATA_SCHEMAS;
+        const CLEAR_TS_METADATA_SCHEMAS = ll_bindings::TSK_CLEAR_TS_METADATA_AND_SCHEMA;
+        const CLEAR_PROVENANCE = ll_bindings::TSK_CLEAR_PROVENANCE;
+    }
+}
+
+bitflags! {
+    /// Modify behavior of [`crate::TableCollection::equals`].
+    #[derive(Default)]
+    pub struct TableEqualityOptions : tsk_flags_t {
+        /// Default behavior.
+        const NONE = 0;
+        const IGNORE_METADATA = ll_bindings::TSK_CMP_IGNORE_METADATA;
+        const IGNORE_TS_METADATA = ll_bindings::TSK_CMP_IGNORE_TS_METADATA;
+        const IGNORE_PROVENANCE = ll_bindings::TSK_CMP_IGNORE_PROVENANCE;
+        const IGNORE_TIMESTAMPS = ll_bindings::TSK_CMP_IGNORE_TIMESTAMPS;
+    }
+}
+
+bitflags! {
+    /// Modify behavior of [`crate::TableCollection::sort`].
+    #[derive(Default)]
+    pub struct TableSortOptions : tsk_flags_t {
+        /// Default behavior.
+        const NONE = 0;
+        /// Do not validate contents of edge table.
+        const NO_CHECK_INTEGRITY = ll_bindings::TSK_NO_CHECK_INTEGRITY;
+    }
+}
+
+bitflags! {
+    /// Specify the behavior of iterating over [`Tree`] objects.
+    /// See [`TreeSequence::tree_iterator`].
+    #[derive(Default)]
+    pub struct TreeFlags: tsk_flags_t {
+        /// Default behavior.
+        const NONE = 0;
+        /// Update sample lists, enabling [`Tree::samples`].
+        const SAMPLE_LISTS = ll_bindings::TSK_SAMPLE_LISTS;
+        /// Do *not* update the number of samples descending
+        /// from each node. The default is to update these
+        /// counts.
+        const NO_SAMPLE_COUNTS = ll_bindings::TSK_NO_SAMPLE_COUNTS;
+    }
+}
+
+bitflags! {
+    /// Modify behavior of [`crate::TableCollection::dump`].
+    ///
+    /// # Note
+    ///
+    /// We intentionally do *not* provide the TSK_NO_BUILD_INDEXES
+    /// flag.  Rather, we treat the various "dump" functions as
+    /// operations on immutable objects.  Thus, if indexes are desired
+    /// when outputting a [`crate::TableCollection`], then
+    /// call [`crate::TableCollection::build_index`] prior to calling
+    /// [`crate::TableCollection::dump`].
+    #[derive(Default)]
+    pub struct TableOutputOptions : tsk_flags_t {
+        const NONE = 0;
+    }
+}
+
+bitflags! {
+    /// Modify behavior of [`crate::TableCollection::tree_sequence`]
+    /// and [`crate::TreeSequence::new`].
+    #[derive(Default)]
+    pub struct TreeSequenceFlags: tsk_flags_t {
+        /// Default behavior
+        const NONE = 0;
+        /// If used, then build table indexes if they are not present.
+        const BUILD_INDEXES = ll_bindings::TSK_BUILD_INDEXES;
     }
 }

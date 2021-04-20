@@ -44,7 +44,7 @@ pub const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
-pub use flags::SimplificationOptions;
+pub use flags::*;
 pub use individual_table::{IndividualTable, IndividualTableRow};
 pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow};
@@ -56,7 +56,7 @@ pub use traits::NodeIterator;
 pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
 pub use traits::TskitTypeAccess;
-pub use trees::{NodeTraversalOrder, Tree, TreeFlags, TreeSequence};
+pub use trees::{NodeTraversalOrder, Tree, TreeSequence};
 
 /// Handles return codes from low-level tskit functions.
 ///
