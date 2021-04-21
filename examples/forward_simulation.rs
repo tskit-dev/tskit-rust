@@ -283,24 +283,20 @@ fn births(
 ) -> Result<(), Box<dyn Error>> {
     for p in parents {
         // Register the two nodes for our offspring
-        let offspring_node_0 = tables.add_node(
+        let node0 = tables.add_node(
             0,                 // flags
             birth_time as f64, // time
             tskit::TSK_NULL,   // population
             // individual
             tskit::TSK_NULL,
         )?;
-        let offspring_node_1 =
-            tables.add_node(0, birth_time as f64, tskit::TSK_NULL, tskit::TSK_NULL)?;
+        let node1 = tables.add_node(0, birth_time as f64, tskit::TSK_NULL, tskit::TSK_NULL)?;
 
         // Replace a dead individual
         // with our newborn.
-        alive[p.index] = Diploid {
-            node0: offspring_node_0,
-            node1: offspring_node_1,
-        };
+        alive[p.index] = Diploid { node0, node1 };
 
-        crossover_and_record_edges(p, (offspring_node_0, offspring_node_1), params, tables, rng)?;
+        crossover_and_record_edges(p, (node0, node1), params, tables, rng)?;
     }
     Ok(())
 }
