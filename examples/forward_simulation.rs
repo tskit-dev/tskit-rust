@@ -4,7 +4,7 @@
  * * Constant population size
  * * Poisson number of crossovers per parent, per mating.
  * * Overlapping generations supported.
- * * Simplifcation includes unary nodes for later "recapitation".
+ * * Simplifcation keeps input roots for later "recapitation".
  *
  * On the rust side:
  *
@@ -323,7 +323,11 @@ fn simplify(alive: &mut [Diploid], tables: &mut tskit::TableCollection) {
         Err(e) => panic!("{}", e),
     }
 
-    match tables.simplify(&samples, tskit::SimplificationOptions::KEEP_UNARY, true) {
+    match tables.simplify(
+        &samples,
+        tskit::SimplificationOptions::KEEP_INPUT_ROOTS,
+        true,
+    ) {
         Ok(x) => match x {
             Some(idmap) => {
                 for a in alive.iter_mut() {
