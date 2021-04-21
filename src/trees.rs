@@ -68,23 +68,6 @@ impl Tree {
         handle_tsk_return_value!(rv, tree)
     }
 
-    fn advance_details(&mut self) {
-        let rv = if self.current_tree == 0 {
-            unsafe { ll_bindings::tsk_tree_first(self.as_mut_ptr()) }
-        } else {
-            unsafe { ll_bindings::tsk_tree_next(self.as_mut_ptr()) }
-        };
-        if rv == 0 {
-            self.advanced = false;
-            self.current_tree += 1;
-        } else if rv == 1 {
-            self.advanced = true;
-            self.current_tree += 1;
-        } else if rv < 0 {
-            panic_on_tskit_error!(rv);
-        }
-    }
-
     pub fn parent_array(&self) -> crate::ffi::TskIdArray {
         crate::ffi::TskIdArray::new(self.inner.parent, self.inner.num_nodes)
     }
@@ -361,13 +344,45 @@ impl Tree {
 impl streaming_iterator::StreamingIterator for Tree {
     type Item = Tree;
     fn advance(&mut self) {
-        self.advance_details();
+        let rv = if self.current_tree == 0 {
+            unsafe { ll_bindings::tsk_tree_first(self.as_mut_ptr()) }
+        } else {
+            unsafe { ll_bindings::tsk_tree_next(self.as_mut_ptr()) }
+        };
+        if rv == 0 {
+            self.advanced = false;
+            self.current_tree += 1;
+        } else if rv == 1 {
+            self.advanced = true;
+            self.current_tree += 1;
+        } else if rv < 0 {
+            panic_on_tskit_error!(rv);
+        }
     }
 
     fn get(&self) -> Option<&Tree> {
         match self.advanced {
             true => Some(&self),
             false => None,
+        }
+    }
+}
+
+impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
+    fn advance_back(&mut self) {
+        let rv = if self.current_tree == 0 {
+            unsafe { ll_bindings::tsk_tree_last(self.as_mut_ptr()) }
+        } else {
+            unsafe { ll_bindings::tsk_tree_prev(self.as_mut_ptr()) }
+        };
+        if rv == 0 {
+            self.advanced = false;
+            self.current_tree -= 1;
+        } else if rv == 1 {
+            self.advanced = true;
+            self.current_tree -= 1;
+        } else if rv < 0 {
+            panic_on_tskit_error!(rv);
         }
     }
 }
@@ -718,6 +733,9 @@ impl TreeSequence {
     /// // You must include streaming_iterator as a dependency
     /// // and import this type.
     /// use streaming_iterator::StreamingIterator;
+    /// // Import this to allow .next_back() for reverse
+    /// // iteration over trees.
+    /// use streaming_iterator::DoubleEndedStreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// tables.build_index();
@@ -880,6 +898,7 @@ pub(crate) mod test_trees {
         make_small_table_collection, make_small_table_collection_two_trees,
         treeseq_from_small_table_collection, treeseq_from_small_table_collection_two_trees,
     };
+    use streaming_iterator::DoubleEndedStreamingIterator;
     use streaming_iterator::StreamingIterator;
 
     #[test]
@@ -1052,5 +1071,36 @@ pub(crate) mod test_trees {
         let ts = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
         let dumped = ts.dump_tables().unwrap();
         assert!(tables_copy.equals(&dumped, crate::TableEqualityOptions::default()));
+    }
+
+    #[test]
+    fn test_reverse_tree_iteration() {
+        let treeseq = treeseq_from_small_table_collection_two_trees();
+        let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
+        let mut starts_fwd = vec![];
+        let mut stops_fwd = vec![];
+        let mut starts_rev = vec![];
+        let mut stops_rev = vec![];
+        while let Some(tree) = tree_iter.next() {
+            let interval = tree.interval();
+            starts_fwd.push(interval.0);
+            stops_fwd.push(interval.1);
+        }
+        assert_eq!(stops_fwd.len(), 2);
+        assert_eq!(stops_fwd.len(), 2);
+
+        // NOTE: we do NOT need to create a new iterator.
+        while let Some(tree) = tree_iter.next_back() {
+            let interval = tree.interval();
+            starts_rev.push(interval.0);
+            stops_rev.push(interval.1);
+        }
+        assert_eq!(starts_fwd.len(), starts_rev.len());
+        assert_eq!(stops_fwd.len(), stops_rev.len());
+
+        starts_rev.reverse();
+        assert!(starts_fwd == starts_rev);
+        stops_rev.reverse();
+        assert!(stops_fwd == stops_rev);
     }
 }
