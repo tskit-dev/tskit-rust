@@ -1,4 +1,34 @@
 //! A rust interface to [tskit](https://github.com/tskit-dev/tskit).
+//!
+//! This crate provides a mapping of the `tskit` C API to rust.
+//! The result is an interface similar to the `tskit` Python interface,
+//! but with all operations implemented using compiled code.
+//!
+//! # Features
+//!
+//! ## Interface to the C library
+//!
+//! * [`TableCollection`] wraps `tsk_table_collection_t`.
+//! * [`TreeSequence`] wraps `tsk_treeseq_t`.
+//! * [`Tree`] wraps `tsk_tree_t`. 
+//! * Tree iteration occurs via traits from [streaming_iterator](https://docs.rs/streaming-iterator/).
+//! * Errors returned from C map to [`TskitError::ErrorCode`]. 
+//!   Their string messages can be obtained by printing the error type.
+//!
+//! ## Safety
+//!
+//! * The types listed above handle all the memory management!
+//! * All array accesses are range-checked.
+//! * Object lifetimes are clear:
+//!     * Creating a tree sequence moves/consumes a table collection.
+//!     * Tree lifetimes are tied to that of the parent tree sequence.
+//!     * Table objects ([`NodeTable`], etc..) are only represented by non-owning, immutable types.
+//!
+//! # What is missing?
+//!
+//! * A lot of wrappers to the C functions.
+//! * Support for provenance tables.
+//! * Tree sequence statistics!
 
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
