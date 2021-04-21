@@ -1,5 +1,49 @@
 # Change log
 
+## 2021-04-21, Version 0.2.0
+
+### Commits
+- [[`daffeda43e`](https://github.com/molpopgen/tskit_rust/commit/daffeda43eeee3f2c7abe684ab6f503c943c0874)] bump version to 0.2.0 (molpopgen)
+- [[`0dad5e39d2`](https://github.com/molpopgen/tskit_rust/commit/0dad5e39d2142285bac8260874a8adcb716e2e72)] Update docs (#93) (Kevin R. Thornton)
+- [[`f905b9c384`](https://github.com/molpopgen/tskit_rust/commit/f905b9c3848237b53b14d45b03f19840fe62762e)] Add reverse tree iteration. (#92) (Kevin R. Thornton)
+- [[`a1a033f901`](https://github.com/molpopgen/tskit_rust/commit/a1a033f901d48ee583e91b73ff30bd0797d119f2)] Add development documentation. (#91) (Kevin R. Thornton)
+- [[`ce3d8f4849`](https://github.com/molpopgen/tskit_rust/commit/ce3d8f4849875650c9f3ba23522228f566bbbe2c)] Refine forward sim example (#90) (Kevin R. Thornton)
+- [[`b1022e1f59`](https://github.com/molpopgen/tskit_rust/commit/b1022e1f5954dd7f1dd7caa62d7cb0ad431a32b1)] Refactor how tskit flags are handled. (#89) (Kevin R. Thornton)
+- [[`56e43cb0ff`](https://github.com/molpopgen/tskit_rust/commit/56e43cb0ff045a0fb99a4ddd282b87219fde7d5d)] Add forward simulation example.  Closes #71. (#86) (Kevin R. Thornton)
+- [[`5530d7b234`](https://github.com/molpopgen/tskit_rust/commit/5530d7b234fd623810a1ba717a729f228239fd9a)] Refactor all examples into examples/ (#85) (Kevin R. Thornton)
+- [[`651e4edcac`](https://github.com/molpopgen/tskit_rust/commit/651e4edcac13dbc2282242fe0659d343095b5e58)] Collect public traits in traits.rs.  Closes #81. (#84) (Kevin R. Thornton)
+- [[`11ad49f0e1`](https://github.com/molpopgen/tskit_rust/commit/11ad49f0e156008ae1318003dab97b84b951fc42)] Remove mention of use NodeIterator.  Closes #68. (#83) (Kevin R. Thornton)
+- [[`df28231d9a`](https://github.com/molpopgen/tskit_rust/commit/df28231d9aba33a24e52279991e15a6c4f753196)] Add test fixtures module. Closes #73 (#80) (Kevin R. Thornton)
+- [[`3a8a82637e`](https://github.com/molpopgen/tskit_rust/commit/3a8a82637e63d14c3e73b427ea82f4385241e320)] Rename Tree::nodes to Tree::traverse_nodes. (#79) (Kevin R. Thornton)
+- [[`4e7af98ac5`](https://github.com/molpopgen/tskit_rust/commit/4e7af98ac55e3d735693c70ae41da44be8721337)] Update GitHub actions. (#78) (Kevin R. Thornton)
+- [[`43e14bb8a6`](https://github.com/molpopgen/tskit_rust/commit/43e14bb8a6ebf948ba0ae386743cd9958f120d91)] Add NodeListGenerator trait bound to TableAccess.  Closes #67. (#75) (Kevin R. Thornton)
+- [[`ae203769f4`](https://github.com/molpopgen/tskit_rust/commit/ae203769f404468588aac1f5043ddc79e9feaad9)] add id field to table row types. Closes #76 (#77) (Kevin R. Thornton)
+- [[`346c804be8`](https://github.com/molpopgen/tskit_rust/commit/346c804be87ffa857acf22525dd6def71c6a9b38)] Make tree arrays public.  Closes #70 (#74) (Kevin R. Thornton)
+- [[`a2dfcfe8f6`](https://github.com/molpopgen/tskit_rust/commit/a2dfcfe8f6e0a42f075a94529ae4d0d77f332229)] Add TableCollection and TreeSequence simplification (#64) (Kevin R. Thornton)
+- [[`c62ccd21aa`](https://github.com/molpopgen/tskit_rust/commit/c62ccd21aadf32a23a8600c78431e8a6c861defb)] Add TableAccess trait and implement for TableCollection and TreeSequence. (#66) (Kevin R. Thornton)
+- [[`167209466a`](https://github.com/molpopgen/tskit_rust/commit/167209466ae371a1de671f802b1f7fef5cf0fcfe)] Remove duplication of entire table collection when creating a tree sequence. (#65) (Kevin R. Thornton)
+- [[`df258ad8d1`](https://github.com/molpopgen/tskit_rust/commit/df258ad8d143aec9450e236c6ebea6f487cb249e)] Fix useless conversion in lib::c_api_version (#63) (Kevin R. Thornton)
+- [[`fcca8bb682`](https://github.com/molpopgen/tskit_rust/commit/fcca8bb6826f27b50de8cda397dd5584afabdc94)] remove unnecessary function from util (#62) (Kevin R. Thornton)
+- [[`0ee9f86db4`](https://github.com/molpopgen/tskit_rust/commit/0ee9f86db47bbf2968e8888a7f47b791a6327c41)] Merge pull request #61 from molpopgen/add_individual_and_migration_tables (Kevin R. Thornton)
+- [[`8f072c47d1`](https://github.com/molpopgen/tskit_rust/commit/8f072c47d1ece61dd55892fb64c5fa4ab2827710)] Add migrations and individuals tables. (molpopogen)
+- [[`b2c891300b`](https://github.com/molpopgen/tskit_rust/commit/b2c891300b9543cbd402525a263ad5c538978289)] Merge pull request #60 from molpopgen/tskit_C_version (Kevin R. Thornton)
+- [[`f48b2fed57`](https://github.com/molpopgen/tskit_rust/commit/f48b2fed575d5b08cd9cc412d9be3f9c2c490be3)] Add functions to return C API version info (molpopogen)
+- [[`87593d4bdc`](https://github.com/molpopgen/tskit_rust/commit/87593d4bdc8eadd1732c20dfb3fdbff3ef370b91)] Merge pull request #59 from molpopgen/add_test_metadata_some_columns_only (Kevin R. Thornton)
+- [[`5ab8e8c9d0`](https://github.com/molpopgen/tskit_rust/commit/5ab8e8c9d04c7b6f2696d0a1364c4e2f50398516)] Add test of metadata decoding when not all rows have metadata. (molpopogen)
+- [[`adcc321cc8`](https://github.com/molpopgen/tskit_rust/commit/adcc321cc84d065b2e8eb0a79e88d47b9512c048)] Merge pull request #58 from molpopgen/table_row_access (Kevin R. Thornton)
+- [[`860a647bf3`](https://github.com/molpopgen/tskit_rust/commit/860a647bf30eb35f60b055ac48337b83319882f9)] * Add ::row for all tables (molpopgen)
+- [[`6b0a77e106`](https://github.com/molpopgen/tskit_rust/commit/6b0a77e1060b6e3a43cc06f7f6016953003e02cb)] Add util.rs (molpopgen)
+- [[`6b9631e1f1`](https://github.com/molpopgen/tskit_rust/commit/6b9631e1f1d7dcd554f3b0a920101bdad54945ea)] Merge pull request #57 from molpopgen/unify_table_iteration (Kevin R. Thornton)
+- [[`3d79f8bbfa`](https://github.com/molpopgen/tskit_rust/commit/3d79f8bbfaf7b555c61c68fd6c3421473022a512)] Add ability to iterate tables from a TableCollection: (molpopogen)
+- [[`392ce57e0a`](https://github.com/molpopgen/tskit_rust/commit/392ce57e0a5ea26ede7788b55e2e0b0b120ccbd4)] Merge pull request #52 from molpopgen/table_iteration (Kevin R. Thornton)
+- [[`2fe5912c34`](https://github.com/molpopgen/tskit_rust/commit/2fe5912c341617c4d18caecebd65c9f5127fed17)] Add table iteration w/optional handling of metadata. (molpopgen)
+- [[`9a59a148f7`](https://github.com/molpopgen/tskit_rust/commit/9a59a148f74810a9c906dea5f227e07b7fac69ac)] Merge pull request #55 from molpopgen/wrapped_tsk_array_iter_adapter (Kevin R. Thornton)
+- [[`84b0b496c1`](https://github.com/molpopgen/tskit_rust/commit/84b0b496c11eedf7d1ee11b1d9315ace8662ce4b)] Replace built-in iteration with iterator adapter for WrappedTskArray (molpopgen)
+- [[`18234998ea`](https://github.com/molpopgen/tskit_rust/commit/18234998ea493cea7119338f176a520e16f16425)] Merge pull request #56 from molpopgen/metadata_macro_fixes (Kevin R. Thornton)
+- [[`49bbd0f2f4`](https://github.com/molpopgen/tskit_rust/commit/49bbd0f2f4439a6b13d62f05c120d762bb06e5d2)] metadata_to_vector macro is now a simple return (no ? operator). (molpopgen)
+- [[`6e293acf14`](https://github.com/molpopgen/tskit_rust/commit/6e293acf14a652996be45eced13f9a165c19b212)] Remove unused paramter to metadata_to_vector.  Fixes #54. (molpopgen)
+- [[`45347a576c`](https://github.com/molpopgen/tskit_rust/commit/45347a576c36b15acd653efd21c8a8b3116de59b)] Change log for 0.1.2 (molpopgen)
+
 ## 2021-04-12, Version 0.1.2
 
 ### Commits
