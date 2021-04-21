@@ -109,8 +109,6 @@ use ll_bindings::tsk_table_collection_free;
 /// 1. Support all table types.  Currently, we only support
 ///    those needed for current goals in ongoing projects.
 /// 2. Strengthen some of the error handling.
-///
-/// Addressing point 3 may require API breakage.
 pub struct TableCollection {
     inner: Box<ll_bindings::tsk_table_collection_t>,
 }

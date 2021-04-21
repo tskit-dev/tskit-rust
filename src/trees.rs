@@ -290,7 +290,7 @@ impl Tree {
     ///
     /// # Errors
     ///
-    /// [`TskitError`] may be returned via [`Tree::nodes`].
+    /// [`TskitError`] may be returned via [`Tree::traverse_nodes`].
     pub fn total_branch_length(&self, by_span: bool) -> Result<f64, TskitError> {
         let nt = self.node_table();
         let mut b = 0.;
@@ -388,7 +388,7 @@ impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
 }
 
 /// Specify the traversal order used by
-/// [`Tree::nodes`].
+/// [`Tree::traverse_nodes`].
 pub enum NodeTraversalOrder {
     ///Preorder traversal, starting at the root(s) of a [`Tree`].
     ///For trees with multiple roots, start at the left root,
