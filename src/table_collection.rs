@@ -12,6 +12,11 @@ use crate::PopulationTable;
 use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
+use crate::TableClearOptions;
+use crate::TableEqualityOptions;
+use crate::TableOutputOptions;
+use crate::TableSortOptions;
+use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
@@ -410,18 +415,26 @@ impl TableCollection {
     /// Build the "input" and "output"
     /// indexes for the edge table.
     ///
-    /// `flags` is currently unused, so pass in `0`.
-    pub fn build_index(&mut self, flags: tsk_flags_t) -> TskReturnValue {
-        let rv = unsafe { ll_bindings::tsk_table_collection_build_index(self.as_mut_ptr(), flags) };
+    /// # Note
+    ///
+    /// The `C API` call behind this takes a `flags` argument
+    /// that is currently unused.  A future release may break `API`
+    /// here if the `C` library is updated to use flags.
+    pub fn build_index(&mut self) -> TskReturnValue {
+        let rv = unsafe { ll_bindings::tsk_table_collection_build_index(self.as_mut_ptr(), 0) };
         handle_tsk_return_value!(rv)
     }
 
     /// Sort the tables.  
     /// The [``bookmark``](crate::types::Bookmark) can
     /// be used to affect where sorting starts from for each table.
-    pub fn sort(&mut self, start: &Bookmark, options: tsk_flags_t) -> TskReturnValue {
+    pub fn sort(&mut self, start: &Bookmark, options: TableSortOptions) -> TskReturnValue {
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_sort(self.as_mut_ptr(), &start.offsets, options)
+            ll_bindings::tsk_table_collection_sort(
+                self.as_mut_ptr(),
+                &start.offsets,
+                options.bits(),
+            )
         };
 
         handle_tsk_return_value!(rv)
@@ -429,20 +442,24 @@ impl TableCollection {
 
     /// Fully sort all functions.
     /// Implemented via a call to [``sort``](crate::TableCollection::sort).
-    pub fn full_sort(&mut self) -> TskReturnValue {
+    pub fn full_sort(&mut self, options: TableSortOptions) -> TskReturnValue {
         let b = Bookmark::new();
-        self.sort(&b, 0)
+        self.sort(&b, options)
     }
 
     /// Dump the table collection to file.
-    /// If tables are not sorted and indexes, this function will raise
-    /// and error.  In order to output such data,
-    /// include [``TSK_NO_BUILD_INDEXES``](crate::TSK_NO_BUILD_INDEXES) in ``options``.
-    /// Otherwisze, use ``0`` for ``options``.
-    pub fn dump(&mut self, filename: &str, options: tsk_flags_t) -> TskReturnValue {
+    ///
+    /// # Note
+    ///
+    /// This function by default uses the flag TSK_NO_BUILD_INDEXES.
+    pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_dump(self.as_mut_ptr(), c_str.as_ptr(), options)
+            ll_bindings::tsk_table_collection_dump(
+                self.as_ptr() as *mut ll_bindings::tsk_table_collection_t,
+                c_str.as_ptr(),
+                options.bits() | ll_bindings::TSK_NO_BUILD_INDEXES,
+            )
         };
 
         handle_tsk_return_value!(rv)
@@ -452,8 +469,9 @@ impl TableCollection {
     /// Does not release memory.
     /// Memory will be released when the object goes out
     /// of scope.
-    pub fn clear(&mut self, options: tsk_flags_t) -> TskReturnValue {
-        let rv = unsafe { ll_bindings::tsk_table_collection_clear(self.as_mut_ptr(), options) };
+    pub fn clear(&mut self, options: TableClearOptions) -> TskReturnValue {
+        let rv =
+            unsafe { ll_bindings::tsk_table_collection_clear(self.as_mut_ptr(), options.bits()) };
 
         handle_tsk_return_value!(rv)
     }
@@ -469,8 +487,10 @@ impl TableCollection {
 
     /// Return ``true`` if ``self`` contains the same
     /// data as ``other``, and ``false`` otherwise.
-    pub fn equals(&self, other: &TableCollection, options: tsk_flags_t) -> bool {
-        unsafe { ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options) }
+    pub fn equals(&self, other: &TableCollection, options: TableEqualityOptions) -> bool {
+        unsafe {
+            ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options.bits())
+        }
     }
 
     /// Return a "deep" copy of the tables.
@@ -486,8 +506,11 @@ impl TableCollection {
     /// Return a [`crate::TreeSequence`] based on the tables.
     /// This function will raise errors if tables are not sorted,
     /// not indexed, or invalid in any way.
-    pub fn tree_sequence(self) -> Result<crate::TreeSequence, TskitError> {
-        crate::TreeSequence::new(self)
+    pub fn tree_sequence(
+        self,
+        flags: TreeSequenceFlags,
+    ) -> Result<crate::TreeSequence, TskitError> {
+        crate::TreeSequence::new(self, flags)
     }
 
     /// Simplify tables in place.
@@ -579,7 +602,7 @@ mod test {
         tables.add_node(0, 0.0, TSK_NULL, TSK_NULL).unwrap();
         tables.add_edge(0., 1000., 0, 1).unwrap();
         tables.add_edge(0., 1000., 0, 2).unwrap();
-        tables.build_index(0).unwrap();
+        tables.build_index().unwrap();
         tables
     }
 
@@ -930,10 +953,12 @@ mod test {
             )
             .unwrap();
         tables.add_edge(0., tables.sequence_length(), 1, 0).unwrap();
-        tables.dump(&treefile, 0).unwrap();
+        tables
+            .dump(&treefile, TableOutputOptions::default())
+            .unwrap();
 
         let tables2 = TableCollection::new_from_file(&treefile).unwrap();
-        assert!(tables.equals(&tables2, 0));
+        assert!(tables.equals(&tables2, TableEqualityOptions::default()));
 
         std::fs::remove_file(&treefile).unwrap();
     }
@@ -945,7 +970,7 @@ mod test {
             let _ = tables.add_edge(0., 1000., i, 2 * i).unwrap();
         }
         assert_eq!(tables.edges().num_rows(), 5);
-        tables.clear(0).unwrap();
+        tables.clear(TableClearOptions::default()).unwrap();
         assert_eq!(tables.edges().num_rows(), 0);
     }
 
@@ -959,7 +984,7 @@ mod test {
     fn test_deepcopy() {
         let tables = make_small_table_collection();
         let dumps = tables.deepcopy().unwrap();
-        assert!(tables.equals(&dumps, 0));
+        assert!(tables.equals(&dumps, TableEqualityOptions::default()));
     }
 
     #[test]

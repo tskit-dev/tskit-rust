@@ -11,27 +11,13 @@ use crate::PopulationTable;
 use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::TableAccess;
+use crate::TableOutputOptions;
+use crate::TreeFlags;
+use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
-use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
-use bitflags::bitflags;
+use crate::{tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
-
-bitflags! {
-    /// Specify the behavior of iterating over [`Tree`] objects.
-    /// See [`TreeSequence::tree_iterator`].
-    #[derive(Default)]
-    pub struct TreeFlags: tsk_flags_t {
-        /// Default behavior.
-        const NONE = 0;
-        /// Update sample lists, enabling [`Tree::samples`].
-        const SAMPLE_LISTS = ll_bindings::TSK_SAMPLE_LISTS;
-        /// Do *not* update the number of samples descending
-        /// from each node. The default is to update these
-        /// counts.
-        const NO_SAMPLE_COUNTS = ll_bindings::TSK_NO_SAMPLE_COUNTS;
-    }
-}
 
 /// A Tree.
 ///
@@ -64,7 +50,7 @@ impl Tree {
     fn new(ts: &TreeSequence, flags: TreeFlags) -> Result<Self, TskitError> {
         let mut tree = Self::wrap(unsafe { (*(*ts.inner).tables).nodes.num_rows }, flags);
         let mut rv =
-            unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), ts.as_ptr(), flags.bits) };
+            unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), ts.as_ptr(), flags.bits()) };
         if rv < 0 {
             return Err(TskitError::ErrorCode { code: rv });
         }
@@ -615,10 +601,10 @@ impl NodeIterator for SamplesIterator {
 /// tables.add_edge(0., 1000., 0, 2).unwrap();
 ///
 /// // index
-/// tables.build_index(0);
+/// tables.build_index();
 ///
 /// // tables gets moved into our treeseq variable:
-/// let treeseq = tables.tree_sequence().unwrap();
+/// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
 /// ```
 pub struct TreeSequence {
     inner: Box<ll_bindings::tsk_treeseq_t>,
@@ -643,8 +629,8 @@ impl TreeSequence {
     ///
     /// ```
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-    /// tables.build_index(0);
-    /// let tree_sequence = tskit::TreeSequence::new(tables).unwrap();
+    /// tables.build_index();
+    /// let tree_sequence = tskit::TreeSequence::new(tables, tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
     ///
     /// The following may be preferred to the previous example, and more closely
@@ -652,19 +638,22 @@ impl TreeSequence {
     ///
     /// ```
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-    /// tables.build_index(0);
-    /// let tree_sequence = tables.tree_sequence().unwrap();
+    /// tables.build_index();
+    /// let tree_sequence = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
     ///
     /// The following raises an error because the tables are not indexed:
     ///
     /// ```should_panic
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-    /// let tree_sequence = tskit::TreeSequence::new(tables).unwrap();
+    /// let tree_sequence = tskit::TreeSequence::new(tables,
+    /// tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
-    pub fn new(tables: TableCollection) -> Result<Self, TskitError> {
+    pub fn new(tables: TableCollection, flags: TreeSequenceFlags) -> Result<Self, TskitError> {
         let mut treeseq = Self::wrap();
-        let rv = unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), tables.as_ptr(), 0) };
+        let rv = unsafe {
+            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), tables.as_ptr(), flags.bits())
+        };
         handle_tsk_return_value!(rv, treeseq)
     }
 
@@ -672,11 +661,22 @@ impl TreeSequence {
     ///
     /// # Note
     ///
-    /// * `flags` is currently not used.  Set to 0.
-    pub fn dump(&mut self, filename: &str, options: tsk_flags_t) -> TskReturnValue {
+    /// * `options` is currently not used.  Set to default value.
+    ///   This behavior may change in a future release, which could
+    ///   break `API`.
+    ///
+    /// # Note
+    ///
+    /// This function always sets the flag TSK_NO_BUILD_INDEXES.
+    pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
-        let rv =
-            unsafe { ll_bindings::tsk_treeseq_dump(self.as_mut_ptr(), c_str.as_ptr(), options) };
+        let rv = unsafe {
+            ll_bindings::tsk_treeseq_dump(
+                self.as_ptr() as *mut ll_bindings::tsk_treeseq_t,
+                c_str.as_ptr(),
+                options.bits() | ll_bindings::TSK_NO_BUILD_INDEXES,
+            )
+        };
 
         handle_tsk_return_value!(rv)
     }
@@ -685,7 +685,7 @@ impl TreeSequence {
     pub fn load(filename: &str) -> Result<Self, TskitError> {
         let tables = TableCollection::new_from_file(filename)?;
 
-        Self::new(tables)
+        Self::new(tables, TreeSequenceFlags::default())
     }
 
     /// Obtain a copy of the [`TableCollection`].
@@ -720,8 +720,8 @@ impl TreeSequence {
     /// use streaming_iterator::StreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-    /// tables.build_index(0);
-    /// let tree_sequence = tables.tree_sequence().unwrap();
+    /// tables.build_index();
+    /// let tree_sequence = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
     /// let mut tree_iterator = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap();
     /// while let Some(tree) = tree_iterator.next() {
     /// }
@@ -736,8 +736,8 @@ impl TreeSequence {
     /// use streaming_iterator::StreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-    /// tables.build_index(0);
-    /// let tree_sequence = tables.tree_sequence().unwrap();
+    /// tables.build_index();
+    /// let tree_sequence = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
     /// while let Some(tree) = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap().next() {
     /// }
     /// ```
@@ -809,8 +809,8 @@ impl TreeSequence {
         idmap: bool,
     ) -> Result<(Self, Option<Vec<tsk_id_t>>), TskitError> {
         let mut tables = TableCollection::new(unsafe { (*self.inner.tables).sequence_length })?;
-        tables.build_index(0).unwrap();
-        let mut ts = tables.tree_sequence()?;
+        tables.build_index().unwrap();
+        let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
         let mut output_node_map: Vec<tsk_id_t> = vec![];
         if idmap {
             output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL);
@@ -885,7 +885,7 @@ pub(crate) mod test_trees {
     #[test]
     fn test_create_treeseq_new_from_tables() {
         let tables = make_small_table_collection();
-        let treeseq = TreeSequence::new(tables).unwrap();
+        let treeseq = TreeSequence::new(tables, TreeSequenceFlags::default()).unwrap();
         let samples = treeseq.samples_to_vec();
         assert_eq!(samples.len(), 2);
         for i in 1..3 {
@@ -896,13 +896,13 @@ pub(crate) mod test_trees {
     #[test]
     fn test_create_treeseq_from_tables() {
         let tables = make_small_table_collection();
-        let _treeseq = tables.tree_sequence().unwrap();
+        let _treeseq = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
     }
 
     #[test]
     fn test_iterate_tree_seq_with_one_tree() {
         let tables = make_small_table_collection();
-        let treeseq = tables.tree_sequence().unwrap();
+        let treeseq = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
         let mut ntrees = 0;
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         while let Some(tree) = tree_iter.next() {
@@ -934,8 +934,8 @@ pub(crate) mod test_trees {
     #[test]
     fn test_iterate_no_roots() {
         let mut tables = TableCollection::new(100.).unwrap();
-        tables.build_index(0).unwrap();
-        let treeseq = tables.tree_sequence().unwrap();
+        tables.build_index().unwrap();
+        let treeseq = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         while let Some(tree) = tree_iter.next() {
             let mut num_roots = 0;
@@ -950,7 +950,7 @@ pub(crate) mod test_trees {
     #[test]
     fn test_samples_iterator_error_when_not_tracking_samples() {
         let tables = make_small_table_collection();
-        let treeseq = tables.tree_sequence().unwrap();
+        let treeseq = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
 
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         if let Some(tree) = tree_iter.next() {
@@ -988,7 +988,7 @@ pub(crate) mod test_trees {
     #[test]
     fn test_iterate_samples() {
         let tables = make_small_table_collection();
-        let treeseq = tables.tree_sequence().unwrap();
+        let treeseq = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
 
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::SAMPLE_LISTS).unwrap();
         if let Some(tree) = tree_iter.next() {
@@ -1049,8 +1049,8 @@ pub(crate) mod test_trees {
         let tables = make_small_table_collection_two_trees();
         // Have to make b/c tables will no longer exist after making the treeseq
         let tables_copy = tables.deepcopy().unwrap();
-        let ts = tables.tree_sequence().unwrap();
+        let ts = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
         let dumped = ts.dump_tables().unwrap();
-        assert!(tables_copy.equals(&dumped, 0));
+        assert!(tables_copy.equals(&dumped, crate::TableEqualityOptions::default()));
     }
 }
