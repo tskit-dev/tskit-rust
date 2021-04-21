@@ -8,7 +8,9 @@
  *
  * On the rust side:
  *
- * * Runtime errors from all dependencies propagate to main.
+ * * Runtime errors are handled when they occur.
+ *   We do this because stable rust does not have
+ *   support for back traces.
  * * No "unsafe" tskit C code is called directly.
  * * By default, clap doesn't allow argument values to start
  *   with a hyphen ('-').  This is handy, as it automatically
@@ -21,7 +23,6 @@ use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_distr::{Exp, Uniform};
-use std::error::Error;
 
 struct SimParams {
     pub popsize: u32,
@@ -200,24 +201,15 @@ fn death_and_parents(
     }
 }
 
-fn mendel(
-    pnodes: &mut (tskit::tsk_id_t, tskit::tsk_id_t),
-    rng: &mut StdRng,
-) -> Result<(), Box<dyn Error>> {
+fn mendel(pnodes: &mut (tskit::tsk_id_t, tskit::tsk_id_t), rng: &mut StdRng) {
     let x: f64 = rng.gen();
     match x.partial_cmp(&0.5) {
         Some(std::cmp::Ordering::Less) => {
             std::mem::swap(&mut pnodes.0, &mut pnodes.1);
         }
         Some(_) => (),
-        None => {
-            return Err(Box::new(tskit::TskitError::ValueError {
-                got: String::from("None"),
-                expected: String::from("Some(std::cmp::Ordering)"),
-            }));
-        }
+        None => panic!("Unexpected None"),
     }
-    Ok(())
 }
 
 fn crossover_and_record_edges_details(
@@ -226,40 +218,52 @@ fn crossover_and_record_edges_details(
     params: &SimParams,
     tables: &mut tskit::TableCollection,
     rng: &mut StdRng,
-) -> Result<(), Box<dyn Error>> {
+) {
     if params.xovers == 0.0 {
-        let _ = tables.add_edge(0., tables.sequence_length(), parent.node0, offspring_node)?;
+        match tables.add_edge(0., tables.sequence_length(), parent.node0, offspring_node) {
+            Ok(_) => (),
+            Err(e) => panic!("{}", e),
+        }
     } else {
         let mut pnodes = (parent.node0, parent.node1);
-        mendel(&mut pnodes, rng)?;
+        mendel(&mut pnodes, rng);
 
         let mut p0 = parent.node0;
         let mut p1 = parent.node1;
 
-        let exp = Exp::new(params.xovers / tables.sequence_length())?;
+        let exp = match Exp::new(params.xovers / tables.sequence_length()) {
+            Ok(e) => e,
+            Err(e) => panic!("{}", e),
+        };
         let mut current_pos = 0.0;
         loop {
             let next_length = rng.sample(exp);
             match (current_pos + next_length).partial_cmp(&tables.sequence_length()) {
                 Some(std::cmp::Ordering::Less) => {
-                    tables.add_edge(current_pos, current_pos + next_length, p0, offspring_node)?;
+                    match tables.add_edge(
+                        current_pos,
+                        current_pos + next_length,
+                        p0,
+                        offspring_node,
+                    ) {
+                        Ok(_) => (),
+                        Err(e) => panic!("{}", e),
+                    }
                     std::mem::swap(&mut p0, &mut p1);
                     current_pos += next_length;
                 }
                 Some(_) => {
-                    tables.add_edge(current_pos, tables.sequence_length(), p0, offspring_node)?;
+                    match tables.add_edge(current_pos, tables.sequence_length(), p0, offspring_node)
+                    {
+                        Ok(_) => (),
+                        Err(e) => panic!("{}", e),
+                    }
                     break;
                 }
-                None => {
-                    return Err(Box::new(tskit::TskitError::ValueError {
-                        got: String::from("None"),
-                        expected: String::from("Some(std::cmp::Ordering)"),
-                    }));
-                }
+                None => panic!("Unexpected None"),
             }
         }
     }
-    Ok(())
 }
 
 fn crossover_and_record_edges(
@@ -268,9 +272,9 @@ fn crossover_and_record_edges(
     params: &SimParams,
     tables: &mut tskit::TableCollection,
     rng: &mut StdRng,
-) -> Result<(), Box<dyn Error>> {
-    crossover_and_record_edges_details(parents.parent0, offspring_nodes.0, params, tables, rng)?;
-    crossover_and_record_edges_details(parents.parent1, offspring_nodes.1, params, tables, rng)
+) {
+    crossover_and_record_edges_details(parents.parent0, offspring_nodes.0, params, tables, rng);
+    crossover_and_record_edges_details(parents.parent1, offspring_nodes.1, params, tables, rng);
 }
 
 fn births(
@@ -280,31 +284,33 @@ fn births(
     tables: &mut tskit::TableCollection,
     alive: &mut [Diploid],
     rng: &mut StdRng,
-) -> Result<(), Box<dyn Error>> {
+) {
     for p in parents {
         // Register the two nodes for our offspring
-        let node0 = tables.add_node(
+        let node0 = match tables.add_node(
             0,                 // flags
             birth_time as f64, // time
             tskit::TSK_NULL,   // population
             // individual
             tskit::TSK_NULL,
-        )?;
-        let node1 = tables.add_node(0, birth_time as f64, tskit::TSK_NULL, tskit::TSK_NULL)?;
+        ) {
+            Ok(x) => x,
+            Err(e) => panic!("{}", e),
+        };
+        let node1 = match tables.add_node(0, birth_time as f64, tskit::TSK_NULL, tskit::TSK_NULL) {
+            Ok(x) => x,
+            Err(e) => panic!("{}", e),
+        };
 
         // Replace a dead individual
         // with our newborn.
         alive[p.index] = Diploid { node0, node1 };
 
-        crossover_and_record_edges(p, (node0, node1), params, tables, rng)?;
+        crossover_and_record_edges(p, (node0, node1), params, tables, rng);
     }
-    Ok(())
 }
 
-fn simplify(
-    alive: &mut [Diploid],
-    tables: &mut tskit::TableCollection,
-) -> Result<(), Box<dyn Error>> {
+fn simplify(alive: &mut [Diploid], tables: &mut tskit::TableCollection) {
     let mut samples = vec![];
     for a in alive.iter() {
         assert!(a.node0 != a.node1);
@@ -312,34 +318,47 @@ fn simplify(
         samples.push(a.node1);
     }
 
-    tables.full_sort(tskit::TableSortOptions::default())?;
-
-    match tables.simplify(&samples, tskit::SimplificationOptions::KEEP_UNARY, true)? {
-        Some(idmap) => {
-            for a in alive.iter_mut() {
-                a.node0 = idmap[a.node0 as usize];
-                assert!(a.node0 != tskit::TSK_NULL);
-                a.node1 = idmap[a.node1 as usize];
-                assert!(a.node1 != tskit::TSK_NULL);
-            }
-            Ok(())
-        }
-        None => Err(Box::new(tskit::TskitError::ValueError {
-            got: String::from("None"),
-            expected: String::from("Some(idmap) from simplification function"),
-        })),
+    match tables.full_sort(tskit::TableSortOptions::default()) {
+        Ok(_) => (),
+        Err(e) => panic!("{}", e),
     }
+
+    match tables.simplify(&samples, tskit::SimplificationOptions::KEEP_UNARY, true) {
+        Ok(x) => match x {
+            Some(idmap) => {
+                for a in alive.iter_mut() {
+                    a.node0 = idmap[a.node0 as usize];
+                    assert!(a.node0 != tskit::TSK_NULL);
+                    a.node1 = idmap[a.node1 as usize];
+                    assert!(a.node1 != tskit::TSK_NULL);
+                }
+            }
+            None => panic!("Unexpected None"),
+        },
+        Err(e) => panic!("{}", e),
+    };
 }
 
-fn runsim(params: &SimParams) -> Result<tskit::TableCollection, Box<dyn std::error::Error>> {
-    let mut tables = tskit::TableCollection::new(params.genome_length)?;
+fn runsim(params: &SimParams) -> tskit::TableCollection {
+    let mut tables = match tskit::TableCollection::new(params.genome_length) {
+        Ok(x) => x,
+        Err(e) => panic!("{}", e),
+    };
 
     let mut rng = StdRng::seed_from_u64(params.seed);
 
     let mut alive: Vec<Diploid> = vec![];
     for _ in 0..params.popsize {
-        let node0 = tables.add_node(0, params.nsteps as f64, tskit::TSK_NULL, tskit::TSK_NULL)?;
-        let node1 = tables.add_node(0, params.nsteps as f64, tskit::TSK_NULL, tskit::TSK_NULL)?;
+        let node0 = match tables.add_node(0, params.nsteps as f64, tskit::TSK_NULL, tskit::TSK_NULL)
+        {
+            Ok(x) => x,
+            Err(e) => panic!("{}", e),
+        };
+        let node1 = match tables.add_node(0, params.nsteps as f64, tskit::TSK_NULL, tskit::TSK_NULL)
+        {
+            Ok(x) => x,
+            Err(e) => panic!("{}", e),
+        };
         alive.push(Diploid { node0, node1 });
     }
 
@@ -349,11 +368,11 @@ fn runsim(params: &SimParams) -> Result<tskit::TableCollection, Box<dyn std::err
     for step in (0..params.nsteps).rev() {
         parents.clear();
         death_and_parents(&alive, &params, &mut parents, &mut rng);
-        births(&parents, &params, step, &mut tables, &mut alive, &mut rng)?;
+        births(&parents, &params, step, &mut tables, &mut alive, &mut rng);
         let remainder = step % params.simplification_interval;
         match step < params.nsteps && remainder == 0 {
             true => {
-                simplify(&mut alive, &mut tables)?;
+                simplify(&mut alive, &mut tables);
                 simplified = true;
             }
             false => simplified = false,
@@ -361,20 +380,17 @@ fn runsim(params: &SimParams) -> Result<tskit::TableCollection, Box<dyn std::err
     }
 
     if !simplified {
-        simplify(&mut alive, &mut tables)?;
+        simplify(&mut alive, &mut tables);
     }
 
-    Ok(tables)
+    tables
 }
 
 fn main() {
     let params = SimParams::new();
     params.validate().unwrap();
 
-    let tables = match runsim(&params) {
-        Ok(t) => t,
-        Err(e) => panic!("{}", e),
-    };
+    let tables = runsim(&params);
     let treeseq = tables
         .tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES)
         .unwrap();
@@ -388,7 +404,7 @@ fn main() {
 fn test_bad_genome_length() {
     let mut params = SimParams::new();
     params.genome_length = -1.0;
-    let _tables = runsim(&params).unwrap();
+    let _tables = runsim(&params);
 }
 
 #[test]
@@ -397,10 +413,7 @@ fn test_nonoverlapping_generations() {
     params.nsteps = 100;
     params.xovers = 1e-3;
     params.validate().unwrap();
-    match runsim(&params) {
-        Ok(_) => (),
-        Err(e) => panic!("{}", e),
-    }
+    runsim(&params);
 }
 
 #[test]
@@ -411,8 +424,5 @@ fn test_overlapping_generations() {
     params.psurvival = 0.25;
     params.seed = 616161;
     params.validate().unwrap();
-    match runsim(&params) {
-        Ok(_) => (),
-        Err(e) => panic!("{}", e),
-    }
+    runsim(&params);
 }
