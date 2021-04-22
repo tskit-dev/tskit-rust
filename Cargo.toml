@@ -6,8 +6,8 @@ build = "build.rs"
 edition = "2018"
 description = "rust interface to tskit"
 license = "MIT"
-homepage = "https://github.com/molpopgen/tskit_rust"
-repository = "https://github.com/molpopgen/tskit_rust"
+homepage = "https://github.com/molpopgen/tskit-rust"
+repository = "https://github.com/molpopgen/tskit-rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
