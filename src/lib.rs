@@ -58,8 +58,6 @@ mod util;
 // re-export fundamental constants that
 // we can't live without
 pub use bindings::TSK_NODE_IS_SAMPLE;
-pub use bindings::TSK_NO_BUILD_INDEXES;
-pub use bindings::TSK_SAMPLE_LISTS;
 
 // re-export types, too
 pub use bindings::tsk_flags_t;
