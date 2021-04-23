@@ -10,9 +10,9 @@
 //!
 //! * [`TableCollection`] wraps `tsk_table_collection_t`.
 //! * [`TreeSequence`] wraps `tsk_treeseq_t`.
-//! * [`Tree`] wraps `tsk_tree_t`. 
+//! * [`Tree`] wraps `tsk_tree_t`.
 //! * Tree iteration occurs via traits from [streaming_iterator](https://docs.rs/streaming-iterator/).
-//! * Errors returned from C map to [`TskitError::ErrorCode`]. 
+//! * Errors returned from C map to [`TskitError::ErrorCode`].
 //!   Their string messages can be obtained by printing the error type.
 //!
 //! ## Safety
@@ -24,10 +24,23 @@
 //!     * Tree lifetimes are tied to that of the parent tree sequence.
 //!     * Table objects ([`NodeTable`], etc..) are only represented by non-owning, immutable types.
 //!
+//! # Optional features
+//!
+//! Some features are optional, and are activated by requesting them in your `Cargo.toml` file.
+//!
+//! * `provenance`
+//!     * Enables [`provenance`]
+//!
+//! To add features to your `Cargo.toml` file:
+//!
+//! ```toml
+//! [dependencies]
+//! tskit = {version = "0.2.0", features=["feature0", "feature1"]}
+//! ```
+//!
 //! # What is missing?
 //!
 //! * A lot of wrappers to the C functions.
-//! * Support for provenance tables.
 //! * Tree sequence statistics!
 
 #![allow(non_upper_case_globals)]
@@ -85,6 +98,10 @@ pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
 pub use traits::TskitTypeAccess;
 pub use trees::{NodeTraversalOrder, Tree, TreeSequence};
+
+// Optional features
+#[cfg(any(doc, feature = "provenance"))]
+pub mod provenance;
 
 /// Handles return codes from low-level tskit functions.
 ///
