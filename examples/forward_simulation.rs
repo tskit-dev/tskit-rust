@@ -219,18 +219,15 @@ fn crossover_and_record_edges_details(
     tables: &mut tskit::TableCollection,
     rng: &mut StdRng,
 ) {
+    let mut pnodes = (parent.node0, parent.node1);
+    mendel(&mut pnodes, rng);
+
     if params.xovers == 0.0 {
-        match tables.add_edge(0., tables.sequence_length(), parent.node0, offspring_node) {
+        match tables.add_edge(0., tables.sequence_length(), pnodes.0, offspring_node) {
             Ok(_) => (),
             Err(e) => panic!("{}", e),
         }
     } else {
-        let mut pnodes = (parent.node0, parent.node1);
-        mendel(&mut pnodes, rng);
-
-        let mut p0 = parent.node0;
-        let mut p1 = parent.node1;
-
         let exp = match Exp::new(params.xovers / tables.sequence_length()) {
             Ok(e) => e,
             Err(e) => panic!("{}", e),
@@ -243,18 +240,22 @@ fn crossover_and_record_edges_details(
                     match tables.add_edge(
                         current_pos,
                         current_pos + next_length,
-                        p0,
+                        pnodes.0,
                         offspring_node,
                     ) {
                         Ok(_) => (),
                         Err(e) => panic!("{}", e),
                     }
-                    std::mem::swap(&mut p0, &mut p1);
+                    std::mem::swap(&mut pnodes.0, &mut pnodes.1);
                     current_pos += next_length;
                 }
                 Some(_) => {
-                    match tables.add_edge(current_pos, tables.sequence_length(), p0, offspring_node)
-                    {
+                    match tables.add_edge(
+                        current_pos,
+                        tables.sequence_length(),
+                        pnodes.0,
+                        offspring_node,
+                    ) {
                         Ok(_) => (),
                         Err(e) => panic!("{}", e),
                     }
