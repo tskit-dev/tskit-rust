@@ -588,6 +588,33 @@ impl TableAccess for TableCollection {
 
 impl crate::traits::NodeListGenerator for TableCollection {}
 
+#[cfg(any(doc, feature = "provenance"))]
+impl crate::provenance::Provenance for TableCollection {
+    fn add_provenance(&mut self, record: &str) -> TskReturnValue {
+        if record.is_empty() {
+            return Err(TskitError::ValueError {
+                got: String::from("empty string slice"),
+                expected: String::from("non-empty string slice"),
+            });
+        }
+        let timestamp = chrono::prelude::Local::now().to_rfc3339();
+        let rv = unsafe {
+            ll_bindings::tsk_provenance_table_add_row(
+                &mut (*self.as_mut_ptr()).provenances,
+                timestamp.as_ptr() as *mut i8,
+                timestamp.len() as tsk_size_t,
+                record.as_ptr() as *mut i8,
+                record.len() as tsk_size_t,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    fn provenances(&self) -> crate::provenance::ProvenanceTable {
+        crate::provenance::ProvenanceTable::new_from_table(&self.inner.provenances)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

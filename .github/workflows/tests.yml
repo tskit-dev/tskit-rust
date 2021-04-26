@@ -6,12 +6,13 @@ on:
 name: CI
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  run-tests:
+    runs-on: ${{ matrix.os }}
     #container:
     #  image: ubuntu:20.10
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         rust:
           - stable
           - beta
@@ -26,43 +27,27 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
       - run: sudo apt-get update -y
+        if: matrix.os == 'ubuntu-latest'
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
           override: true
       - name: cargo check
-        run: cargo check
+        run: cargo check 
       - name: cargo check examples
         run: cargo check --examples
+      - name: cargo check all features
+        run: cargo check --all-features
+      - name: cargo check examples w/all featurse
+        run: cargo check --examples --all-features
       - name: run tests
         run: |
             cargo test
             cargo test --examples
-
-  build-osx:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          submodules: recursive
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - name: cargo check
-        run: cargo check
-      - name: cargo check examples
-        run: cargo check --examples
-      - name: run tests
+      - name: run tests (all featurss)
         run: |
-            cargo test
-            cargo test --examples
+            cargo test --all-features
+            cargo test --all-features --examples
 
   fmt:
     name: rust fmt
@@ -93,4 +78,6 @@ jobs:
           override: true
       - run: rustup component add clippy
       - name: clippy (all targets)
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: clippy (all targets, all features)
         run: cargo clippy --all-targets -- -D warnings
