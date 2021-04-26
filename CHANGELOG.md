@@ -1,5 +1,13 @@
 # Change log
 
+## 2021-04-26, Version 0.2.1
+
+- [[`ff1c7ced82`](https://github.com/molpopgen/tskit-rust/commit/ff1c7ced8260091d6fe8930ebbda3a361dac0246)] Add Provenance trait as optional feature (#98). (Kevin R. Thornton)
+- [[`0fdd30067e`](https://github.com/molpopgen/tskit-rust/commit/0fdd30067e172f91a0974bbda5e2f00f1c20efe8)] Fix error in transmitting nodes. Closes #96 (#97) (Kevin R. Thornton)
+- [[`299c83ae35`](https://github.com/molpopgen/tskit-rust/commit/299c83ae35516297592b61681e00e57b10de4ad4)] Update repo/homepage name in Cargo.toml (molpopgen)
+- [[`35ecf29933`](https://github.com/molpopgen/tskit-rust/commit/35ecf29933506e4ee2d02b98bfc9d3d6f21d7254)] Remove re-exports that are part of existing bitflags types. (#95) (Kevin R. Thornton)
+
+
 ## 2021-04-21, Version 0.2.0
 
 ### Commits
