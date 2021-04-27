@@ -1,5 +1,15 @@
 # Change log
 
+## 2021-04-27, Version 0.2.2
+
+This release fixes issues with the lifetime relationships of `Tree` and the raw `C` arrays.
+Technically, this is an API change, but only with respect to return type and the integer type used to index that return type.
+
+### Commits
+- [[`89d234f674`](https://github.com/molpopgen/tskit-rust/commit/89d234f674e8363ca6edf76f223746ae18afd283)] Replace WrappedTskArray with idiomatic slices. Closes #99 (#101) (Kevin R. Thornton)
+- [[`ed8329b89e`](https://github.com/molpopgen/tskit-rust/commit/ed8329b89ec633cc32150f98c1b79eaf75ee1d83)] Completely hide NodeIterator from public name spaces. (#100) (Kevin R. Thornton)
+
+
 ## 2021-04-26, Version 0.2.1
 
 - [[`ff1c7ced82`](https://github.com/molpopgen/tskit-rust/commit/ff1c7ced8260091d6fe8930ebbda3a361dac0246)] Add Provenance trait as optional feature (#98). (Kevin R. Thornton)
