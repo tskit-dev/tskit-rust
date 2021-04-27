@@ -216,6 +216,18 @@ macro_rules! table_row_access {
     };
 }
 
+macro_rules! iterator_for_nodeiterator {
+    ($ty: ty) => {
+        impl Iterator for $ty {
+            type Item = crate::tsk_id_t;
+            fn next(&mut self) -> Option<Self::Item> {
+                self.next_node();
+                self.current_node()
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
