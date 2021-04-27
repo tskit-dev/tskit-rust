@@ -71,54 +71,251 @@ impl Tree {
         handle_tsk_return_value!(rv, tree)
     }
 
-    pub fn parent_array(&self) -> crate::ffi::TskIdArray {
-        crate::ffi::TskIdArray::new(self.inner.parent, self.inner.num_nodes)
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let p = tree.parent_array();
+    ///     drop(tree_iter);
+    ///     for _ in p {} // ERROR
+    /// }
+    /// ```
+    pub fn parent_array(&self) -> &[tsk_id_t] {
+        tree_array_slice!(self, parent, self.inner.num_nodes)
     }
 
-    pub fn samples_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // ERROR
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let s = tree.samples_array().unwrap();
+    ///     for _ in s {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let s = tree.samples_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in s {} // ERROR
+    /// }
+    /// ```
+    pub fn samples_array(&self) -> Result<&[tsk_id_t], TskitError> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
+        err_if_not_tracking_samples!(self.flags, tree_array_slice!(self, samples, num_samples))
+    }
+
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // ERROR
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let n = tree.next_sample_array().unwrap();
+    ///     for _ in n {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let n = tree.next_sample_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in n {} // ERROR
+    /// }
+    /// ```
+    pub fn next_sample_array(&self) -> Result<&[tsk_id_t], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            crate::ffi::TskIdArray::new(self.inner.samples, num_samples)
+            tree_array_slice!(self, next_sample, self.inner.num_nodes)
         )
     }
 
-    pub fn next_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // Error
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let l = tree.left_sample_array().unwrap();
+    ///     for _ in l {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let l = tree.left_sample_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in l {} // Error
+    /// }
+    /// ```
+    pub fn left_sample_array(&self) -> Result<&[tsk_id_t], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            crate::ffi::TskIdArray::new(self.inner.next_sample, self.inner.num_nodes)
+            tree_array_slice!(self, left_sample, self.inner.num_nodes)
         )
     }
 
-    pub fn left_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // ERROR
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_sample_array().unwrap();
+    ///     for _ in r {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_sample_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn right_sample_array(&self) -> Result<&[tsk_id_t], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            crate::ffi::TskIdArray::new(self.inner.left_sample, self.inner.num_nodes)
+            tree_array_slice!(self, right_sample, self.inner.num_nodes)
         )
     }
 
-    pub fn right_sample_array(&self) -> Result<crate::ffi::TskIdArray, TskitError> {
-        err_if_not_tracking_samples!(
-            self.flags,
-            crate::ffi::TskIdArray::new(self.inner.right_sample, self.inner.num_nodes)
-        )
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.left_sib_array();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn left_sib_array(&self) -> &[tsk_id_t] {
+        tree_array_slice!(self, left_sib, self.inner.num_nodes)
     }
 
-    pub fn left_sib_array(&self) -> crate::ffi::TskIdArray {
-        crate::ffi::TskIdArray::new(self.inner.left_sib, self.inner.num_nodes)
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_sib_array();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn right_sib_array(&self) -> &[tsk_id_t] {
+        tree_array_slice!(self, right_sib, self.inner.num_nodes)
     }
 
-    pub fn right_sib_array(&self) -> crate::ffi::TskIdArray {
-        crate::ffi::TskIdArray::new(self.inner.right_sib, self.inner.num_nodes)
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let l = tree.left_child_array();
+    ///     drop(tree_iter);
+    ///     for _ in l {} // ERROR
+    /// }
+    /// ```
+    pub fn left_child_array(&self) -> &[tsk_id_t] {
+        tree_array_slice!(self, left_child, self.inner.num_nodes)
     }
 
-    pub fn left_child_array(&self) -> crate::ffi::TskIdArray {
-        crate::ffi::TskIdArray::new(self.inner.left_child, self.inner.num_nodes)
-    }
-
-    pub fn right_child_array(&self) -> crate::ffi::TskIdArray {
-        crate::ffi::TskIdArray::new(self.inner.right_child, self.inner.num_nodes)
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_child_array();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn right_child_array(&self) -> &[tsk_id_t] {
+        tree_array_slice!(self, right_child, self.inner.num_nodes)
     }
 
     fn left_sample(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
@@ -1146,5 +1343,24 @@ pub(crate) mod test_trees {
         assert!(starts_fwd == starts_rev);
         stops_rev.reverse();
         assert!(stops_fwd == stops_rev);
+    }
+
+    // FIXME: remove later
+    #[test]
+    fn test_array_lifetime() {
+        let treeseq = treeseq_from_small_table_collection_two_trees();
+        let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
+        if let Some(tree) = tree_iter.next() {
+            let pa = tree.parent_array();
+            let mut pc = vec![];
+            for i in pa.iter() {
+                pc.push(*i);
+            }
+            for (i, p) in pc.iter().enumerate() {
+                assert_eq!(pa[i], *p);
+            }
+        } else {
+            panic!("Expected a tree.");
+        }
     }
 }
