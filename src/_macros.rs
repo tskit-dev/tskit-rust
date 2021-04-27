@@ -168,28 +168,6 @@ macro_rules! process_state_input {
     };
 }
 
-macro_rules! index_for_wrapped_tsk_array_type {
-    ($name: ty, $index:ty, $output: ty) => {
-        impl std::ops::Index<$index> for $name {
-            type Output = $output;
-
-            fn index(&self, index: $index) -> &Self::Output {
-                if index >= self.len() as $index {
-                    panic!("fatal: index out of range");
-                }
-                let rv = unsafe { self.array.offset(index as isize) };
-                unsafe { &*rv }
-            }
-        }
-    };
-}
-
-macro_rules! wrapped_tsk_array_traits {
-    ($name: ty, $index:ty, $output: ty) => {
-        index_for_wrapped_tsk_array_type!($name, $index, $output);
-    };
-}
-
 macro_rules! err_if_not_tracking_samples {
     ($flags: expr, $rv: expr) => {
         match $flags.contains(crate::TreeFlags::SAMPLE_LISTS) {
@@ -224,6 +202,14 @@ macro_rules! iterator_for_nodeiterator {
                 self.next_node();
                 self.current_node()
             }
+        }
+    };
+}
+
+macro_rules! tree_array_slice {
+    ($self: ident, $array: ident, $len: expr) => {
+        unsafe {
+            std::slice::from_raw_parts((*$self.as_ptr()).$array as *const tsk_id_t, $len as usize)
         }
     };
 }
