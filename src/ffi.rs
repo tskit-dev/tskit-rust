@@ -44,7 +44,7 @@ impl<T: Copy> WrappedTskArray<T> {
     ///
     /// This function returns the raw C pointer,
     /// and is thus unsafe.
-    pub unsafe fn as_ptr(&self) -> *const T {
+    pub fn as_ptr(&self) -> *const T {
         self.array
     }
 

@@ -197,18 +197,3 @@ pub trait NodeListGenerator: TableAccess {
         self.nodes().create_node_id_vector(f)
     }
 }
-
-/// Trait defining iteration over nodes.
-pub trait NodeIterator {
-    fn next_node(&mut self);
-    fn current_node(&mut self) -> Option<tsk_id_t>;
-}
-
-impl Iterator for dyn NodeIterator {
-    type Item = tsk_id_t;
-
-    fn next(&mut self) -> Option<tsk_id_t> {
-        self.next_node();
-        self.current_node()
-    }
-}

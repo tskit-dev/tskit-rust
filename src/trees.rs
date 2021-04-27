@@ -5,7 +5,6 @@ use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;
 use crate::MutationTable;
-use crate::NodeIterator;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SimplificationOptions;
@@ -30,7 +29,11 @@ pub struct Tree {
     flags: TreeFlags,
 }
 
-pub type BoxedNodeIterator = Box<dyn NodeIterator>;
+// Trait defining iteration over nodes.
+trait NodeIterator {
+    fn next_node(&mut self);
+    fn current_node(&mut self) -> Option<tsk_id_t>;
+}
 
 drop_for_tskit_type!(Tree, tsk_tree_free);
 tskit_type_access!(Tree, ll_bindings::tsk_tree_t);
@@ -203,26 +206,27 @@ impl Tree {
         rv
     }
 
-    /// Return a [`NodeIterator`] from the node `u` to the root of the tree.
+    /// Return an [`Iterator`] from the node `u` to the root of the tree.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn path_to_root(&self, u: tsk_id_t) -> Result<BoxedNodeIterator, TskitError> {
-        let iter = PathToRootIterator::new(self, u)?;
-        Ok(Box::new(iter))
+    pub fn path_to_root(
+        &self,
+        u: tsk_id_t,
+    ) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+        PathToRootIterator::new(self, u)
     }
 
-    /// Return a [`NodeIterator`] over the children of node `u`.
+    /// Return an [`Iterator`] over the children of node `u`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn children(&self, u: tsk_id_t) -> Result<BoxedNodeIterator, TskitError> {
-        let iter = ChildIterator::new(self, u)?;
-        Ok(Box::new(iter))
+    pub fn children(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+        ChildIterator::new(&self, u)
     }
-    /// Return a [`NodeIterator`] over the sample nodes descending from node `u`.
+    /// Return an [`Iterator`] over the sample nodes descending from node `u`.
     ///
     /// # Note
     ///
@@ -234,19 +238,18 @@ impl Tree {
     ///
     /// [`TskitError::NotTrackingSamples`] if [`TreeFlags::SAMPLE_LISTS`] was not used
     /// to initialize `self`.
-    pub fn samples(&self, u: tsk_id_t) -> Result<BoxedNodeIterator, TskitError> {
-        let iter = SamplesIterator::new(self, u)?;
-        Ok(Box::new(iter))
+    pub fn samples(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+        SamplesIterator::new(self, u)
     }
 
-    /// Return a [`NodeIterator`] over the roots of the tree.
+    /// Return an [`Iterator`] over the roots of the tree.
     ///
     /// # Note
     ///
     /// For a tree with multiple roots, the iteration starts
     /// at the left root.
-    pub fn roots(&self) -> BoxedNodeIterator {
-        Box::new(RootIterator::new(self))
+    pub fn roots(&self) -> impl Iterator<Item = tsk_id_t> + '_ {
+        RootIterator::new(self)
     }
 
     /// Return all roots as a vector.
@@ -260,15 +263,15 @@ impl Tree {
         v
     }
 
-    /// Return a [`NodeIterator`] over all nodes in the tree.
+    /// Return an [`Iterator`] over all nodes in the tree.
     ///
     /// # Parameters
     ///
     /// * `order`: A value from [`NodeTraversalOrder`] specifying the
     ///   iteration order.
-    pub fn traverse_nodes(&self, order: NodeTraversalOrder) -> BoxedNodeIterator {
+    pub fn traverse_nodes(&self, order: NodeTraversalOrder) -> impl Iterator<Item = tsk_id_t> + '_ {
         match order {
-            NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
+            NodeTraversalOrder::Preorder => PreorderNodeIterator::new(&self),
         }
     }
 
@@ -396,21 +399,19 @@ pub enum NodeTraversalOrder {
     Preorder,
 }
 
-struct PreorderNodeIterator {
+struct PreorderNodeIterator<'a> {
     root_stack: Vec<i32>,
     node_stack: Vec<i32>,
-    left_child: crate::ffi::TskIdArray,
-    right_sib: crate::ffi::TskIdArray,
+    tree: &'a Tree,
     current_node_: Option<tsk_id_t>,
 }
 
-impl PreorderNodeIterator {
-    fn new(tree: &Tree) -> Self {
+impl<'a> PreorderNodeIterator<'a> {
+    fn new(tree: &'a Tree) -> Self {
         let mut rv = PreorderNodeIterator {
             root_stack: tree.roots_to_vec(),
             node_stack: vec![],
-            left_child: tree.left_child_array(),
-            right_sib: tree.right_sib_array(),
+            tree,
             current_node_: None,
         };
         rv.root_stack.reverse();
@@ -421,15 +422,15 @@ impl PreorderNodeIterator {
     }
 }
 
-impl NodeIterator for PreorderNodeIterator {
+impl NodeIterator for PreorderNodeIterator<'_> {
     fn next_node(&mut self) {
         self.current_node_ = self.node_stack.pop();
         match self.current_node_ {
             Some(u) => {
-                let mut c = self.left_child[u];
+                let mut c = self.tree.left_child(u).unwrap();
                 while c != TSK_NULL {
                     self.node_stack.push(c);
-                    c = self.right_sib[c];
+                    c = self.tree.right_sib(c).unwrap();
                 }
             }
             None => {
@@ -445,30 +446,32 @@ impl NodeIterator for PreorderNodeIterator {
     }
 }
 
-struct RootIterator {
+iterator_for_nodeiterator!(PreorderNodeIterator<'_>);
+
+struct RootIterator<'a> {
     current_root: Option<tsk_id_t>,
     next_root: tsk_id_t,
-    right_sib: crate::ffi::TskIdArray,
+    tree: &'a Tree,
 }
 
-impl RootIterator {
-    fn new(tree: &Tree) -> Self {
+impl<'a> RootIterator<'a> {
+    fn new(tree: &'a Tree) -> Self {
         RootIterator {
             current_root: None,
             next_root: tree.inner.left_root,
-            right_sib: tree.right_sib_array(),
+            tree,
         }
     }
 }
 
-impl NodeIterator for RootIterator {
+impl NodeIterator for RootIterator<'_> {
     fn next_node(&mut self) {
         self.current_root = match self.next_root {
             TSK_NULL => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                self.next_root = self.right_sib[r];
+                self.next_root = self.tree.right_sib(r).unwrap();
                 cr
             }
         };
@@ -479,32 +482,34 @@ impl NodeIterator for RootIterator {
     }
 }
 
-struct ChildIterator {
+iterator_for_nodeiterator!(RootIterator<'_>);
+
+struct ChildIterator<'a> {
     current_child: Option<tsk_id_t>,
     next_child: tsk_id_t,
-    right_sib: crate::ffi::TskIdArray,
+    tree: &'a Tree,
 }
 
-impl ChildIterator {
-    fn new(tree: &Tree, u: tsk_id_t) -> Result<Self, TskitError> {
+impl<'a> ChildIterator<'a> {
+    fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
         let c = tree.left_child(u)?;
 
         Ok(ChildIterator {
             current_child: None,
             next_child: c,
-            right_sib: tree.right_sib_array(),
+            tree,
         })
     }
 }
 
-impl NodeIterator for ChildIterator {
+impl NodeIterator for ChildIterator<'_> {
     fn next_node(&mut self) {
         self.current_child = match self.next_child {
             TSK_NULL => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                self.next_child = self.right_sib[r];
+                self.next_child = self.tree.right_sib(r).unwrap();
                 cr
             }
         };
@@ -515,33 +520,35 @@ impl NodeIterator for ChildIterator {
     }
 }
 
-struct PathToRootIterator {
+iterator_for_nodeiterator!(ChildIterator<'_>);
+
+struct PathToRootIterator<'a> {
     current_node: Option<tsk_id_t>,
     next_node: tsk_id_t,
-    parent: crate::ffi::TskIdArray,
+    tree: &'a Tree,
 }
 
-impl PathToRootIterator {
-    fn new(tree: &Tree, u: tsk_id_t) -> Result<Self, TskitError> {
+impl<'a> PathToRootIterator<'a> {
+    fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
         match u >= tree.num_nodes as tsk_id_t {
             true => Err(TskitError::IndexError),
             false => Ok(PathToRootIterator {
                 current_node: None,
                 next_node: u,
-                parent: tree.parent_array(),
+                tree,
             }),
         }
     }
 }
 
-impl NodeIterator for PathToRootIterator {
+impl NodeIterator for PathToRootIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_node {
             TSK_NULL => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                self.next_node = self.parent[r];
+                self.next_node = self.tree.parent(r).unwrap();
                 cr
             }
         };
@@ -552,41 +559,47 @@ impl NodeIterator for PathToRootIterator {
     }
 }
 
-struct SamplesIterator {
+iterator_for_nodeiterator!(PathToRootIterator<'_>);
+
+struct SamplesIterator<'a> {
     current_node: Option<tsk_id_t>,
     next_sample_index: tsk_id_t,
     last_sample_index: tsk_id_t,
-    next_sample: crate::ffi::TskIdArray,
-    samples: crate::ffi::TskIdArray,
+    tree: &'a Tree,
+    //next_sample: crate::ffi::TskIdArray,
+    //samples: crate::ffi::TskIdArray,
 }
 
-impl SamplesIterator {
-    fn new(tree: &Tree, u: tsk_id_t) -> Result<Self, TskitError> {
+impl<'a> SamplesIterator<'a> {
+    fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
         let rv = SamplesIterator {
             current_node: None,
             next_sample_index: tree.left_sample(u)?,
             last_sample_index: tree.right_sample(u)?,
-            next_sample: tree.next_sample_array()?,
-            samples: tree.samples_array()?,
+            tree,
         };
 
         Ok(rv)
     }
 }
 
-impl NodeIterator for SamplesIterator {
+impl NodeIterator for SamplesIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_sample_index {
             TSK_NULL => None,
             r => {
                 if r == self.last_sample_index {
-                    let cr = Some(self.samples[r]);
+                    //let cr = Some(self.tree.samples(r).unwrap());
+                    let cr = Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r as isize) });
                     self.next_sample_index = TSK_NULL;
                     cr
                 } else {
                     assert!(r >= 0);
-                    let cr = Some(self.samples[r]);
-                    self.next_sample_index = self.next_sample[r];
+                    //let cr = Some(self.tree.samples(r).unwrap());
+                    let cr = Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r as isize) });
+                    //self.next_sample_index = self.next_sample[r];
+                    self.next_sample_index =
+                        unsafe { *(*self.tree.as_ptr()).next_sample.offset(r as isize) };
                     cr
                 }
             }
@@ -597,6 +610,8 @@ impl NodeIterator for SamplesIterator {
         self.current_node
     }
 }
+
+iterator_for_nodeiterator!(SamplesIterator<'_>);
 
 /// A tree sequence.
 ///
