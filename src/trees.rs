@@ -477,9 +477,13 @@ impl Tree {
     ///
     /// * `order`: A value from [`NodeTraversalOrder`] specifying the
     ///   iteration order.
-    pub fn traverse_nodes(&self, order: NodeTraversalOrder) -> impl Iterator<Item = tsk_id_t> + '_ {
+    // Return value is dyn for later addition of other traversal orders
+    pub fn traverse_nodes(
+        &self,
+        order: NodeTraversalOrder,
+    ) -> Box<dyn Iterator<Item = tsk_id_t> + '_> {
         match order {
-            NodeTraversalOrder::Preorder => PreorderNodeIterator::new(&self),
+            NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
         }
     }
 
