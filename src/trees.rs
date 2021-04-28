@@ -408,10 +408,21 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
+    #[deprecated(since = "0.2.3", note = "Please use Tree::parents instead")]
     pub fn path_to_root(
         &self,
         u: tsk_id_t,
     ) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+        self.parents(u)
+    }
+
+    /// Return an [`Iterator`] from the node `u` to the root of the tree,
+    /// travering all parent nodes.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `u` is out of range.
+    pub fn parents(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
         PathToRootIterator::new(self, u)
     }
 
@@ -1174,7 +1185,7 @@ pub(crate) mod test_trees {
                 assert_eq!(samples[i - 1], i as tsk_id_t);
 
                 let mut nsteps = 0;
-                for _ in tree.path_to_root(samples[i - 1]).unwrap() {
+                for _ in tree.parents(samples[i - 1]).unwrap() {
                     nsteps += 1;
                 }
                 assert_eq!(nsteps, 2);
