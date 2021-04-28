@@ -391,6 +391,7 @@ impl Tree {
 
     /// Obtain the list of samples for the current tree/tree sequence
     /// as a vector.
+    #[deprecated(since = "0.2.3", note = "Please use Tree::sample_nodes instead")]
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
@@ -401,6 +402,13 @@ impl Tree {
             rv.push(u);
         }
         rv
+    }
+
+    /// Get the list of sample nodes as a slice.
+    pub fn sample_nodes(&self) -> &[tsk_id_t] {
+        let num_samples =
+            unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
+        tree_array_slice!(self, samples, num_samples)
     }
 
     /// Return an [`Iterator`] from the node `u` to the root of the tree.
@@ -993,6 +1001,10 @@ impl TreeSequence {
     }
 
     /// Get the list of samples as a vector.
+    #[deprecated(
+        since = "0.2.3",
+        note = "Please use TreeSequence::sample_nodes instead"
+    )]
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         let mut rv = vec![];
@@ -1002,6 +1014,12 @@ impl TreeSequence {
             rv.push(u);
         }
         rv
+    }
+
+    /// Get the list of sample nodes as a slice.
+    pub fn sample_nodes(&self) -> &[tsk_id_t] {
+        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
+        tree_array_slice!(self, samples, num_samples)
     }
 
     /// Get the number of trees.
@@ -1161,7 +1179,7 @@ pub(crate) mod test_trees {
     fn test_create_treeseq_new_from_tables() {
         let tables = make_small_table_collection();
         let treeseq = TreeSequence::new(tables, TreeSequenceFlags::default()).unwrap();
-        let samples = treeseq.samples_to_vec();
+        let samples = treeseq.sample_nodes();
         assert_eq!(samples.len(), 2);
         for i in 1..3 {
             assert_eq!(samples[i - 1], i as tsk_id_t);
@@ -1183,7 +1201,7 @@ pub(crate) mod test_trees {
         while let Some(tree) = tree_iter.next() {
             ntrees += 1;
             assert_eq!(tree.current_tree, ntrees);
-            let samples = tree.samples_to_vec();
+            let samples = tree.sample_nodes();
             assert_eq!(samples.len(), 2);
             for i in 1..3 {
                 assert_eq!(samples[i - 1], i as tsk_id_t);
