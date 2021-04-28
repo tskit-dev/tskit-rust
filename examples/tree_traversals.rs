@@ -3,10 +3,8 @@ use streaming_iterator::StreamingIterator; // Required for tree iteration
 
 // "Manual" traversal from samples to root
 fn traverse_upwards(tree: &tskit::Tree) {
-    let samples = tree.samples_to_vec();
-
-    for s in samples.iter() {
-        let mut u = *s;
+    for &s in tree.sample_nodes() {
+        let mut u = s;
         while u != tskit::TSK_NULL {
             u = tree.parent(u).unwrap();
         }
@@ -15,12 +13,10 @@ fn traverse_upwards(tree: &tskit::Tree) {
 
 // Iterate from each node up to its root.
 fn traverse_upwards_with_iterator(tree: &tskit::Tree) {
-    let samples = tree.samples_to_vec();
-
-    for s in samples.iter() {
+    for &s in tree.sample_nodes() {
         // _steps_to_root counts the number of steps,
         // including the starting node s.
-        for (_steps_to_root, _) in tree.path_to_root(*s).unwrap().enumerate() {}
+        for (_steps_to_root, _) in tree.parents(s).unwrap().enumerate() {}
     }
 }
 

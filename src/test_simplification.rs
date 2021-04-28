@@ -30,14 +30,14 @@ mod tests {
     #[test]
     fn test_simplify_treeseq() {
         let ts = treeseq_from_small_table_collection_two_trees();
-        let samples = ts.samples_to_vec();
+        let samples = ts.sample_nodes();
         let (_, idmap_option) = ts
             .simplify(&samples, SimplificationOptions::default(), true)
             .unwrap();
         assert!(idmap_option.is_some());
         let idmap = idmap_option.unwrap();
-        for i in samples.iter() {
-            assert_ne!(idmap[*i as usize], TSK_NULL);
+        for &i in samples {
+            assert_ne!(idmap[i as usize], TSK_NULL);
         }
     }
 }

@@ -391,6 +391,7 @@ impl Tree {
 
     /// Obtain the list of samples for the current tree/tree sequence
     /// as a vector.
+    #[deprecated(since = "0.2.3", note = "Please use Tree::sample_nodes instead")]
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
@@ -403,16 +404,34 @@ impl Tree {
         rv
     }
 
+    /// Get the list of sample nodes as a slice.
+    pub fn sample_nodes(&self) -> &[tsk_id_t] {
+        let num_samples =
+            unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
+        tree_array_slice!(self, samples, num_samples)
+    }
+
     /// Return an [`Iterator`] from the node `u` to the root of the tree.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
+    #[deprecated(since = "0.2.3", note = "Please use Tree::parents instead")]
     pub fn path_to_root(
         &self,
         u: tsk_id_t,
     ) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
-        PathToRootIterator::new(self, u)
+        self.parents(u)
+    }
+
+    /// Return an [`Iterator`] from the node `u` to the root of the tree,
+    /// travering all parent nodes.
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError::IndexError`] if `u` is out of range.
+    pub fn parents(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+        ParentsIterator::new(self, u)
     }
 
     /// Return an [`Iterator`] over the children of node `u`.
@@ -466,9 +485,13 @@ impl Tree {
     ///
     /// * `order`: A value from [`NodeTraversalOrder`] specifying the
     ///   iteration order.
-    pub fn traverse_nodes(&self, order: NodeTraversalOrder) -> impl Iterator<Item = tsk_id_t> + '_ {
+    // Return value is dyn for later addition of other traversal orders
+    pub fn traverse_nodes(
+        &self,
+        order: NodeTraversalOrder,
+    ) -> Box<dyn Iterator<Item = tsk_id_t> + '_> {
         match order {
-            NodeTraversalOrder::Preorder => PreorderNodeIterator::new(&self),
+            NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
         }
     }
 
@@ -719,17 +742,17 @@ impl NodeIterator for ChildIterator<'_> {
 
 iterator_for_nodeiterator!(ChildIterator<'_>);
 
-struct PathToRootIterator<'a> {
+struct ParentsIterator<'a> {
     current_node: Option<tsk_id_t>,
     next_node: tsk_id_t,
     tree: &'a Tree,
 }
 
-impl<'a> PathToRootIterator<'a> {
+impl<'a> ParentsIterator<'a> {
     fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
         match u >= tree.num_nodes as tsk_id_t {
             true => Err(TskitError::IndexError),
-            false => Ok(PathToRootIterator {
+            false => Ok(ParentsIterator {
                 current_node: None,
                 next_node: u,
                 tree,
@@ -738,7 +761,7 @@ impl<'a> PathToRootIterator<'a> {
     }
 }
 
-impl NodeIterator for PathToRootIterator<'_> {
+impl NodeIterator for ParentsIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_node {
             TSK_NULL => None,
@@ -756,7 +779,7 @@ impl NodeIterator for PathToRootIterator<'_> {
     }
 }
 
-iterator_for_nodeiterator!(PathToRootIterator<'_>);
+iterator_for_nodeiterator!(ParentsIterator<'_>);
 
 struct SamplesIterator<'a> {
     current_node: Option<tsk_id_t>,
@@ -978,6 +1001,10 @@ impl TreeSequence {
     }
 
     /// Get the list of samples as a vector.
+    #[deprecated(
+        since = "0.2.3",
+        note = "Please use TreeSequence::sample_nodes instead"
+    )]
     pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         let mut rv = vec![];
@@ -987,6 +1014,12 @@ impl TreeSequence {
             rv.push(u);
         }
         rv
+    }
+
+    /// Get the list of sample nodes as a slice.
+    pub fn sample_nodes(&self) -> &[tsk_id_t] {
+        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
+        tree_array_slice!(self, samples, num_samples)
     }
 
     /// Get the number of trees.
@@ -1146,7 +1179,7 @@ pub(crate) mod test_trees {
     fn test_create_treeseq_new_from_tables() {
         let tables = make_small_table_collection();
         let treeseq = TreeSequence::new(tables, TreeSequenceFlags::default()).unwrap();
-        let samples = treeseq.samples_to_vec();
+        let samples = treeseq.sample_nodes();
         assert_eq!(samples.len(), 2);
         for i in 1..3 {
             assert_eq!(samples[i - 1], i as tsk_id_t);
@@ -1168,13 +1201,13 @@ pub(crate) mod test_trees {
         while let Some(tree) = tree_iter.next() {
             ntrees += 1;
             assert_eq!(tree.current_tree, ntrees);
-            let samples = tree.samples_to_vec();
+            let samples = tree.sample_nodes();
             assert_eq!(samples.len(), 2);
             for i in 1..3 {
                 assert_eq!(samples[i - 1], i as tsk_id_t);
 
                 let mut nsteps = 0;
-                for _ in tree.path_to_root(samples[i - 1]).unwrap() {
+                for _ in tree.parents(samples[i - 1]).unwrap() {
                     nsteps += 1;
                 }
                 assert_eq!(nsteps, 2);
