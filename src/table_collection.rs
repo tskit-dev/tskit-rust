@@ -1033,8 +1033,8 @@ mod test {
             assert!(row == tables.nodes().row(i as tsk_id_t, true).unwrap());
             assert!(!(row != tables.nodes().row(i as tsk_id_t, true).unwrap()));
         }
-        assert!(tables.nodes().row(0, true) != tables.nodes().row(1, true));
-        assert!(tables.nodes().row(1, true) != tables.nodes().row(2, true));
+        assert!(tables.nodes().row(0, true).unwrap() != tables.nodes().row(1, true).unwrap());
+        assert!(tables.nodes().row(1, true).unwrap() != tables.nodes().row(2, true).unwrap());
     }
 
     #[test]
@@ -1069,5 +1069,23 @@ mod test {
             tables.individuals().row(0, true).unwrap()
                 == tables.individuals().row(0, true).unwrap()
         );
+    }
+}
+
+#[cfg(test)]
+mod test_bad_metadata {
+    use super::*;
+    use crate::test_fixtures::bad_metadata::*;
+
+    #[test]
+    fn test_bad_mutation_metadata_roundtrip() {
+        let mut tables = TableCollection::new(1.).unwrap();
+        let md = F { x: 1, y: 11 };
+        tables
+            .add_mutation_with_metadata(0, 0, crate::TSK_NULL, 0.0, None, Some(&md))
+            .unwrap();
+        if tables.mutations().metadata::<Ff>(0).is_ok() {
+            panic!("expected an error!!");
+        }
     }
 }

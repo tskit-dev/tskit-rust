@@ -13,11 +13,17 @@ pub struct Mutation {
 // details.
 impl metadata::MetadataRoundtrip for Mutation {
     fn encode(&self) -> Result<Vec<u8>, metadata::MetadataError> {
-        Ok(bincode::serialize(&self).unwrap())
+        match bincode::serialize(&self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+        }
     }
 
     fn decode(md: &[u8]) -> Result<Self, metadata::MetadataError> {
-        Ok(bincode::deserialize(md).unwrap())
+        match bincode::deserialize(md) {
+            Ok(x) => Ok(x),
+            Err(e) => Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+        }
     }
 }
 

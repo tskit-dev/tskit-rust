@@ -42,6 +42,10 @@ impl metadata::MetadataRoundtrip for Mutation {
         Ok(rv)
     }
 
+    // NOTE: there is no point in trying to return MetadataError here!
+    // Internally, split_at asserts that the starting point is less than the
+    // end of the slice, and then proceeds to an unsafe operation.
+    // The lack of nice error handling is a big reason to prefer serde!
     fn decode(md: &[u8]) -> Result<Self, metadata::MetadataError> {
         use std::convert::TryInto;
         let (effect_size_bytes, rest) = md.split_at(std::mem::size_of::<f64>());
