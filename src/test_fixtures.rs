@@ -69,3 +69,58 @@ pub fn treeseq_from_small_table_collection_two_trees() -> TreeSequence {
     let tables = make_small_table_collection_two_trees();
     tables.tree_sequence(TreeSequenceFlags::default()).unwrap()
 }
+
+#[cfg(test)]
+pub mod bad_metadata {
+    #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    pub struct F {
+        pub x: i32,
+        pub y: u32,
+    }
+
+    #[derive(serde::Serialize, serde::Deserialize, Debug)]
+    pub struct Ff {
+        pub x: i32,
+        pub y: u64,
+    }
+
+    impl crate::metadata::MetadataRoundtrip for F {
+        fn encode(&self) -> Result<Vec<u8>, crate::metadata::MetadataError> {
+            match bincode::serialize(&self) {
+                Ok(v) => Ok(v),
+                Err(e) => {
+                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                }
+            }
+        }
+
+        fn decode(md: &[u8]) -> Result<Self, crate::metadata::MetadataError> {
+            match bincode::deserialize(md) {
+                Ok(x) => Ok(x),
+                Err(e) => {
+                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                }
+            }
+        }
+    }
+
+    impl crate::metadata::MetadataRoundtrip for Ff {
+        fn encode(&self) -> Result<Vec<u8>, crate::metadata::MetadataError> {
+            match bincode::serialize(&self) {
+                Ok(v) => Ok(v),
+                Err(e) => {
+                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                }
+            }
+        }
+
+        fn decode(md: &[u8]) -> Result<Self, crate::metadata::MetadataError> {
+            match bincode::deserialize(md) {
+                Ok(x) => Ok(x),
+                Err(e) => {
+                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                }
+            }
+        }
+    }
+}

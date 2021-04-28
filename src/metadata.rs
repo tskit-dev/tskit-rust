@@ -38,12 +38,15 @@ impl EncodedMetadata {
     }
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum MetadataError {
     /// Error related to types implementing
     /// [``MetadataRoundtrip``]
-    #[error("{}", *msg)]
-    RoundtripError { msg: String },
+    #[error("{}", *value)]
+    RoundtripError {
+        #[from]
+        value: Box<dyn std::error::Error>,
+    },
 }
 
 pub(crate) fn char_column_to_vector(
@@ -145,5 +148,53 @@ mod tests {
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
         assert_eq!(f.y, df.y);
+    }
+}
+
+#[cfg(test)]
+mod test_serde {
+    use super::*;
+    use crate::test_fixtures::bad_metadata::*;
+
+    #[test]
+    fn test_metadata_round_trip() {
+        let f = F { x: -3, y: 42 };
+        let v = f.encode().unwrap();
+        let c = v.as_ptr() as *const libc::c_char;
+        let mut d = vec![];
+        for i in 0..v.len() {
+            d.push(unsafe { *c.add(i as usize) as u8 });
+        }
+        let df = F::decode(&d).unwrap();
+        assert_eq!(f.x, df.x);
+        assert_eq!(f.y, df.y);
+    }
+
+    #[test]
+    fn test_encoded_metadata_roundtrip() {
+        let f = F { x: -3, y: 42 };
+        let enc = EncodedMetadata::new(Some(&f)).unwrap();
+        let p = enc.as_ptr();
+        let mut d = vec![];
+        for i in 0..enc.len() {
+            d.push(unsafe { *p.add(i as usize) as u8 });
+        }
+        let df = F::decode(&d).unwrap();
+        assert_eq!(f.x, df.x);
+        assert_eq!(f.y, df.y);
+    }
+
+    #[test]
+    fn test_metadata_round_trip_wrong_type() {
+        let f = F { x: -3, y: 42 };
+        let v = f.encode().unwrap();
+        let c = v.as_ptr() as *const libc::c_char;
+        let mut d = vec![];
+        for i in 0..v.len() {
+            d.push(unsafe { *c.add(i as usize) as u8 });
+        }
+        if crate::test_fixtures::bad_metadata::Ff::decode(&d).is_ok() {
+            panic!("expected an error!!");
+        }
     }
 }

@@ -3,7 +3,7 @@
 use crate::TskReturnValue;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum TskitError {
     /// Used when bad input is encountered.
     #[error("we received {} but expected {}",*got, *expected)]
