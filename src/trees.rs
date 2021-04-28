@@ -423,7 +423,7 @@ impl Tree {
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
     pub fn parents(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
-        PathToRootIterator::new(self, u)
+        ParentsIterator::new(self, u)
     }
 
     /// Return an [`Iterator`] over the children of node `u`.
@@ -730,17 +730,17 @@ impl NodeIterator for ChildIterator<'_> {
 
 iterator_for_nodeiterator!(ChildIterator<'_>);
 
-struct PathToRootIterator<'a> {
+struct ParentsIterator<'a> {
     current_node: Option<tsk_id_t>,
     next_node: tsk_id_t,
     tree: &'a Tree,
 }
 
-impl<'a> PathToRootIterator<'a> {
+impl<'a> ParentsIterator<'a> {
     fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
         match u >= tree.num_nodes as tsk_id_t {
             true => Err(TskitError::IndexError),
-            false => Ok(PathToRootIterator {
+            false => Ok(ParentsIterator {
                 current_node: None,
                 next_node: u,
                 tree,
@@ -749,7 +749,7 @@ impl<'a> PathToRootIterator<'a> {
     }
 }
 
-impl NodeIterator for PathToRootIterator<'_> {
+impl NodeIterator for ParentsIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_node {
             TSK_NULL => None,
@@ -767,7 +767,7 @@ impl NodeIterator for PathToRootIterator<'_> {
     }
 }
 
-iterator_for_nodeiterator!(PathToRootIterator<'_>);
+iterator_for_nodeiterator!(ParentsIterator<'_>);
 
 struct SamplesIterator<'a> {
     current_node: Option<tsk_id_t>,
