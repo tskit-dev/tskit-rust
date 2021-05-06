@@ -168,6 +168,15 @@ macro_rules! decode_metadata_row {
     };
 }
 
+macro_rules! table_row_decode_metadata {
+    ($decode_metadata: ident, $table: ident, $pos: ident) => {
+        match $decode_metadata {
+            true => metadata_to_vector!($table, $pos).unwrap().map(|x| x),
+            false => None,
+        }
+    };
+}
+
 macro_rules! process_state_input {
     ($state: expr) => {
         match $state {

@@ -41,13 +41,7 @@ fn make_migration_table_row(
             source: table.source(pos).unwrap(),
             dest: table.dest(pos).unwrap(),
             time: table.time(pos).unwrap(),
-            metadata: match decode_metadata {
-                true => match metadata_to_vector!(table, pos).unwrap() {
-                    Some(x) => Some(x),
-                    None => None,
-                },
-                false => None,
-            },
+            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
         })
     } else {
         None

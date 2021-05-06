@@ -58,13 +58,7 @@ fn make_individual_table_row(
             flags: table.flags(pos).unwrap(),
             location: table.location(pos).unwrap(),
             parents: table.parents(pos).unwrap(),
-            metadata: match decode_metadata {
-                true => match metadata_to_vector!(table, pos).unwrap() {
-                    Some(x) => Some(x),
-                    None => None,
-                },
-                false => None,
-            },
+            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
         };
         Some(rv)
     } else {
