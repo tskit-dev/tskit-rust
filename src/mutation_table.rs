@@ -38,13 +38,7 @@ fn make_mutation_table_row(
             parent: table.parent(pos).unwrap(),
             time: table.time(pos).unwrap(),
             derived_state: table.derived_state(pos).unwrap(),
-            metadata: match decode_metadata {
-                true => match metadata_to_vector!(table, pos).unwrap() {
-                    Some(x) => Some(x),
-                    None => None,
-                },
-                false => None,
-            },
+            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
         };
         Some(rv)
     } else {
