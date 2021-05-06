@@ -86,41 +86,21 @@ pub mod bad_metadata {
 
     impl crate::metadata::MetadataRoundtrip for F {
         fn encode(&self) -> Result<Vec<u8>, crate::metadata::MetadataError> {
-            match bincode::serialize(&self) {
-                Ok(v) => Ok(v),
-                Err(e) => {
-                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                }
-            }
+            handle_metadata_return!(bincode::serialize(&self))
         }
 
         fn decode(md: &[u8]) -> Result<Self, crate::metadata::MetadataError> {
-            match bincode::deserialize(md) {
-                Ok(x) => Ok(x),
-                Err(e) => {
-                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                }
-            }
+            handle_metadata_return!(bincode::deserialize(md))
         }
     }
 
     impl crate::metadata::MetadataRoundtrip for Ff {
         fn encode(&self) -> Result<Vec<u8>, crate::metadata::MetadataError> {
-            match bincode::serialize(&self) {
-                Ok(v) => Ok(v),
-                Err(e) => {
-                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                }
-            }
+            handle_metadata_return!(bincode::serialize(&self))
         }
 
         fn decode(md: &[u8]) -> Result<Self, crate::metadata::MetadataError> {
-            match bincode::deserialize(md) {
-                Ok(x) => Ok(x),
-                Err(e) => {
-                    Err(crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                }
-            }
+            handle_metadata_return!(bincode::deserialize(md))
         }
     }
 }

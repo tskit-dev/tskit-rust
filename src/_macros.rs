@@ -236,6 +236,18 @@ macro_rules! tree_array_slice {
     };
 }
 
+/// Convenience macro to handle implementing
+/// [`crate::metadata::MetadataRoundtrip`]
+#[macro_export]
+macro_rules! handle_metadata_return {
+    ($e: expr) => {
+        match $e {
+            Ok(x) => Ok(x),
+            Err(e) => Err($crate::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
