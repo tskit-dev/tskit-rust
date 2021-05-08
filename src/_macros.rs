@@ -17,13 +17,13 @@ macro_rules! enable_tskit_traits {
 macro_rules! handle_tsk_return_value {
     ($code: expr) => {{
         if $code < 0 {
-            return Err(crate::error::TskitError::ErrorCode { code: $code });
+            return Err($crate::error::TskitError::ErrorCode { code: $code });
         }
         Ok($code)
     }};
     ($code: expr, $return_value: expr) => {{
         if $code < 0 {
-            return Err(crate::error::TskitError::ErrorCode { code: $code });
+            return Err($crate::error::TskitError::ErrorCode { code: $code });
         }
         Ok($return_value)
     }};
@@ -32,7 +32,7 @@ macro_rules! handle_tsk_return_value {
 macro_rules! panic_on_tskit_error {
     ($code: expr) => {
         if $code < 0 {
-            let c_str = unsafe { std::ffi::CStr::from_ptr(crate::bindings::tsk_strerror($code)) };
+            let c_str = unsafe { std::ffi::CStr::from_ptr($crate::bindings::tsk_strerror($code)) };
             let str_slice: &str = c_str.to_str().unwrap();
             let message: String = str_slice.to_owned();
             panic!("{}", message);
@@ -42,8 +42,8 @@ macro_rules! panic_on_tskit_error {
 
 macro_rules! unsafe_tsk_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
-        if $i < $lo || ($i as crate::tsk_size_t) >= $hi {
-            Err(crate::error::TskitError::IndexError {})
+        if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
+            Err($crate::error::TskitError::IndexError {})
         } else {
             Ok(unsafe { *$array.offset($i as isize) })
         }
@@ -118,7 +118,7 @@ macro_rules! drop_for_tskit_type {
 
 macro_rules! tskit_type_access {
     ($name: ident, $ll_name: ty) => {
-        impl crate::TskitTypeAccess<$ll_name> for $name {
+        impl $crate::TskitTypeAccess<$ll_name> for $name {
             fn as_ptr(&self) -> *const $ll_name {
                 &*self.inner
             }
@@ -132,7 +132,7 @@ macro_rules! tskit_type_access {
 
 macro_rules! build_tskit_type {
     ($name: ident, $ll_name: ty, $drop: ident) => {
-        impl crate::ffi::WrapTskitType<$ll_name> for $name {
+        impl $crate::ffi::WrapTskitType<$ll_name> for $name {
             fn wrap() -> Self {
                 let temp: std::mem::MaybeUninit<$ll_name> = std::mem::MaybeUninit::uninit();
                 $name {
@@ -147,7 +147,7 @@ macro_rules! build_tskit_type {
 
 macro_rules! metadata_to_vector {
     ($self: expr, $row: expr) => {
-        crate::metadata::char_column_to_vector(
+        $crate::metadata::char_column_to_vector(
             $self.table_.metadata,
             $self.table_.metadata_offset,
             $row,
@@ -161,7 +161,7 @@ macro_rules! decode_metadata_row {
     ($T: ty, $buffer: expr) => {
         match $buffer {
             None => Ok(None),
-            Some(v) => Ok(Some(<$T as crate::metadata::MetadataRoundtrip>::decode(
+            Some(v) => Ok(Some(<$T as $crate::metadata::MetadataRoundtrip>::decode(
                 &v,
             )?)),
         }
@@ -182,7 +182,7 @@ macro_rules! process_state_input {
         match $state {
             Some(x) => (
                 x.as_ptr() as *const libc::c_char,
-                x.len() as crate::bindings::tsk_size_t,
+                x.len() as $crate::bindings::tsk_size_t,
                 $state,
             ),
             None => (std::ptr::null(), 0, $state),
@@ -192,7 +192,7 @@ macro_rules! process_state_input {
 
 macro_rules! err_if_not_tracking_samples {
     ($flags: expr, $rv: expr) => {
-        match $flags.contains(crate::TreeFlags::SAMPLE_LISTS) {
+        match $flags.contains($crate::TreeFlags::SAMPLE_LISTS) {
             false => Err(TskitError::NotTrackingSamples),
             true => Ok($rv),
         }
@@ -219,7 +219,7 @@ macro_rules! table_row_access {
 macro_rules! iterator_for_nodeiterator {
     ($ty: ty) => {
         impl Iterator for $ty {
-            type Item = crate::tsk_id_t;
+            type Item = $crate::tsk_id_t;
             fn next(&mut self) -> Option<Self::Item> {
                 self.next_node();
                 self.current_node()
