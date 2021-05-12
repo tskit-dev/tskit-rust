@@ -1,18 +1,5 @@
 #![macro_use]
 
-/// Convenience macro issuing `use` for all public traits.
-#[macro_export]
-macro_rules! enable_tskit_traits {
-    () => {
-        use $crate::metadata::MetadataRoundtrip;
-        #[cfg(feature = "provenance")]
-        use $crate::provenance::Provenance;
-        use $crate::NodeListGenerator;
-        use $crate::TableAccess;
-        use $crate::TskitTypeAccess;
-    };
-}
-
 #[doc(hidden)]
 macro_rules! handle_tsk_return_value {
     ($code: expr) => {{
