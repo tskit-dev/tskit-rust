@@ -1,5 +1,5 @@
 use clap::{value_t_or_exit, App, Arg};
-use streaming_iterator::StreamingIterator; // Required for tree iteration
+use tskit::prelude::*;
 
 // "Manual" traversal from samples to root
 fn traverse_upwards(tree: &tskit::Tree) {

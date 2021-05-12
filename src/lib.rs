@@ -24,6 +24,21 @@
 //!     * Tree lifetimes are tied to that of the parent tree sequence.
 //!     * Table objects ([`NodeTable`], etc..) are only represented by non-owning, immutable types.
 //!
+//! ## Prelude
+//!
+//! The [`prelude`] module contains definitions that are difficult/annoying to live without.
+//! In particuar, this module exports various traits that make it so that client code does
+//! not have to `use` them a la carte.
+//!
+//! We recomment that client code import all symbols from this module:
+//!
+//! ```
+//! use tskit::prelude::*;
+//! ```
+//!
+//! The various documentation examples manually `use` each trait both in order
+//! to illustrate which traits are needed and to serve as doc tests.
+//!
 //! # Optional features
 //!
 //! Some features are optional, and are activated by requesting them in your `Cargo.toml` file.
@@ -60,6 +75,7 @@ mod migration_table;
 mod mutation_table;
 mod node_table;
 mod population_table;
+pub mod prelude;
 mod site_table;
 mod table_collection;
 mod table_iterator;
