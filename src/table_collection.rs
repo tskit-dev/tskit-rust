@@ -697,6 +697,25 @@ mod test {
     }
 
     #[test]
+    fn test_mutable_node_access() {
+        let tables = TableCollection::new(1000.).unwrap();
+        let mut nodes = tables.nodes();
+        let f = nodes.flags_array_mut();
+        for i in f {
+            *i = 11;
+        }
+
+        for t in nodes.time_array_mut() {
+            *t = -33.0;
+        }
+
+        for i in tables.nodes_iter(true) {
+            assert_eq!(i.flags, 11);
+            assert_eq!(i.time as i64, -33);
+        }
+    }
+
+    #[test]
     fn test_node_iteration() {
         let tables = make_small_table_collection();
         for (i, row) in tables.nodes().iter(true).enumerate() {

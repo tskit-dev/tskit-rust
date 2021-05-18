@@ -104,6 +104,16 @@ impl<'a> NodeTable<'a> {
         unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.flags)
     }
 
+    /// Mutable access to node flags.
+    pub fn flags_array_mut(&mut self) -> &mut [tsk_flags_t] {
+        unsafe { std::slice::from_raw_parts_mut(self.table_.flags, self.table_.num_rows as usize) }
+    }
+
+    /// Mutable access to node times.
+    pub fn time_array_mut(&mut self) -> &mut [f64] {
+        unsafe { std::slice::from_raw_parts_mut(self.table_.time, self.table_.num_rows as usize) }
+    }
+
     /// Return the ``population`` value from row ``row`` of the table.
     ///
     /// # Errors
