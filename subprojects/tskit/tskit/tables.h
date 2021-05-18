@@ -727,9 +727,6 @@ typedef struct {
 /* Leave room for more positive check flags */
 #define TSK_NO_CHECK_POPULATION_REFS (1 << 10)
 
-/* Flags for dump tables */
-#define TSK_NO_BUILD_INDEXES (1 << 0)
-
 /* Flags for load tables */
 #define TSK_BUILD_INDEXES (1 << 0)
 
@@ -841,6 +838,29 @@ int tsk_individual_table_clear(tsk_individual_table_t *self);
 @return Return 0 on success or a negative value on failure.
 */
 int tsk_individual_table_truncate(tsk_individual_table_t *self, tsk_size_t num_rows);
+
+/**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_individual_table_t object where rows are to be added.
+@param other A pointer to a tsk_individual_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_individual_table_extend(tsk_individual_table_t *self,
+    const tsk_individual_table_t *other, tsk_size_t num_rows,
+    const tsk_id_t *row_indexes, tsk_flags_t options);
 
 /**
 @brief Returns true if the data in the specified table is identical to the data
@@ -1036,6 +1056,28 @@ int tsk_node_table_clear(tsk_node_table_t *self);
 int tsk_node_table_truncate(tsk_node_table_t *self, tsk_size_t num_rows);
 
 /**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_node_table_t object where rows are to be added.
+@param other A pointer to a tsk_node_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_node_table_extend(tsk_node_table_t *self, const tsk_node_table_t *other,
+    tsk_size_t num_rows, const tsk_id_t *row_indexes, tsk_flags_t options);
+
+/**
 @brief Returns true if the data in the specified table is identical to the data
        in this table.
 
@@ -1227,6 +1269,28 @@ int tsk_edge_table_clear(tsk_edge_table_t *self);
 int tsk_edge_table_truncate(tsk_edge_table_t *self, tsk_size_t num_rows);
 
 /**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_edge_table_t object where rows are to be added.
+@param other A pointer to a tsk_edge_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_edge_table_extend(tsk_edge_table_t *self, const tsk_edge_table_t *other,
+    tsk_size_t num_rows, const tsk_id_t *row_indexes, tsk_flags_t options);
+
+/**
 @brief Returns true if the data in the specified table is identical to the data
        in this table.
 
@@ -1414,6 +1478,30 @@ int tsk_migration_table_clear(tsk_migration_table_t *self);
 int tsk_migration_table_truncate(tsk_migration_table_t *self, tsk_size_t num_rows);
 
 /**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_migration_table_t object where rows are to be added.
+@param other A pointer to a tsk_migration_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+
+int tsk_migration_table_extend(tsk_migration_table_t *self,
+    const tsk_migration_table_t *other, tsk_size_t num_rows, const tsk_id_t *row_indexes,
+    tsk_flags_t options);
+
+/**
 @brief Returns true if the data in the specified table is identical to the data
        in this table.
 
@@ -1595,6 +1683,28 @@ int tsk_site_table_clear(tsk_site_table_t *self);
 @return Return 0 on success or a negative value on failure.
 */
 int tsk_site_table_truncate(tsk_site_table_t *self, tsk_size_t num_rows);
+
+/**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_site_table_t object where rows are to be added.
+@param other A pointer to a tsk_site_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_site_table_extend(tsk_site_table_t *self, const tsk_site_table_t *other,
+    tsk_size_t num_rows, const tsk_id_t *row_indexes, tsk_flags_t options);
 
 /**
 @brief Returns true if the data in the specified table is identical to the data
@@ -1785,6 +1895,29 @@ int tsk_mutation_table_clear(tsk_mutation_table_t *self);
 int tsk_mutation_table_truncate(tsk_mutation_table_t *self, tsk_size_t num_rows);
 
 /**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_mutation_table_t object where rows are to be added.
+@param other A pointer to a tsk_mutation_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_mutation_table_extend(tsk_mutation_table_t *self,
+    const tsk_mutation_table_t *other, tsk_size_t num_rows, const tsk_id_t *row_indexes,
+    tsk_flags_t options);
+
+/**
 @brief Returns true if the data in the specified table is identical to the data
        in this table.
 
@@ -1967,6 +2100,29 @@ int tsk_population_table_clear(tsk_population_table_t *self);
 int tsk_population_table_truncate(tsk_population_table_t *self, tsk_size_t num_rows);
 
 /**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table. Note that metadata is copied as-is
+and is not checked for compatibility with any existing schema on this table.
+@endrst
+
+@param self A pointer to a tsk_population_table_t object where rows are to be added.
+@param other A pointer to a tsk_population_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_population_table_extend(tsk_population_table_t *self,
+    const tsk_population_table_t *other, tsk_size_t num_rows,
+    const tsk_id_t *row_indexes, tsk_flags_t options);
+
+/**
 @brief Returns true if the data in the specified table is identical to the data
        in this table.
 
@@ -2145,6 +2301,28 @@ int tsk_provenance_table_clear(tsk_provenance_table_t *self);
 @return Return 0 on success or a negative value on failure.
 */
 int tsk_provenance_table_truncate(tsk_provenance_table_t *self, tsk_size_t num_rows);
+
+/**
+@brief Extends this table by appending rows copied from another table.
+
+@rst
+Appends the rows at the specified indexes from the table ``other`` to the end of this
+table. Row indexes can be repeated and in any order. If ``row_indexes`` is NULL, append
+the first ``num_rows`` from ``other`` to this table.
+@endrst
+
+@param self A pointer to a tsk_provenance_table_t object where rows are to be added.
+@param other A pointer to a tsk_provenance_table_t object where rows are copied from.
+@param num_rows The number of rows from ``other`` to append to this table.
+@param row_indexes Array of row indexes in ``other``. If ``NULL`` is passed then the
+first ``num_rows`` of ``other`` are used.
+@param options Bitwise option flags. Currently unused; should be
+    set to zero to ensure compatibility with later versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_provenance_table_extend(tsk_provenance_table_t *self,
+    const tsk_provenance_table_t *other, tsk_size_t num_rows,
+    const tsk_id_t *row_indexes, tsk_flags_t options);
 
 /**
 @brief Returns true if the data in the specified table is identical to the data
@@ -2531,7 +2709,7 @@ TSK_NO_BUILD_INDEXES
 @return Return 0 on success or a negative value on failure.
 */
 int tsk_table_collection_dump(
-    tsk_table_collection_t *self, const char *filename, tsk_flags_t options);
+    const tsk_table_collection_t *self, const char *filename, tsk_flags_t options);
 
 /**
 @brief Write a table collection to a stream.
@@ -2563,7 +2741,7 @@ TSK_NO_BUILD_INDEXES
 */
 
 int tsk_table_collection_dumpf(
-    tsk_table_collection_t *self, FILE *file, tsk_flags_t options);
+    const tsk_table_collection_t *self, FILE *file, tsk_flags_t options);
 
 /**
 @brief Record the number of rows in each table in the specified tsk_bookmark_t object.

@@ -915,16 +915,13 @@ impl TreeSequence {
     ///   This behavior may change in a future release, which could
     ///   break `API`.
     ///
-    /// # Note
-    ///
-    /// This function always sets the flag TSK_NO_BUILD_INDEXES.
     pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
             ll_bindings::tsk_treeseq_dump(
                 self.as_ptr() as *mut ll_bindings::tsk_treeseq_t,
                 c_str.as_ptr(),
-                options.bits() | ll_bindings::TSK_NO_BUILD_INDEXES,
+                options.bits(),
             )
         };
 
