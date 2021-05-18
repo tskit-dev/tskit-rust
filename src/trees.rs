@@ -513,7 +513,7 @@ impl Tree {
     ///
     /// # Errors
     ///
-    /// [`TskitError`] may be returned via [`Tree::traverse_nodes`].
+    /// [`TskitError`] may be returned if a node index is out of range.
     pub fn total_branch_length(&self, by_span: bool) -> Result<f64, TskitError> {
         let nt = self.node_table();
         let mut b = 0.;
