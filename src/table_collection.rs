@@ -423,6 +423,43 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
+    /// Return `true` if tables are indexed.
+    pub fn is_indexed(&self) -> bool {
+        unsafe { ll_bindings::tsk_table_collection_has_index(self.as_ptr(), 0) }
+    }
+
+    /// If `self.is_indexed()` is `true`, return a non-owning
+    /// slice containing the edge insertion order.
+    /// Otherwise, return `None`.
+    pub fn edge_insertion_order(&self) -> Option<&[tsk_id_t]> {
+        if self.is_indexed() {
+            Some(unsafe {
+                std::slice::from_raw_parts(
+                    (*self.as_ptr()).indexes.edge_insertion_order,
+                    (*self.as_ptr()).indexes.num_edges as usize,
+                )
+            })
+        } else {
+            None
+        }
+    }
+
+    /// If `self.is_indexed()` is `true`, return a non-owning
+    /// slice containing the edge removal order.
+    /// Otherwise, return `None`.
+    pub fn edge_removal_order(&self) -> Option<&[tsk_id_t]> {
+        if self.is_indexed() {
+            Some(unsafe {
+                std::slice::from_raw_parts(
+                    (*self.as_ptr()).indexes.edge_removal_order,
+                    (*self.as_ptr()).indexes.num_edges as usize,
+                )
+            })
+        } else {
+            None
+        }
+    }
+
     /// Sort the tables.  
     /// The [``bookmark``](crate::types::Bookmark) can
     /// be used to affect where sorting starts from for each table.
@@ -713,6 +750,30 @@ mod test {
             assert_eq!(tables.edges().parent(row.id).unwrap(), row.parent);
             assert_eq!(tables.edges().child(row.id).unwrap(), row.child);
             assert!(row.metadata.is_none());
+        }
+    }
+
+    #[test]
+    fn test_edge_index_access() {
+        let tables = make_small_table_collection();
+        assert_eq!(tables.is_indexed(), true);
+        assert_eq!(
+            tables.edge_insertion_order().unwrap().len(),
+            tables.edges().num_rows() as usize
+        );
+        assert_eq!(
+            tables.edge_removal_order().unwrap().len(),
+            tables.edges().num_rows() as usize
+        );
+
+        for i in tables.edge_insertion_order().unwrap() {
+            assert!(*i >= 0);
+            assert!(*i < tables.edges().num_rows() as tsk_id_t);
+        }
+
+        for i in tables.edge_removal_order().unwrap() {
+            assert!(*i >= 0);
+            assert!(*i < tables.edges().num_rows() as tsk_id_t);
         }
     }
 
