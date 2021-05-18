@@ -129,7 +129,7 @@ to the API or ABI are introduced, i.e., the addition of a new function.
 The library patch version. Incremented when any changes not relevant to the
 to the API or ABI are introduced, i.e., internal refactors of bugfixes.
 */
-#define TSK_VERSION_PATCH   11
+#define TSK_VERSION_PATCH   12
 /** @} */
 
 /* Node flags */
@@ -274,6 +274,7 @@ not found in the file.
 #define TSK_ERR_SORT_OFFSET_NOT_SUPPORTED                           -803
 #define TSK_ERR_NONBINARY_MUTATIONS_UNSUPPORTED                     -804
 #define TSK_ERR_MIGRATIONS_NOT_SUPPORTED                            -805
+#define TSK_ERR_CANNOT_EXTEND_FROM_SELF                             -806
 
 /* Stats errors */
 #define TSK_ERR_BAD_NUM_WINDOWS                                     -900

@@ -447,16 +447,13 @@ impl TableCollection {
 
     /// Dump the table collection to file.
     ///
-    /// # Note
-    ///
-    /// This function by default uses the flag TSK_NO_BUILD_INDEXES.
     pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
             ll_bindings::tsk_table_collection_dump(
                 self.as_ptr() as *mut ll_bindings::tsk_table_collection_t,
                 c_str.as_ptr(),
-                options.bits() | ll_bindings::TSK_NO_BUILD_INDEXES,
+                options.bits(),
             )
         };
 
