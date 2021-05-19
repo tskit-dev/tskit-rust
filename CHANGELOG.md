@@ -1,5 +1,29 @@
 # Change log
 
+## 2021-05-19, Version 0.3.0
+
+This release has a few API changes, etc., that streamline the public interface.
+
+The C code is updated to 0.99.12.
+
+### Commits
+
+- [[`ec0adc36ae`](https://github.com/molpopgen/tskit-rust/commit/ec0adc36ae974846f61c01b4394e35017e7e4354)] streamline API for creating table row objects (#126) (Kevin R. Thornton)
+- [[`edd36fa886`](https://github.com/molpopgen/tskit-rust/commit/edd36fa886839b5328b6349799b763abfd0b6ae1)] Add mutable access to NodeTable flag and time arrays. (#125) (Kevin R. Thornton)
+- [[`634df568af`](https://github.com/molpopgen/tskit-rust/commit/634df568afac7a16fa319351b2d27739cb02d52d)] Fix docs for Tree::total_branch_length.  Fixes #114. (#124) (Kevin R. Thornton)
+- [[`202bcded3f`](https://github.com/molpopgen/tskit-rust/commit/202bcded3f9c2bc430f51ada2b050d85877c3599)] Give access to TableCollection edge indexes. (#123) (Kevin R. Thornton)
+- [[`3888fe5f10`](https://github.com/molpopgen/tskit-rust/commit/3888fe5f1090b753c4efcf57331b6d058e53f4d1)] update C code to version 0.99.12 (#122) (Kevin R. Thornton)
+- [[`6fa2057af6`](https://github.com/molpopgen/tskit-rust/commit/6fa2057af6102fe35b2ae6ebd96aef7e3cf5da49)] Add prelude.rs (#119) (Kevin R. Thornton)
+- [[`a592126594`](https://github.com/molpopgen/tskit-rust/commit/a59212659413892415df7e51d7c6fa0f03845828)] replace crate with \$crate for all macros (#113) (Kevin R. Thornton)
+- [[`b618d75e5b`](https://github.com/molpopgen/tskit-rust/commit/b618d75e5bdc64620c27f0929111ba315080962c)] Add macro to aid returning from MetadataRoundtrip functions. (#110) (Kevin R. Thornton)
+- [[`79adaa1a4a`](https://github.com/molpopgen/tskit-rust/commit/79adaa1a4a398b536d8b0fb6148703b50492aaaa)] Add macro to remove code duplication (#111) (Kevin R. Thornton)
+- [[`159bbfe926`](https://github.com/molpopgen/tskit-rust/commit/159bbfe926a3efb19805ad3eabdd4a3b40cf3cec)] Add convenience macro to use all public traits. (#106) (Kevin R. Thornton)
+- [[`e912f7b2c8`](https://github.com/molpopgen/tskit-rust/commit/e912f7b2c844df985b06956673432437a3264433)] Bump bindgen version. (#109) (Kevin R. Thornton)
+- [[`15fae9327b`](https://github.com/molpopgen/tskit-rust/commit/15fae9327bd9adf404789d8dcdadcf32cbc4eadd)] Update clap requirement from ~2.27.0 to ~2.33.3 (#107) (dependabot[bot])
+- [[`55f18a1a4f`](https://github.com/molpopgen/tskit-rust/commit/55f18a1a4f7bab301835893e8a23b01d4c01f014)] Refactor MetadataError: (#105) (Kevin R. Thornton)
+- [[`fbce6ca894`](https://github.com/molpopgen/tskit-rust/commit/fbce6ca8941b4b3976d0a71b7776e2efa1fcd12a)] API fixes. (#104) (Kevin R. Thornton)
+
+
 ## 2021-04-27, Version 0.2.2
 
 This release fixes issues with the lifetime relationships of `Tree` and the raw `C` arrays.
