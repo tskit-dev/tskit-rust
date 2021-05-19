@@ -23,11 +23,7 @@ impl PartialEq for NodeTableRow {
     }
 }
 
-fn make_node_table_row(
-    table: &NodeTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<NodeTableRow> {
+fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(NodeTableRow {
             id: pos,
@@ -35,7 +31,7 @@ fn make_node_table_row(
             flags: table.flags(pos).unwrap(),
             population: table.population(pos).unwrap(),
             individual: table.individual(pos).unwrap(),
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         })
     } else {
         None
@@ -49,7 +45,7 @@ impl<'a> Iterator for NodeTableRefIterator<'a> {
     type Item = NodeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_node_table_row(self.table, self.pos, self.decode_metadata);
+        let rv = make_node_table_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -59,7 +55,7 @@ impl<'a> Iterator for NodeTableIterator<'a> {
     type Item = crate::node_table::NodeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_node_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_node_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -154,16 +150,8 @@ impl<'a> NodeTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`NodeTableRow`].
-    ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`NodeTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> NodeTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> NodeTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -171,16 +159,12 @@ impl<'a> NodeTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`NodeTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<NodeTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_node_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<NodeTableRow, TskitError> {
+        table_row_access!(r, self, make_node_table_row)
     }
 
     /// Obtain a vector containing the indexes ("ids")
@@ -188,7 +172,7 @@ impl<'a> NodeTable<'a> {
     /// is `true`.
     pub fn samples_as_vector(&self) -> Vec<tsk_id_t> {
         let mut samples: Vec<tsk_id_t> = vec![];
-        for row in self.iter(false) {
+        for row in self.iter() {
             if row.flags & crate::TSK_NODE_IS_SAMPLE > 0 {
                 samples.push(row.id);
             }
@@ -203,7 +187,7 @@ impl<'a> NodeTable<'a> {
         mut f: impl FnMut(&crate::NodeTableRow) -> bool,
     ) -> Vec<tsk_id_t> {
         let mut samples: Vec<tsk_id_t> = vec![];
-        for row in self.iter(true) {
+        for row in self.iter() {
             if f(&row) {
                 samples.push(row.id);
             }

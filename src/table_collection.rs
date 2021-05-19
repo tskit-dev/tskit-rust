@@ -95,7 +95,7 @@ use ll_bindings::tsk_table_collection_free;
 /// // Iterate over each row in the table.
 /// // The "true" means to include (a copy of) the
 /// // encoded metadata, if any exist.
-/// for row in tables.mutations().iter(true) {
+/// for row in tables.mutations().iter() {
 ///     // Decode the metadata if any exists.
 ///     if !row.metadata.is_none() {
 ///         let md = F::decode(&row.metadata.unwrap()).unwrap();
@@ -709,7 +709,7 @@ mod test {
             *t = -33.0;
         }
 
-        for i in tables.nodes_iter(true) {
+        for i in tables.nodes_iter() {
             assert_eq!(i.flags, 11);
             assert_eq!(i.time as i64, -33);
         }
@@ -718,7 +718,7 @@ mod test {
     #[test]
     fn test_node_iteration() {
         let tables = make_small_table_collection();
-        for (i, row) in tables.nodes().iter(true).enumerate() {
+        for (i, row) in tables.nodes().iter().enumerate() {
             assert!(close_enough(
                 tables.nodes().time(i as tsk_id_t).unwrap(),
                 row.time
@@ -735,7 +735,7 @@ mod test {
             assert!(row.metadata.is_none());
         }
 
-        for row in tables.nodes_iter(true) {
+        for row in tables.nodes_iter() {
             assert!(close_enough(tables.nodes().time(row.id).unwrap(), row.time));
             assert_eq!(tables.nodes().flags(row.id).unwrap(), row.flags);
             assert_eq!(tables.nodes().population(row.id).unwrap(), row.population);
@@ -747,7 +747,7 @@ mod test {
     #[test]
     fn test_edge_iteration() {
         let tables = make_small_table_collection();
-        for (i, row) in tables.edges().iter(true).enumerate() {
+        for (i, row) in tables.edges().iter().enumerate() {
             assert!(close_enough(
                 tables.edges().left(i as tsk_id_t).unwrap(),
                 row.left
@@ -760,7 +760,7 @@ mod test {
             assert_eq!(tables.edges().child(i as tsk_id_t).unwrap(), row.child);
             assert!(row.metadata.is_none());
         }
-        for row in tables.edges_iter(true) {
+        for row in tables.edges_iter() {
             assert!(close_enough(tables.edges().left(row.id).unwrap(), row.left));
             assert!(close_enough(
                 tables.edges().right(row.id).unwrap(),
@@ -827,7 +827,7 @@ mod test {
 
         // NOTE: this is a useful test as not all rows have ancestral_state
         let mut no_anc_state = 0;
-        for (i, row) in sites.iter(true).enumerate() {
+        for (i, row) in sites.iter().enumerate() {
             assert!(close_enough(
                 sites.position(i as tsk_id_t).unwrap(),
                 row.position
@@ -844,7 +844,7 @@ mod test {
         }
         assert_eq!(no_anc_state, 1);
         no_anc_state = 0;
-        for row in tables.sites_iter(true) {
+        for row in tables.sites_iter() {
             assert!(close_enough(sites.position(row.id).unwrap(), row.position));
             if row.ancestral_state.is_some() {
                 if row.id == 0 {
@@ -898,7 +898,7 @@ mod test {
         );
 
         let mut nmuts = 0;
-        for (i, row) in tables.mutations().iter(true).enumerate() {
+        for (i, row) in tables.mutations().iter().enumerate() {
             assert_eq!(row.site, tables.mutations().site(i as tsk_id_t).unwrap());
             assert_eq!(row.node, tables.mutations().node(i as tsk_id_t).unwrap());
             assert_eq!(
@@ -916,7 +916,7 @@ mod test {
         assert_eq!(nmuts, 3);
 
         nmuts = 0;
-        for row in tables.mutations_iter(true) {
+        for row in tables.mutations_iter() {
             assert_eq!(row.site, tables.mutations().site(row.id).unwrap());
             assert_eq!(row.node, tables.mutations().node(row.id).unwrap());
             assert_eq!(row.parent, tables.mutations().parent(row.id).unwrap());
@@ -929,12 +929,12 @@ mod test {
         }
         assert_eq!(nmuts, tables.mutations().num_rows());
         assert_eq!(nmuts, 3);
-        for row in tables.mutations().iter(false) {
+        for row in tables.mutations().iter() {
             assert!(row.metadata.is_none());
         }
 
         nmuts = 0;
-        for _ in tables.mutations().iter(true).skip(1) {
+        for _ in tables.mutations().iter().skip(1) {
             nmuts += 1;
         }
         assert_eq!(nmuts, tables.mutations().num_rows() - 1);
@@ -982,7 +982,7 @@ mod test {
         assert_eq!(md.x, -3);
         assert_eq!(md.y, 666);
 
-        for row in tables.mutations().iter(true) {
+        for row in tables.mutations().iter() {
             assert!(!row.metadata.is_none());
             let md = F::decode(&row.metadata.unwrap()).unwrap();
             assert_eq!(md.x, -3);
@@ -1092,12 +1092,12 @@ mod test {
     #[test]
     fn test_edge_table_row_equality() {
         let tables = make_small_table_collection();
-        for (i, row) in tables.edges_iter(true).enumerate() {
+        for (i, row) in tables.edges_iter().enumerate() {
             assert!(row.id == i as tsk_id_t);
-            assert!(row == tables.edges().row(i as tsk_id_t, true).unwrap());
-            assert!(!(row != tables.edges().row(i as tsk_id_t, true).unwrap()));
+            assert!(row == tables.edges().row(i as tsk_id_t).unwrap());
+            assert!(!(row != tables.edges().row(i as tsk_id_t).unwrap()));
             if i > 0 {
-                assert!(row != tables.edges().row(i as tsk_id_t - 1, true).unwrap());
+                assert!(row != tables.edges().row(i as tsk_id_t - 1).unwrap());
             }
         }
     }
@@ -1105,13 +1105,13 @@ mod test {
     #[test]
     fn test_node_table_row_equality() {
         let tables = make_small_table_collection();
-        for (i, row) in tables.nodes_iter(true).enumerate() {
+        for (i, row) in tables.nodes_iter().enumerate() {
             assert!(row.id == i as tsk_id_t);
-            assert!(row == tables.nodes().row(i as tsk_id_t, true).unwrap());
-            assert!(!(row != tables.nodes().row(i as tsk_id_t, true).unwrap()));
+            assert!(row == tables.nodes().row(i as tsk_id_t).unwrap());
+            assert!(!(row != tables.nodes().row(i as tsk_id_t).unwrap()));
         }
-        assert!(tables.nodes().row(0, true).unwrap() != tables.nodes().row(1, true).unwrap());
-        assert!(tables.nodes().row(1, true).unwrap() != tables.nodes().row(2, true).unwrap());
+        assert!(tables.nodes().row(0).unwrap() != tables.nodes().row(1).unwrap());
+        assert!(tables.nodes().row(1).unwrap() != tables.nodes().row(2).unwrap());
     }
 
     #[test]
@@ -1142,10 +1142,7 @@ mod test {
             None => panic!("expected some locations"),
         }
 
-        assert!(
-            tables.individuals().row(0, true).unwrap()
-                == tables.individuals().row(0, true).unwrap()
-        );
+        assert!(tables.individuals().row(0).unwrap() == tables.individuals().row(0).unwrap());
     }
 }
 

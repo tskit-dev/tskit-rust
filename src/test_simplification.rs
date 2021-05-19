@@ -12,7 +12,7 @@ mod tests {
     fn test_simplify_tables() {
         let mut tables = make_small_table_collection_two_trees();
         let mut samples: Vec<tsk_id_t> = vec![];
-        for (i, row) in tables.nodes_iter(false).enumerate() {
+        for (i, row) in tables.nodes_iter().enumerate() {
             if row.flags & TSK_NODE_IS_SAMPLE > 0 {
                 samples.push(i as tsk_id_t);
             }

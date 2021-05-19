@@ -25,11 +25,7 @@ impl PartialEq for MutationTableRow {
     }
 }
 
-fn make_mutation_table_row(
-    table: &MutationTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<MutationTableRow> {
+fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<MutationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = MutationTableRow {
             id: pos,
@@ -38,7 +34,7 @@ fn make_mutation_table_row(
             parent: table.parent(pos).unwrap(),
             time: table.time(pos).unwrap(),
             derived_state: table.derived_state(pos).unwrap(),
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         };
         Some(rv)
     } else {
@@ -52,7 +48,7 @@ impl<'a> Iterator for MutationTableRefIterator<'a> {
     type Item = MutationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_mutation_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_mutation_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -62,7 +58,7 @@ impl<'a> Iterator for MutationTableIterator<'a> {
     type Item = MutationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_mutation_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_mutation_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -157,16 +153,8 @@ impl<'a> MutationTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MutationTableRow`].
-    ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`MutationTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> MutationTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> MutationTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -174,15 +162,11 @@ impl<'a> MutationTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`MutationTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<MutationTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_mutation_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<MutationTableRow, TskitError> {
+        table_row_access!(r, self, make_mutation_table_row)
     }
 }

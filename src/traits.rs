@@ -62,8 +62,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the edges.
     /// See [`EdgeTable::iter`] for details.
-    fn edges_iter(&self, decode_metadata: bool) -> EdgeTableIterator {
-        make_table_iterator::<EdgeTable>(self.edges(), decode_metadata)
+    fn edges_iter(&self) -> EdgeTableIterator {
+        make_table_iterator::<EdgeTable>(self.edges())
     }
 
     /// Get reference to the [``NodeTable``](crate::NodeTable).
@@ -71,8 +71,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the nodes.
     /// See [`NodeTable::iter`] for details.
-    fn nodes_iter(&self, decode_metadata: bool) -> NodeTableIterator {
-        make_table_iterator::<NodeTable>(self.nodes(), decode_metadata)
+    fn nodes_iter(&self) -> NodeTableIterator {
+        make_table_iterator::<NodeTable>(self.nodes())
     }
 
     /// Get reference to the [``MutationTable``](crate::MutationTable).
@@ -80,8 +80,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the mutations.
     /// See [`MutationTable::iter`] for details.
-    fn mutations_iter(&self, decode_metadata: bool) -> MutationTableIterator {
-        make_table_iterator::<MutationTable>(self.mutations(), decode_metadata)
+    fn mutations_iter(&self) -> MutationTableIterator {
+        make_table_iterator::<MutationTable>(self.mutations())
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).
@@ -89,8 +89,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the sites.
     /// See [`SiteTable::iter`] for details.
-    fn sites_iter(&self, decode_metadata: bool) -> SiteTableIterator {
-        make_table_iterator::<SiteTable>(self.sites(), decode_metadata)
+    fn sites_iter(&self) -> SiteTableIterator {
+        make_table_iterator::<SiteTable>(self.sites())
     }
 
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
@@ -98,8 +98,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the populations.
     /// See [`PopulationTable::iter`] for details.
-    fn populations_iter(&self, decode_metadata: bool) -> PopulationTableIterator {
-        make_table_iterator::<PopulationTable>(self.populations(), decode_metadata)
+    fn populations_iter(&self) -> PopulationTableIterator {
+        make_table_iterator::<PopulationTable>(self.populations())
     }
 
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).
@@ -107,8 +107,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the migration events.
     /// See [`MigrationTable::iter`] for details.
-    fn migrations_iter(&self, decode_metadata: bool) -> MigrationTableIterator {
-        make_table_iterator::<MigrationTable>(self.migrations(), decode_metadata)
+    fn migrations_iter(&self) -> MigrationTableIterator {
+        make_table_iterator::<MigrationTable>(self.migrations())
     }
 
     /// Get reference to the [``IndividualTable``](crate::IndividualTable).
@@ -116,8 +116,8 @@ pub trait TableAccess {
 
     /// Return an iterator over the individuals.
     /// See [`IndividualTable::iter`] for details.
-    fn individuals_iter(&self, decode_metadata: bool) -> IndividualTableIterator {
-        make_table_iterator::<IndividualTable>(self.individuals(), decode_metadata)
+    fn individuals_iter(&self) -> IndividualTableIterator {
+        make_table_iterator::<IndividualTable>(self.individuals())
     }
 }
 
@@ -177,7 +177,7 @@ pub trait NodeListGenerator: TableAccess {
     ///     tabled_type: &dyn tskit::TableAccess,
     ///     row: &tskit::NodeTableRow,
     /// ) -> bool {
-    ///     for mrow in tabled_type.mutations_iter(false) {
+    ///     for mrow in tabled_type.mutations_iter() {
     ///         if mrow.node == row.id {
     ///             return true;
     ///         }
