@@ -1,13 +1,13 @@
 [package]
 name = "tskit"
 version = "0.3.0"
-authors = ["molpopgen <krthornt@uci.edu>"]
+authors = ["tskit developers <admin@tskit.dev>"]
 build = "build.rs"
 edition = "2018"
 description = "rust interface to tskit"
 license = "MIT"
-homepage = "https://github.com/molpopgen/tskit-rust"
-repository = "https://github.com/molpopgen/tskit-rust"
+homepage = "https://github.com/tskit-dev/tskit-rust"
+repository = "https://github.com/tskit-dev/tskit-rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

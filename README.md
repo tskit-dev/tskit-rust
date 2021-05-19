@@ -14,7 +14,7 @@ This package provides the following:
 
 The overview is:
 
-1. `tskit` and `kastore` source from `tskit 0.3.5` are include in `subprojects/`
+1. `tskit` and `kastore` C code are include in `subprojects/`
 2. These two tools are compiled into the `rust` package.
 3. Then `bindgen` generates the bindings.
 4. Finally, the entire rust package is generated.
@@ -26,20 +26,42 @@ Help wanted!
 
 ## Quick start guide
 
+### Cloning the repository and running the test suite
+
 ```sh
-git clone https://github.com/molpopgen/tskit_rust
-cd tskit_rust
-cargo build
-cargo test
+git clone https://github.com/tskit-dev/tskit-rust
+cd tskit-rust
+cargo test --all-features
 ```
 
-Then, to look at the docs:
+### Viewing the documentation
 
 ```
-cargo doc --open
+cargo doc --all-features --open
 ```
+
+### Calculating code coverage
+
+First, install `tarpaulin`:
+
+```sh
+cargo install cargo-tarpaulin
+```
+
+Then, we use all tests, doc tests, and example programs to calculate code coverage for all available features:
+
+```sh
+cargo tarpaulin --all-features --doc --tests --examples --exclude-files '*.c' --exclude-files '*.h' --ignore-tests  -o html
+```
+
+Then, point your favorite browser to `tarpaulin-report.html`.
+
+The last few flags exclude the C code and any `rust` code that is test-only from being part of the denominator of the coverage calculation.
+The goal here is not to have high *test* coverage of the C API, as it is up to the [upstream project](https://github.com/tskit-dev/tskit) to provide that.
+
+**Note:** `tarpaulin` can be fickle, and changing the order of some of those flags can cause the coverage run to fail.
 
 ## Change log
 
-See [here](https://github.com/molpopgen/tskit_rust/blob/main/CHANGELOG.md).
+See [here](https://github.com/tskit-dev/tskit-rust/blob/main/CHANGELOG.md).
 
