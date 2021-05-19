@@ -27,11 +27,7 @@ impl PartialEq for MigrationTableRow {
     }
 }
 
-fn make_migration_table_row(
-    table: &MigrationTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<MigrationTableRow> {
+fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(MigrationTableRow {
             id: pos,
@@ -41,7 +37,7 @@ fn make_migration_table_row(
             source: table.source(pos).unwrap(),
             dest: table.dest(pos).unwrap(),
             time: table.time(pos).unwrap(),
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         })
     } else {
         None
@@ -56,7 +52,7 @@ impl<'a> Iterator for MigrationTableRefIterator<'a> {
     type Item = MigrationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_migration_table_row(self.table, self.pos, self.decode_metadata);
+        let rv = make_migration_table_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -66,7 +62,7 @@ impl<'a> Iterator for MigrationTableIterator<'a> {
     type Item = crate::migration_table::MigrationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_migration_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_migration_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -160,16 +156,8 @@ impl<'a> MigrationTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MigrationTableRow`].
-    ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`MigrationTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> MigrationTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&MigrationTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> MigrationTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&MigrationTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -177,15 +165,11 @@ impl<'a> MigrationTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`MigrationTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<MigrationTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_migration_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<MigrationTableRow, TskitError> {
+        table_row_access!(r, self, make_migration_table_row)
     }
 }

@@ -16,15 +16,11 @@ impl PartialEq for PopulationTableRow {
     }
 }
 
-fn make_population_table_row(
-    table: &PopulationTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<PopulationTableRow> {
+fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = PopulationTableRow {
             id: pos,
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         };
         Some(rv)
     } else {
@@ -40,7 +36,7 @@ impl<'a> Iterator for PopulationTableRefIterator<'a> {
     type Item = PopulationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_population_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_population_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -50,7 +46,7 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
     type Item = PopulationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_population_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_population_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -85,16 +81,8 @@ impl<'a> PopulationTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`PopulationTableRow`].
-    ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`PopulationTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> PopulationTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> PopulationTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -102,19 +90,11 @@ impl<'a> PopulationTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`PopulationTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(
-        &self,
-        r: tsk_id_t,
-        decode_metadata: bool,
-    ) -> Result<PopulationTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_population_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<PopulationTableRow, TskitError> {
+        table_row_access!(r, self, make_population_table_row)
     }
 }

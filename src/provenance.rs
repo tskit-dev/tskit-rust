@@ -106,7 +106,7 @@ pub trait Provenance: crate::TableAccess {
     /// Return an iterator over the rows of the [`ProvenanceTable`].
     /// See [`ProvenanceTable::iter`] for details.
     fn provenances_iter(&self) -> ProvenanceTableIterator {
-        crate::table_iterator::make_table_iterator::<ProvenanceTable>(self.provenances(), false)
+        crate::table_iterator::make_table_iterator::<ProvenanceTable>(self.provenances())
     }
 }
 
@@ -263,6 +263,6 @@ impl<'a> ProvenanceTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`ProvenanceTableRow`].
     pub fn iter(&self) -> ProvenanceTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(&self, false)
+        crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(&self)
     }
 }

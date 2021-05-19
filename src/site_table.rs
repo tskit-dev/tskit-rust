@@ -20,17 +20,13 @@ impl PartialEq for SiteTableRow {
     }
 }
 
-fn make_site_table_row(
-    table: &SiteTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<SiteTableRow> {
+fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = SiteTableRow {
             id: pos,
             position: table.position(pos).unwrap(),
             ancestral_state: table.ancestral_state(pos).unwrap(),
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         };
         Some(rv)
     } else {
@@ -45,7 +41,7 @@ impl<'a> Iterator for SiteTableRefIterator<'a> {
     type Item = SiteTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_site_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_site_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -55,7 +51,7 @@ impl<'a> Iterator for SiteTableIterator<'a> {
     type Item = SiteTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_site_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_site_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -120,16 +116,8 @@ impl<'a> SiteTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`SiteTableRow`].
-    ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`SiteTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> SiteTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> SiteTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -137,15 +125,11 @@ impl<'a> SiteTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`SiteTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<SiteTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_site_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<SiteTableRow, TskitError> {
+        table_row_access!(r, self, make_site_table_row)
     }
 }

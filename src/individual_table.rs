@@ -47,18 +47,14 @@ pub struct IndividualTable<'a> {
     table_: &'a ll_bindings::tsk_individual_table_t,
 }
 
-fn make_individual_table_row(
-    table: &IndividualTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<IndividualTableRow> {
+fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = IndividualTableRow {
             id: pos,
             flags: table.flags(pos).unwrap(),
             location: table.location(pos).unwrap(),
             parents: table.parents(pos).unwrap(),
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         };
         Some(rv)
     } else {
@@ -139,15 +135,8 @@ impl<'a> IndividualTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`IndividualTableRow`].
     ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`IndividualTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> IndividualTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&IndividualTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> IndividualTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&IndividualTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -155,19 +144,11 @@ impl<'a> IndividualTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`IndividualTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(
-        &self,
-        r: tsk_id_t,
-        decode_metadata: bool,
-    ) -> Result<IndividualTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_individual_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<IndividualTableRow, TskitError> {
+        table_row_access!(r, self, make_individual_table_row)
     }
 }

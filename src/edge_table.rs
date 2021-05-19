@@ -23,11 +23,7 @@ impl PartialEq for EdgeTableRow {
     }
 }
 
-fn make_edge_table_row(
-    table: &EdgeTable,
-    pos: tsk_id_t,
-    decode_metadata: bool,
-) -> Option<EdgeTableRow> {
+fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = EdgeTableRow {
             id: pos,
@@ -35,7 +31,7 @@ fn make_edge_table_row(
             right: table.right(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
             child: table.child(pos).unwrap(),
-            metadata: table_row_decode_metadata!(decode_metadata, table, pos),
+            metadata: table_row_decode_metadata!(table, pos),
         };
         Some(rv)
     } else {
@@ -50,7 +46,7 @@ impl<'a> Iterator for EdgeTableRefIterator<'a> {
     type Item = EdgeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_edge_table_row(self.table, self.pos, self.decode_metadata);
+        let rv = make_edge_table_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -60,7 +56,7 @@ impl<'a> Iterator for EdgeTableIterator<'a> {
     type Item = EdgeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_edge_table_row(&self.table, self.pos, self.decode_metadata);
+        let rv = make_edge_table_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -136,15 +132,8 @@ impl<'a> EdgeTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`EdgeTableRow`].
     ///
-    /// # Parameters
-    ///
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`EdgeTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
-    ///
-    pub fn iter(&self, decode_metadata: bool) -> EdgeTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(&self, decode_metadata)
+    pub fn iter(&self) -> EdgeTableRefIterator {
+        crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(&self)
     }
 
     /// Return row `r` of the table.
@@ -152,15 +141,11 @@ impl<'a> EdgeTable<'a> {
     /// # Parameters
     ///
     /// * `r`: the row id.
-    /// * `decode_metadata`: if `true`, then a *copy* of row metadata
-    ///    will be provided in [`EdgeTableRow::metadata`].
-    ///    The meta data are *not* decoded.
-    ///    Rows with no metadata will contain the value `None`.
     ///
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t, decode_metadata: bool) -> Result<EdgeTableRow, TskitError> {
-        table_row_access!(r, decode_metadata, self, make_edge_table_row)
+    pub fn row(&self, r: tsk_id_t) -> Result<EdgeTableRow, TskitError> {
+        table_row_access!(r, self, make_edge_table_row)
     }
 }
