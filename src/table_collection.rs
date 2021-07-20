@@ -165,23 +165,23 @@ impl TableCollection {
     }
 
     /// Add a row to the edge table
-    pub fn add_edge(
+    pub fn add_edge<P: Into<crate::NodeId>, C: Into<crate::NodeId>>(
         &mut self,
         left: f64,
         right: f64,
-        parent: tsk_id_t,
-        child: tsk_id_t,
+        parent: P,
+        child: C,
     ) -> TskReturnValue {
         self.add_edge_with_metadata(left, right, parent, child, None)
     }
 
     /// Add a row with metadata to the edge table
-    pub fn add_edge_with_metadata(
+    pub fn add_edge_with_metadata<P: Into<crate::NodeId>, C: Into<crate::NodeId>>(
         &mut self,
         left: f64,
         right: f64,
-        parent: tsk_id_t,
-        child: tsk_id_t,
+        parent: P,
+        child: C,
         metadata: Option<&dyn MetadataRoundtrip>,
     ) -> TskReturnValue {
         let md = EncodedMetadata::new(metadata)?;
@@ -190,8 +190,8 @@ impl TableCollection {
                 &mut (*self.as_mut_ptr()).edges,
                 left,
                 right,
-                parent,
-                child,
+                parent.into().0,
+                child.into().0,
                 md.as_ptr(),
                 md.len(),
             )
@@ -201,21 +201,21 @@ impl TableCollection {
     }
 
     /// Add a row to the individual table
-    pub fn add_individual(
+    pub fn add_individual<N: Into<crate::NodeId>>(
         &mut self,
         flags: tsk_flags_t,
         location: &[f64],
-        parents: &[tsk_id_t],
+        parents: &[N],
     ) -> TskReturnValue {
         self.add_individual_with_metadata(flags, location, parents, None)
     }
 
     /// Add a row with metadata to the individual table
-    pub fn add_individual_with_metadata(
+    pub fn add_individual_with_metadata<N: Into<crate::NodeId>>(
         &mut self,
         flags: tsk_flags_t,
         location: &[f64],
-        parents: &[tsk_id_t],
+        parents: &[N],
         metadata: Option<&dyn MetadataRoundtrip>,
     ) -> TskReturnValue {
         let md = EncodedMetadata::new(metadata)?;
@@ -225,7 +225,7 @@ impl TableCollection {
                 flags,
                 location.as_ptr(),
                 location.len() as tsk_size_t,
-                parents.as_ptr(),
+                parents.as_ptr() as *const tsk_id_t,
                 parents.len() as tsk_size_t,
                 md.as_ptr(),
                 md.len(),
@@ -240,10 +240,10 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    pub fn add_migration(
+    pub fn add_migration<N: Into<crate::NodeId>>(
         &mut self,
         span: (f64, f64),
-        node: tsk_id_t,
+        node: N,
         source_dest: (tsk_id_t, tsk_id_t),
         time: f64,
     ) -> TskReturnValue {
@@ -256,10 +256,10 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    pub fn add_migration_with_metadata(
+    pub fn add_migration_with_metadata<N: Into<crate::NodeId>>(
         &mut self,
         span: (f64, f64),
-        node: tsk_id_t,
+        node: N,
         source_dest: (tsk_id_t, tsk_id_t),
         time: f64,
         metadata: Option<&dyn MetadataRoundtrip>,
@@ -270,7 +270,7 @@ impl TableCollection {
                 &mut (*self.as_mut_ptr()).migrations,
                 span.0,
                 span.1,
-                node,
+                node.into().0,
                 source_dest.0,
                 source_dest.1,
                 time,
@@ -288,7 +288,7 @@ impl TableCollection {
         time: f64,
         population: tsk_id_t,
         individual: tsk_id_t,
-    ) -> TskReturnValue {
+    ) -> Result<crate::NodeId, TskitError> {
         self.add_node_with_metadata(flags, time, population, individual, None)
     }
 
@@ -300,7 +300,7 @@ impl TableCollection {
         population: tsk_id_t,
         individual: tsk_id_t,
         metadata: Option<&dyn MetadataRoundtrip>,
-    ) -> TskReturnValue {
+    ) -> Result<crate::NodeId, TskitError> {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_node_table_add_row(
@@ -314,7 +314,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, rv.into())
     }
 
     /// Add a row to the site table
@@ -347,10 +347,10 @@ impl TableCollection {
     }
 
     /// Add a row to the mutation table.
-    pub fn add_mutation(
+    pub fn add_mutation<N: Into<crate::NodeId>>(
         &mut self,
         site: tsk_id_t,
-        node: tsk_id_t,
+        node: N,
         parent: tsk_id_t,
         time: f64,
         derived_state: Option<&[u8]>,
@@ -359,10 +359,10 @@ impl TableCollection {
     }
 
     /// Add a row with metadata to the mutation table.
-    pub fn add_mutation_with_metadata(
+    pub fn add_mutation_with_metadata<N: Into<crate::NodeId>>(
         &mut self,
         site: tsk_id_t,
-        node: tsk_id_t,
+        node: N,
         parent: tsk_id_t,
         time: f64,
         derived_state: Option<&[u8]>,
@@ -375,7 +375,7 @@ impl TableCollection {
             ll_bindings::tsk_mutation_table_add_row(
                 &mut (*self.as_mut_ptr()).mutations,
                 site,
-                node,
+                node.into().0,
                 parent,
                 time,
                 dstate.0,
@@ -558,24 +558,24 @@ impl TableCollection {
     ///   in length to the input node table.  For each input node,
     ///   this vector either contains the node's new index or [`TSK_NULL`]
     ///   if the input node is not part of the simplified history.
-    pub fn simplify(
+    pub fn simplify<N: Into<crate::NodeId>>(
         &mut self,
-        samples: &[tsk_id_t],
+        samples: &[N],
         options: SimplificationOptions,
         idmap: bool,
-    ) -> Result<Option<Vec<tsk_id_t>>, TskitError> {
-        let mut output_node_map: Vec<tsk_id_t> = vec![];
+    ) -> Result<Option<Vec<crate::NodeId>>, TskitError> {
+        let mut output_node_map: Vec<crate::NodeId> = vec![];
         if idmap {
-            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL);
+            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL.into());
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
                 self.as_mut_ptr(),
-                samples.as_ptr(),
+                samples.as_ptr() as *const tsk_id_t,
                 samples.len() as tsk_size_t,
                 options.bits(),
                 match idmap {
-                    true => output_node_map.as_mut_ptr(),
+                    true => output_node_map.as_mut_ptr() as *mut tsk_id_t,
                     false => std::ptr::null_mut(),
                 },
             )
@@ -1106,7 +1106,7 @@ mod test {
     fn test_node_table_row_equality() {
         let tables = make_small_table_collection();
         for (i, row) in tables.nodes_iter().enumerate() {
-            assert!(row.id == i as tsk_id_t);
+            assert!(row.id.0 == i as tsk_id_t);
             assert!(row == tables.nodes().row(i as tsk_id_t).unwrap());
             assert!(!(row != tables.nodes().row(i as tsk_id_t).unwrap()));
         }

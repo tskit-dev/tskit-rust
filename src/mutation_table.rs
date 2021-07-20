@@ -1,12 +1,13 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::NodeId;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of a [`MutationTable`]
 pub struct MutationTableRow {
     pub id: tsk_id_t,
     pub site: tsk_id_t,
-    pub node: tsk_id_t,
+    pub node: NodeId,
     pub parent: tsk_id_t,
     pub time: f64,
     pub derived_state: Option<Vec<u8>>,
@@ -99,8 +100,8 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn node(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node)
+    pub fn node(&'a self, row: tsk_id_t) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node, NodeId)
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.

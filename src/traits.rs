@@ -8,7 +8,6 @@ use crate::node_table::NodeTableIterator;
 use crate::population_table::PopulationTableIterator;
 use crate::site_table::SiteTableIterator;
 use crate::table_iterator::make_table_iterator;
-use crate::tsk_id_t;
 use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;
@@ -130,7 +129,7 @@ pub trait NodeListGenerator: TableAccess {
     ///
     /// The provided implementation dispatches to
     /// [`crate::NodeTable::samples_as_vector`].
-    fn samples_as_vector(&self) -> Vec<tsk_id_t> {
+    fn samples_as_vector(&self) -> Vec<crate::NodeId> {
         self.nodes().samples_as_vector()
     }
 
@@ -174,10 +173,10 @@ pub trait NodeListGenerator: TableAccess {
     /// fn node_has_mutation(
     ///     // dyn trait here means this
     ///     // will work with TreeSequence, too.
-    ///     tabled_type: &dyn tskit::TableAccess,
+    ///     tables_type: &dyn tskit::TableAccess,
     ///     row: &tskit::NodeTableRow,
     /// ) -> bool {
-    ///     for mrow in tabled_type.mutations_iter() {
+    ///     for mrow in tables_type.mutations_iter() {
     ///         if mrow.node == row.id {
     ///             return true;
     ///         }
@@ -193,7 +192,14 @@ pub trait NodeListGenerator: TableAccess {
     /// assert_eq!(samples_with_mut[0], 0);
     /// ```
 
-    fn create_node_id_vector(&self, f: impl FnMut(&crate::NodeTableRow) -> bool) -> Vec<tsk_id_t> {
+    fn create_node_id_vector(
+        &self,
+        f: impl FnMut(&crate::NodeTableRow) -> bool,
+    ) -> Vec<crate::NodeId> {
         self.nodes().create_node_id_vector(f)
     }
+}
+
+pub trait IdIsNull {
+    fn is_null(&self) -> bool;
 }

@@ -35,6 +35,13 @@ macro_rules! unsafe_tsk_column_access {
             Ok(unsafe { *$array.offset($i as isize) })
         }
     }};
+    ($i: expr, $lo: expr, $hi: expr, $array: expr, $output_id_type: expr) => {{
+        if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
+            Err($crate::error::TskitError::IndexError {})
+        } else {
+            Ok($output_id_type(unsafe { *$array.offset($i as isize) }))
+        }
+    }};
 }
 
 macro_rules! unsafe_tsk_ragged_column_access {
@@ -216,6 +223,58 @@ macro_rules! tree_array_slice {
     ($self: ident, $array: ident, $len: expr) => {
         unsafe {
             std::slice::from_raw_parts((*$self.as_ptr()).$array as *const tsk_id_t, $len as usize)
+        }
+    };
+}
+
+macro_rules! impl_id_traits {
+    ($idtype: ty) => {
+        impl From<$crate::tsk_id_t> for $idtype {
+            fn from(value: $crate::tsk_id_t) -> Self {
+                Self(value)
+            }
+        }
+
+        impl $crate::IdIsNull for $idtype {
+            fn is_null(&self) -> bool {
+                self.0 == $crate::TSK_NULL
+            }
+        }
+
+        impl From<$idtype> for usize {
+            fn from(value: $idtype) -> Self {
+                value.0 as usize
+            }
+        }
+
+        impl From<$idtype> for $crate::tsk_id_t {
+            fn from(value: $idtype) -> Self {
+                value.0
+            }
+        }
+
+        impl PartialEq<$crate::tsk_id_t> for $idtype {
+            fn eq(&self, other: &$crate::tsk_id_t) -> bool {
+                self.0 == *other
+            }
+        }
+
+        impl PartialEq<$idtype> for $crate::tsk_id_t {
+            fn eq(&self, other: &$idtype) -> bool {
+                *self == other.0
+            }
+        }
+
+        impl PartialOrd<$crate::tsk_id_t> for $idtype {
+            fn partial_cmp(&self, other: &$crate::tsk_id_t) -> Option<std::cmp::Ordering> {
+                self.0.partial_cmp(other)
+            }
+        }
+
+        impl PartialOrd<$idtype> for $crate::tsk_id_t {
+            fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
+                self.partial_cmp(&other.0)
+            }
         }
     };
 }

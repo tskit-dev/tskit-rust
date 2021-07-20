@@ -166,8 +166,8 @@ impl SimParams {
 
 #[derive(Copy, Clone)]
 struct Diploid {
-    node0: tskit::tsk_id_t,
-    node1: tskit::tsk_id_t,
+    node0: tskit::NodeId,
+    node1: tskit::NodeId,
 }
 
 struct Parents {
@@ -201,7 +201,7 @@ fn death_and_parents(
     }
 }
 
-fn mendel(pnodes: &mut (tskit::tsk_id_t, tskit::tsk_id_t), rng: &mut StdRng) {
+fn mendel(pnodes: &mut (tskit::NodeId, tskit::NodeId), rng: &mut StdRng) {
     let x: f64 = rng.gen();
     match x.partial_cmp(&0.5) {
         Some(std::cmp::Ordering::Less) => {
@@ -214,7 +214,7 @@ fn mendel(pnodes: &mut (tskit::tsk_id_t, tskit::tsk_id_t), rng: &mut StdRng) {
 
 fn crossover_and_record_edges_details(
     parent: Diploid,
-    offspring_node: tskit::tsk_id_t,
+    offspring_node: tskit::NodeId,
     params: &SimParams,
     tables: &mut tskit::TableCollection,
     rng: &mut StdRng,
@@ -269,7 +269,7 @@ fn crossover_and_record_edges_details(
 
 fn crossover_and_record_edges(
     parents: &Parents,
-    offspring_nodes: (tskit::tsk_id_t, tskit::tsk_id_t),
+    offspring_nodes: (tskit::NodeId, tskit::NodeId),
     params: &SimParams,
     tables: &mut tskit::TableCollection,
     rng: &mut StdRng,
@@ -332,9 +332,9 @@ fn simplify(alive: &mut [Diploid], tables: &mut tskit::TableCollection) {
         Ok(x) => match x {
             Some(idmap) => {
                 for a in alive.iter_mut() {
-                    a.node0 = idmap[a.node0 as usize];
+                    a.node0 = idmap[usize::from(a.node0)];
                     assert!(a.node0 != tskit::TSK_NULL);
-                    a.node1 = idmap[a.node1 as usize];
+                    a.node1 = idmap[usize::from(a.node1)];
                     assert!(a.node1 != tskit::TSK_NULL);
                 }
             }
