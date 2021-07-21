@@ -1,11 +1,12 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::SiteId;
 use crate::TskitError;
 use crate::{tsk_id_t, tsk_size_t};
 
 /// Row of a [`SiteTable`]
 pub struct SiteTableRow {
-    pub id: tsk_id_t,
+    pub id: SiteId,
     pub position: f64,
     pub ancestral_state: Option<Vec<u8>>,
     pub metadata: Option<Vec<u8>>,
@@ -23,7 +24,7 @@ impl PartialEq for SiteTableRow {
 fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = SiteTableRow {
-            id: pos,
+            id: pos.into(),
             position: table.position(pos).unwrap(),
             ancestral_state: table.ancestral_state(pos).unwrap(),
             metadata: table_row_decode_metadata!(table, pos),
@@ -82,8 +83,8 @@ impl<'a> SiteTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn position(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.position)
+    pub fn position<S: Into<SiteId> + Copy>(&'a self, row: S) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.position)
     }
 
     /// Get the ``ancestral_state`` value from row ``row`` of the table.
@@ -96,11 +97,14 @@ impl<'a> SiteTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn ancestral_state(&'a self, row: tsk_id_t) -> Result<Option<Vec<u8>>, TskitError> {
+    pub fn ancestral_state<S: Into<SiteId>>(
+        &'a self,
+        row: S,
+    ) -> Result<Option<Vec<u8>>, TskitError> {
         crate::metadata::char_column_to_vector(
             self.table_.ancestral_state,
             self.table_.ancestral_state_offset,
-            row,
+            row.into().0,
             self.table_.num_rows,
             self.table_.ancestral_state_length,
         )
@@ -108,9 +112,9 @@ impl<'a> SiteTable<'a> {
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: SiteId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
@@ -129,7 +133,7 @@ impl<'a> SiteTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<SiteTableRow, TskitError> {
-        table_row_access!(r, self, make_site_table_row)
+    pub fn row<S: Into<SiteId> + Copy>(&self, r: S) -> Result<SiteTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_site_table_row)
     }
 }

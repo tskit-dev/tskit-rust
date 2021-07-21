@@ -160,9 +160,29 @@ pub struct IndividualId(tsk_id_t);
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct PopulationId(tsk_id_t);
 
+/// A site ID
+///
+/// This is an integer referring to a row of an [``SiteTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct SiteId(tsk_id_t);
+
+/// A mutation ID
+///
+/// This is an integer referring to a row of an [``MutationTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct MutationId(tsk_id_t);
+
 impl_id_traits!(NodeId);
 impl_id_traits!(IndividualId);
 impl_id_traits!(PopulationId);
+impl_id_traits!(SiteId);
+impl_id_traits!(MutationId);
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.

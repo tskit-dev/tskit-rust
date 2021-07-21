@@ -20,7 +20,7 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
-use crate::{IndividualId, NodeId, PopulationId};
+use crate::{IndividualId, MutationId, NodeId, PopulationId, SiteId};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -323,7 +323,11 @@ impl TableCollection {
     }
 
     /// Add a row to the site table
-    pub fn add_site(&mut self, position: f64, ancestral_state: Option<&[u8]>) -> TskReturnValue {
+    pub fn add_site(
+        &mut self,
+        position: f64,
+        ancestral_state: Option<&[u8]>,
+    ) -> Result<SiteId, TskitError> {
         self.add_site_with_metadata(position, ancestral_state, None)
     }
 
@@ -333,7 +337,7 @@ impl TableCollection {
         position: f64,
         ancestral_state: Option<&[u8]>,
         metadata: Option<&dyn MetadataRoundtrip>,
-    ) -> TskReturnValue {
+    ) -> Result<SiteId, TskitError> {
         let astate = process_state_input!(ancestral_state);
         let md = EncodedMetadata::new(metadata)?;
 
@@ -348,40 +352,40 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, SiteId::from(rv))
     }
 
     /// Add a row to the mutation table.
-    pub fn add_mutation<N: Into<NodeId>>(
+    pub fn add_mutation<N: Into<NodeId>, M: Into<MutationId>, S: Into<SiteId>>(
         &mut self,
-        site: tsk_id_t,
+        site: S,
         node: N,
-        parent: tsk_id_t,
+        parent: M,
         time: f64,
         derived_state: Option<&[u8]>,
-    ) -> TskReturnValue {
+    ) -> Result<MutationId, TskitError> {
         self.add_mutation_with_metadata(site, node, parent, time, derived_state, None)
     }
 
     /// Add a row with metadata to the mutation table.
-    pub fn add_mutation_with_metadata<N: Into<NodeId>>(
+    pub fn add_mutation_with_metadata<N: Into<NodeId>, M: Into<MutationId>, S: Into<SiteId>>(
         &mut self,
-        site: tsk_id_t,
+        site: S,
         node: N,
-        parent: tsk_id_t,
+        parent: M,
         time: f64,
         derived_state: Option<&[u8]>,
         metadata: Option<&dyn MetadataRoundtrip>,
-    ) -> TskReturnValue {
+    ) -> Result<MutationId, TskitError> {
         let dstate = process_state_input!(derived_state);
         let md = EncodedMetadata::new(metadata)?;
 
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_add_row(
                 &mut (*self.as_mut_ptr()).mutations,
-                site,
+                site.into().0,
                 node.into().0,
-                parent,
+                parent.into().0,
                 time,
                 dstate.0,
                 dstate.1,
@@ -390,7 +394,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, MutationId::from(rv))
     }
 
     /// Add a row to the population_table
@@ -983,7 +987,7 @@ mod test {
             .unwrap();
         // The double unwrap is to first check for error
         // and then to process the Option.
-        let md = tables.mutations().metadata::<F>(0).unwrap().unwrap();
+        let md = tables.mutations().metadata::<F>(0.into()).unwrap().unwrap();
         assert_eq!(md.x, -3);
         assert_eq!(md.y, 666);
 
@@ -1016,7 +1020,11 @@ mod test {
         let mut num_with_metadata = 0;
         let mut num_without_metadata = 0;
         for i in 0..tables.mutations().num_rows() {
-            match tables.mutations().metadata::<F>(i as tsk_id_t).unwrap() {
+            match tables
+                .mutations()
+                .metadata::<F>((i as tsk_id_t).into())
+                .unwrap()
+            {
                 Some(x) => {
                     num_with_metadata += 1;
                     assert_eq!(x.x, -3);
@@ -1166,7 +1174,7 @@ mod test_bad_metadata {
         tables
             .add_mutation_with_metadata(0, 0, crate::TSK_NULL, 0.0, None, Some(&md))
             .unwrap();
-        if tables.mutations().metadata::<Ff>(0).is_ok() {
+        if tables.mutations().metadata::<Ff>(0.into()).is_ok() {
             panic!("expected an error!!");
         }
     }
