@@ -20,7 +20,7 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
-use crate::{IndividualId, MutationId, NodeId, PopulationId, SiteId};
+use crate::{EdgeId, IndividualId, MutationId, NodeId, PopulationId, SiteId};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -172,7 +172,7 @@ impl TableCollection {
         right: f64,
         parent: P,
         child: C,
-    ) -> TskReturnValue {
+    ) -> Result<EdgeId, TskitError> {
         self.add_edge_with_metadata(left, right, parent, child, None)
     }
 
@@ -184,7 +184,7 @@ impl TableCollection {
         parent: P,
         child: C,
         metadata: Option<&dyn MetadataRoundtrip>,
-    ) -> TskReturnValue {
+    ) -> Result<EdgeId, TskitError> {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_edge_table_add_row(
@@ -198,7 +198,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, EdgeId::from(rv))
     }
 
     /// Add a row to the individual table
@@ -440,11 +440,11 @@ impl TableCollection {
     /// If `self.is_indexed()` is `true`, return a non-owning
     /// slice containing the edge insertion order.
     /// Otherwise, return `None`.
-    pub fn edge_insertion_order(&self) -> Option<&[tsk_id_t]> {
+    pub fn edge_insertion_order(&self) -> Option<&[EdgeId]> {
         if self.is_indexed() {
             Some(unsafe {
                 std::slice::from_raw_parts(
-                    (*self.as_ptr()).indexes.edge_insertion_order,
+                    (*self.as_ptr()).indexes.edge_insertion_order as *const EdgeId,
                     (*self.as_ptr()).indexes.num_edges as usize,
                 )
             })
@@ -456,11 +456,11 @@ impl TableCollection {
     /// If `self.is_indexed()` is `true`, return a non-owning
     /// slice containing the edge removal order.
     /// Otherwise, return `None`.
-    pub fn edge_removal_order(&self) -> Option<&[tsk_id_t]> {
+    pub fn edge_removal_order(&self) -> Option<&[EdgeId]> {
         if self.is_indexed() {
             Some(unsafe {
                 std::slice::from_raw_parts(
-                    (*self.as_ptr()).indexes.edge_removal_order,
+                    (*self.as_ptr()).indexes.edge_removal_order as *const EdgeId,
                     (*self.as_ptr()).indexes.num_edges as usize,
                 )
             })
@@ -802,6 +802,41 @@ mod test {
         for i in tables.edge_removal_order().unwrap() {
             assert!(*i >= 0);
             assert!(*i < tables.edges().num_rows() as tsk_id_t);
+        }
+
+        // The "transparent" casts are such black magic that we
+        // should probably test against what C thinks is going on :)
+        let input = unsafe {
+            std::slice::from_raw_parts(
+                (*tables.as_ptr()).indexes.edge_insertion_order,
+                (*tables.as_ptr()).indexes.num_edges as usize,
+            )
+        };
+
+        assert!(!input.is_empty());
+
+        let tables_input = tables.edge_insertion_order().unwrap();
+
+        assert_eq!(input.len(), tables_input.len());
+
+        for i in 0..input.len() {
+            assert_eq!(EdgeId::from(input[i]), tables_input[i]);
+        }
+
+        let output = unsafe {
+            std::slice::from_raw_parts(
+                (*tables.as_ptr()).indexes.edge_removal_order,
+                (*tables.as_ptr()).indexes.num_edges as usize,
+            )
+        };
+        assert!(!output.is_empty());
+
+        let tables_output = tables.edge_removal_order().unwrap();
+
+        assert_eq!(output.len(), tables_output.len());
+
+        for i in 0..output.len() {
+            assert_eq!(EdgeId::from(output[i]), tables_output[i]);
         }
     }
 

@@ -187,12 +187,22 @@ pub struct MutationId(tsk_id_t);
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct MigrationId(tsk_id_t);
 
+/// An edge ID
+///
+/// This is an integer referring to a row of an [``EdgeTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct EdgeId(tsk_id_t);
+
 impl_id_traits!(NodeId);
 impl_id_traits!(IndividualId);
 impl_id_traits!(PopulationId);
 impl_id_traits!(SiteId);
 impl_id_traits!(MutationId);
 impl_id_traits!(MigrationId);
+impl_id_traits!(EdgeId);
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
