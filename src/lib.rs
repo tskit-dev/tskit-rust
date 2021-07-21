@@ -232,7 +232,7 @@ pub mod provenance;
 
 /// A provenance ID
 ///
-/// This is an integer referring to a row of an [``ProvenanceTable``].
+/// This is an integer referring to a row of a [``provenance::ProvenanceTable``].
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
 #[cfg(any(doc, feature = "provenance"))]
