@@ -202,21 +202,21 @@ impl TableCollection {
     }
 
     /// Add a row to the individual table
-    pub fn add_individual<N: Into<NodeId>>(
+    pub fn add_individual<I: Into<IndividualId>>(
         &mut self,
         flags: tsk_flags_t,
         location: &[f64],
-        parents: &[N],
+        parents: &[I],
     ) -> Result<IndividualId, TskitError> {
         self.add_individual_with_metadata(flags, location, parents, None)
     }
 
     /// Add a row with metadata to the individual table
-    pub fn add_individual_with_metadata<N: Into<NodeId>>(
+    pub fn add_individual_with_metadata<I: Into<IndividualId>>(
         &mut self,
         flags: tsk_flags_t,
         location: &[f64],
-        parents: &[N],
+        parents: &[I],
         metadata: Option<&dyn MetadataRoundtrip>,
     ) -> Result<IndividualId, TskitError> {
         let md = EncodedMetadata::new(metadata)?;
