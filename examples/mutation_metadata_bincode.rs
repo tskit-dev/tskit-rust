@@ -45,7 +45,11 @@ pub fn run() {
     // 1. The first is to handle errors.
     // 2. The second is b/c metadata are optional,
     //    so a row may return None.
-    let decoded = tables.mutations().metadata::<Mutation>(0).unwrap().unwrap();
+    let decoded = tables
+        .mutations()
+        .metadata::<Mutation>(0.into())
+        .unwrap()
+        .unwrap();
 
     // Check that we've made the round trip:
     assert_eq!(decoded.origin_time, 1);

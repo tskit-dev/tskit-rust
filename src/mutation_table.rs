@@ -1,14 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::NodeId;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
+use crate::{MutationId, NodeId, SiteId};
 
 /// Row of a [`MutationTable`]
 pub struct MutationTableRow {
-    pub id: tsk_id_t,
-    pub site: tsk_id_t,
+    pub id: MutationId,
+    pub site: SiteId,
     pub node: NodeId,
-    pub parent: tsk_id_t,
+    pub parent: MutationId,
     pub time: f64,
     pub derived_state: Option<Vec<u8>>,
     pub metadata: Option<Vec<u8>>,
@@ -29,7 +29,7 @@ impl PartialEq for MutationTableRow {
 fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<MutationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = MutationTableRow {
-            id: pos,
+            id: pos.into(),
             site: table.site(pos).unwrap(),
             node: table.node(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
@@ -90,8 +90,8 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn site(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.site)
+    pub fn site<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<SiteId, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.site, SiteId)
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -100,8 +100,8 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn node(&'a self, row: tsk_id_t) -> Result<NodeId, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node, NodeId)
+    pub fn node<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.node, NodeId)
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -110,8 +110,14 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent)
+    pub fn parent<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<MutationId, TskitError> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_.parent,
+            MutationId
+        )
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -120,8 +126,8 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time)
+    pub fn time<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time)
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.
@@ -134,11 +140,14 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn derived_state(&'a self, row: tsk_id_t) -> Result<Option<Vec<u8>>, TskitError> {
+    pub fn derived_state<M: Into<MutationId>>(
+        &'a self,
+        row: M,
+    ) -> Result<Option<Vec<u8>>, TskitError> {
         metadata::char_column_to_vector(
             self.table_.derived_state,
             self.table_.derived_state_offset,
-            row,
+            row.into().0,
             self.table_.num_rows,
             self.table_.derived_state_length,
         )
@@ -146,9 +155,9 @@ impl<'a> MutationTable<'a> {
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: MutationId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
@@ -167,7 +176,7 @@ impl<'a> MutationTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<MutationTableRow, TskitError> {
-        table_row_access!(r, self, make_mutation_table_row)
+    pub fn row<M: Into<MutationId> + Copy>(&self, r: M) -> Result<MutationTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_mutation_table_row)
     }
 }

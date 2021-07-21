@@ -52,7 +52,12 @@ use thiserror::Error;
 /// // The two unwraps are:
 /// // 1. Handle Errors vs Option.
 /// // 2. Handle the option for the case of no error.
-/// let decoded = tables.mutations().metadata::<MyMutation>(0).unwrap().unwrap();
+/// //
+/// // The .into() reflects the fact that metadata fetching
+/// // functions only take a strong ID type, and tskit-rust
+/// // adds Into<strong ID type> for i32 for all strong ID types.
+///
+/// let decoded = tables.mutations().metadata::<MyMutation>(0.into()).unwrap().unwrap();
 /// assert_eq!(mutation.origin_time, decoded.origin_time);
 /// match decoded.effect_size.partial_cmp(&mutation.effect_size) {
 ///     Some(std::cmp::Ordering::Greater) => assert!(false),
