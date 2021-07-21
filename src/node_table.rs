@@ -141,11 +141,11 @@ impl<'a> NodeTable<'a> {
         unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.individual)
     }
 
-    pub fn metadata<T: metadata::MetadataRoundtrip>(
+    pub fn metadata<N: Into<crate::NodeId>, T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: N,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.into().0)?;
         decode_metadata_row!(T, buffer)
     }
 
