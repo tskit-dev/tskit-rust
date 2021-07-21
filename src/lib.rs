@@ -94,6 +94,56 @@ pub use bindings::tsk_flags_t;
 pub use bindings::tsk_id_t;
 pub use bindings::tsk_size_t;
 
+/// A node ID
+///
+/// This is an integer referring to a row of a [``NodeTable``].
+/// The underlying type is [``tsk_id_t``].
+///
+/// # Examples
+///
+/// These examples illustrate using this type as something "integer-like".
+///
+/// ```
+/// use tskit::NodeId;
+/// use tskit::tsk_id_t;
+///
+/// let x: tsk_id_t = 1;
+/// let y: NodeId = NodeId::from(x);
+/// assert_eq!(x, y);
+/// assert_eq!(y, x);
+///
+/// assert!(y < x + 1);
+/// assert!(y <= x);
+/// assert!(x + 1 > y);
+/// assert!(x + 1 >= y);
+///
+/// let z: NodeId = NodeId::from(x);
+/// assert_eq!(y, z);
+/// ```
+///
+/// It is also possible to write functions accepting both the `NodeId` 
+/// and `tsk_id_t`:
+///
+/// ```
+/// use tskit::NodeId;
+/// use tskit::tsk_id_t;
+///
+/// fn interesting<N: Into<NodeId>>(x: N) -> NodeId {
+///     x.into()
+/// }
+///
+/// let x: tsk_id_t = 0;
+/// assert_eq!(interesting(x), x);
+/// let x: NodeId = NodeId::from(0);
+/// assert_eq!(interesting(x), x);
+/// ```
+///
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct NodeId(tsk_id_t);
+
+impl_id_traits!(NodeId);
+
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
 // See bindgen issue 316.
@@ -110,6 +160,7 @@ pub use node_table::{NodeTable, NodeTableRow};
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
+pub use traits::IdIsNull;
 pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
 pub use traits::TskitTypeAccess;

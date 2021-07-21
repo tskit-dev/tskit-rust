@@ -1,10 +1,11 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::NodeId;
 use crate::{tsk_flags_t, tsk_id_t, TskitError};
 
 /// Row of a [`NodeTable`]
 pub struct NodeTableRow {
-    pub id: tsk_id_t,
+    pub id: NodeId,
     pub time: f64,
     pub flags: tsk_flags_t,
     pub population: tsk_id_t,
@@ -26,7 +27,7 @@ impl PartialEq for NodeTableRow {
 fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(NodeTableRow {
-            id: pos,
+            id: pos.into(),
             time: table.time(pos).unwrap(),
             flags: table.flags(pos).unwrap(),
             population: table.population(pos).unwrap(),
@@ -86,8 +87,8 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time)
+    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time)
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -96,8 +97,8 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn flags(&'a self, row: tsk_id_t) -> Result<tsk_flags_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.flags)
+    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_flags_t, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags)
     }
 
     /// Mutable access to node flags.
@@ -116,8 +117,8 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn population(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.population)
+    pub fn population<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_id_t, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.population)
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
@@ -126,7 +127,7 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn deme(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
+    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_id_t, TskitError> {
         self.population(row)
     }
 
@@ -136,8 +137,8 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn individual(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.individual)
+    pub fn individual<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_id_t, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.individual)
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
@@ -163,15 +164,15 @@ impl<'a> NodeTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<NodeTableRow, TskitError> {
-        table_row_access!(r, self, make_node_table_row)
+    pub fn row<N: Into<NodeId> + Copy>(&self, r: N) -> Result<NodeTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_node_table_row)
     }
 
     /// Obtain a vector containing the indexes ("ids")
     /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
     /// is `true`.
-    pub fn samples_as_vector(&self) -> Vec<tsk_id_t> {
-        let mut samples: Vec<tsk_id_t> = vec![];
+    pub fn samples_as_vector(&self) -> Vec<NodeId> {
+        let mut samples: Vec<NodeId> = vec![];
         for row in self.iter() {
             if row.flags & crate::TSK_NODE_IS_SAMPLE > 0 {
                 samples.push(row.id);
@@ -185,8 +186,8 @@ impl<'a> NodeTable<'a> {
     pub fn create_node_id_vector(
         &self,
         mut f: impl FnMut(&crate::NodeTableRow) -> bool,
-    ) -> Vec<tsk_id_t> {
-        let mut samples: Vec<tsk_id_t> = vec![];
+    ) -> Vec<NodeId> {
+        let mut samples: Vec<NodeId> = vec![];
         for row in self.iter() {
             if f(&row) {
                 samples.push(row.id);
