@@ -1,7 +1,7 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::{tsk_flags_t, tsk_id_t, TskitError};
-use crate::{NodeId, PopulationId};
+use crate::{IndividualId, NodeId, PopulationId};
 
 /// Row of a [`NodeTable`]
 pub struct NodeTableRow {
@@ -9,7 +9,7 @@ pub struct NodeTableRow {
     pub time: f64,
     pub flags: tsk_flags_t,
     pub population: PopulationId,
-    pub individual: tsk_id_t,
+    pub individual: IndividualId,
     pub metadata: Option<Vec<u8>>,
 }
 
@@ -146,8 +146,17 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn individual<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.individual)
+    pub fn individual<N: Into<NodeId> + Copy>(
+        &'a self,
+        row: N,
+    ) -> Result<IndividualId, TskitError> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_.individual,
+            IndividualId
+        )
     }
 
     pub fn metadata<N: Into<crate::NodeId>, T: metadata::MetadataRoundtrip>(
