@@ -67,6 +67,26 @@ pub type IndividualTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a IndividualTable<'a>>;
 pub type IndividualTableIterator<'a> = crate::table_iterator::TableIterator<IndividualTable<'a>>;
 
+impl<'a> Iterator for IndividualTableRefIterator<'a> {
+    type Item = IndividualTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_individual_table_row(self.table, self.pos);
+        self.pos += 1;
+        rv
+    }
+}
+
+impl<'a> Iterator for IndividualTableIterator<'a> {
+    type Item = IndividualTableRow;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = make_individual_table_row(&self.table, self.pos);
+        self.pos += 1;
+        rv
+    }
+}
+
 impl<'a> IndividualTable<'a> {
     pub(crate) fn new_from_table(individuals: &'a ll_bindings::tsk_individual_table_t) -> Self {
         IndividualTable {

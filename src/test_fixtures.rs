@@ -2,6 +2,35 @@
 use crate::*;
 
 #[cfg(test)]
+pub fn make_empty_table_collection(L: f64) -> TableCollection {
+    TableCollection::new(L).unwrap()
+}
+
+#[cfg(test)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq, Copy, Clone)]
+pub struct GenericMetadata {
+    pub data: i64,
+}
+
+#[cfg(test)]
+impl Default for GenericMetadata {
+    fn default() -> Self {
+        Self { data: 42 }
+    }
+}
+
+#[cfg(test)]
+impl crate::metadata::MetadataRoundtrip for GenericMetadata {
+    fn encode(&self) -> Result<Vec<u8>, crate::metadata::MetadataError> {
+        handle_metadata_return!(bincode::serialize(&self))
+    }
+
+    fn decode(md: &[u8]) -> Result<Self, crate::metadata::MetadataError> {
+        handle_metadata_return!(bincode::deserialize(md))
+    }
+}
+
+#[cfg(test)]
 pub fn make_small_table_collection() -> TableCollection {
     let mut tables = TableCollection::new(1000.).unwrap();
     tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
