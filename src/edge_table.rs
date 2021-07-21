@@ -1,14 +1,15 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
+use crate::{EdgeId, NodeId};
 
 /// Row of an [`EdgeTable`]
 pub struct EdgeTableRow {
-    pub id: tsk_id_t,
+    pub id: EdgeId,
     pub left: f64,
     pub right: f64,
-    pub parent: tsk_id_t,
-    pub child: tsk_id_t,
+    pub parent: NodeId,
+    pub child: NodeId,
     pub metadata: Option<Vec<u8>>,
 }
 
@@ -26,7 +27,7 @@ impl PartialEq for EdgeTableRow {
 fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = EdgeTableRow {
-            id: pos,
+            id: pos.into(),
             left: table.left(pos).unwrap(),
             right: table.right(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
@@ -87,8 +88,8 @@ impl<'a> EdgeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn parent(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.parent)
+    pub fn parent<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.parent, NodeId)
     }
 
     /// Return the ``child`` value from row ``row`` of the table.
@@ -97,8 +98,8 @@ impl<'a> EdgeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn child(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.child)
+    pub fn child<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.child, NodeId)
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -107,8 +108,8 @@ impl<'a> EdgeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn left(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.left)
+    pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left)
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
@@ -117,15 +118,15 @@ impl<'a> EdgeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn right(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.right)
+    pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right)
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: EdgeId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
@@ -145,7 +146,7 @@ impl<'a> EdgeTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<EdgeTableRow, TskitError> {
-        table_row_access!(r, self, make_edge_table_row)
+    pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Result<EdgeTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_edge_table_row)
     }
 }
