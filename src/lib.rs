@@ -62,6 +62,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+#[allow(deref_nullptr)]
 pub mod bindings;
 
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!

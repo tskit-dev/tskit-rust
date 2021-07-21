@@ -775,7 +775,7 @@ mod test {
     #[test]
     fn test_edge_index_access() {
         let tables = make_small_table_collection();
-        assert_eq!(tables.is_indexed(), true);
+        assert!(tables.is_indexed());
         assert_eq!(
             tables.edge_insertion_order().unwrap().len(),
             tables.edges().num_rows() as usize
