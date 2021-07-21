@@ -20,7 +20,7 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
-use crate::{IndividualId, NodeId};
+use crate::{IndividualId, NodeId, PopulationId};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -241,11 +241,11 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    pub fn add_migration<N: Into<NodeId>>(
+    pub fn add_migration<N: Into<NodeId>, SOURCE: Into<PopulationId>, DEST: Into<PopulationId>>(
         &mut self,
         span: (f64, f64),
         node: N,
-        source_dest: (tsk_id_t, tsk_id_t),
+        source_dest: (SOURCE, DEST),
         time: f64,
     ) -> TskReturnValue {
         self.add_migration_with_metadata(span, node, source_dest, time, None)
@@ -257,11 +257,15 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    pub fn add_migration_with_metadata<N: Into<NodeId>>(
+    pub fn add_migration_with_metadata<
+        N: Into<NodeId>,
+        SOURCE: Into<PopulationId>,
+        DEST: Into<PopulationId>,
+    >(
         &mut self,
         span: (f64, f64),
         node: N,
-        source_dest: (tsk_id_t, tsk_id_t),
+        source_dest: (SOURCE, DEST),
         time: f64,
         metadata: Option<&dyn MetadataRoundtrip>,
     ) -> TskReturnValue {
@@ -272,8 +276,8 @@ impl TableCollection {
                 span.0,
                 span.1,
                 node.into().0,
-                source_dest.0,
-                source_dest.1,
+                source_dest.0.into().0,
+                source_dest.1.into().0,
                 time,
                 md.as_ptr(),
                 md.len(),
@@ -283,22 +287,22 @@ impl TableCollection {
     }
 
     /// Add a row to the node table
-    pub fn add_node<I: Into<IndividualId>>(
+    pub fn add_node<I: Into<IndividualId>, POP: Into<PopulationId>>(
         &mut self,
         flags: ll_bindings::tsk_flags_t,
         time: f64,
-        population: tsk_id_t,
+        population: POP,
         individual: I,
     ) -> Result<NodeId, TskitError> {
         self.add_node_with_metadata(flags, time, population, individual, None)
     }
 
     /// Add a row with metadata to the node table
-    pub fn add_node_with_metadata<I: Into<IndividualId>>(
+    pub fn add_node_with_metadata<I: Into<IndividualId>, POP: Into<PopulationId>>(
         &mut self,
         flags: ll_bindings::tsk_flags_t,
         time: f64,
-        population: tsk_id_t,
+        population: POP,
         individual: I,
         metadata: Option<&dyn MetadataRoundtrip>,
     ) -> Result<NodeId, TskitError> {
@@ -308,7 +312,7 @@ impl TableCollection {
                 &mut (*self.as_mut_ptr()).nodes,
                 flags,
                 time,
-                population,
+                population.into().0,
                 individual.into().0,
                 md.as_ptr(),
                 md.len(),
@@ -390,7 +394,7 @@ impl TableCollection {
     }
 
     /// Add a row to the population_table
-    pub fn add_population(&mut self) -> TskReturnValue {
+    pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
         self.add_population_with_metadata(None)
     }
 
@@ -398,7 +402,7 @@ impl TableCollection {
     pub fn add_population_with_metadata(
         &mut self,
         metadata: Option<&dyn MetadataRoundtrip>,
-    ) -> TskReturnValue {
+    ) -> Result<PopulationId, TskitError> {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_population_table_add_row(
@@ -408,7 +412,7 @@ impl TableCollection {
             )
         };
 
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, PopulationId::from(rv))
     }
 
     /// Build the "input" and "output"
@@ -1030,30 +1034,33 @@ mod test {
     #[test]
     fn test_add_population() {
         let mut tables = TableCollection::new(1000.).unwrap();
-        tables.add_population().unwrap();
+        let pop_id = tables.add_population().unwrap();
+        assert_eq!(pop_id, 0);
         assert_eq!(tables.populations().num_rows(), 1);
+
+        tables
+            .add_node(crate::TSK_NODE_IS_SAMPLE, 0.0, pop_id, crate::TSK_NULL)
+            .unwrap();
+
+        match tables.nodes().row(NodeId::from(0)) {
+            Ok(x) => match x.population {
+                PopulationId(0) => (),
+                _ => panic!("expected PopulationId(0)"),
+            },
+            Err(_) => panic!("expected Ok(_)"),
+        };
     }
 
     #[test]
     fn test_dump_tables() {
         let treefile = "trees.trees";
         let mut tables = TableCollection::new(1000.).unwrap();
-        tables.add_population().unwrap();
+        let pop_id = tables.add_population().unwrap();
         tables
-            .add_node(
-                crate::TSK_NODE_IS_SAMPLE,
-                0.0,
-                crate::TSK_NULL,
-                crate::TSK_NULL,
-            )
+            .add_node(crate::TSK_NODE_IS_SAMPLE, 0.0, pop_id, crate::TSK_NULL)
             .unwrap();
         tables
-            .add_node(
-                crate::TSK_NODE_IS_SAMPLE,
-                1.0,
-                crate::TSK_NULL,
-                crate::TSK_NULL,
-            )
+            .add_node(crate::TSK_NODE_IS_SAMPLE, 1.0, pop_id, crate::TSK_NULL)
             .unwrap();
         tables.add_edge(0., tables.sequence_length(), 1, 0).unwrap();
         tables

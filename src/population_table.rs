@@ -1,12 +1,13 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::PopulationId;
 use crate::TskitError;
 use crate::{tsk_id_t, tsk_size_t};
 
 /// Row of a [`PopulationTable`]
 #[derive(Eq)]
 pub struct PopulationTableRow {
-    pub id: tsk_id_t,
+    pub id: PopulationId,
     pub metadata: Option<Vec<u8>>,
 }
 
@@ -19,7 +20,7 @@ impl PartialEq for PopulationTableRow {
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = PopulationTableRow {
-            id: pos,
+            id: pos.into(),
             metadata: table_row_decode_metadata!(table, pos),
         };
         Some(rv)
@@ -71,11 +72,11 @@ impl<'a> PopulationTable<'a> {
         self.table_.num_rows
     }
 
-    pub fn metadata<T: metadata::MetadataRoundtrip>(
+    pub fn metadata<P: Into<PopulationId>, T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: P,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.into().0)?;
         decode_metadata_row!(T, buffer)
     }
 
@@ -94,7 +95,10 @@ impl<'a> PopulationTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<PopulationTableRow, TskitError> {
-        table_row_access!(r, self, make_population_table_row)
+    pub fn row<P: Into<PopulationId> + Copy>(
+        &self,
+        r: P,
+    ) -> Result<PopulationTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_population_table_row)
     }
 }

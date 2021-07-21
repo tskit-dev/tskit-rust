@@ -121,7 +121,7 @@ pub use bindings::tsk_size_t;
 /// assert_eq!(y, z);
 /// ```
 ///
-/// It is also possible to write functions accepting both the `NodeId` 
+/// It is also possible to write functions accepting both the `NodeId`
 /// and `tsk_id_t`:
 ///
 /// ```
@@ -151,8 +151,18 @@ pub struct NodeId(tsk_id_t);
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct IndividualId(tsk_id_t);
 
+/// A population ID
+///
+/// This is an integer referring to a row of an [``PopulationTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct PopulationId(tsk_id_t);
+
 impl_id_traits!(NodeId);
 impl_id_traits!(IndividualId);
+impl_id_traits!(PopulationId);
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.

@@ -1,14 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::NodeId;
 use crate::{tsk_flags_t, tsk_id_t, TskitError};
+use crate::{NodeId, PopulationId};
 
 /// Row of a [`NodeTable`]
 pub struct NodeTableRow {
     pub id: NodeId,
     pub time: f64,
     pub flags: tsk_flags_t,
-    pub population: tsk_id_t,
+    pub population: PopulationId,
     pub individual: tsk_id_t,
     pub metadata: Option<Vec<u8>>,
 }
@@ -117,8 +117,17 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn population<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.population)
+    pub fn population<N: Into<NodeId> + Copy>(
+        &'a self,
+        row: N,
+    ) -> Result<PopulationId, TskitError> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_.population,
+            PopulationId
+        )
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
@@ -127,7 +136,7 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_id_t, TskitError> {
+    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<PopulationId, TskitError> {
         self.population(row)
     }
 
