@@ -159,11 +159,11 @@ impl<'a> NodeTable<'a> {
         )
     }
 
-    pub fn metadata<N: Into<crate::NodeId>, T: metadata::MetadataRoundtrip>(
+    pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: N,
+        row: NodeId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.into().0)?;
+        let buffer = metadata_to_vector!(self, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

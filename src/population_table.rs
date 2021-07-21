@@ -72,11 +72,11 @@ impl<'a> PopulationTable<'a> {
         self.table_.num_rows
     }
 
-    pub fn metadata<P: Into<PopulationId>, T: metadata::MetadataRoundtrip>(
+    pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: P,
+        row: PopulationId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.into().0)?;
+        let buffer = metadata_to_vector!(self, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
