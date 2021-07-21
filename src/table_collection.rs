@@ -176,7 +176,7 @@ impl TableCollection {
         self.add_edge_with_metadata(left, right, parent, child, None)
     }
 
-    /// Add a row with metadata to the edge table
+    /// Add a row with optional metadata to the edge table
     pub fn add_edge_with_metadata<P: Into<NodeId>, C: Into<NodeId>>(
         &mut self,
         left: f64,
@@ -199,6 +199,18 @@ impl TableCollection {
         };
 
         handle_tsk_return_value!(rv, EdgeId::from(rv))
+    }
+
+    /// Add a row with metadata to the edge table
+    pub fn add_edge_with_some_metadata<P: Into<NodeId>, C: Into<NodeId>>(
+        &mut self,
+        left: f64,
+        right: f64,
+        parent: P,
+        child: C,
+        metadata: &dyn MetadataRoundtrip,
+    ) -> Result<EdgeId, TskitError> {
+        self.add_edge_with_metadata(left, right, parent, child, Some(metadata))
     }
 
     /// Add a row to the individual table
@@ -235,6 +247,17 @@ impl TableCollection {
         handle_tsk_return_value!(rv, IndividualId::from(rv))
     }
 
+    /// Add a row with metadata to the individual table
+    pub fn add_individual_with_some_metadata<I: Into<IndividualId>>(
+        &mut self,
+        flags: tsk_flags_t,
+        location: &[f64],
+        parents: &[I],
+        metadata: &dyn MetadataRoundtrip,
+    ) -> Result<IndividualId, TskitError> {
+        self.add_individual_with_metadata(flags, location, parents, Some(metadata))
+    }
+
     /// Add a row to the migration table
     ///
     /// # Warnings
@@ -251,7 +274,7 @@ impl TableCollection {
         self.add_migration_with_metadata(span, node, source_dest, time, None)
     }
 
-    /// Add a row with metadata to the migration table
+    /// Add a row with optional metadata to the migration table
     ///
     /// # Warnings
     ///
@@ -286,6 +309,27 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
+    /// Add a row with metadata to the migration table
+    ///
+    /// # Warnings
+    ///
+    /// Migration tables are not currently supported
+    /// by tree sequence simplification.
+    pub fn add_migration_with_some_metadata<
+        N: Into<NodeId>,
+        SOURCE: Into<PopulationId>,
+        DEST: Into<PopulationId>,
+    >(
+        &mut self,
+        span: (f64, f64),
+        node: N,
+        source_dest: (SOURCE, DEST),
+        time: f64,
+        metadata: &dyn MetadataRoundtrip,
+    ) -> TskReturnValue {
+        self.add_migration_with_metadata(span, node, source_dest, time, Some(metadata))
+    }
+
     /// Add a row to the node table
     pub fn add_node<I: Into<IndividualId>, POP: Into<PopulationId>>(
         &mut self,
@@ -297,7 +341,7 @@ impl TableCollection {
         self.add_node_with_metadata(flags, time, population, individual, None)
     }
 
-    /// Add a row with metadata to the node table
+    /// Add a row with optional metadata to the node table
     pub fn add_node_with_metadata<I: Into<IndividualId>, POP: Into<PopulationId>>(
         &mut self,
         flags: ll_bindings::tsk_flags_t,
@@ -322,6 +366,18 @@ impl TableCollection {
         handle_tsk_return_value!(rv, rv.into())
     }
 
+    /// Add a row with metadata to the node table
+    pub fn add_node_with_some_metadata<I: Into<IndividualId>, POP: Into<PopulationId>>(
+        &mut self,
+        flags: ll_bindings::tsk_flags_t,
+        time: f64,
+        population: POP,
+        individual: I,
+        metadata: &dyn MetadataRoundtrip,
+    ) -> Result<NodeId, TskitError> {
+        self.add_node_with_metadata(flags, time, population, individual, Some(metadata))
+    }
+
     /// Add a row to the site table
     pub fn add_site(
         &mut self,
@@ -331,7 +387,7 @@ impl TableCollection {
         self.add_site_with_metadata(position, ancestral_state, None)
     }
 
-    /// Add a row with metadata to the site table
+    /// Add a row with optional metadata to the site table
     pub fn add_site_with_metadata(
         &mut self,
         position: f64,
@@ -355,6 +411,16 @@ impl TableCollection {
         handle_tsk_return_value!(rv, SiteId::from(rv))
     }
 
+    /// Add a row with metadata to the site table
+    pub fn add_site_with_some_metadata(
+        &mut self,
+        position: f64,
+        ancestral_state: Option<&[u8]>,
+        metadata: &dyn MetadataRoundtrip,
+    ) -> Result<SiteId, TskitError> {
+        self.add_site_with_metadata(position, ancestral_state, Some(metadata))
+    }
+
     /// Add a row to the mutation table.
     pub fn add_mutation<N: Into<NodeId>, M: Into<MutationId>, S: Into<SiteId>>(
         &mut self,
@@ -367,7 +433,7 @@ impl TableCollection {
         self.add_mutation_with_metadata(site, node, parent, time, derived_state, None)
     }
 
-    /// Add a row with metadata to the mutation table.
+    /// Add a row with optional metadata to the mutation table.
     pub fn add_mutation_with_metadata<N: Into<NodeId>, M: Into<MutationId>, S: Into<SiteId>>(
         &mut self,
         site: S,
@@ -397,12 +463,29 @@ impl TableCollection {
         handle_tsk_return_value!(rv, MutationId::from(rv))
     }
 
+    /// Add a row with metadata to the mutation table.
+    pub fn add_mutation_with_some_metadata<
+        N: Into<NodeId>,
+        M: Into<MutationId>,
+        S: Into<SiteId>,
+    >(
+        &mut self,
+        site: S,
+        node: N,
+        parent: M,
+        time: f64,
+        derived_state: Option<&[u8]>,
+        metadata: &dyn MetadataRoundtrip,
+    ) -> Result<MutationId, TskitError> {
+        self.add_mutation_with_metadata(site, node, parent, time, derived_state, Some(metadata))
+    }
+
     /// Add a row to the population_table
     pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
         self.add_population_with_metadata(None)
     }
 
-    /// Add a row with metadata to the population_table
+    /// Add a row with optional metadata to the population_table
     pub fn add_population_with_metadata(
         &mut self,
         metadata: Option<&dyn MetadataRoundtrip>,
@@ -417,6 +500,14 @@ impl TableCollection {
         };
 
         handle_tsk_return_value!(rv, PopulationId::from(rv))
+    }
+
+    /// Add a row with metadata to the population_table
+    pub fn add_population_with_some_metadata(
+        &mut self,
+        metadata: &dyn MetadataRoundtrip,
+    ) -> Result<PopulationId, TskitError> {
+        self.add_population_with_metadata(Some(metadata))
     }
 
     /// Build the "input" and "output"
