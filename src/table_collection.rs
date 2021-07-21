@@ -633,7 +633,7 @@ impl crate::traits::NodeListGenerator for TableCollection {}
 
 #[cfg(any(doc, feature = "provenance"))]
 impl crate::provenance::Provenance for TableCollection {
-    fn add_provenance(&mut self, record: &str) -> TskReturnValue {
+    fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
         if record.is_empty() {
             return Err(TskitError::ValueError {
                 got: String::from("empty string slice"),
@@ -650,7 +650,7 @@ impl crate::provenance::Provenance for TableCollection {
                 record.len() as tsk_size_t,
             )
         };
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
     }
 
     fn provenances(&self) -> crate::provenance::ProvenanceTable {

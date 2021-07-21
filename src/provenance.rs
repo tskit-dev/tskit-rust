@@ -11,7 +11,7 @@
 //! See [`Provenance`] for examples.
 
 use crate::bindings as ll_bindings;
-use crate::{tsk_id_t, tsk_size_t, TskitError};
+use crate::{tsk_id_t, tsk_size_t, ProvenanceId, TskitError};
 
 /// Enable provenance table access.
 ///
@@ -100,7 +100,7 @@ pub trait Provenance: crate::TableAccess {
     /// # Parameters
     ///
     /// * `record`: the provenance record
-    fn add_provenance(&mut self, record: &str) -> crate::TskReturnValue;
+    fn add_provenance(&mut self, record: &str) -> Result<ProvenanceId, TskitError>;
     /// Return an immutable reference to the table, type [`ProvenanceTable`]
     fn provenances(&self) -> ProvenanceTable;
     /// Return an iterator over the rows of the [`ProvenanceTable`].
@@ -114,7 +114,7 @@ pub trait Provenance: crate::TableAccess {
 /// Row of a [`ProvenanceTable`].
 pub struct ProvenanceTableRow {
     /// The row id
-    pub id: tsk_id_t,
+    pub id: ProvenanceId,
     /// ISO-formatted time stamp
     pub timestamp: String,
     /// The provenance record
@@ -124,6 +124,12 @@ pub struct ProvenanceTableRow {
 impl PartialEq for ProvenanceTableRow {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id && self.timestamp == other.timestamp && self.record == other.record
+    }
+}
+
+impl std::fmt::Display for ProvenanceId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "ProvenanceId({})", self.0)
     }
 }
 
@@ -140,7 +146,7 @@ impl std::fmt::Display for ProvenanceTableRow {
 fn make_provenance_table_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(ProvenanceTableRow {
-            id: pos,
+            id: pos.into(),
             timestamp: table.timestamp(pos).unwrap(),
             record: table.record(pos).unwrap(),
         })
@@ -203,9 +209,9 @@ impl<'a> ProvenanceTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn timestamp(&'a self, row: tsk_id_t) -> Result<String, TskitError> {
+    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Result<String, TskitError> {
         match unsafe_tsk_ragged_char_column_access!(
-            row,
+            row.into().0,
             0,
             self.num_rows(),
             self.table_.timestamp,
@@ -226,9 +232,9 @@ impl<'a> ProvenanceTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn record(&'a self, row: tsk_id_t) -> Result<String, TskitError> {
+    pub fn record<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Result<String, TskitError> {
         match unsafe_tsk_ragged_char_column_access!(
-            row,
+            row.into().0,
             0,
             self.num_rows(),
             self.table_.record,
@@ -249,11 +255,14 @@ impl<'a> ProvenanceTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&'a self, row: tsk_id_t) -> Result<ProvenanceTableRow, TskitError> {
-        if row < 0 {
+    pub fn row<P: Into<ProvenanceId> + Copy>(
+        &'a self,
+        row: P,
+    ) -> Result<ProvenanceTableRow, TskitError> {
+        if row.into() < 0 {
             Err(TskitError::IndexError)
         } else {
-            match make_provenance_table_row(self, row) {
+            match make_provenance_table_row(self, row.into().0) {
                 Some(x) => Ok(x),
                 None => Err(TskitError::IndexError),
             }

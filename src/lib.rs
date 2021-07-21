@@ -178,11 +178,21 @@ pub struct SiteId(tsk_id_t);
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct MutationId(tsk_id_t);
 
+/// A migration ID
+///
+/// This is an integer referring to a row of an [``MigrationTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct MigrationId(tsk_id_t);
+
 impl_id_traits!(NodeId);
 impl_id_traits!(IndividualId);
 impl_id_traits!(PopulationId);
 impl_id_traits!(SiteId);
 impl_id_traits!(MutationId);
+impl_id_traits!(MigrationId);
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
@@ -209,6 +219,19 @@ pub use trees::{NodeTraversalOrder, Tree, TreeSequence};
 // Optional features
 #[cfg(any(doc, feature = "provenance"))]
 pub mod provenance;
+
+/// A provenance ID
+///
+/// This is an integer referring to a row of an [``ProvenanceTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[cfg(any(doc, feature = "provenance"))]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct ProvenanceId(tsk_id_t);
+
+#[cfg(any(doc, feature = "provenance"))]
+impl_id_traits!(ProvenanceId);
 
 /// Handles return codes from low-level tskit functions.
 ///

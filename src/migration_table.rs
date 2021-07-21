@@ -1,15 +1,16 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::{tsk_id_t, TskitError};
+use crate::{MigrationId, NodeId, PopulationId};
 
 /// Row of a [`MigrationTable`]
 pub struct MigrationTableRow {
-    pub id: tsk_id_t,
+    pub id: MigrationId,
     pub left: f64,
     pub right: f64,
-    pub node: tsk_id_t,
-    pub source: tsk_id_t,
-    pub dest: tsk_id_t,
+    pub node: NodeId,
+    pub source: PopulationId,
+    pub dest: PopulationId,
     pub time: f64,
     pub metadata: Option<Vec<u8>>,
 }
@@ -30,7 +31,7 @@ impl PartialEq for MigrationTableRow {
 fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         Some(MigrationTableRow {
-            id: pos,
+            id: pos.into(),
             left: table.left(pos).unwrap(),
             right: table.right(pos).unwrap(),
             node: table.node(pos).unwrap(),
@@ -92,8 +93,8 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn left(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.left)
+    pub fn left<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left)
     }
 
     /// Return the right coordinate for a given row.
@@ -101,8 +102,8 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn right(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.right)
+    pub fn right<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right)
     }
 
     /// Return the node for a given row.
@@ -110,8 +111,8 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn node(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.source)
+    pub fn node<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.source, NodeId)
     }
 
     /// Return the source population for a given row.
@@ -119,8 +120,17 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn source(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.node)
+    pub fn source<M: Into<MigrationId> + Copy>(
+        &'a self,
+        row: M,
+    ) -> Result<PopulationId, TskitError> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_.node,
+            PopulationId
+        )
     }
 
     /// Return the destination population for a given row.
@@ -128,8 +138,14 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn dest(&'a self, row: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.dest)
+    pub fn dest<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<PopulationId, TskitError> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_.dest,
+            PopulationId
+        )
     }
 
     /// Return the time of the migration event for a given row.
@@ -137,8 +153,8 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn time(&'a self, row: tsk_id_t) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.time)
+    pub fn time<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time)
     }
 
     /// Return the metadata for a given row.
@@ -148,9 +164,9 @@ impl<'a> MigrationTable<'a> {
     /// * [`TskitError::IndexError`] if `row` is out of range.
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: MigrationId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
@@ -169,7 +185,7 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<MigrationTableRow, TskitError> {
-        table_row_access!(r, self, make_migration_table_row)
+    pub fn row<M: Into<MigrationId> + Copy>(&self, r: M) -> Result<MigrationTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_migration_table_row)
     }
 }
