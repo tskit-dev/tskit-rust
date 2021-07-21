@@ -142,7 +142,17 @@ pub use bindings::tsk_size_t;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct NodeId(tsk_id_t);
 
+/// An individual ID
+///
+/// This is an integer referring to a row of an [``IndividualTable``].
+///
+/// The features for this type follow the same pattern as for [``NodeId``]
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct IndividualId(tsk_id_t);
+
 impl_id_traits!(NodeId);
+impl_id_traits!(IndividualId);
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
