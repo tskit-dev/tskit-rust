@@ -1,13 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::IndividualId;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of a [`IndividualTable`]
 pub struct IndividualTableRow {
-    pub id: tsk_id_t,
+    pub id: IndividualId,
     pub flags: tsk_flags_t,
     pub location: Option<Vec<f64>>,
-    pub parents: Option<Vec<tsk_id_t>>,
+    pub parents: Option<Vec<IndividualId>>,
     pub metadata: Option<Vec<u8>>,
 }
 
@@ -50,7 +51,7 @@ pub struct IndividualTable<'a> {
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
     if pos < table.num_rows() as tsk_id_t {
         let rv = IndividualTableRow {
-            id: pos,
+            id: pos.into(),
             flags: table.flags(pos).unwrap(),
             location: table.location(pos).unwrap(),
             parents: table.parents(pos).unwrap(),
@@ -83,8 +84,8 @@ impl<'a> IndividualTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn flags(&self, row: tsk_id_t) -> Result<tsk_flags_t, TskitError> {
-        unsafe_tsk_column_access!(row, 0, self.num_rows(), self.table_.flags)
+    pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Result<tsk_flags_t, TskitError> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags)
     }
 
     /// Return the locations for a given row.
@@ -92,9 +93,12 @@ impl<'a> IndividualTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn location(&self, row: tsk_id_t) -> Result<Option<Vec<f64>>, TskitError> {
+    pub fn location<I: Into<IndividualId> + Copy>(
+        &self,
+        row: I,
+    ) -> Result<Option<Vec<f64>>, TskitError> {
         unsafe_tsk_ragged_column_access!(
-            row,
+            row.into().0,
             0,
             self.num_rows(),
             self.table_.location,
@@ -108,14 +112,18 @@ impl<'a> IndividualTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn parents(&self, row: tsk_id_t) -> Result<Option<Vec<tsk_id_t>>, TskitError> {
+    pub fn parents<I: Into<IndividualId> + Copy>(
+        &self,
+        row: I,
+    ) -> Result<Option<Vec<IndividualId>>, TskitError> {
         unsafe_tsk_ragged_column_access!(
-            row,
+            row.into().0,
             0,
             self.num_rows(),
             self.table_.parents,
             self.table_.parents_offset,
-            self.table_.parents_length
+            self.table_.parents_length,
+            IndividualId
         )
     }
 
@@ -124,11 +132,11 @@ impl<'a> IndividualTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn metadata<T: metadata::MetadataRoundtrip>(
+    pub fn metadata<I: Into<IndividualId>, T: metadata::MetadataRoundtrip>(
         &'a self,
-        row: tsk_id_t,
+        row: I,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row)?;
+        let buffer = metadata_to_vector!(self, row.into().0)?;
         decode_metadata_row!(T, buffer)
     }
 
@@ -148,7 +156,10 @@ impl<'a> IndividualTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row(&self, r: tsk_id_t) -> Result<IndividualTableRow, TskitError> {
-        table_row_access!(r, self, make_individual_table_row)
+    pub fn row<I: Into<IndividualId> + Copy>(
+        &self,
+        r: I,
+    ) -> Result<IndividualTableRow, TskitError> {
+        table_row_access!(r.into().0, self, make_individual_table_row)
     }
 }
