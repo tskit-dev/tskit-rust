@@ -234,7 +234,7 @@ macro_rules! table_row_access {
 macro_rules! iterator_for_nodeiterator {
     ($ty: ty) => {
         impl Iterator for $ty {
-            type Item = $crate::tsk_id_t;
+            type Item = $crate::NodeId;
             fn next(&mut self) -> Option<Self::Item> {
                 self.next_node();
                 self.current_node()
@@ -246,7 +246,10 @@ macro_rules! iterator_for_nodeiterator {
 macro_rules! tree_array_slice {
     ($self: ident, $array: ident, $len: expr) => {
         unsafe {
-            std::slice::from_raw_parts((*$self.as_ptr()).$array as *const tsk_id_t, $len as usize)
+            std::slice::from_raw_parts(
+                (*$self.as_ptr()).$array as *const $crate::NodeId,
+                $len as usize,
+            )
         }
     };
 }
