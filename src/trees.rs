@@ -16,6 +16,7 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
+use crate::{NodeId, NULL_NODE_ID};
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
 
 /// A Tree.
@@ -32,7 +33,7 @@ pub struct Tree {
 // Trait defining iteration over nodes.
 trait NodeIterator {
     fn next_node(&mut self);
-    fn current_node(&mut self) -> Option<tsk_id_t>;
+    fn current_node(&mut self) -> Option<NodeId>;
 }
 
 drop_for_tskit_type!(Tree, tsk_tree_free);
@@ -87,7 +88,7 @@ impl Tree {
     ///     for _ in p {} // ERROR
     /// }
     /// ```
-    pub fn parent_array(&self) -> &[tsk_id_t] {
+    pub fn parent_array(&self) -> &[NodeId] {
         tree_array_slice!(self, parent, self.inner.num_nodes)
     }
 
@@ -121,7 +122,7 @@ impl Tree {
     ///     for _ in s {} // ERROR
     /// }
     /// ```
-    pub fn samples_array(&self) -> Result<&[tsk_id_t], TskitError> {
+    pub fn samples_array(&self) -> Result<&[NodeId], TskitError> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
         err_if_not_tracking_samples!(self.flags, tree_array_slice!(self, samples, num_samples))
@@ -157,7 +158,7 @@ impl Tree {
     ///     for _ in n {} // ERROR
     /// }
     /// ```
-    pub fn next_sample_array(&self) -> Result<&[tsk_id_t], TskitError> {
+    pub fn next_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
             tree_array_slice!(self, next_sample, self.inner.num_nodes)
@@ -194,7 +195,7 @@ impl Tree {
     ///     for _ in l {} // Error
     /// }
     /// ```
-    pub fn left_sample_array(&self) -> Result<&[tsk_id_t], TskitError> {
+    pub fn left_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
             tree_array_slice!(self, left_sample, self.inner.num_nodes)
@@ -231,7 +232,7 @@ impl Tree {
     ///     for _ in r {} // ERROR
     /// }
     /// ```
-    pub fn right_sample_array(&self) -> Result<&[tsk_id_t], TskitError> {
+    pub fn right_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
             tree_array_slice!(self, right_sample, self.inner.num_nodes)
@@ -254,7 +255,7 @@ impl Tree {
     ///     for _ in r {} // ERROR
     /// }
     /// ```
-    pub fn left_sib_array(&self) -> &[tsk_id_t] {
+    pub fn left_sib_array(&self) -> &[NodeId] {
         tree_array_slice!(self, left_sib, self.inner.num_nodes)
     }
 
@@ -274,7 +275,7 @@ impl Tree {
     ///     for _ in r {} // ERROR
     /// }
     /// ```
-    pub fn right_sib_array(&self) -> &[tsk_id_t] {
+    pub fn right_sib_array(&self) -> &[NodeId] {
         tree_array_slice!(self, right_sib, self.inner.num_nodes)
     }
 
@@ -294,7 +295,7 @@ impl Tree {
     ///     for _ in l {} // ERROR
     /// }
     /// ```
-    pub fn left_child_array(&self) -> &[tsk_id_t] {
+    pub fn left_child_array(&self) -> &[NodeId] {
         tree_array_slice!(self, left_child, self.inner.num_nodes)
     }
 
@@ -314,21 +315,23 @@ impl Tree {
     ///     for _ in r {} // ERROR
     /// }
     /// ```
-    pub fn right_child_array(&self) -> &[tsk_id_t] {
+    pub fn right_child_array(&self) -> &[NodeId] {
         tree_array_slice!(self, right_child, self.inner.num_nodes)
     }
 
-    fn left_sample(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
+    fn left_sample(&self, u: NodeId) -> Result<NodeId, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sample).unwrap()
+            unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.left_sample, NodeId)
+                .unwrap()
         )
     }
 
-    fn right_sample(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
+    fn right_sample(&self, u: NodeId) -> Result<NodeId, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sample).unwrap()
+            unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.right_sample, NodeId)
+                .unwrap()
         )
     }
 
@@ -349,8 +352,8 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError`] if `u` is out of range.
-    pub fn parent(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.parent)
+    pub fn parent(&self, u: NodeId) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.parent, NodeId)
     }
 
     /// Get the left child of node `u`.
@@ -358,8 +361,8 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError`] if `u` is out of range.
-    pub fn left_child(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_child)
+    pub fn left_child(&self, u: NodeId) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.left_child, NodeId)
     }
 
     /// Get the right child of node `u`.
@@ -367,8 +370,8 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError`] if `u` is out of range.
-    pub fn right_child(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_child)
+    pub fn right_child(&self, u: NodeId) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.right_child, NodeId)
     }
 
     /// Get the left sib of node `u`.
@@ -376,8 +379,8 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError`] if `u` is out of range.
-    pub fn left_sib(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.left_sib)
+    pub fn left_sib(&self, u: NodeId) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.left_sib, NodeId)
     }
 
     /// Get the right sib of node `u`.
@@ -385,27 +388,27 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn right_sib(&self, u: tsk_id_t) -> Result<tsk_id_t, TskitError> {
-        unsafe_tsk_column_access!(u, 0, self.num_nodes, self.inner.right_sib)
+    pub fn right_sib(&self, u: NodeId) -> Result<NodeId, TskitError> {
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, self.inner.right_sib, NodeId)
     }
 
     /// Obtain the list of samples for the current tree/tree sequence
     /// as a vector.
     #[deprecated(since = "0.2.3", note = "Please use Tree::sample_nodes instead")]
-    pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
+    pub fn samples_to_vec(&self) -> Vec<NodeId> {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
         let mut rv = vec![];
 
         for i in 0..num_samples {
             let u = unsafe { *(*(*self.as_ptr()).tree_sequence).samples.offset(i as isize) };
-            rv.push(u);
+            rv.push(u.into());
         }
         rv
     }
 
     /// Get the list of sample nodes as a slice.
-    pub fn sample_nodes(&self) -> &[tsk_id_t] {
+    pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
         tree_array_slice!(self, samples, num_samples)
@@ -417,10 +420,7 @@ impl Tree {
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
     #[deprecated(since = "0.2.3", note = "Please use Tree::parents instead")]
-    pub fn path_to_root(
-        &self,
-        u: tsk_id_t,
-    ) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+    pub fn path_to_root(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         self.parents(u)
     }
 
@@ -430,7 +430,7 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn parents(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+    pub fn parents(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         ParentsIterator::new(self, u)
     }
 
@@ -439,7 +439,7 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn children(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+    pub fn children(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         ChildIterator::new(&self, u)
     }
     /// Return an [`Iterator`] over the sample nodes descending from node `u`.
@@ -454,7 +454,7 @@ impl Tree {
     ///
     /// [`TskitError::NotTrackingSamples`] if [`TreeFlags::SAMPLE_LISTS`] was not used
     /// to initialize `self`.
-    pub fn samples(&self, u: tsk_id_t) -> Result<impl Iterator<Item = tsk_id_t> + '_, TskitError> {
+    pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         SamplesIterator::new(self, u)
     }
 
@@ -464,12 +464,12 @@ impl Tree {
     ///
     /// For a tree with multiple roots, the iteration starts
     /// at the left root.
-    pub fn roots(&self) -> impl Iterator<Item = tsk_id_t> + '_ {
+    pub fn roots(&self) -> impl Iterator<Item = NodeId> + '_ {
         RootIterator::new(self)
     }
 
     /// Return all roots as a vector.
-    pub fn roots_to_vec(&self) -> Vec<tsk_id_t> {
+    pub fn roots_to_vec(&self) -> Vec<NodeId> {
         let mut v = vec![];
 
         for r in self.roots() {
@@ -489,7 +489,7 @@ impl Tree {
     pub fn traverse_nodes(
         &self,
         order: NodeTraversalOrder,
-    ) -> Box<dyn Iterator<Item = tsk_id_t> + '_> {
+    ) -> Box<dyn Iterator<Item = NodeId> + '_> {
         match order {
             NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
         }
@@ -519,7 +519,7 @@ impl Tree {
         let mut b = 0.;
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self.parent(n)?;
-            if p != TSK_NULL {
+            if p != NULL_NODE_ID {
                 b += nt.time(p)? - nt.time(n)?;
             }
         }
@@ -535,10 +535,10 @@ impl Tree {
     /// # Errors
     ///
     /// * [`TskitError`] if [`TreeFlags::NO_SAMPLE_COUNTS`].
-    pub fn num_tracked_samples(&self, u: tsk_id_t) -> Result<u64, TskitError> {
+    pub fn num_tracked_samples(&self, u: NodeId) -> Result<u64, TskitError> {
         let mut n = u64::MAX;
         let np: *mut u64 = &mut n;
-        let code = unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u, np) };
+        let code = unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.0, np) };
         handle_tsk_return_value!(code, n)
     }
 
@@ -620,10 +620,10 @@ pub enum NodeTraversalOrder {
 }
 
 struct PreorderNodeIterator<'a> {
-    root_stack: Vec<i32>,
-    node_stack: Vec<i32>,
+    root_stack: Vec<NodeId>,
+    node_stack: Vec<NodeId>,
     tree: &'a Tree,
-    current_node_: Option<tsk_id_t>,
+    current_node_: Option<NodeId>,
 }
 
 impl<'a> PreorderNodeIterator<'a> {
@@ -661,7 +661,7 @@ impl NodeIterator for PreorderNodeIterator<'_> {
         };
     }
 
-    fn current_node(&mut self) -> Option<tsk_id_t> {
+    fn current_node(&mut self) -> Option<NodeId> {
         self.current_node_
     }
 }
@@ -669,8 +669,8 @@ impl NodeIterator for PreorderNodeIterator<'_> {
 iterator_for_nodeiterator!(PreorderNodeIterator<'_>);
 
 struct RootIterator<'a> {
-    current_root: Option<tsk_id_t>,
-    next_root: tsk_id_t,
+    current_root: Option<NodeId>,
+    next_root: NodeId,
     tree: &'a Tree,
 }
 
@@ -678,7 +678,7 @@ impl<'a> RootIterator<'a> {
     fn new(tree: &'a Tree) -> Self {
         RootIterator {
             current_root: None,
-            next_root: tree.inner.left_root,
+            next_root: tree.inner.left_root.into(),
             tree,
         }
     }
@@ -687,7 +687,7 @@ impl<'a> RootIterator<'a> {
 impl NodeIterator for RootIterator<'_> {
     fn next_node(&mut self) {
         self.current_root = match self.next_root {
-            TSK_NULL => None,
+            NULL_NODE_ID => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
@@ -697,7 +697,7 @@ impl NodeIterator for RootIterator<'_> {
         };
     }
 
-    fn current_node(&mut self) -> Option<tsk_id_t> {
+    fn current_node(&mut self) -> Option<NodeId> {
         self.current_root
     }
 }
@@ -705,13 +705,13 @@ impl NodeIterator for RootIterator<'_> {
 iterator_for_nodeiterator!(RootIterator<'_>);
 
 struct ChildIterator<'a> {
-    current_child: Option<tsk_id_t>,
-    next_child: tsk_id_t,
+    current_child: Option<NodeId>,
+    next_child: NodeId,
     tree: &'a Tree,
 }
 
 impl<'a> ChildIterator<'a> {
-    fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
+    fn new(tree: &'a Tree, u: NodeId) -> Result<Self, TskitError> {
         let c = tree.left_child(u)?;
 
         Ok(ChildIterator {
@@ -725,7 +725,7 @@ impl<'a> ChildIterator<'a> {
 impl NodeIterator for ChildIterator<'_> {
     fn next_node(&mut self) {
         self.current_child = match self.next_child {
-            TSK_NULL => None,
+            NULL_NODE_ID => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
@@ -735,7 +735,7 @@ impl NodeIterator for ChildIterator<'_> {
         };
     }
 
-    fn current_node(&mut self) -> Option<tsk_id_t> {
+    fn current_node(&mut self) -> Option<NodeId> {
         self.current_child
     }
 }
@@ -743,14 +743,14 @@ impl NodeIterator for ChildIterator<'_> {
 iterator_for_nodeiterator!(ChildIterator<'_>);
 
 struct ParentsIterator<'a> {
-    current_node: Option<tsk_id_t>,
-    next_node: tsk_id_t,
+    current_node: Option<NodeId>,
+    next_node: NodeId,
     tree: &'a Tree,
 }
 
 impl<'a> ParentsIterator<'a> {
-    fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
-        match u >= tree.num_nodes as tsk_id_t {
+    fn new(tree: &'a Tree, u: NodeId) -> Result<Self, TskitError> {
+        match u.0 >= tree.num_nodes as tsk_id_t {
             true => Err(TskitError::IndexError),
             false => Ok(ParentsIterator {
                 current_node: None,
@@ -764,7 +764,7 @@ impl<'a> ParentsIterator<'a> {
 impl NodeIterator for ParentsIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_node {
-            TSK_NULL => None,
+            NULL_NODE_ID => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
@@ -774,7 +774,7 @@ impl NodeIterator for ParentsIterator<'_> {
         };
     }
 
-    fn current_node(&mut self) -> Option<tsk_id_t> {
+    fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
     }
 }
@@ -782,16 +782,16 @@ impl NodeIterator for ParentsIterator<'_> {
 iterator_for_nodeiterator!(ParentsIterator<'_>);
 
 struct SamplesIterator<'a> {
-    current_node: Option<tsk_id_t>,
-    next_sample_index: tsk_id_t,
-    last_sample_index: tsk_id_t,
+    current_node: Option<NodeId>,
+    next_sample_index: NodeId,
+    last_sample_index: NodeId,
     tree: &'a Tree,
     //next_sample: crate::ffi::TskIdArray,
     //samples: crate::ffi::TskIdArray,
 }
 
 impl<'a> SamplesIterator<'a> {
-    fn new(tree: &'a Tree, u: tsk_id_t) -> Result<Self, TskitError> {
+    fn new(tree: &'a Tree, u: NodeId) -> Result<Self, TskitError> {
         let rv = SamplesIterator {
             current_node: None,
             next_sample_index: tree.left_sample(u)?,
@@ -806,27 +806,29 @@ impl<'a> SamplesIterator<'a> {
 impl NodeIterator for SamplesIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_sample_index {
-            TSK_NULL => None,
+            NULL_NODE_ID => None,
             r => {
                 if r == self.last_sample_index {
                     //let cr = Some(self.tree.samples(r).unwrap());
-                    let cr = Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r as isize) });
-                    self.next_sample_index = TSK_NULL;
+                    let cr =
+                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
+                    self.next_sample_index = NULL_NODE_ID;
                     cr
                 } else {
                     assert!(r >= 0);
                     //let cr = Some(self.tree.samples(r).unwrap());
-                    let cr = Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r as isize) });
+                    let cr =
+                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
                     //self.next_sample_index = self.next_sample[r];
                     self.next_sample_index =
-                        unsafe { *(*self.tree.as_ptr()).next_sample.offset(r as isize) };
+                        unsafe { *(*self.tree.as_ptr()).next_sample.offset(r.0 as isize) }.into();
                     cr
                 }
             }
         };
     }
 
-    fn current_node(&mut self) -> Option<tsk_id_t> {
+    fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
     }
 }
@@ -1002,19 +1004,19 @@ impl TreeSequence {
         since = "0.2.3",
         note = "Please use TreeSequence::sample_nodes instead"
     )]
-    pub fn samples_to_vec(&self) -> Vec<tsk_id_t> {
+    pub fn samples_to_vec(&self) -> Vec<NodeId> {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         let mut rv = vec![];
 
         for i in 0..num_samples {
-            let u = unsafe { *(*self.as_ptr()).samples.offset(i as isize) };
+            let u = NodeId::from(unsafe { *(*self.as_ptr()).samples.offset(i as isize) });
             rv.push(u);
         }
         rv
     }
 
     /// Get the list of sample nodes as a slice.
-    pub fn sample_nodes(&self) -> &[tsk_id_t] {
+    pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         tree_array_slice!(self, samples, num_samples)
     }
@@ -1064,26 +1066,26 @@ impl TreeSequence {
     ///   if the input node is not part of the simplified history.
     pub fn simplify(
         &self,
-        samples: &[tsk_id_t],
+        samples: &[NodeId],
         options: SimplificationOptions,
         idmap: bool,
-    ) -> Result<(Self, Option<Vec<tsk_id_t>>), TskitError> {
+    ) -> Result<(Self, Option<Vec<NodeId>>), TskitError> {
         let mut tables = TableCollection::new(unsafe { (*self.inner.tables).sequence_length })?;
         tables.build_index().unwrap();
         let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
-        let mut output_node_map: Vec<tsk_id_t> = vec![];
+        let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL);
+            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL.into());
         }
         let rv = unsafe {
             ll_bindings::tsk_treeseq_simplify(
                 self.as_ptr(),
-                samples.as_ptr(),
+                samples.as_ptr() as *mut tsk_id_t,
                 samples.len() as tsk_size_t,
                 options.bits(),
                 ts.as_mut_ptr(),
                 match idmap {
-                    true => output_node_map.as_mut_ptr(),
+                    true => output_node_map.as_mut_ptr() as *mut tsk_id_t,
                     false => std::ptr::null_mut(),
                 },
             )
@@ -1179,7 +1181,7 @@ pub(crate) mod test_trees {
         let samples = treeseq.sample_nodes();
         assert_eq!(samples.len(), 2);
         for i in 1..3 {
-            assert_eq!(samples[i - 1], i as tsk_id_t);
+            assert_eq!(samples[i - 1], NodeId::from(i as tsk_id_t));
         }
     }
 
@@ -1201,7 +1203,7 @@ pub(crate) mod test_trees {
             let samples = tree.sample_nodes();
             assert_eq!(samples.len(), 2);
             for i in 1..3 {
-                assert_eq!(samples[i - 1], i as tsk_id_t);
+                assert_eq!(samples[i - 1], NodeId::from(i as tsk_id_t));
 
                 let mut nsteps = 0;
                 for _ in tree.parents(samples[i - 1]).unwrap() {
@@ -1256,9 +1258,9 @@ pub(crate) mod test_trees {
         assert_eq!(treeseq.inner.num_samples, 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         if let Some(tree) = tree_iter.next() {
-            assert_eq!(tree.num_tracked_samples(2).unwrap(), 1);
-            assert_eq!(tree.num_tracked_samples(1).unwrap(), 1);
-            assert_eq!(tree.num_tracked_samples(0).unwrap(), 2);
+            assert_eq!(tree.num_tracked_samples(2.into()).unwrap(), 1);
+            assert_eq!(tree.num_tracked_samples(1.into()).unwrap(), 1);
+            assert_eq!(tree.num_tracked_samples(0.into()).unwrap(), 2);
         }
     }
 
@@ -1269,9 +1271,9 @@ pub(crate) mod test_trees {
         assert_eq!(treeseq.inner.num_samples, 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::NO_SAMPLE_COUNTS).unwrap();
         if let Some(tree) = tree_iter.next() {
-            assert_eq!(tree.num_tracked_samples(2).unwrap(), 0);
-            assert_eq!(tree.num_tracked_samples(1).unwrap(), 0);
-            assert_eq!(tree.num_tracked_samples(0).unwrap(), 0);
+            assert_eq!(tree.num_tracked_samples(2.into()).unwrap(), 0);
+            assert_eq!(tree.num_tracked_samples(1.into()).unwrap(), 0);
+            assert_eq!(tree.num_tracked_samples(0.into()).unwrap(), 0);
         }
     }
 
@@ -1285,22 +1287,28 @@ pub(crate) mod test_trees {
             assert!(!tree.flags.contains(TreeFlags::NO_SAMPLE_COUNTS));
             assert!(tree.flags.contains(TreeFlags::SAMPLE_LISTS));
             let mut s = vec![];
-            for i in tree.samples(0).unwrap() {
+            for i in tree.samples(0.into()).unwrap() {
                 s.push(i);
             }
             assert_eq!(s.len(), 2);
-            assert_eq!(s.len(), tree.num_tracked_samples(0).unwrap() as usize);
+            assert_eq!(
+                s.len(),
+                tree.num_tracked_samples(0.into()).unwrap() as usize
+            );
             assert_eq!(s[0], 1);
             assert_eq!(s[1], 2);
 
             for u in 1..3 {
                 let mut s = vec![];
-                for i in tree.samples(u).unwrap() {
+                for i in tree.samples(u.into()).unwrap() {
                     s.push(i);
                 }
                 assert_eq!(s.len(), 1);
                 assert_eq!(s[0], u);
-                assert_eq!(s.len(), tree.num_tracked_samples(u).unwrap() as usize);
+                assert_eq!(
+                    s.len(),
+                    tree.num_tracked_samples(u.into()).unwrap() as usize
+                );
             }
         } else {
             panic!("Expected a tree");

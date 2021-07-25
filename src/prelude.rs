@@ -6,6 +6,7 @@ pub use crate::tsk_size_t;
 pub use crate::NodeListGenerator;
 pub use crate::TableAccess;
 pub use crate::TskitTypeAccess;
+pub use crate::NULL_NODE_ID;
 pub use crate::TSK_NODE_IS_SAMPLE;
 pub use crate::TSK_NULL;
 pub use streaming_iterator::DoubleEndedStreamingIterator;
