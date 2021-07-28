@@ -112,7 +112,7 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
     pub fn node<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<NodeId, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.source, NodeId)
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.node, NodeId)
     }
 
     /// Return the source population for a given row.
@@ -128,7 +128,7 @@ impl<'a> MigrationTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.node,
+            self.table_.source,
             PopulationId
         )
     }

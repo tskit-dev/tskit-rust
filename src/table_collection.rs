@@ -20,7 +20,7 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
-use crate::{EdgeId, IndividualId, MutationId, NodeId, PopulationId, SiteId};
+use crate::{EdgeId, IndividualId, MigrationId, MutationId, NodeId, PopulationId, SiteId};
 use ll_bindings::tsk_table_collection_free;
 
 /// A table collection.
@@ -270,7 +270,7 @@ impl TableCollection {
         node: N,
         source_dest: (SOURCE, DEST),
         time: f64,
-    ) -> TskReturnValue {
+    ) -> Result<MigrationId, TskitError> {
         self.add_migration_with_metadata(span, node, source_dest, time, None)
     }
 
@@ -291,7 +291,7 @@ impl TableCollection {
         source_dest: (SOURCE, DEST),
         time: f64,
         metadata: Option<&dyn MetadataRoundtrip>,
-    ) -> TskReturnValue {
+    ) -> Result<MigrationId, TskitError> {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_migration_table_add_row(
@@ -306,7 +306,7 @@ impl TableCollection {
                 md.len(),
             )
         };
-        handle_tsk_return_value!(rv)
+        handle_tsk_return_value!(rv, MigrationId(rv))
     }
 
     /// Add a row with metadata to the migration table
@@ -326,7 +326,7 @@ impl TableCollection {
         source_dest: (SOURCE, DEST),
         time: f64,
         metadata: &dyn MetadataRoundtrip,
-    ) -> TskReturnValue {
+    ) -> Result<MigrationId, TskitError> {
         self.add_migration_with_metadata(span, node, source_dest, time, Some(metadata))
     }
 
@@ -1257,12 +1257,6 @@ mod test {
     }
 
     #[test]
-    fn test_add_migration() {
-        let mut tables = TableCollection::new(1.).unwrap();
-        tables.add_migration((0., 0.25), 0, (0, 1), 0.).unwrap();
-    }
-
-    #[test]
     fn test_add_individual_with_location_and_parents() {
         let mut tables = TableCollection::new(1.).unwrap();
         let location = vec![0., 1., 2.];
@@ -1302,6 +1296,481 @@ mod test_bad_metadata {
             .unwrap();
         if tables.mutations().metadata::<Ff>(0.into()).is_ok() {
             panic!("expected an error!!");
+        }
+    }
+}
+
+// The tests that follow involve more detailed analysis
+// of the strong ID types.
+
+#[cfg(test)]
+mod test_adding_node {
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_adding_node_without_metadata() {
+        let mut tables = make_empty_table_collection(10.);
+
+        match tables.add_node(0, 0.0, TSK_NULL, TSK_NULL) {
+            Ok(NodeId(0)) => (),
+            _ => panic!("Expected NodeId(0)"),
+        };
+
+        let row = tables.nodes().row(NodeId::from(0)).unwrap();
+
+        assert_eq!(row.id, NodeId::from(0));
+        assert_eq!(row.population, PopulationId::from(TSK_NULL));
+        assert_eq!(row.individual, IndividualId::from(TSK_NULL));
+        assert!(row.metadata.is_none());
+
+        let row_id = tables
+            .add_node(0, 0.0, PopulationId::from(2), TSK_NULL)
+            .unwrap();
+
+        assert_eq!(tables.nodes().population(row_id).unwrap(), PopulationId(2));
+        assert_eq!(
+            tables.nodes().individual(row_id).unwrap(),
+            IndividualId(TSK_NULL)
+        );
+        assert!(tables
+            .nodes()
+            .metadata::<GenericMetadata>(row_id)
+            .unwrap()
+            .is_none());
+
+        // We are playing a dangerous game here,
+        // in that we do not have any populations.
+        // Fortunately, we are range-checked everywhere.
+        assert!(!tables
+            .populations()
+            .row(tables.nodes().population(row_id).unwrap())
+            .is_ok());
+
+        let row_id = tables
+            .add_node(0, 0.0, TSK_NULL, IndividualId::from(17))
+            .unwrap();
+
+        assert_eq!(
+            tables.nodes().population(row_id).unwrap(),
+            PopulationId(TSK_NULL)
+        );
+        assert_eq!(tables.nodes().individual(row_id).unwrap(), IndividualId(17));
+
+        assert!(!tables
+            .individuals()
+            .row(tables.nodes().individual(row_id).unwrap())
+            .is_ok());
+    }
+
+    #[test]
+    fn test_adding_node_with_metadata() {
+        let mut tables = make_empty_table_collection(10.);
+        let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 12345 }];
+
+        for (mi, m) in metadata.iter().enumerate() {
+            let row_id = match tables.add_node_with_some_metadata(
+                0,
+                1.0,
+                PopulationId::from(11),
+                IndividualId::from(12),
+                m,
+            ) {
+                Ok(NodeId(x)) => NodeId(x),
+                Err(_) => panic!("unexpected Err"),
+            };
+            assert_eq!(
+                tables.nodes().metadata::<GenericMetadata>(row_id).unwrap(),
+                Some(metadata[mi])
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_adding_individual {
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_adding_individual_without_metadata() {
+        let mut tables = make_empty_table_collection(10.);
+        match tables.add_individual(0, &[0., 0., 0.], &[TSK_NULL, TSK_NULL]) {
+            Ok(IndividualId(0)) => (),
+            _ => panic!("Expected NodeId(0)"),
+        };
+
+        let row = tables.individuals().row(IndividualId::from(0)).unwrap();
+        assert_eq!(row.id, IndividualId::from(0));
+        assert!(row.location.is_some());
+        assert_eq!(row.location.unwrap().len(), 3);
+
+        assert_eq!(
+            row.parents,
+            Some(vec![IndividualId(TSK_NULL), IndividualId(TSK_NULL),])
+        );
+
+        // Empty slices are a thing, causing None to be in the rows.
+
+        let mut tables = crate::test_fixtures::make_empty_table_collection(10.);
+        let row_id = tables
+            .add_individual(0, &[] as &[f64], &[] as &[IndividualId])
+            .unwrap();
+        let row = tables.individuals().row(row_id).unwrap();
+        assert_eq!(row.id, IndividualId::from(0));
+        assert!(row.location.is_none());
+        assert!(row.parents.is_none());
+    }
+
+    #[test]
+    fn test_adding_individual_with_metadata() {
+        let mut tables = crate::test_fixtures::make_empty_table_collection(10.);
+        let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 12345 }];
+
+        for (mi, m) in metadata.iter().enumerate() {
+            let row_id = match tables.add_individual_with_some_metadata(
+                0,
+                &[] as &[f64],
+                &[] as &[IndividualId],
+                m,
+            ) {
+                Ok(IndividualId(x)) => IndividualId(x),
+                Err(_) => panic!("unexpected Err"),
+            };
+            assert_eq!(
+                tables
+                    .individuals()
+                    .metadata::<GenericMetadata>(row_id)
+                    .unwrap(),
+                Some(metadata[mi])
+            );
+        }
+
+        for (i, j) in tables.individuals().iter().enumerate() {
+            assert!(
+                tables
+                    .individuals()
+                    .row(IndividualId::from(i as tsk_id_t))
+                    .unwrap()
+                    == j
+            );
+        }
+
+        for (i, j) in tables.individuals_iter().enumerate() {
+            assert!(
+                tables
+                    .individuals()
+                    .row(IndividualId::from(i as tsk_id_t))
+                    .unwrap()
+                    == j
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_adding_edge {
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_adding_edge_without_metadata() {
+        let mut tables = make_empty_table_collection(10.0);
+
+        let edge_id = tables
+            .add_edge(0., tables.sequence_length(), 0, 11)
+            .unwrap();
+
+        assert_eq!(edge_id, EdgeId(0));
+        assert_eq!(tables.edges().parent(edge_id).unwrap(), NodeId(0));
+        assert_eq!(tables.edges().child(edge_id).unwrap(), NodeId(11));
+    }
+
+    #[test]
+    fn test_adding_edge_with_metadata() {
+        let mut tables = make_empty_table_collection(10.0);
+        let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 12345 }];
+
+        for (mi, m) in metadata.iter().enumerate() {
+            let edge_id =
+                match tables.add_edge_with_some_metadata(0., tables.sequence_length(), 0, 11, m) {
+                    Ok(EdgeId(x)) => EdgeId(x),
+                    Err(_) => panic!("unexpected Err"),
+                };
+            assert_eq!(
+                tables.edges().metadata::<GenericMetadata>(edge_id).unwrap(),
+                Some(metadata[mi])
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_adding_mutation {
+    use crate::metadata::MetadataRoundtrip;
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_adding_mutation_without_metadata() {
+        let mut tables = make_empty_table_collection(1.0);
+
+        let mut_id = tables.add_mutation(0, 0, -1, 1.0, None).unwrap();
+
+        assert_eq!(mut_id, MutationId(0));
+        assert_eq!(mut_id, 0);
+
+        let row_0 = tables.mutations().row(mut_id).unwrap();
+
+        assert_eq!(row_0.id, 0);
+
+        let mut_id_two = tables.add_mutation(0, 0, -1, 1.0, None).unwrap();
+
+        assert!(mut_id_two > mut_id);
+        assert_ne!(mut_id_two, mut_id);
+
+        let row_1 = tables.mutations().row(mut_id_two).unwrap();
+
+        assert!(row_0 != row_1);
+
+        for row in [mut_id, mut_id_two] {
+            if tables
+                .mutations()
+                .metadata::<GenericMetadata>(row)
+                .unwrap()
+                .is_some()
+            {
+                panic!("expected None");
+            }
+        }
+    }
+
+    #[test]
+    fn test_adding_mutation_with_metadata() {
+        let mut tables = make_empty_table_collection(1.0);
+        let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 12345 }];
+
+        for (mi, m) in metadata.iter().enumerate() {
+            let mut_id = match tables.add_mutation_with_some_metadata(0, 0, -1, 1.0, None, m) {
+                Ok(MutationId(x)) => MutationId(x),
+                Err(_) => panic!("unexpected Err"),
+            };
+            assert_eq!(
+                tables
+                    .mutations()
+                    .metadata::<GenericMetadata>(mut_id)
+                    .unwrap(),
+                Some(metadata[mi])
+            );
+            assert_eq!(
+                GenericMetadata::decode(&tables.mutations().row(mut_id).unwrap().metadata.unwrap())
+                    .unwrap(),
+                *m
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_adding_site {
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_adding_site_without_metadata() {
+        let mut tables = make_empty_table_collection(11.0);
+        let site_id = tables.add_site(0.1, None).unwrap();
+
+        match site_id {
+            SiteId(0) => (),
+            _ => panic!("Expected SiteId(0)"),
+        };
+
+        assert_eq!(site_id, 0);
+
+        assert!(tables
+            .sites()
+            .metadata::<GenericMetadata>(site_id)
+            .unwrap()
+            .is_none());
+
+        let row = tables.sites().row(site_id).unwrap();
+        assert_eq!(row.id, site_id);
+        assert!(row.ancestral_state.is_none());
+        assert!(row.metadata.is_none());
+    }
+
+    #[test]
+    fn test_adding_site_with_metadata() {
+        let mut tables = make_empty_table_collection(11.0);
+        let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 12345 }];
+
+        for (mi, m) in metadata.iter().enumerate() {
+            let site_id = match tables.add_site_with_some_metadata(0.1, None, m) {
+                Ok(SiteId(x)) => SiteId(x),
+                Err(_) => panic!("unexpected Err"),
+            };
+            assert_eq!(
+                tables.sites().metadata::<GenericMetadata>(site_id).unwrap(),
+                Some(metadata[mi])
+            );
+        }
+        for i in 0..tables.sites().num_rows() as tsk_id_t {
+            assert!(
+                tables.sites().row(SiteId::from(i)).unwrap()
+                    == tables.sites().row(SiteId::from(i)).unwrap()
+            );
+            if i > 0 {
+                assert!(
+                    tables.sites().row(SiteId::from(i)).unwrap()
+                        != tables.sites().row(SiteId::from(i - 1)).unwrap()
+                );
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_adding_population {
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_adding_population_without_metadata() {
+        let mut tables = make_empty_table_collection(11.0);
+        let pop_id = tables.add_population().unwrap();
+
+        assert!(pop_id == PopulationId(0));
+        assert!(pop_id == 0);
+        assert!(tables
+            .populations()
+            .metadata::<GenericMetadata>(pop_id)
+            .unwrap()
+            .is_none());
+
+        for row in tables.populations_iter() {
+            assert!(row.metadata.is_none());
+        }
+
+        for row in tables.populations().iter() {
+            assert!(row.metadata.is_none());
+        }
+
+        assert!(
+            tables.populations().row(pop_id).unwrap() == tables.populations().row(pop_id).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_adding_population_with_metadata() {
+        let mut tables = make_empty_table_collection(11.0);
+        let pop_id = tables
+            .add_population_with_some_metadata(&GenericMetadata::default())
+            .unwrap();
+        assert!(
+            tables
+                .populations()
+                .metadata::<GenericMetadata>(pop_id)
+                .unwrap()
+                == Some(GenericMetadata::default())
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_adding_migrations {
+    use crate::test_fixtures::make_empty_table_collection;
+    use crate::test_fixtures::GenericMetadata;
+    use crate::*;
+
+    #[test]
+    fn test_add_migration_without_metadata() {
+        let mut tables = make_empty_table_collection(1.0);
+        let mig_id = tables.add_migration((0., 1.), 7, (0, 1), 1e-3).unwrap();
+
+        match mig_id {
+            MigrationId(0) => (),
+            _ => panic!("Extend MigrationId(0)"),
+        };
+
+        assert_eq!(mig_id, 0);
+        assert_eq!(tables.migrations().node(mig_id).unwrap(), NodeId(7));
+        assert_eq!(tables.migrations().source(mig_id).unwrap(), PopulationId(0));
+        assert_eq!(tables.migrations().dest(mig_id).unwrap(), PopulationId(1));
+        assert!(tables
+            .migrations()
+            .metadata::<GenericMetadata>(mig_id)
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn test_add_migration_with_metadata() {
+        use crate::metadata::MetadataRoundtrip;
+
+        let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 84 }];
+
+        let mut tables = make_empty_table_collection(1.0);
+
+        for (i, md) in metadata.iter().enumerate() {
+            let id_i = i as tsk_id_t;
+            let mig_id = tables.add_migration_with_some_metadata(
+                (0., 1.),
+                7 * id_i,
+                (id_i, id_i + 1),
+                1e-3,
+                md,
+            );
+
+            match mig_id {
+                Ok(MigrationId(x)) => {
+                    assert_eq!(x, id_i);
+                }
+                Err(_) => panic!("got unexpected error"),
+            };
+
+            let mig_id = mig_id.unwrap();
+
+            let row = tables.migrations().row(mig_id).unwrap();
+            assert_eq!(row.id, mig_id);
+            assert_eq!(row.source, PopulationId(id_i * tsk_id_t::from(mig_id)));
+            assert_eq!(row.dest, PopulationId(id_i * tsk_id_t::from(mig_id) + 1));
+            assert_eq!(row.node, NodeId(7 * id_i));
+        }
+
+        for i in 0..tables.migrations().num_rows() as tsk_id_t {
+            assert!(
+                tables.migrations().row(MigrationId::from(i)).unwrap()
+                    == tables.migrations().row(MigrationId::from(i)).unwrap()
+            );
+            if i > 0 {
+                assert!(
+                    tables.migrations().row(MigrationId::from(i)).unwrap()
+                        != tables.migrations().row(MigrationId::from(i - 1)).unwrap()
+                );
+            }
+        }
+
+        for (i, r) in tables.migrations_iter().enumerate() {
+            assert_eq!(r.id, i as crate::tsk_id_t);
+            assert_eq!(
+                GenericMetadata::decode(&r.metadata.unwrap()).unwrap(),
+                metadata[i]
+            );
+        }
+
+        for (i, r) in tables.migrations().iter().enumerate() {
+            assert_eq!(r.id, i as crate::tsk_id_t);
+            assert_eq!(
+                GenericMetadata::decode(&r.metadata.unwrap()).unwrap(),
+                metadata[i]
+            );
         }
     }
 }

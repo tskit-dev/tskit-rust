@@ -275,3 +275,48 @@ impl<'a> ProvenanceTable<'a> {
         crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(&self)
     }
 }
+
+#[cfg(test)]
+mod test_trigger_provenance_errors {
+    use super::*;
+    use crate::test_fixtures::make_empty_table_collection;
+    use Provenance;
+
+    #[test]
+    #[should_panic]
+    fn test_empty_record_string() {
+        //TODO: decide if we like this behavior:
+        //See GitHub issue 150 -- this behavior should change.
+        let mut tables = make_empty_table_collection(1.0);
+        let row_id = tables.add_provenance(&String::from("")).unwrap();
+        let _ = tables.provenances().row(row_id).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod test_provenance_tables {
+    use super::*;
+    use crate::test_fixtures::make_empty_table_collection;
+    use Provenance;
+
+    #[test]
+    fn test_add_rows() {
+        let records = vec!["banana".to_string(), "split".to_string()];
+        let mut tables = make_empty_table_collection(1.);
+        for (i, r) in records.iter().enumerate() {
+            let row_id = tables.add_provenance(&r).unwrap();
+            assert!(row_id == ProvenanceId(i as crate::tsk_id_t));
+            assert_eq!(tables.provenances().record(row_id).unwrap(), *r);
+        }
+        assert_eq!(tables.provenances().num_rows() as usize, records.len());
+        for (i, row) in tables.provenances_iter().enumerate() {
+            assert_eq!(records[i], row.record);
+        }
+        for (i, row) in tables.provenances().iter().enumerate() {
+            assert_eq!(records[i], row.record);
+        }
+
+        assert!(tables.provenances().row(0).unwrap() == tables.provenances().row(0).unwrap());
+        assert!(tables.provenances().row(0).unwrap() != tables.provenances().row(1).unwrap());
+    }
+}
