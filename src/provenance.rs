@@ -242,10 +242,7 @@ impl<'a> ProvenanceTable<'a> {
             self.table_.record_length
         ) {
             Ok(Some(string)) => Ok(string),
-            Ok(None) => Err(crate::TskitError::ValueError {
-                got: String::from("None"),
-                expected: String::from("String"),
-            }),
+            Ok(None) => Ok(String::from("")),
             Err(e) => Err(e),
         }
     }
@@ -277,27 +274,27 @@ impl<'a> ProvenanceTable<'a> {
 }
 
 #[cfg(test)]
-mod test_trigger_provenance_errors {
+mod test_provenance_tables {
     use super::*;
     use crate::test_fixtures::make_empty_table_collection;
     use Provenance;
 
     #[test]
-    #[should_panic]
     fn test_empty_record_string() {
-        //TODO: decide if we like this behavior:
-        //See GitHub issue 150 -- this behavior should change.
+        // check for tables...
         let mut tables = make_empty_table_collection(1.0);
-        let row_id = tables.add_provenance(&String::from("")).unwrap();
+        let s = String::from("");
+        let row_id = tables.add_provenance(&s).unwrap();
         let _ = tables.provenances().row(row_id).unwrap();
-    }
-}
 
-#[cfg(test)]
-mod test_provenance_tables {
-    use super::*;
-    use crate::test_fixtures::make_empty_table_collection;
-    use Provenance;
+        // and for tree sequences...
+        tables.build_index().unwrap();
+        let mut ts = tables
+            .tree_sequence(crate::TreeSequenceFlags::default())
+            .unwrap();
+        let row_id = ts.add_provenance(&s).unwrap();
+        let _ = ts.provenances().row(row_id).unwrap();
+    }
 
     #[test]
     fn test_add_rows() {

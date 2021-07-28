@@ -725,12 +725,6 @@ impl crate::traits::NodeListGenerator for TableCollection {}
 #[cfg(any(doc, feature = "provenance"))]
 impl crate::provenance::Provenance for TableCollection {
     fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
-        if record.is_empty() {
-            return Err(TskitError::ValueError {
-                got: String::from("empty string slice"),
-                expected: String::from("non-empty string slice"),
-            });
-        }
         let timestamp = chrono::prelude::Local::now().to_rfc3339();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
