@@ -269,7 +269,7 @@ impl<'a> ProvenanceTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`ProvenanceTableRow`].
     pub fn iter(&self) -> ProvenanceTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(self)
     }
 }
 
@@ -301,7 +301,7 @@ mod test_provenance_tables {
         let records = vec!["banana".to_string(), "split".to_string()];
         let mut tables = make_empty_table_collection(1.);
         for (i, r) in records.iter().enumerate() {
-            let row_id = tables.add_provenance(&r).unwrap();
+            let row_id = tables.add_provenance(r).unwrap();
             assert!(row_id == ProvenanceId(i as crate::tsk_id_t));
             assert_eq!(tables.provenances().record(row_id).unwrap(), *r);
         }

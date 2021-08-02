@@ -42,8 +42,8 @@ fn main() {
     let mut tree_iterator = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
 
     while let Some(tree) = tree_iterator.next() {
-        traverse_upwards(&tree);
-        traverse_upwards_with_iterator(&tree);
-        preorder_traversal(&tree);
+        traverse_upwards(tree);
+        traverse_upwards_with_iterator(tree);
+        preorder_traversal(tree);
     }
 }

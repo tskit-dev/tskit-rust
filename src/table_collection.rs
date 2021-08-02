@@ -1192,10 +1192,10 @@ mod test {
             .unwrap();
         tables.add_edge(0., tables.sequence_length(), 1, 0).unwrap();
         tables
-            .dump(&treefile, TableOutputOptions::default())
+            .dump(treefile, TableOutputOptions::default())
             .unwrap();
 
-        let tables2 = TableCollection::new_from_file(&treefile).unwrap();
+        let tables2 = TableCollection::new_from_file(treefile).unwrap();
         assert!(tables.equals(&tables2, TableEqualityOptions::default()));
 
         std::fs::remove_file(&treefile).unwrap();
@@ -1266,7 +1266,7 @@ mod test {
             Some(x) => {
                 assert_eq!(x.len(), location.len());
                 for (i, l) in x.iter().enumerate() {
-                    assert!(crate::util::f64_partial_cmp_equal(&l, &location[i]));
+                    assert!(crate::util::f64_partial_cmp_equal(l, &location[i]));
                 }
             }
             None => panic!("expected some locations"),

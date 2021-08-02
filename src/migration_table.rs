@@ -173,7 +173,7 @@ impl<'a> MigrationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MigrationTableRow`].
     pub fn iter(&self) -> MigrationTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&MigrationTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&MigrationTable<'a>>(self)
     }
 
     /// Return row `r` of the table.
