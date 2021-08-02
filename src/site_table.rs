@@ -42,7 +42,7 @@ impl<'a> Iterator for SiteTableRefIterator<'a> {
     type Item = SiteTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_site_table_row(&self.table, self.pos);
+        let rv = make_site_table_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -121,7 +121,7 @@ impl<'a> SiteTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`SiteTableRow`].
     pub fn iter(&self) -> SiteTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(self)
     }
 
     /// Return row `r` of the table.

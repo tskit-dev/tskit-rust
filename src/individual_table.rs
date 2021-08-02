@@ -27,7 +27,7 @@ impl PartialEq for IndividualTableRow {
                             false
                         } else {
                             for (i, j) in a.iter().enumerate() {
-                                if !crate::util::f64_partial_cmp_equal(&j, &b[i]) {
+                                if !crate::util::f64_partial_cmp_equal(j, &b[i]) {
                                     return false;
                                 }
                             }
@@ -164,7 +164,7 @@ impl<'a> IndividualTable<'a> {
     /// The value of the iterator is [`IndividualTableRow`].
     ///
     pub fn iter(&self) -> IndividualTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&IndividualTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&IndividualTable<'a>>(self)
     }
 
     /// Return row `r` of the table.

@@ -37,7 +37,7 @@ impl<'a> Iterator for PopulationTableRefIterator<'a> {
     type Item = PopulationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_population_table_row(&self.table, self.pos);
+        let rv = make_population_table_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -83,7 +83,7 @@ impl<'a> PopulationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`PopulationTableRow`].
     pub fn iter(&self) -> PopulationTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(self)
     }
 
     /// Return row `r` of the table.

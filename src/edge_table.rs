@@ -134,7 +134,7 @@ impl<'a> EdgeTable<'a> {
     /// The value of the iterator is [`EdgeTableRow`].
     ///
     pub fn iter(&self) -> EdgeTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(self)
     }
 
     /// Return row `r` of the table.

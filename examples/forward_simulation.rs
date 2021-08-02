@@ -372,8 +372,8 @@ fn runsim(params: &SimParams) -> tskit::TableCollection {
 
     for step in (0..params.nsteps).rev() {
         parents.clear();
-        death_and_parents(&alive, &params, &mut parents, &mut rng);
-        births(&parents, &params, step, &mut tables, &mut alive, &mut rng);
+        death_and_parents(&alive, params, &mut parents, &mut rng);
+        births(&parents, params, step, &mut tables, &mut alive, &mut rng);
         let remainder = step % params.simplification_interval;
         match step < params.nsteps && remainder == 0 {
             true => {

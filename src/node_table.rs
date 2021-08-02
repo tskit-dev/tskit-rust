@@ -170,7 +170,7 @@ impl<'a> NodeTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`NodeTableRow`].
     pub fn iter(&self) -> NodeTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(self)
     }
 
     /// Return row `r` of the table.

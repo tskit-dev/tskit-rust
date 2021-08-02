@@ -440,7 +440,7 @@ impl Tree {
     ///
     /// [`TskitError::IndexError`] if `u` is out of range.
     pub fn children(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
-        ChildIterator::new(&self, u)
+        ChildIterator::new(self, u)
     }
     /// Return an [`Iterator`] over the sample nodes descending from node `u`.
     ///
@@ -491,7 +491,7 @@ impl Tree {
         order: NodeTraversalOrder,
     ) -> Box<dyn Iterator<Item = NodeId> + '_> {
         match order {
-            NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(&self)),
+            NodeTraversalOrder::Preorder => Box::new(PreorderNodeIterator::new(self)),
         }
     }
 
@@ -585,7 +585,7 @@ impl streaming_iterator::StreamingIterator for Tree {
 
     fn get(&self) -> Option<&Tree> {
         match self.advanced {
-            true => Some(&self),
+            true => Some(self),
             false => None,
         }
     }

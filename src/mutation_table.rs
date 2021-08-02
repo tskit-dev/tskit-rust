@@ -49,7 +49,7 @@ impl<'a> Iterator for MutationTableRefIterator<'a> {
     type Item = MutationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_mutation_table_row(&self.table, self.pos);
+        let rv = make_mutation_table_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -164,7 +164,7 @@ impl<'a> MutationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MutationTableRow`].
     pub fn iter(&self) -> MutationTableRefIterator {
-        crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(&self)
+        crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(self)
     }
 
     /// Return row `r` of the table.
