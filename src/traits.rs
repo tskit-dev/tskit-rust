@@ -200,7 +200,3 @@ pub trait NodeListGenerator: TableAccess {
         self.nodes().create_node_id_vector(f)
     }
 }
-
-pub trait IdIsNull {
-    fn is_null(&self) -> bool;
-}
