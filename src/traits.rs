@@ -151,17 +151,18 @@ pub trait NodeListGenerator: TableAccess {
     /// Get all nodes with time > 0.0:
     ///
     /// ```
-    /// use tskit::TSK_NULL;
     /// use tskit::tsk_id_t;
     /// use tskit::TableAccess;
     /// use tskit::NodeListGenerator;
     ///
     /// let mut tables = tskit::TableCollection::new(100.).unwrap();
     /// tables
-    ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+    ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 0.0, tskit::PopulationId::NULL,
+    ///     tskit::IndividualId::NULL)
     ///     .unwrap();
     /// tables
-    ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 1.0, TSK_NULL, TSK_NULL)
+    ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 1.0, tskit::PopulationId::NULL,
+    ///     tskit::IndividualId::NULL)
     ///     .unwrap();
     /// let samples = tables.create_node_id_vector(
     ///     |row: &tskit::NodeTableRow| row.time > 0.,
@@ -186,7 +187,7 @@ pub trait NodeListGenerator: TableAccess {
     ///
     /// // Get all nodes that have a mutation:
     ///
-    /// tables.add_mutation(0, 0, TSK_NULL, 0.0, None).unwrap();
+    /// tables.add_mutation(0, 0, tskit::MutationId::NULL, 0.0, None).unwrap();
     /// let samples_with_mut = tables.create_node_id_vector(
     ///     |row: &tskit::NodeTableRow| node_has_mutation(&tables, row));
     /// assert_eq!(samples_with_mut[0], 0);

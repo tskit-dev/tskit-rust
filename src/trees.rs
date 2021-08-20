@@ -5,6 +5,7 @@ use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;
 use crate::MutationTable;
+use crate::NodeId;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SimplificationOptions;
@@ -15,8 +16,7 @@ use crate::TreeFlags;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
-use crate::{tsk_id_t, tsk_size_t, TableCollection, TSK_NULL};
-use crate::{NodeId, NULL_NODE_ID};
+use crate::{tsk_id_t, tsk_size_t, TableCollection};
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
 
 /// A Tree.
@@ -519,7 +519,7 @@ impl Tree {
         let mut b = 0.;
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self.parent(n)?;
-            if p != NULL_NODE_ID {
+            if p != NodeId::NULL {
                 b += nt.time(p)? - nt.time(n)?;
             }
         }
@@ -648,7 +648,7 @@ impl NodeIterator for PreorderNodeIterator<'_> {
         match self.current_node_ {
             Some(u) => {
                 let mut c = self.tree.left_child(u).unwrap();
-                while c != TSK_NULL {
+                while c != NodeId::NULL {
                     self.node_stack.push(c);
                     c = self.tree.right_sib(c).unwrap();
                 }
@@ -687,7 +687,7 @@ impl<'a> RootIterator<'a> {
 impl NodeIterator for RootIterator<'_> {
     fn next_node(&mut self) {
         self.current_root = match self.next_root {
-            NULL_NODE_ID => None,
+            NodeId::NULL => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
@@ -725,7 +725,7 @@ impl<'a> ChildIterator<'a> {
 impl NodeIterator for ChildIterator<'_> {
     fn next_node(&mut self) {
         self.current_child = match self.next_child {
-            NULL_NODE_ID => None,
+            NodeId::NULL => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
@@ -764,7 +764,7 @@ impl<'a> ParentsIterator<'a> {
 impl NodeIterator for ParentsIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_node {
-            NULL_NODE_ID => None,
+            NodeId::NULL => None,
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
@@ -806,13 +806,13 @@ impl<'a> SamplesIterator<'a> {
 impl NodeIterator for SamplesIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_sample_index {
-            NULL_NODE_ID => None,
+            NodeId::NULL => None,
             r => {
                 if r == self.last_sample_index {
                     //let cr = Some(self.tree.samples(r).unwrap());
                     let cr =
                         Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
-                    self.next_sample_index = NULL_NODE_ID;
+                    self.next_sample_index = NodeId::NULL;
                     cr
                 } else {
                     assert!(r >= 0);
@@ -846,9 +846,9 @@ iterator_for_nodeiterator!(SamplesIterator<'_>);
 ///
 /// ```
 /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-/// tables.add_node(0, 1.0, tskit::TSK_NULL, tskit::TSK_NULL).unwrap();
-/// tables.add_node(0, 0.0, tskit::TSK_NULL, tskit::TSK_NULL).unwrap();
-/// tables.add_node(0, 0.0, tskit::TSK_NULL, tskit::TSK_NULL).unwrap();
+/// tables.add_node(0, 1.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
+/// tables.add_node(0, 0.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
+/// tables.add_node(0, 0.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
 /// tables.add_edge(0., 1000., 0, 1).unwrap();
 /// tables.add_edge(0., 1000., 0, 2).unwrap();
 ///
@@ -1062,7 +1062,7 @@ impl TreeSequence {
     ///   the behavior of simplification.
     /// * `idmap`: if `true`, the return value contains a vector equal
     ///   in length to the input node table.  For each input node,
-    ///   this vector either contains the node's new index or [`TSK_NULL`]
+    ///   this vector either contains the node's new index or [`NodeId::NULL`]
     ///   if the input node is not part of the simplified history.
     pub fn simplify(
         &self,
@@ -1075,7 +1075,7 @@ impl TreeSequence {
         let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL.into());
+            output_node_map.resize(self.nodes().num_rows() as usize, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_treeseq_simplify(

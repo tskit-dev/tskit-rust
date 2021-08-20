@@ -289,16 +289,21 @@ fn births(
     for p in parents {
         // Register the two nodes for our offspring
         let node0 = match tables.add_node(
-            0,                 // flags
-            birth_time as f64, // time
-            tskit::TSK_NULL,   // population
+            0,                         // flags
+            birth_time as f64,         // time
+            tskit::PopulationId::NULL, // population
             // individual
-            tskit::TSK_NULL,
+            tskit::IndividualId::NULL,
         ) {
             Ok(x) => x,
             Err(e) => panic!("{}", e),
         };
-        let node1 = match tables.add_node(0, birth_time as f64, tskit::TSK_NULL, tskit::TSK_NULL) {
+        let node1 = match tables.add_node(
+            0,
+            birth_time as f64,
+            tskit::PopulationId::NULL,
+            tskit::IndividualId::NULL,
+        ) {
             Ok(x) => x,
             Err(e) => panic!("{}", e),
         };
@@ -333,9 +338,9 @@ fn simplify(alive: &mut [Diploid], tables: &mut tskit::TableCollection) {
             Some(idmap) => {
                 for a in alive.iter_mut() {
                     a.node0 = idmap[usize::from(a.node0)];
-                    assert!(a.node0 != tskit::TSK_NULL);
+                    assert!(a.node0 != tskit::NodeId::NULL);
                     a.node1 = idmap[usize::from(a.node1)];
-                    assert!(a.node1 != tskit::TSK_NULL);
+                    assert!(a.node1 != tskit::NodeId::NULL);
                 }
             }
             None => panic!("Unexpected None"),
@@ -354,13 +359,21 @@ fn runsim(params: &SimParams) -> tskit::TableCollection {
 
     let mut alive: Vec<Diploid> = vec![];
     for _ in 0..params.popsize {
-        let node0 = match tables.add_node(0, params.nsteps as f64, tskit::TSK_NULL, tskit::TSK_NULL)
-        {
+        let node0 = match tables.add_node(
+            0,
+            params.nsteps as f64,
+            tskit::PopulationId::NULL,
+            tskit::IndividualId::NULL,
+        ) {
             Ok(x) => x,
             Err(e) => panic!("{}", e),
         };
-        let node1 = match tables.add_node(0, params.nsteps as f64, tskit::TSK_NULL, tskit::TSK_NULL)
-        {
+        let node1 = match tables.add_node(
+            0,
+            params.nsteps as f64,
+            tskit::PopulationId::NULL,
+            tskit::IndividualId::NULL,
+        ) {
             Ok(x) => x,
             Err(e) => panic!("{}", e),
         };

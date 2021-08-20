@@ -10,9 +10,4 @@ mod tests {
         let x = bindings::TSK_NODE_IS_SAMPLE;
         assert!(x > 0);
     }
-
-    #[test]
-    fn test_tsk_null() {
-        assert_eq!(TSK_NULL, -1);
-    }
 }

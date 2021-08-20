@@ -19,7 +19,7 @@ use crate::TableSortOptions;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
-use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TSK_NULL};
+use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
 use crate::{EdgeId, IndividualId, MigrationId, MutationId, NodeId, PopulationId, SiteId};
 use ll_bindings::tsk_table_collection_free;
 
@@ -42,7 +42,7 @@ use ll_bindings::tsk_table_collection_free;
 ///
 /// // Add node:
 ///
-/// let rv = tables.add_node(0, 3.2, tskit::TSK_NULL, tskit::TSK_NULL).unwrap();
+/// let rv = tables.add_node(0, 3.2, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
 ///
 /// // Get immutable reference to edge table
 /// let edges = tables.edges();
@@ -656,7 +656,7 @@ impl TableCollection {
     ///   the behavior of simplification.
     /// * `idmap`: if `true`, the return value contains a vector equal
     ///   in length to the input node table.  For each input node,
-    ///   this vector either contains the node's new index or [`TSK_NULL`]
+    ///   this vector either contains the node's new index or [`NodeId::NULL`]
     ///   if the input node is not part of the simplified history.
     pub fn simplify<N: Into<NodeId>>(
         &mut self,
@@ -666,7 +666,7 @@ impl TableCollection {
     ) -> Result<Option<Vec<NodeId>>, TskitError> {
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(self.nodes().num_rows() as usize, TSK_NULL.into());
+            output_node_map.resize(self.nodes().num_rows() as usize, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -746,13 +746,18 @@ impl crate::provenance::Provenance for TableCollection {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::TSK_NULL;
 
     fn make_small_table_collection() -> TableCollection {
         let mut tables = TableCollection::new(1000.).unwrap();
-        tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
-        tables.add_node(0, 0.0, TSK_NULL, TSK_NULL).unwrap();
-        tables.add_node(0, 0.0, TSK_NULL, TSK_NULL).unwrap();
+        tables
+            .add_node(0, 1.0, PopulationId::NULL, IndividualId::NULL)
+            .unwrap();
+        tables
+            .add_node(0, 0.0, PopulationId::NULL, IndividualId::NULL)
+            .unwrap();
+        tables
+            .add_node(0, 0.0, PopulationId::NULL, IndividualId::NULL)
+            .unwrap();
         tables.add_edge(0., 1000., 0, 1).unwrap();
         tables.add_edge(0., 1000., 0, 2).unwrap();
         tables.build_index().unwrap();
@@ -997,13 +1002,13 @@ mod test {
         let mut tables = TableCollection::new(1000.).unwrap();
 
         tables
-            .add_mutation(0, 0, crate::TSK_NULL, 1.123, Some(b"pajamas"))
+            .add_mutation(0, 0, MutationId::NULL, 1.123, Some(b"pajamas"))
             .unwrap();
         tables
-            .add_mutation(1, 1, crate::TSK_NULL, 2.123, None)
+            .add_mutation(1, 1, MutationId::NULL, 2.123, None)
             .unwrap();
         tables
-            .add_mutation(2, 2, crate::TSK_NULL, 3.123, Some(b"more pajamas"))
+            .add_mutation(2, 2, MutationId::NULL, 3.123, Some(b"more pajamas"))
             .unwrap();
         let mutations = tables.mutations();
         assert!(close_enough(mutations.time(0).unwrap(), 1.123));
@@ -1012,9 +1017,9 @@ mod test {
         assert_eq!(mutations.node(0).unwrap(), 0);
         assert_eq!(mutations.node(1).unwrap(), 1);
         assert_eq!(mutations.node(2).unwrap(), 2);
-        assert_eq!(mutations.parent(0).unwrap(), crate::TSK_NULL);
-        assert_eq!(mutations.parent(1).unwrap(), crate::TSK_NULL);
-        assert_eq!(mutations.parent(2).unwrap(), crate::TSK_NULL);
+        assert_eq!(mutations.parent(0).unwrap(), MutationId::NULL);
+        assert_eq!(mutations.parent(1).unwrap(), MutationId::NULL);
+        assert_eq!(mutations.parent(2).unwrap(), MutationId::NULL);
         assert_eq!(mutations.derived_state(0).unwrap().unwrap(), b"pajamas");
 
         if mutations.derived_state(1).unwrap().is_some() {
@@ -1099,7 +1104,7 @@ mod test {
             .add_mutation_with_metadata(
                 0,
                 0,
-                crate::TSK_NULL,
+                MutationId::NULL,
                 1.123,
                 None,
                 Some(&F { x: -3, y: 666 }),
@@ -1126,7 +1131,7 @@ mod test {
             .add_mutation_with_metadata(
                 0,
                 0,
-                crate::TSK_NULL,
+                MutationId::NULL,
                 1.123,
                 None,
                 Some(&F { x: -3, y: 666 }),
@@ -1134,7 +1139,7 @@ mod test {
             .unwrap();
 
         tables
-            .add_mutation_with_metadata(1, 2, crate::TSK_NULL, 2.0, None, None)
+            .add_mutation_with_metadata(1, 2, MutationId::NULL, 2.0, None, None)
             .unwrap();
 
         let mut num_with_metadata = 0;
@@ -1167,7 +1172,7 @@ mod test {
         assert_eq!(tables.populations().num_rows(), 1);
 
         tables
-            .add_node(crate::TSK_NODE_IS_SAMPLE, 0.0, pop_id, crate::TSK_NULL)
+            .add_node(crate::TSK_NODE_IS_SAMPLE, 0.0, pop_id, IndividualId::NULL)
             .unwrap();
 
         match tables.nodes().row(NodeId::from(0)) {
@@ -1185,10 +1190,10 @@ mod test {
         let mut tables = TableCollection::new(1000.).unwrap();
         let pop_id = tables.add_population().unwrap();
         tables
-            .add_node(crate::TSK_NODE_IS_SAMPLE, 0.0, pop_id, crate::TSK_NULL)
+            .add_node(crate::TSK_NODE_IS_SAMPLE, 0.0, pop_id, IndividualId::NULL)
             .unwrap();
         tables
-            .add_node(crate::TSK_NODE_IS_SAMPLE, 1.0, pop_id, crate::TSK_NULL)
+            .add_node(crate::TSK_NODE_IS_SAMPLE, 1.0, pop_id, IndividualId::NULL)
             .unwrap();
         tables.add_edge(0., tables.sequence_length(), 1, 0).unwrap();
         tables
@@ -1286,7 +1291,7 @@ mod test_bad_metadata {
         let mut tables = TableCollection::new(1.).unwrap();
         let md = F { x: 1, y: 11 };
         tables
-            .add_mutation_with_metadata(0, 0, crate::TSK_NULL, 0.0, None, Some(&md))
+            .add_mutation_with_metadata(0, 0, MutationId::NULL, 0.0, None, Some(&md))
             .unwrap();
         if tables.mutations().metadata::<Ff>(0.into()).is_ok() {
             panic!("expected an error!!");
@@ -1307,7 +1312,7 @@ mod test_adding_node {
     fn test_adding_node_without_metadata() {
         let mut tables = make_empty_table_collection(10.);
 
-        match tables.add_node(0, 0.0, TSK_NULL, TSK_NULL) {
+        match tables.add_node(0, 0.0, PopulationId::NULL, IndividualId::NULL) {
             Ok(NodeId(0)) => (),
             _ => panic!("Expected NodeId(0)"),
         };
@@ -1315,18 +1320,18 @@ mod test_adding_node {
         let row = tables.nodes().row(NodeId::from(0)).unwrap();
 
         assert_eq!(row.id, NodeId::from(0));
-        assert_eq!(row.population, PopulationId::from(TSK_NULL));
-        assert_eq!(row.individual, IndividualId::from(TSK_NULL));
+        assert_eq!(row.population, PopulationId::NULL);
+        assert_eq!(row.individual, IndividualId::NULL);
         assert!(row.metadata.is_none());
 
         let row_id = tables
-            .add_node(0, 0.0, PopulationId::from(2), TSK_NULL)
+            .add_node(0, 0.0, PopulationId::from(2), IndividualId::NULL)
             .unwrap();
 
         assert_eq!(tables.nodes().population(row_id).unwrap(), PopulationId(2));
         assert_eq!(
             tables.nodes().individual(row_id).unwrap(),
-            IndividualId(TSK_NULL)
+            IndividualId::NULL,
         );
         assert!(tables
             .nodes()
@@ -1343,12 +1348,12 @@ mod test_adding_node {
             .is_ok());
 
         let row_id = tables
-            .add_node(0, 0.0, TSK_NULL, IndividualId::from(17))
+            .add_node(0, 0.0, PopulationId::NULL, IndividualId::from(17))
             .unwrap();
 
         assert_eq!(
             tables.nodes().population(row_id).unwrap(),
-            PopulationId(TSK_NULL)
+            PopulationId::NULL,
         );
         assert_eq!(tables.nodes().individual(row_id).unwrap(), IndividualId(17));
 
@@ -1391,7 +1396,7 @@ mod test_adding_individual {
     #[test]
     fn test_adding_individual_without_metadata() {
         let mut tables = make_empty_table_collection(10.);
-        match tables.add_individual(0, &[0., 0., 0.], &[TSK_NULL, TSK_NULL]) {
+        match tables.add_individual(0, &[0., 0., 0.], &[IndividualId::NULL, IndividualId::NULL]) {
             Ok(IndividualId(0)) => (),
             _ => panic!("Expected NodeId(0)"),
         };
@@ -1403,7 +1408,7 @@ mod test_adding_individual {
 
         assert_eq!(
             row.parents,
-            Some(vec![IndividualId(TSK_NULL), IndividualId(TSK_NULL),])
+            Some(vec![IndividualId::NULL, IndividualId::NULL,])
         );
 
         // Empty slices are a thing, causing None to be in the rows.

@@ -45,7 +45,7 @@ use thiserror::Error;
 ///     dominance: 0.25};
 ///
 /// // Add table row with metadata.
-/// tables.add_mutation_with_metadata(0, 0, tskit::TSK_NULL, 100., None,
+/// tables.add_mutation_with_metadata(0, 0, tskit::MutationId::NULL, 100., None,
 ///     Some(&mutation)).unwrap();
 ///
 /// // Decode the metadata

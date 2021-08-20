@@ -208,10 +208,7 @@ impl_id_traits!(EdgeId);
 // in a macro. bindgen thus misses it.
 // See bindgen issue 316.
 /// "Null" identifier value.
-pub const TSK_NULL: tsk_id_t = -1;
-
-/// "Null" identifier value for [``NodeId``]
-pub const NULL_NODE_ID: NodeId = NodeId(-1);
+pub(crate) const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
