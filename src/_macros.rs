@@ -256,6 +256,11 @@ macro_rules! tree_array_slice {
 
 macro_rules! impl_id_traits {
     ($idtype: ty) => {
+        impl $idtype {
+            /// NULL value for this type.
+            pub const NULL: $idtype = Self($crate::TSK_NULL);
+        }
+
         impl From<$crate::tsk_id_t> for $idtype {
             fn from(value: $crate::tsk_id_t) -> Self {
                 Self(value)
@@ -264,7 +269,7 @@ macro_rules! impl_id_traits {
 
         impl $crate::IdIsNull for $idtype {
             fn is_null(&self) -> bool {
-                self.0 == $crate::TSK_NULL
+                self.0 == Self::NULL
             }
         }
 

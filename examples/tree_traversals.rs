@@ -5,7 +5,7 @@ use tskit::prelude::*;
 fn traverse_upwards(tree: &tskit::Tree) {
     for &s in tree.sample_nodes() {
         let mut u = s;
-        while u != tskit::TSK_NULL {
+        while u != tskit::NodeId::NULL {
             u = tree.parent(u).unwrap();
         }
     }

@@ -33,12 +33,24 @@ impl crate::metadata::MetadataRoundtrip for GenericMetadata {
 #[cfg(test)]
 pub fn make_small_table_collection() -> TableCollection {
     let mut tables = TableCollection::new(1000.).unwrap();
-    tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
     tables
-        .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+        .add_node(0, 1.0, PopulationId::NULL, IndividualId::NULL)
         .unwrap();
     tables
-        .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+        .add_node(
+            TSK_NODE_IS_SAMPLE,
+            0.0,
+            PopulationId::NULL,
+            IndividualId::NULL,
+        )
+        .unwrap();
+    tables
+        .add_node(
+            TSK_NODE_IS_SAMPLE,
+            0.0,
+            PopulationId::NULL,
+            IndividualId::NULL,
+        )
         .unwrap();
     tables.add_edge(0., 1000., 0, 1).unwrap();
     tables.add_edge(0., 1000., 0, 2).unwrap();
@@ -68,19 +80,43 @@ pub fn make_small_table_collection_two_trees() -> TableCollection {
     // 2 4 5 3
 
     let mut tables = TableCollection::new(1000.).unwrap();
-    tables.add_node(0, 2.0, TSK_NULL, TSK_NULL).unwrap();
-    tables.add_node(0, 1.0, TSK_NULL, TSK_NULL).unwrap();
     tables
-        .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+        .add_node(0, 2.0, PopulationId::NULL, IndividualId::NULL)
         .unwrap();
     tables
-        .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+        .add_node(0, 1.0, PopulationId::NULL, IndividualId::NULL)
         .unwrap();
     tables
-        .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+        .add_node(
+            TSK_NODE_IS_SAMPLE,
+            0.0,
+            PopulationId::NULL,
+            IndividualId::NULL,
+        )
         .unwrap();
     tables
-        .add_node(TSK_NODE_IS_SAMPLE, 0.0, TSK_NULL, TSK_NULL)
+        .add_node(
+            TSK_NODE_IS_SAMPLE,
+            0.0,
+            PopulationId::NULL,
+            IndividualId::NULL,
+        )
+        .unwrap();
+    tables
+        .add_node(
+            TSK_NODE_IS_SAMPLE,
+            0.0,
+            PopulationId::NULL,
+            IndividualId::NULL,
+        )
+        .unwrap();
+    tables
+        .add_node(
+            TSK_NODE_IS_SAMPLE,
+            0.0,
+            PopulationId::NULL,
+            IndividualId::NULL,
+        )
         .unwrap();
     tables.add_edge(500., 1000., 0, 1).unwrap();
     tables.add_edge(0., 500., 0, 2).unwrap();

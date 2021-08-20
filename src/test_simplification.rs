@@ -2,20 +2,19 @@
 mod tests {
     use crate::test_fixtures::make_small_table_collection_two_trees;
     use crate::test_fixtures::treeseq_from_small_table_collection_two_trees;
-    use crate::tsk_id_t;
     use crate::IdIsNull;
+    use crate::NodeId;
     use crate::SimplificationOptions;
     use crate::TableAccess;
     use crate::TSK_NODE_IS_SAMPLE;
-    use crate::TSK_NULL;
 
     #[test]
     fn test_simplify_tables() {
         let mut tables = make_small_table_collection_two_trees();
-        let mut samples: Vec<tsk_id_t> = vec![];
+        let mut samples: Vec<NodeId> = vec![];
         for (i, row) in tables.nodes_iter().enumerate() {
             if row.flags & TSK_NODE_IS_SAMPLE > 0 {
-                samples.push(i as tsk_id_t);
+                samples.push((i as i32).into());
             }
         }
         let idmap_option = tables
@@ -24,8 +23,8 @@ mod tests {
         assert!(idmap_option.is_some());
         let idmap = idmap_option.unwrap();
         for i in samples.iter() {
-            assert_ne!(idmap[*i as usize], TSK_NULL);
-            assert!(!idmap[*i as usize].is_null());
+            assert_ne!(idmap[i.0 as usize], NodeId::NULL);
+            assert!(!idmap[i.0 as usize].is_null());
         }
     }
 
@@ -39,7 +38,7 @@ mod tests {
         assert!(idmap_option.is_some());
         let idmap = idmap_option.unwrap();
         for &i in samples {
-            assert_ne!(idmap[usize::from(i)], TSK_NULL);
+            assert_ne!(idmap[usize::from(i)], NodeId::NULL);
         }
     }
 }
