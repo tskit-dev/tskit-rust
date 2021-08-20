@@ -2,7 +2,6 @@
 mod tests {
     use crate::test_fixtures::make_small_table_collection_two_trees;
     use crate::test_fixtures::treeseq_from_small_table_collection_two_trees;
-    use crate::IdIsNull;
     use crate::NodeId;
     use crate::SimplificationOptions;
     use crate::TableAccess;

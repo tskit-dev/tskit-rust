@@ -259,17 +259,16 @@ macro_rules! impl_id_traits {
         impl $idtype {
             /// NULL value for this type.
             pub const NULL: $idtype = Self($crate::TSK_NULL);
+
+            /// Return `true` is `self == Self::NULL`
+            pub fn is_null(&self) -> bool {
+                *self == Self::NULL
+            }
         }
 
         impl From<$crate::tsk_id_t> for $idtype {
             fn from(value: $crate::tsk_id_t) -> Self {
                 Self(value)
-            }
-        }
-
-        impl $crate::IdIsNull for $idtype {
-            fn is_null(&self) -> bool {
-                self.0 == Self::NULL
             }
         }
 
