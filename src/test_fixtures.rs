@@ -31,6 +31,27 @@ impl crate::metadata::MetadataRoundtrip for GenericMetadata {
 }
 
 #[cfg(test)]
+impl crate::metadata::MutationMetadata for GenericMetadata {}
+
+#[cfg(test)]
+impl crate::metadata::SiteMetadata for GenericMetadata {}
+
+#[cfg(test)]
+impl crate::metadata::EdgeMetadata for GenericMetadata {}
+
+#[cfg(test)]
+impl crate::metadata::NodeMetadata for GenericMetadata {}
+
+#[cfg(test)]
+impl crate::metadata::IndividualMetadata for GenericMetadata {}
+
+#[cfg(test)]
+impl crate::metadata::PopulationMetadata for GenericMetadata {}
+
+#[cfg(test)]
+impl crate::metadata::MigrationMetadata for GenericMetadata {}
+
+#[cfg(test)]
 pub fn make_small_table_collection() -> TableCollection {
     let mut tables = TableCollection::new(1000.).unwrap();
     tables
@@ -168,4 +189,7 @@ pub mod bad_metadata {
             handle_metadata_return!(bincode::deserialize(md))
         }
     }
+
+    impl crate::metadata::MutationMetadata for F {}
+    impl crate::metadata::MutationMetadata for Ff {}
 }

@@ -39,6 +39,8 @@ use thiserror::Error;
 ///    }
 /// }
 ///
+/// impl tskit::metadata::MutationMetadata for MyMutation {}
+///
 /// let mut tables = tskit::TableCollection::new(100.).unwrap();
 /// let mutation = MyMutation{origin_time: 100,
 ///     effect_size: -1e-4,
@@ -46,7 +48,7 @@ use thiserror::Error;
 ///
 /// // Add table row with metadata.
 /// tables.add_mutation_with_metadata(0, 0, tskit::MutationId::NULL, 100., None,
-///     Some(&mutation)).unwrap();
+///     &mutation).unwrap();
 ///
 /// // Decode the metadata
 /// // The two unwraps are:
@@ -80,33 +82,54 @@ pub trait MetadataRoundtrip {
         Self: Sized;
 }
 
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the mutation table of a [`TableCollection`](crate::TableCollection).
+pub trait MutationMetadata: MetadataRoundtrip {}
+
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the node table of a [`TableCollection`](crate::TableCollection).
+pub trait NodeMetadata: MetadataRoundtrip {}
+
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the edge table of a [`TableCollection`](crate::TableCollection).
+pub trait EdgeMetadata: MetadataRoundtrip {}
+///
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the migratoin table of a [`TableCollection`](crate::TableCollection).
+pub trait MigrationMetadata: MetadataRoundtrip {}
+
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the site table of a [`TableCollection`](crate::TableCollection).
+pub trait SiteMetadata: MetadataRoundtrip {}
+
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the individual table of a [`TableCollection`](crate::TableCollection).
+pub trait IndividualMetadata: MetadataRoundtrip {}
+
+/// Marker trait indicating [`MetadataRoundtrip`]
+/// for the population table of a [`TableCollection`](crate::TableCollection).
+pub trait PopulationMetadata: MetadataRoundtrip {}
+
 pub(crate) struct EncodedMetadata {
-    encoded: Option<Vec<u8>>,
+    encoded: Vec<u8>,
 }
 
 impl EncodedMetadata {
-    pub(crate) fn new(md: Option<&dyn MetadataRoundtrip>) -> Result<Self, MetadataError> {
-        match md {
-            Some(x) => {
-                let e = x.encode()?;
-                Ok(Self { encoded: Some(e) })
-            }
-            None => Ok(Self { encoded: None }),
-        }
+    pub(crate) fn new<M: MetadataRoundtrip + ?Sized>(md: &M) -> Result<Self, MetadataError> {
+        let encoded = md.encode()?;
+        Ok(Self { encoded })
     }
 
     pub(crate) fn as_ptr(&self) -> *const libc::c_char {
-        match &self.encoded {
-            Some(x) => x.as_ptr() as *const libc::c_char,
-            None => std::ptr::null(),
+        if self.encoded.is_empty() {
+            std::ptr::null()
+        } else {
+            self.encoded.as_ptr() as *const libc::c_char
         }
     }
 
     pub(crate) fn len(&self) -> tsk_size_t {
-        match &self.encoded {
-            Some(x) => x.len() as tsk_size_t,
-            None => 0,
-        }
+        self.encoded.len() as tsk_size_t
     }
 }
 
@@ -194,6 +217,8 @@ mod tests {
         }
     }
 
+    impl MutationMetadata for F {}
+
     #[test]
     fn test_metadata_round_trip() {
         let f = F { x: -3, y: 42 };
@@ -211,7 +236,7 @@ mod tests {
     #[test]
     fn test_encoded_metadata_roundtrip() {
         let f = F { x: -3, y: 42 };
-        let enc = EncodedMetadata::new(Some(&f)).unwrap();
+        let enc = EncodedMetadata::new(&f).unwrap();
         let p = enc.as_ptr();
         let mut d = vec![];
         for i in 0..enc.len() {
@@ -245,7 +270,7 @@ mod test_serde {
     #[test]
     fn test_encoded_metadata_roundtrip() {
         let f = F { x: -3, y: 42 };
-        let enc = EncodedMetadata::new(Some(&f)).unwrap();
+        let enc = EncodedMetadata::new(&f).unwrap();
         let p = enc.as_ptr();
         let mut d = vec![];
         for i in 0..enc.len() {

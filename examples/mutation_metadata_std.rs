@@ -18,7 +18,7 @@ pub fn run() {
 
     // The mutation's data are included as metadata:
     tables
-        .add_mutation_with_metadata(0, 0, 0, 0.0, None, Some(&m))
+        .add_mutation_with_metadata(0, 0, 0, 0.0, None, &m)
         .unwrap();
 
     // Decoding requres 2 unwraps:
@@ -62,6 +62,8 @@ impl metadata::MetadataRoundtrip for Mutation {
         })
     }
 }
+
+impl metadata::MutationMetadata for Mutation {}
 
 #[test]
 fn run_test() {
