@@ -647,10 +647,13 @@ impl NodeIterator for PreorderNodeIterator<'_> {
         self.current_node_ = self.node_stack.pop();
         match self.current_node_ {
             Some(u) => {
-                let mut c = self.tree.left_child(u).unwrap();
+                // NOTE: process children right-to-left
+                // because we later pop them from a steck
+                // to generate the expected left-to-right ordering.
+                let mut c = self.tree.right_child(u).unwrap();
                 while c != NodeId::NULL {
                     self.node_stack.push(c);
-                    c = self.tree.right_sib(c).unwrap();
+                    c = self.tree.left_sib(c).unwrap();
                 }
             }
             None => {
