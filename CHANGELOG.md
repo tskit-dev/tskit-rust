@@ -1,5 +1,38 @@
 # Change log
 
+## 2021-08-31, Version 0.4.0
+
+The theme of this release is "type safety".
+This release breaks API due to use of newtypes for row IDs and new metadata marker traits.
+
+### Commits
+
+- [[`a7d78b16aa`](https://github.com/tskit-dev/tskit-rust/commit/a7d78b16aa0605b0fe07749a7cfbcbb83924010e)] Bump version to 0.4.0 (molpopogen)
+- [[`b5e2c265dd`](https://github.com/tskit-dev/tskit-rust/commit/b5e2c265ddfefac6ff46273a0c588a35750d5138)] Add newtype row IDs to prelude. (#161) (Kevin R. Thornton)
+- [[`3dbe8c4b5e`](https://github.com/tskit-dev/tskit-rust/commit/3dbe8c4b5eee90f0d56b096d32f48b92618e19c6)] Fix implementation of tree preorder stacking. (#160) (Kevin R. Thornton)
+- [[`fafd457033`](https://github.com/tskit-dev/tskit-rust/commit/fafd45703365188cc3771cb56bb50ead220c6958)] Refactor metadata encoding: (#158) (Kevin R. Thornton)
+- [[`258b4ee5f0`](https://github.com/tskit-dev/tskit-rust/commit/258b4ee5f039d643a4a6fb56ff4a8cf56919b996)] replace IdIsNull trait with associated fn (#156) (Kevin R. Thornton)
+- [[`9987fc0472`](https://github.com/tskit-dev/tskit-rust/commit/9987fc0472b1f912569cdf898faa2bba9d3c5d38)] Release build optimizations: (#155) (Kevin R. Thornton)
+- [[`58ac4a92d7`](https://github.com/tskit-dev/tskit-rust/commit/58ac4a92d77b7428e926c3ff942b6bf9d5872959)] Refine what "NULL"-ness means for an Id type: (#154) (Kevin R. Thornton)
+- [[`ad4975fc70`](https://github.com/tskit-dev/tskit-rust/commit/ad4975fc7076057534d85e927bc39fd6e303dfb6)] Update bindgen requirement from 0.58.1 to 0.59.1 (#152) (dependabot[bot])
+- [[`8a553eaa80`](https://github.com/tskit-dev/tskit-rust/commit/8a553eaa80d7872ccae3faf54a5717777bcf7e9f)] fix clippy warnings that showed up in rust 1.54 (#153) (Kevin R. Thornton)
+- [[`bef4bb6c7a`](https://github.com/tskit-dev/tskit-rust/commit/bef4bb6c7acf9f054f62f2a746de1d9ed5805445)] Allow empty provenance records. (#151) (Kevin R. Thornton)
+- [[`86df702040`](https://github.com/tskit-dev/tskit-rust/commit/86df7020407df7165d2bb2ae9bcff28d2abd3274)] Improve test coverage of "adding rows to table collections" (#143): (Kevin R. Thornton)
+- [[`036680050b`](https://github.com/tskit-dev/tskit-rust/commit/036680050bdca732f3be4db439dfcfafd144d79c)] * Update trees API to use NodeId (#145) (Kevin R. Thornton)
+- [[`7a716bbe76`](https://github.com/tskit-dev/tskit-rust/commit/7a716bbe76860fcb06d0c724e987420bd3d5048f)] Add additional member functions to TableCollection to (#141) (Kevin R. Thornton)
+- [[`baf6f17430`](https://github.com/tskit-dev/tskit-rust/commit/baf6f1743015741e6438f63dc2a5122ae0739c2b)] Fix Into< > type for TableCollection::add_individual_* (#142) (Kevin R. Thornton)
+- [[`689938eee7`](https://github.com/tskit-dev/tskit-rust/commit/689938eee7e07635fe07d92744c0cd24ff0bc042)] fix link from ProvenanceId to ProvenanceTable in docs (#140) (Kevin R. Thornton)
+- [[`1203a5d523`](https://github.com/tskit-dev/tskit-rust/commit/1203a5d5235300782cbaeb44f32265a6ebc3340e)] strong id type cleanup (#139) (Kevin R. Thornton)
+- [[`6bae100e61`](https://github.com/tskit-dev/tskit-rust/commit/6bae100e614984e2ef26e7b6b57560557a484515)] Add EdgeId (#138) (Kevin R. Thornton)
+- [[`9baff077b5`](https://github.com/tskit-dev/tskit-rust/commit/9baff077b5f6dd247b6e8c01905a391ad23e5650)] Add MigrationId and ProvenanceId (#137) (Kevin R. Thornton)
+- [[`7713ef669e`](https://github.com/tskit-dev/tskit-rust/commit/7713ef669e4c4e32dfb7f84f44891794a11d667b)] Add SiteId and MutationId (#136) (Kevin R. Thornton)
+- [[`de006a1f0e`](https://github.com/tskit-dev/tskit-rust/commit/de006a1f0e0e0608040c344aea2e5f435f52abcd)] Add PopulationId (#135) (Kevin R. Thornton)
+- [[`630ccd5f5e`](https://github.com/tskit-dev/tskit-rust/commit/630ccd5f5e9839b7fca9d3e694be01ea0b075ee2)] Add IndividualId. (#133) (Kevin R. Thornton)
+- [[`8bf7d4b954`](https://github.com/tskit-dev/tskit-rust/commit/8bf7d4b9549bf0db4403e0051d43469c6a7c05d3)] NodeTable::metadata now uses Into<NodeId>. (#134) (Kevin R. Thornton)
+- [[`3ac3d50f7b`](https://github.com/tskit-dev/tskit-rust/commit/3ac3d50f7b33ded239f4c19b88f3cc9a31bafe14)] * Establish a pattern for stronger ID types (#129) (Kevin R. Thornton)
+- [[`e19095d9a9`](https://github.com/tskit-dev/tskit-rust/commit/e19095d9a9af035a0e91a04e8b1d9597e14f764f)] clippy vs bindgen (#130) (Kevin R. Thornton)
+- [[`d9abda5bb6`](https://github.com/tskit-dev/tskit-rust/commit/d9abda5bb601b72841fc8e8e5a651f861e8e01f3)] Change links in Cargo.toml to tskit-dev (#127) (Kevin R. Thornton)
+
 ## 2021-05-19, Version 0.3.0
 
 This release has a few API changes, etc., that streamline the public interface.
