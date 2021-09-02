@@ -322,66 +322,6 @@ macro_rules! handle_metadata_return {
     };
 }
 
-/// Implement [`crate::metadata::MetadataRoundtrip`]
-/// for a type using `serde_json`.
-///
-/// Requires the `serde_json_metadata` feature.
-#[cfg(any(doc, feature = "serde_json_metadata"))]
-#[macro_export]
-macro_rules! serde_json_metadata {
-    ($structname: ty) => {
-        impl $crate::metadata::MetadataRoundtrip for $structname {
-            fn encode(&self) -> Result<Vec<u8>, $crate::metadata::MetadataError> {
-                match serde_json::to_string(self) {
-                    Ok(x) => Ok(x.as_bytes().to_vec()),
-                    Err(e) => {
-                        Err($crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                    }
-                }
-            }
-
-            fn decode(md: &[u8]) -> Result<Self, $crate::metadata::MetadataError> {
-                let value: Result<Self, serde_json::Error> = serde_json::from_slice(md);
-                match value {
-                    Ok(v) => Ok(v),
-                    Err(e) => {
-                        Err($crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                    }
-                }
-            }
-        }
-    };
-}
-
-/// Implement [`crate::metadata::MetadataRoundtrip`]
-/// for a type using `bincode`.
-///
-/// Requires the `serde_bincode_metadata` feature.
-#[cfg(any(doc, feature = "serde_bincode_metadata"))]
-#[macro_export]
-macro_rules! serde_bincode_metadata {
-    ($structname: ty) => {
-        impl $crate::metadata::MetadataRoundtrip for $structname {
-            fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
-                match bincode::serialize(&self) {
-                    Ok(x) => Ok(x),
-                    Err(e) => {
-                        Err($crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                    }
-                }
-            }
-            fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
-                match bincode::deserialize(md) {
-                    Ok(x) => Ok(x),
-                    Err(e) => {
-                        Err($crate::metadata::MetadataError::RoundtripError { value: Box::new(e) })
-                    }
-                }
-            }
-        }
-    };
-}
-
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;

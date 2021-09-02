@@ -24,10 +24,12 @@ chrono = {version = "0.4.19", optional = true}
 serde = {version = "1.0.118", features = ["derive"], optional = true}
 serde_json = {version = "1.0.67", optional = true}
 bincode = {version = "1.3.1", optional = true}
+tskit-derive = {version = "0.1.0", path = "tskit-derive", optional = true}
 
 [dev-dependencies]
 clap = "~2.33.3"
 serde = {version = "1.0.118", features = ["derive"]}
+serde-pickle = "0.6"
 bincode = "1.3.1"
 rand = "0.8.3"
 rand_distr = "0.4.0"
@@ -39,8 +41,7 @@ pkg-config = "0.3"
 
 [features]
 provenance = ["chrono"]
-serde_json_metadata = ["serde", "serde_json"]
-serde_bincode_metadata = ["serde", "bincode"]
+derive = ["tskit-derive", "serde", "serde_json", "bincode"]
 
 [package.metadata.docs.rs]
 all-features = true

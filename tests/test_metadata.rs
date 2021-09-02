@@ -1,97 +1,198 @@
-#[cfg(feature = "serde_json_metadata")]
+#[cfg(feature = "derive")]
 #[cfg(test)]
-mod test_json_metadata {
-    use tskit::metadata;
-    use tskit::TableAccess;
+macro_rules! build_metadata_registration_test {
+    ($modname: ident, $testname: ident, $serializer: tt, $structname: ty, $metadata_marker: ident) => {
+        #[cfg(test)]
+        mod $modname {
 
-    #[derive(serde::Serialize, serde::Deserialize, Debug)]
-    pub struct Mutation {
-        pub effect_size: f64,
-        pub dominance: f64,
-        pub origin_time: i32,
-    }
+            #[derive(
+                Copy,
+                Clone,
+                Debug,
+                Eq,
+                PartialEq,
+                Ord,
+                PartialOrd,
+                serde::Serialize,
+                serde::Deserialize,
+            )]
+            struct N(i32);
 
-    tskit::serde_json_metadata!(Mutation);
+            #[derive(
+                Copy, Clone, Debug, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize,
+            )]
+            struct F(f64);
 
-    impl metadata::MutationMetadata for Mutation {}
+            #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::$metadata_marker)]
+            #[serializer($serializer)]
+            struct GenericMetadata {
+                a: N,
+                b: Vec<F>,
+            }
 
-    #[test]
-    fn test_roundtrip() {
-        let mut tables = tskit::TableCollection::new(1000.).unwrap();
-        // The simulation generates a mutation:
-        let m = Mutation {
-            effect_size: -0.235423,
-            dominance: 0.5,
-            origin_time: 1,
-        };
+            impl Default for GenericMetadata {
+                fn default() -> Self {
+                    GenericMetadata {
+                        a: N(-1),
+                        b: vec![F(1.0), F(-2.0)],
+                    }
+                }
+            }
 
-        // The mutation's data are included as metadata:
-        tables
-            .add_mutation_with_metadata(0, 0, 0, 0.0, None, &m)
-            .unwrap();
+            fn dispatch_metadata<T>(_: &T)
+            where
+                T: tskit::metadata::$metadata_marker,
+            {
+            }
 
-        // Decoding requres 2 unwraps:
-        // 1. The first is to handle errors.
-        // 2. The second is b/c metadata are optional,
-        //    so a row may return None.
-        let decoded = tables
-            .mutations()
-            .metadata::<Mutation>(0.into())
-            .unwrap()
-            .unwrap();
+            #[test]
+            fn $testname() {
+                dispatch_metadata(&<$structname>::default());
+            }
 
-        // Check that we've made the round trip:
-        assert_eq!(decoded.origin_time, 1);
-        assert!((m.effect_size - decoded.effect_size).abs() < f64::EPSILON);
-        assert!((m.dominance - decoded.dominance).abs() < f64::EPSILON);
-    }
+            #[test]
+            fn test_roundtrip() {
+                use tskit::metadata::MetadataRoundtrip;
+                let d = GenericMetadata::default();
+                let encoded = d.encode().unwrap();
+                let decoded = GenericMetadata::decode(&encoded).unwrap();
+                assert_eq!(d.a, decoded.a);
+                assert_eq!(d.b.len(), decoded.b.len());
+                for (i, j) in d.b.iter().zip(decoded.b.iter()) {
+                    match i.partial_cmp(j) {
+                        Some(std::cmp::Ordering::Equal) => (),
+                        Some(std::cmp::Ordering::Less) => panic!("expected Equal"),
+                        Some(std::cmp::Ordering::Greater) => panic!("expected Equal"),
+                        None => panic!("expected Equal"),
+                    };
+                }
+            }
+        }
+    };
 }
 
-#[cfg(feature = "serde_bincode_metadata")]
-#[cfg(test)]
-mod test_bincode_metadata {
-    use tskit::metadata;
-    use tskit::TableAccess;
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_metadata_registration,
+    test_register_mutation_metadata,
+    "serde_json",
+    GenericMetadata,
+    MutationMetadata
+);
 
-    #[derive(serde::Serialize, serde::Deserialize, Debug)]
-    pub struct Mutation {
-        pub effect_size: f64,
-        pub dominance: f64,
-        pub origin_time: i32,
-    }
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_node_registration,
+    test_register_node_metadata,
+    "serde_json",
+    GenericMetadata,
+    NodeMetadata
+);
 
-    tskit::serde_bincode_metadata!(Mutation);
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_site_registration,
+    test_register_site_metadata,
+    "serde_json",
+    GenericMetadata,
+    SiteMetadata
+);
 
-    impl metadata::MutationMetadata for Mutation {}
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_edge_registration,
+    test_register_edge_metadata,
+    "serde_json",
+    GenericMetadata,
+    EdgeMetadata
+);
 
-    #[test]
-    fn test_roundtrip() {
-        let mut tables = tskit::TableCollection::new(1000.).unwrap();
-        // The simulation generates a mutation:
-        let m = Mutation {
-            effect_size: -0.235423,
-            dominance: 0.5,
-            origin_time: 1,
-        };
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_individual_registration,
+    test_register_individual_metadata,
+    "serde_json",
+    GenericMetadata,
+    IndividualMetadata
+);
 
-        // The mutation's data are included as metadata:
-        tables
-            .add_mutation_with_metadata(0, 0, 0, 0.0, None, &m)
-            .unwrap();
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_migration_registration,
+    test_register_migration_metadata,
+    "serde_json",
+    GenericMetadata,
+    MigrationMetadata
+);
 
-        // Decoding requres 2 unwraps:
-        // 1. The first is to handle errors.
-        // 2. The second is b/c metadata are optional,
-        //    so a row may return None.
-        let decoded = tables
-            .mutations()
-            .metadata::<Mutation>(0.into())
-            .unwrap()
-            .unwrap();
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_json_population_registration,
+    test_register_population_metadata,
+    "serde_json",
+    GenericMetadata,
+    PopulationMetadata
+);
 
-        // Check that we've made the round trip:
-        assert_eq!(decoded.origin_time, 1);
-        assert!((m.effect_size - decoded.effect_size).abs() < f64::EPSILON);
-        assert!((m.dominance - decoded.dominance).abs() < f64::EPSILON);
-    }
-}
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_metadata_registration,
+    test_register_mutation_metadata,
+    "bincode",
+    GenericMetadata,
+    MutationMetadata
+);
+
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_node_registration,
+    test_register_node_metadata,
+    "bincode",
+    GenericMetadata,
+    NodeMetadata
+);
+
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_site_registration,
+    test_register_site_metadata,
+    "bincode",
+    GenericMetadata,
+    SiteMetadata
+);
+
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_edge_registration,
+    test_register_edge_metadata,
+    "bincode",
+    GenericMetadata,
+    EdgeMetadata
+);
+
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_individual_registration,
+    test_register_individual_metadata,
+    "bincode",
+    GenericMetadata,
+    IndividualMetadata
+);
+
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_migration_registration,
+    test_register_migration_metadata,
+    "bincode",
+    GenericMetadata,
+    MigrationMetadata
+);
+
+#[cfg(feature = "derive")]
+build_metadata_registration_test!(
+    test_bincode_population_registration,
+    test_register_population_metadata,
+    "bincode",
+    GenericMetadata,
+    PopulationMetadata
+);

@@ -45,11 +45,18 @@
 //!
 //! * `provenance`
 //!     * Enables [`provenance`]
-//! * `serde_json_metadata`
-//!     * Enables [`serde_json_metadata`] macro.
-//! * `serde_bincode_metadata`
-//!     * Enables [`serde_bincode_metadata`] macro.
+//! * `derive` enables the following derive macros:
+//!     * [`MutationMetadata`]
+//!     * [`IndividualMetadata`]
+//!     * [`SiteMetadata`]
+//!     * [`EdgeMetadata`]
+//!     * [`NodeMetadata`]
+//!     * [`MigrationMetadata`]
+//!     * [`PopulationMetadata`]
 //!
+//!     To see these derive macros in action, take a look
+//!     [`here`](metadata).
+//!         
 //! To add features to your `Cargo.toml` file:
 //!
 //! ```toml
