@@ -14,67 +14,73 @@ use thiserror::Error;
 /// [bincode](https://crates.io/crates/bincode) will be one of
 /// the more useful `serde`-related crates.
 ///
-/// # Examples
+/// The library provides two macros to facilitate implementing metadata
+/// traits:
 ///
-/// ## Mutation metadata
+/// * [`serde_json_metadata`]
+/// * [`serde_bincode_metadata`]
 ///
-/// ```
-/// use tskit::handle_metadata_return;
-/// use tskit::TableAccess;
+/// These macros are optional features.
+/// The feature names are the same as the macro names
 ///
-/// #[derive(serde::Serialize, serde::Deserialize)]
-/// pub struct MyMutation {
-///     origin_time: i32,
-///     effect_size: f64,
-///     dominance: f64,
-/// }
-///
-/// impl tskit::metadata::MetadataRoundtrip for MyMutation {
-///     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
-///         handle_metadata_return!(bincode::serialize(&self))
-///    }
-///
-///    fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
-///        handle_metadata_return!(bincode::deserialize(md))
-///    }
-/// }
-///
-/// impl tskit::metadata::MutationMetadata for MyMutation {}
-///
-/// let mut tables = tskit::TableCollection::new(100.).unwrap();
-/// let mutation = MyMutation{origin_time: 100,
-///     effect_size: -1e-4,
-///     dominance: 0.25};
-///
-/// // Add table row with metadata.
-/// tables.add_mutation_with_metadata(0, 0, tskit::MutationId::NULL, 100., None,
-///     &mutation).unwrap();
-///
-/// // Decode the metadata
-/// // The two unwraps are:
-/// // 1. Handle Errors vs Option.
-/// // 2. Handle the option for the case of no error.
-/// //
-/// // The .into() reflects the fact that metadata fetching
-/// // functions only take a strong ID type, and tskit-rust
-/// // adds Into<strong ID type> for i32 for all strong ID types.
-///
-/// let decoded = tables.mutations().metadata::<MyMutation>(0.into()).unwrap().unwrap();
-/// assert_eq!(mutation.origin_time, decoded.origin_time);
-/// match decoded.effect_size.partial_cmp(&mutation.effect_size) {
-///     Some(std::cmp::Ordering::Greater) => assert!(false),
-///     Some(std::cmp::Ordering::Less) => assert!(false),
-///     Some(std::cmp::Ordering::Equal) => (),
-///     None => panic!("bad comparison"),
-/// };
-/// match decoded.dominance.partial_cmp(&mutation.dominance) {
-///     Some(std::cmp::Ordering::Greater) => assert!(false),
-///     Some(std::cmp::Ordering::Less) => assert!(false),
-///     Some(std::cmp::Ordering::Equal) => (),
-///     None => panic!("bad comparison"),
-/// };
-///
-/// ```
+#[cfg_attr(
+    feature = "provenance",
+    doc = r##"
+# Examples
+
+## Mutation metadata encoded as JSON
+
+```
+use tskit::handle_metadata_return;
+use tskit::TableAccess;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct MyMutation {
+    origin_time: i32,
+    effect_size: f64,
+    dominance: f64,
+}
+
+// Implement tskit::metadata::MetadataRoundtrip
+tskit::serde_json_metadata!(MyMutation);
+
+impl tskit::metadata::MutationMetadata for MyMutation {}
+
+let mut tables = tskit::TableCollection::new(100.).unwrap();
+let mutation = MyMutation{origin_time: 100,
+    effect_size: -1e-4,
+    dominance: 0.25};
+
+// Add table row with metadata.
+tables.add_mutation_with_metadata(0, 0, tskit::MutationId::NULL, 100., None,
+    &mutation).unwrap();
+
+// Decode the metadata
+// The two unwraps are:
+// 1. Handle Errors vs Option.
+// 2. Handle the option for the case of no error.
+//
+// The .into() reflects the fact that metadata fetching
+// functions only take a strong ID type, and tskit-rust
+// adds Into<strong ID type> for i32 for all strong ID types.
+
+let decoded = tables.mutations().metadata::<MyMutation>(0.into()).unwrap().unwrap();
+assert_eq!(mutation.origin_time, decoded.origin_time);
+match decoded.effect_size.partial_cmp(&mutation.effect_size) {
+    Some(std::cmp::Ordering::Greater) => assert!(false),
+    Some(std::cmp::Ordering::Less) => assert!(false),
+    Some(std::cmp::Ordering::Equal) => (),
+    None => panic!("bad comparison"),
+};
+match decoded.dominance.partial_cmp(&mutation.dominance) {
+    Some(std::cmp::Ordering::Greater) => assert!(false),
+    Some(std::cmp::Ordering::Less) => assert!(false),
+    Some(std::cmp::Ordering::Equal) => (),
+    None => panic!("bad comparison"),
+};
+```
+"##
+)]
 pub trait MetadataRoundtrip {
     fn encode(&self) -> Result<Vec<u8>, MetadataError>;
     fn decode(md: &[u8]) -> Result<Self, MetadataError>

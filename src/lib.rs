@@ -45,6 +45,10 @@
 //!
 //! * `provenance`
 //!     * Enables [`provenance`]
+//! * `serde_json_metadata`
+//!     * Enables [`serde_json_metadata`] macro.
+//! * `serde_bincode_metadata`
+//!     * Enables [`serde_bincode_metadata`] macro.
 //!
 //! To add features to your `Cargo.toml` file:
 //!
