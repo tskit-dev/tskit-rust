@@ -1,5 +1,14 @@
 # Change log
 
+## 2021-09-03, Version 0.5.0
+
+### Commits
+
+Derive macros for table metadata.
+
+- [[`41633b60ed`](https://github.com/tskit-dev/tskit-rust/commit/41633b60ed1ccb401a1a2794beb518ee1bc0f4ad)] Add metadata type registration via derive macros. (#163) (Kevin R. Thornton)
+
+
 ## 2021-08-31, Version 0.4.0
 
 The theme of this release is "type safety".
