@@ -1,88 +1,187 @@
 //! Support for table row metadata
+//!
+//! Metadata refers to data that client code may need to associate
+//! with table rows, but the data are not necessary to perform algorithms
+//! on tables nor on trees.
+//!
+//! For complete details, see the data model descriptions
+//! [`here`](https://tskit.dev/tskit/docs/stable/)
+//!
+//! The most straightfoward way to implement metadata
+//! is to use the optional `derive` feature of `tskit`.
+//! This feature enables derive macros to convert
+//! your types to metadata types via [`serde`](https://docs.rs/serde).
+//!
+//! Note that you will need to add `serde` as a dependency of your
+//! package, as you will need its `Serialize` and `Deserialize`
+//! derive macros available.
+//!
+//! Without the derive macros provided by tskit, you must `impl` [`MetadataRoundtrip`]
+//! and the approprate table metadata tag marker for your type.
+//! An example of such "manual" metadata type registration is shown
+//! as the last example below.
+//!
+//! A technical details section follows the examples
+//!
+//! # Examples
+//!
+//! ## Mutation metadata encoded as JSON
+//!
+//! ```
+//! # #[cfg(feature = "derive")] {
+//! use tskit::handle_metadata_return;
+//! use tskit::TableAccess;
+//!
+//! #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
+//! #[serializer("serde_json")]
+//! pub struct MyMutation {
+//!     origin_time: i32,
+//!     effect_size: f64,
+//!     dominance: f64,
+//! }
+//!
+//! let mut tables = tskit::TableCollection::new(100.).unwrap();
+//! let mutation = MyMutation{origin_time: 100,
+//!     effect_size: -1e-4,
+//!     dominance: 0.25};
+//!
+//! // Add table row with metadata.
+//! let id = tables.add_mutation_with_metadata(0, 0, tskit::MutationId::NULL, 100., None,
+//!     &mutation).unwrap();
+//!
+//! // Decode the metadata
+//! // The two unwraps are:
+//! // 1. Handle Errors vs Option.
+//! // 2. Handle the option for the case of no error.
+//! let decoded = tables.mutations().metadata::<MyMutation>(id).unwrap().unwrap();
+//! assert_eq!(mutation.origin_time, decoded.origin_time);
+//! match decoded.effect_size.partial_cmp(&mutation.effect_size) {
+//!     Some(std::cmp::Ordering::Greater) => assert!(false),
+//!     Some(std::cmp::Ordering::Less) => assert!(false),
+//!     Some(std::cmp::Ordering::Equal) => (),
+//!     None => panic!("bad comparison"),
+//! };
+//! match decoded.dominance.partial_cmp(&mutation.dominance) {
+//!     Some(std::cmp::Ordering::Greater) => assert!(false),
+//!     Some(std::cmp::Ordering::Less) => assert!(false),
+//!     Some(std::cmp::Ordering::Equal) => (),
+//!     None => panic!("bad comparison"),
+//! };
+//! # }
+//! ```
+//! ## Example: individual metadata implemented via newtypes
+//!
+//! This time, we use [`bincode`](https://docs.rs/bincode/) via `serde`.
+//!
+//! ```
+//! # #[cfg(feature = "derive")] {
+//! use tskit::TableAccess;
+//! #[derive(serde::Serialize, serde::Deserialize, PartialEq, PartialOrd)]
+//! struct GeneticValue(f64);
+//!
+//! #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
+//! #[serializer("bincode")]
+//! struct IndividualMetadata {
+//!     genetic_value: GeneticValue,
+//! }
+//! let mut tables = tskit::TableCollection::new(100.).unwrap();
+//! let individual = IndividualMetadata {
+//!     genetic_value: GeneticValue(0.0),
+//! };
+//! let id = tables.add_individual_with_metadata(0, &[], &[tskit::IndividualId::NULL], &individual).unwrap();
+//! let decoded = tables.individuals().metadata::<IndividualMetadata>(id).unwrap().unwrap();
+//! assert_eq!(decoded.genetic_value.partial_cmp(&individual.genetic_value).unwrap(), std::cmp::Ordering::Equal);
+//! # }
+//! ```
+//!
+//! ## Example: manual implementation of all of the traits.
+//!
+//! Okay, let's do things the hard way.
+//! We will use a serializer not supported by `tskit` right now.
+//! For fun, we'll use the Python [`pickle`](https://docs.rs/crate/serde-pickle/) format.
+//!
+//! ```
+//! use tskit::TableAccess;
+//!
+//! #[derive(serde::Serialize, serde::Deserialize)]
+//! struct Metadata {
+//!     data: String,
+//! }
+//!
+//! // Manually implement the metadata round trip trait.
+//! // You must propogate any errors back via Box, else
+//! // risk a `panic!`.
+//! impl tskit::metadata::MetadataRoundtrip for Metadata {
+//!     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+//!         match serde_pickle::to_vec(self, true) {
+//!             Ok(v) => Ok(v),
+//!             Err(e) => Err(tskit::metadata::MetadataError::RoundtripError{ value: Box::new(e) }),
+//!         }
+//!     }
+//!
+//!     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
+//!         match serde_pickle::from_slice(md) {
+//!             Ok(x) => Ok(x),
+//!             Err(e) => Err(tskit::metadata::MetadataError::RoundtripError{ value: Box::new(e) }),
+//!         }
+//!     }
+//! }
+//!
+//! // If we want this to be, say, node metadata, then we need to mark
+//! // it as such:
+//! impl tskit::metadata::NodeMetadata for Metadata {}
+//!
+//! // Ready to rock:
+//! let mut tables = tskit::TableCollection::new(1.).unwrap();
+//! let id = tables
+//!     .add_node_with_metadata(
+//!         0,
+//!         0.0,
+//!         tskit::PopulationId::NULL,
+//!         tskit::IndividualId::NULL,
+//!         &Metadata {
+//!             data: "Bananas".to_string(),
+//!         },
+//!     )
+//!     .unwrap();
+//!
+//! let decoded = tables.nodes().metadata::<Metadata>(id).unwrap().unwrap();
+//! assert_eq!(decoded.data, "Bananas".to_string());
+//! ```
+//!
+//! # Technial details and notes
+//!
+//! * The derive macros currently support two `serde` methods:
+//!   `serde_json` and `bincode`.
+//! * A concept like "mutation metadata" is the combination of two traits:
+//!   [`MetadataRoundtrip`] plus [`MutationMetadata`].
+//!   The latter is a marker trait.
+//!   The derive macros handle all of this "boiler plate" for you.
+//!
+//! ## Limitations/unknowns
+//!
+//! * We have not yet tested importing metadata encoded using `rust`
+//!   into `Python` via the `tskit` `Python API`.
 
 use crate::bindings::{tsk_id_t, tsk_size_t};
 use thiserror::Error;
 
-/// Enable a type to be used as table metadata
-///
-/// See [`handle_metadata_return`] for a macro to help implement this trait,
-/// and its use in examples below.
-///
-/// We strongly recommend the use of the [serde](https://serde.rs/) ecosystem
-/// for row metadata.
-/// For many use cases, we imagine that
-/// [bincode](https://crates.io/crates/bincode) will be one of
-/// the more useful `serde`-related crates.
-///
-/// The library provides two macros to facilitate implementing metadata
-/// traits:
-///
-/// * [`serde_json_metadata`]
-/// * [`serde_bincode_metadata`]
-///
-/// These macros are optional features.
-/// The feature names are the same as the macro names
-///
-#[cfg_attr(
-    feature = "provenance",
-    doc = r##"
-# Examples
+#[cfg(feature = "derive")]
+#[doc(hidden)]
+pub extern crate tskit_derive;
 
-## Mutation metadata encoded as JSON
-
-```
-use tskit::handle_metadata_return;
-use tskit::TableAccess;
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct MyMutation {
-    origin_time: i32,
-    effect_size: f64,
-    dominance: f64,
-}
-
-// Implement tskit::metadata::MetadataRoundtrip
-tskit::serde_json_metadata!(MyMutation);
-
-impl tskit::metadata::MutationMetadata for MyMutation {}
-
-let mut tables = tskit::TableCollection::new(100.).unwrap();
-let mutation = MyMutation{origin_time: 100,
-    effect_size: -1e-4,
-    dominance: 0.25};
-
-// Add table row with metadata.
-tables.add_mutation_with_metadata(0, 0, tskit::MutationId::NULL, 100., None,
-    &mutation).unwrap();
-
-// Decode the metadata
-// The two unwraps are:
-// 1. Handle Errors vs Option.
-// 2. Handle the option for the case of no error.
-//
-// The .into() reflects the fact that metadata fetching
-// functions only take a strong ID type, and tskit-rust
-// adds Into<strong ID type> for i32 for all strong ID types.
-
-let decoded = tables.mutations().metadata::<MyMutation>(0.into()).unwrap().unwrap();
-assert_eq!(mutation.origin_time, decoded.origin_time);
-match decoded.effect_size.partial_cmp(&mutation.effect_size) {
-    Some(std::cmp::Ordering::Greater) => assert!(false),
-    Some(std::cmp::Ordering::Less) => assert!(false),
-    Some(std::cmp::Ordering::Equal) => (),
-    None => panic!("bad comparison"),
+#[cfg(feature = "derive")]
+#[doc(hidden)]
+pub use tskit_derive::{
+    EdgeMetadata, IndividualMetadata, MigrationMetadata, MutationMetadata, NodeMetadata,
+    PopulationMetadata, SiteMetadata,
 };
-match decoded.dominance.partial_cmp(&mutation.dominance) {
-    Some(std::cmp::Ordering::Greater) => assert!(false),
-    Some(std::cmp::Ordering::Less) => assert!(false),
-    Some(std::cmp::Ordering::Equal) => (),
-    None => panic!("bad comparison"),
-};
-```
-"##
-)]
+
+/// Trait marking a type as table metadata
 pub trait MetadataRoundtrip {
+    /// Encode `self` as bytes
     fn encode(&self) -> Result<Vec<u8>, MetadataError>;
+    /// Decond `Self` from bytes
     fn decode(md: &[u8]) -> Result<Self, MetadataError>
     where
         Self: Sized;
@@ -101,7 +200,7 @@ pub trait NodeMetadata: MetadataRoundtrip {}
 pub trait EdgeMetadata: MetadataRoundtrip {}
 ///
 /// Marker trait indicating [`MetadataRoundtrip`]
-/// for the migratoin table of a [`TableCollection`](crate::TableCollection).
+/// for the migration table of a [`TableCollection`](crate::TableCollection).
 pub trait MigrationMetadata: MetadataRoundtrip {}
 
 /// Marker trait indicating [`MetadataRoundtrip`]
