@@ -127,12 +127,6 @@ impl PartialEq for ProvenanceTableRow {
     }
 }
 
-impl std::fmt::Display for ProvenanceId {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "ProvenanceId({})", self.0)
-    }
-}
-
 impl std::fmt::Display for ProvenanceTableRow {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(
