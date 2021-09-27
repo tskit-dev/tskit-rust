@@ -149,6 +149,17 @@ pub use bindings::tsk_size_t;
 /// assert_eq!(interesting(x), x);
 /// ```
 ///
+/// The types also implement `Display`:
+///
+/// ```
+/// use tskit::NodeId;
+///
+/// let n = NodeId::from(11);
+/// assert_eq!(format!("{}", n), "NodeId(11)".to_string());
+/// let n = NodeId::from(NodeId::NULL);
+/// assert_eq!(format!("{}", n), "NodeId(NULL)".to_string());
+/// ```
+///
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct NodeId(tsk_id_t);
