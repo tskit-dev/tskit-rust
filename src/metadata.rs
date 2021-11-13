@@ -113,14 +113,14 @@
 //! // risk a `panic!`.
 //! impl tskit::metadata::MetadataRoundtrip for Metadata {
 //!     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
-//!         match serde_pickle::to_vec(self, true) {
+//!         match serde_pickle::to_vec(self, serde_pickle::SerOptions::default()) {
 //!             Ok(v) => Ok(v),
 //!             Err(e) => Err(tskit::metadata::MetadataError::RoundtripError{ value: Box::new(e) }),
 //!         }
 //!     }
 //!
 //!     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
-//!         match serde_pickle::from_slice(md) {
+//!         match serde_pickle::from_slice(md, serde_pickle::DeOptions::default()) {
 //!             Ok(x) => Ok(x),
 //!             Err(e) => Err(tskit::metadata::MetadataError::RoundtripError{ value: Box::new(e) }),
 //!         }
