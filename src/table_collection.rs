@@ -729,7 +729,7 @@ impl crate::traits::NodeListGenerator for TableCollection {}
 #[cfg(any(doc, feature = "provenance"))]
 impl crate::provenance::Provenance for TableCollection {
     fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
-        let timestamp = chrono::prelude::Local::now().to_rfc3339();
+        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
                 &mut (*self.as_mut_ptr()).provenances,
