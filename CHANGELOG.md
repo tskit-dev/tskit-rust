@@ -1,5 +1,14 @@
 # Change log
 
+## 2021-11-23, Version 0.6.0
+
+### Commits
+- [[`b07c035077`](https://github.com/tskit-dev/tskit-rust/commit/b07c0350771b2812788dba59c5314108bf65e37c)] bump version to 0.6.0 (molpopgen)
+- [[`8bb08be83d`](https://github.com/tskit-dev/tskit-rust/commit/8bb08be83d2c5a60f6aaf377b78d1cdee1d1c7e8)] Replace chrono dependency with humantime to avoid RUSTSEC-2020-0071 and RUSTSEC-2020-0159 (#171) (Momo Langenstein)
+- [[`896b5891e0`](https://github.com/tskit-dev/tskit-rust/commit/896b5891e05da7f7658bd0c950ff8150c85e607c)] Implement Display for Id newtypes. (#168) (Kevin R. Thornton)
+- [[`d2c6383ae9`](https://github.com/tskit-dev/tskit-rust/commit/d2c6383ae91889d1a85033e60018548503552d12)] Update to C API 0.99.14 (#165) (Kevin R. Thornton)
+
+
 ## 2021-09-03, Version 0.5.0
 
 ### Commits
