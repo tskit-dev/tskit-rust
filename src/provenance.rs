@@ -45,15 +45,9 @@ assert_eq!(record_0, row_0.record);
 let timestamp = prov_ref.timestamp(0).unwrap();
 assert_eq!(timestamp, row_0.timestamp);
 
-// You can get the `chrono::DateTime` object back from the `String`:
-
-let dt = chrono::DateTime::parse_from_rfc3339(&timestamp).unwrap();
-
-// You can get specific time types back, too:
+// You can get the `humantime::Timestamp` object back from the `String`:
 use core::str::FromStr;
-let dt_utc = chrono::DateTime::<chrono::Utc>::from_str(&timestamp).unwrap();
-let dt_local = chrono::DateTime::<chrono::Local>::from_str(&timestamp).unwrap();
-println!("local = {}", dt_local);
+let timestamp_string = humantime::Timestamp::from_str(&timestamp).unwrap();
 
 // Provenance transfers to the tree sequences
 let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -77,11 +71,9 @@ let record_0 = prov_ref.record(0).unwrap();
 assert_eq!(record_0, row_0.record);
 let timestamp = prov_ref.timestamp(0).unwrap();
 assert_eq!(timestamp, row_0.timestamp);
-let dt = chrono::DateTime::parse_from_rfc3339(&timestamp).unwrap();
 use core::str::FromStr;
-let dt_utc = chrono::DateTime::<chrono::Utc>::from_str(&timestamp).unwrap();
-let dt_local = chrono::DateTime::<chrono::Local>::from_str(&timestamp).unwrap();
-println!("local = {}", dt_local);
+let dt_utc = humantime::Timestamp::from_str(&timestamp).unwrap();
+println!("utc = {}", dt_utc);
 ```
 
 "##
