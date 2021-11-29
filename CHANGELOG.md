@@ -1,5 +1,12 @@
 # Change log
 
+## 2021-11-29, Version 0.6.1
+
+### Commits
+
+- [[`3eadcb161e`](https://github.com/tskit-dev/tskit-rust/commit/3eadcb161eb419dd01a4592ccc7d40bed791ceee)] Replace chrono with humantime in provenance doc tests. (#175) (Kevin R. Thornton)
+- [[`4def777ddf`](https://github.com/tskit-dev/tskit-rust/commit/4def777ddf03a7a35e6300f5d955f2350dc7441f)] Add security audit work flow. (#172) (Kevin R. Thornton)
+
 ## 2021-11-23, Version 0.6.0
 
 ### Commits
