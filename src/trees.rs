@@ -337,7 +337,12 @@ impl Tree {
 
     /// Return the `[left, right)` coordinates of the tree.
     pub fn interval(&self) -> (f64, f64) {
-        unsafe { ((*self.as_ptr()).left, (*self.as_ptr()).right) }
+        unsafe {
+            (
+                (*self.as_ptr()).interval.left,
+                (*self.as_ptr()).interval.right,
+            )
+        }
     }
 
     /// Return the length of the genome for which this
@@ -681,7 +686,7 @@ impl<'a> RootIterator<'a> {
     fn new(tree: &'a Tree) -> Self {
         RootIterator {
             current_root: None,
-            next_root: tree.inner.left_root.into(),
+            next_root: unsafe { ll_bindings::tsk_tree_get_left_root(tree.as_ptr()).into() },
             tree,
         }
     }
@@ -905,9 +910,10 @@ impl TreeSequence {
     /// tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
     pub fn new(tables: TableCollection, flags: TreeSequenceFlags) -> Result<Self, TskitError> {
+        let mut t = tables;
         let mut treeseq = Self::wrap();
         let rv = unsafe {
-            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), tables.as_ptr(), flags.bits())
+            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), t.as_mut_ptr(), flags.bits())
         };
         handle_tsk_return_value!(rv, treeseq)
     }
