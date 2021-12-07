@@ -113,7 +113,7 @@ use ll_bindings::tsk_table_collection_free;
 ///    those needed for current goals in ongoing projects.
 /// 2. Strengthen some of the error handling.
 pub struct TableCollection {
-    inner: Box<ll_bindings::tsk_table_collection_t>,
+    pub(crate) inner: *mut ll_bindings::tsk_table_collection_t,
 }
 
 build_tskit_type!(
@@ -132,11 +132,13 @@ impl TableCollection {
             });
         }
         let mut tables = Self::wrap();
-        let rv = unsafe { ll_bindings::tsk_table_collection_init(tables.as_mut_ptr(), 0) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_init(tables.inner, 0) };
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
-        tables.inner.sequence_length = sequence_length;
+        unsafe {
+            (*tables.inner).sequence_length = sequence_length;
+        }
         Ok(tables)
     }
 
@@ -148,12 +150,12 @@ impl TableCollection {
             Err(e) => return Err(e),
         }
 
-        let mut tables = tables.unwrap();
+        let tables = tables.unwrap();
 
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
             ll_bindings::tsk_table_collection_load(
-                tables.as_mut_ptr(),
+                tables.inner,
                 c_str.as_ptr(),
                 ll_bindings::TSK_NO_INIT,
             )
@@ -164,7 +166,7 @@ impl TableCollection {
 
     /// Length of the sequence/"genome".
     pub fn sequence_length(&self) -> f64 {
-        unsafe { (*self.as_ptr()).sequence_length }
+        unsafe { (*self.inner).sequence_length }
     }
 
     /// Add a row to the edge table
@@ -177,7 +179,7 @@ impl TableCollection {
     ) -> Result<EdgeId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_edge_table_add_row(
-                &mut (*self.as_mut_ptr()).edges,
+                &mut (*self.inner).edges,
                 left,
                 right,
                 parent.into().0,
@@ -202,7 +204,7 @@ impl TableCollection {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_edge_table_add_row(
-                &mut (*self.as_mut_ptr()).edges,
+                &mut (*self.inner).edges,
                 left,
                 right,
                 parent.into().0,
@@ -224,7 +226,7 @@ impl TableCollection {
     ) -> Result<IndividualId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_individual_table_add_row(
-                &mut (*self.as_mut_ptr()).individuals,
+                &mut (*self.inner).individuals,
                 flags,
                 location.as_ptr(),
                 location.len() as tsk_size_t,
@@ -248,7 +250,7 @@ impl TableCollection {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_individual_table_add_row(
-                &mut (*self.as_mut_ptr()).individuals,
+                &mut (*self.inner).individuals,
                 flags,
                 location.as_ptr(),
                 location.len() as tsk_size_t,
@@ -276,7 +278,7 @@ impl TableCollection {
     ) -> Result<MigrationId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_migration_table_add_row(
-                &mut (*self.as_mut_ptr()).migrations,
+                &mut (*self.inner).migrations,
                 span.0,
                 span.1,
                 node.into().0,
@@ -312,7 +314,7 @@ impl TableCollection {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_migration_table_add_row(
-                &mut (*self.as_mut_ptr()).migrations,
+                &mut (*self.inner).migrations,
                 span.0,
                 span.1,
                 node.into().0,
@@ -336,7 +338,7 @@ impl TableCollection {
     ) -> Result<NodeId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_node_table_add_row(
-                &mut (*self.as_mut_ptr()).nodes,
+                &mut (*self.inner).nodes,
                 flags,
                 time,
                 population.into().0,
@@ -365,7 +367,7 @@ impl TableCollection {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_node_table_add_row(
-                &mut (*self.as_mut_ptr()).nodes,
+                &mut (*self.inner).nodes,
                 flags,
                 time,
                 population.into().0,
@@ -388,7 +390,7 @@ impl TableCollection {
 
         let rv = unsafe {
             ll_bindings::tsk_site_table_add_row(
-                &mut (*self.as_mut_ptr()).sites,
+                &mut (*self.inner).sites,
                 position,
                 astate.0,
                 astate.1,
@@ -412,7 +414,7 @@ impl TableCollection {
 
         let rv = unsafe {
             ll_bindings::tsk_site_table_add_row(
-                &mut (*self.as_mut_ptr()).sites,
+                &mut (*self.inner).sites,
                 position,
                 astate.0,
                 astate.1,
@@ -436,7 +438,7 @@ impl TableCollection {
         let dstate = process_state_input!(derived_state);
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_add_row(
-                &mut (*self.as_mut_ptr()).mutations,
+                &mut (*self.inner).mutations,
                 site.into().0,
                 node.into().0,
                 parent.into().0,
@@ -470,7 +472,7 @@ impl TableCollection {
 
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_add_row(
-                &mut (*self.as_mut_ptr()).mutations,
+                &mut (*self.inner).mutations,
                 site.into().0,
                 node.into().0,
                 parent.into().0,
@@ -488,7 +490,7 @@ impl TableCollection {
     pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_population_table_add_row(
-                &mut (*self.as_mut_ptr()).populations,
+                &mut (*self.inner).populations,
                 std::ptr::null(),
                 0,
             )
@@ -505,7 +507,7 @@ impl TableCollection {
         let md = EncodedMetadata::new(metadata)?;
         let rv = unsafe {
             ll_bindings::tsk_population_table_add_row(
-                &mut (*self.as_mut_ptr()).populations,
+                &mut (*self.inner).populations,
                 md.as_ptr(),
                 md.len(),
             )
@@ -523,7 +525,7 @@ impl TableCollection {
     /// that is currently unused.  A future release may break `API`
     /// here if the `C` library is updated to use flags.
     pub fn build_index(&mut self) -> TskReturnValue {
-        let rv = unsafe { ll_bindings::tsk_table_collection_build_index(self.as_mut_ptr(), 0) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_build_index(self.inner, 0) };
         handle_tsk_return_value!(rv)
     }
 
@@ -539,8 +541,8 @@ impl TableCollection {
         if self.is_indexed() {
             Some(unsafe {
                 std::slice::from_raw_parts(
-                    (*self.as_ptr()).indexes.edge_insertion_order as *const EdgeId,
-                    (*self.as_ptr()).indexes.num_edges as usize,
+                    (*self.inner).indexes.edge_insertion_order as *const EdgeId,
+                    (*self.inner).indexes.num_edges as usize,
                 )
             })
         } else {
@@ -555,8 +557,8 @@ impl TableCollection {
         if self.is_indexed() {
             Some(unsafe {
                 std::slice::from_raw_parts(
-                    (*self.as_ptr()).indexes.edge_removal_order as *const EdgeId,
-                    (*self.as_ptr()).indexes.num_edges as usize,
+                    (*self.inner).indexes.edge_removal_order as *const EdgeId,
+                    (*self.inner).indexes.num_edges as usize,
                 )
             })
         } else {
@@ -569,11 +571,7 @@ impl TableCollection {
     /// be used to affect where sorting starts from for each table.
     pub fn sort(&mut self, start: &Bookmark, options: TableSortOptions) -> TskReturnValue {
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_sort(
-                self.as_mut_ptr(),
-                &start.offsets,
-                options.bits(),
-            )
+            ll_bindings::tsk_table_collection_sort(self.inner, &start.offsets, options.bits())
         };
 
         handle_tsk_return_value!(rv)
@@ -592,7 +590,7 @@ impl TableCollection {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
             ll_bindings::tsk_table_collection_dump(
-                self.as_ptr() as *mut ll_bindings::tsk_table_collection_t,
+                self.inner as *mut ll_bindings::tsk_table_collection_t,
                 c_str.as_ptr(),
                 options.bits(),
             )
@@ -606,8 +604,7 @@ impl TableCollection {
     /// Memory will be released when the object goes out
     /// of scope.
     pub fn clear(&mut self, options: TableClearOptions) -> TskReturnValue {
-        let rv =
-            unsafe { ll_bindings::tsk_table_collection_clear(self.as_mut_ptr(), options.bits()) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_clear(self.inner, options.bits()) };
 
         handle_tsk_return_value!(rv)
     }
@@ -616,7 +613,7 @@ impl TableCollection {
     /// Not public b/c not very safe.
     #[allow(dead_code)]
     fn free(&mut self) -> TskReturnValue {
-        let rv = unsafe { ll_bindings::tsk_table_collection_free(self.as_mut_ptr()) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_free(self.inner) };
 
         handle_tsk_return_value!(rv)
     }
@@ -624,17 +621,14 @@ impl TableCollection {
     /// Return ``true`` if ``self`` contains the same
     /// data as ``other``, and ``false`` otherwise.
     pub fn equals(&self, other: &TableCollection, options: TableEqualityOptions) -> bool {
-        unsafe {
-            ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options.bits())
-        }
+        unsafe { ll_bindings::tsk_table_collection_equals(self.inner, other.inner, options.bits()) }
     }
 
     /// Return a "deep" copy of the tables.
     pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
-        let mut copy = TableCollection::new(1.)?;
+        let copy = TableCollection::new(1.)?;
 
-        let rv =
-            unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), copy.as_mut_ptr(), 0) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_copy(self.inner, copy.inner, 0) };
 
         handle_tsk_return_value!(rv, copy)
     }
@@ -674,7 +668,7 @@ impl TableCollection {
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
-                self.as_mut_ptr(),
+                self.inner,
                 samples.as_ptr() as *const tsk_id_t,
                 samples.len() as tsk_size_t,
                 options.bits(),
@@ -696,31 +690,31 @@ impl TableCollection {
 
 impl TableAccess for TableCollection {
     fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(&self.inner.edges)
+        EdgeTable::new_from_table(unsafe { &(*self.inner).edges })
     }
 
     fn individuals(&self) -> IndividualTable {
-        IndividualTable::new_from_table(&self.inner.individuals)
+        IndividualTable::new_from_table(unsafe { &(*self.inner).individuals })
     }
 
     fn migrations(&self) -> MigrationTable {
-        MigrationTable::new_from_table(&self.inner.migrations)
+        MigrationTable::new_from_table(unsafe { &(*self.inner).migrations })
     }
 
     fn nodes(&self) -> NodeTable {
-        NodeTable::new_from_table(&self.inner.nodes)
+        NodeTable::new_from_table(unsafe { &(*self.inner).nodes })
     }
 
     fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(&self.inner.sites)
+        SiteTable::new_from_table(unsafe { &(*self.inner).sites })
     }
 
     fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(&self.inner.mutations)
+        MutationTable::new_from_table(unsafe { &(*self.inner).mutations })
     }
 
     fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(&self.inner.populations)
+        PopulationTable::new_from_table(unsafe { &(*self.inner).populations })
     }
 }
 
@@ -732,7 +726,7 @@ impl crate::provenance::Provenance for TableCollection {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
-                &mut (*self.as_mut_ptr()).provenances,
+                &mut (*self.inner).provenances,
                 timestamp.as_ptr() as *mut i8,
                 timestamp.len() as tsk_size_t,
                 record.as_ptr() as *mut i8,
@@ -743,7 +737,7 @@ impl crate::provenance::Provenance for TableCollection {
     }
 
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
-        crate::provenance::ProvenanceTable::new_from_table(&self.inner.provenances)
+        crate::provenance::ProvenanceTable::new_from_table(unsafe { &(*self.inner).provenances })
     }
 }
 
@@ -902,8 +896,8 @@ mod test {
         // should probably test against what C thinks is going on :)
         let input = unsafe {
             std::slice::from_raw_parts(
-                (*tables.as_ptr()).indexes.edge_insertion_order,
-                (*tables.as_ptr()).indexes.num_edges as usize,
+                (*tables.inner).indexes.edge_insertion_order,
+                (*tables.inner).indexes.num_edges as usize,
             )
         };
 
@@ -919,8 +913,8 @@ mod test {
 
         let output = unsafe {
             std::slice::from_raw_parts(
-                (*tables.as_ptr()).indexes.edge_removal_order,
-                (*tables.as_ptr()).indexes.num_edges as usize,
+                (*tables.inner).indexes.edge_removal_order,
+                (*tables.inner).indexes.num_edges as usize,
             )
         };
         assert!(!output.is_empty());

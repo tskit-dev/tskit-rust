@@ -25,7 +25,7 @@ mod tests {
     use ll_bindings::tsk_table_collection_free;
 
     pub struct TableCollectionMock {
-        inner: Box<ll_bindings::tsk_table_collection_t>,
+        inner: *mut ll_bindings::tsk_table_collection_t,
     }
 
     build_tskit_type!(
@@ -41,13 +41,15 @@ mod tests {
             let rv = unsafe { ll_bindings::tsk_table_collection_init(s.as_mut_ptr(), 0) };
             assert_eq!(rv, 0);
 
-            s.inner.sequence_length = len;
+            unsafe {
+                (*s.inner).sequence_length = len;
+            }
 
             s
         }
 
         fn sequence_length(&self) -> f64 {
-            unsafe { (*self.as_ptr()).sequence_length }
+            unsafe { (*self.inner).sequence_length }
         }
     }
 
