@@ -40,28 +40,6 @@ extern "C" {
 #include <stdio.h>
 #include <limits.h>
 
-#if defined(_TSK_WORKAROUND_FALSE_CLANG_WARNING) && defined(__clang__)
-/* Work around bug in clang >= 6.0, https://github.com/tskit-dev/tskit/issues/721
- * (note: fixed in clang January 2019)
- * This workaround does some nasty fiddling with builtins and is only intended to
- * be used within the library. To turn it on, make sure
- * _TSK_WORKAROUND_FALSE_CLANG_WARNING is defined before including any tskit
- * headers.
- */
-#if __has_builtin(__builtin_isnan)
-#undef isnan
-#define isnan __builtin_isnan
-#else
-abort();
-#endif
-#if __has_builtin(__builtin_isfinite)
-#undef isfinite
-#define isfinite __builtin_isfinite
-#else
-abort();
-#endif
-#endif
-
 #ifdef __GNUC__
 #define TSK_WARN_UNUSED __attribute__((warn_unused_result))
 #define TSK_UNUSED(x) TSK_UNUSED_##x __attribute__((__unused__))
@@ -109,6 +87,9 @@ __tsk_nan_f(void)
 }
 #define TSK_UNKNOWN_TIME __tsk_nan_f()
 
+#define TSK_TIME_UNITS_UNKNOWN "unknown"
+#define TSK_TIME_UNITS_UNCALIBRATED "uncalibrated"
+
 /**
 @brief Tskit Object IDs.
 
@@ -132,11 +113,11 @@ missing data.
  * on the thread above.
  */
 typedef int64_t tsk_id_t;
-#define TSK_MAX_ID INT64_MAX
+#define TSK_MAX_ID INT64_MAX - 1
 #define TSK_ID_STORAGE_TYPE KAS_INT64
 #else
 typedef int32_t tsk_id_t;
-#define TSK_MAX_ID INT32_MAX
+#define TSK_MAX_ID INT32_MAX - 1
 #define TSK_ID_STORAGE_TYPE KAS_INT32
 #endif
 
@@ -182,7 +163,7 @@ to the API or ABI are introduced, i.e., the addition of a new function.
 The library patch version. Incremented when any changes not relevant to the
 to the API or ABI are introduced, i.e., internal refactors of bugfixes.
 */
-#define TSK_VERSION_PATCH   14
+#define TSK_VERSION_PATCH   15
 /** @} */
 
 /* Node flags */
@@ -197,7 +178,7 @@ to the API or ABI are introduced, i.e., internal refactors of bugfixes.
 #define TSK_FILE_FORMAT_NAME          "tskit.trees"
 #define TSK_FILE_FORMAT_NAME_LENGTH   11
 #define TSK_FILE_FORMAT_VERSION_MAJOR 12
-#define TSK_FILE_FORMAT_VERSION_MINOR 5
+#define TSK_FILE_FORMAT_VERSION_MINOR 7
 
 /**
 @defgroup GENERAL_ERROR_GROUP General errors.
@@ -280,6 +261,7 @@ An unsupported type was provided for a column in the file.
 #define TSK_ERR_PROVENANCE_OUT_OF_BOUNDS                            -209
 #define TSK_ERR_TIME_NONFINITE                                      -210
 #define TSK_ERR_GENOME_COORDS_NONFINITE                             -211
+#define TSK_ERR_SEEK_OUT_OF_BOUNDS                                  -212
 
 /* Edge errors */
 #define TSK_ERR_NULL_PARENT                                         -300
@@ -313,6 +295,9 @@ An unsupported type was provided for a column in the file.
 #define TSK_ERR_MUTATION_TIME_OLDER_THAN_PARENT_NODE                -508
 #define TSK_ERR_MUTATION_TIME_HAS_BOTH_KNOWN_AND_UNKNOWN            -509
 
+/* Migration errors */
+#define TSK_ERR_UNSORTED_MIGRATIONS                                 -550
+
 /* Sample errors */
 #define TSK_ERR_DUPLICATE_SAMPLE                                    -600
 #define TSK_ERR_BAD_SAMPLES                                         -601
@@ -334,6 +319,7 @@ An unsupported type was provided for a column in the file.
 #define TSK_ERR_NONBINARY_MUTATIONS_UNSUPPORTED                     -804
 #define TSK_ERR_MIGRATIONS_NOT_SUPPORTED                            -805
 #define TSK_ERR_CANNOT_EXTEND_FROM_SELF                             -806
+#define TSK_ERR_SILENT_MUTATIONS_NOT_SUPPORTED                      -807
 
 /* Stats errors */
 #define TSK_ERR_BAD_NUM_WINDOWS                                     -900
@@ -346,6 +332,8 @@ An unsupported type was provided for a column in the file.
 #define TSK_ERR_BAD_SAMPLE_SET_INDEX                                -907
 #define TSK_ERR_EMPTY_SAMPLE_SET                                    -908
 #define TSK_ERR_UNSUPPORTED_STAT_MODE                               -909
+#define TSK_ERR_TIME_UNCALIBRATED                                   -910
+
 
 /* Mutation mapping errors */
 #define TSK_ERR_GENOTYPES_ALL_MISSING                              -1000
@@ -377,8 +365,9 @@ An unsupported type was provided for a column in the file.
 #define TSK_ERR_UNION_DIFF_HISTORIES                               -1401
 
 /* IBD errors */
-#define TSK_ERR_NO_SAMPLE_PAIRS                                    -1500
-#define TSK_ERR_DUPLICATE_SAMPLE_PAIRS                             -1501
+#define TSK_ERR_SAME_NODES_IN_PAIR                                 -1500
+#define TSK_ERR_IBD_PAIRS_NOT_STORED                               -1501
+#define TSK_ERR_IBD_SEGMENTS_NOT_STORED                            -1502
 
 /* Simplify errors */
 #define TSK_ERR_KEEP_UNARY_MUTUALLY_EXCLUSIVE                      -1600
@@ -395,6 +384,7 @@ An unsupported type was provided for a column in the file.
 
 int tsk_set_kas_error(int err);
 bool tsk_is_kas_error(int err);
+int tsk_get_kas_error(int err);
 
 /**
 @brief Return a description of the specified error.
@@ -462,10 +452,56 @@ extern int tsk_blkalloc_init(tsk_blkalloc_t *self, size_t chunk_size);
 extern void *tsk_blkalloc_get(tsk_blkalloc_t *self, size_t size);
 extern void tsk_blkalloc_free(tsk_blkalloc_t *self);
 
+typedef struct _tsk_avl_node_int_t {
+    int64_t key;
+    void *value;
+    struct _tsk_avl_node_int_t *llink;
+    struct _tsk_avl_node_int_t *rlink;
+    /* This can only contain -1, 0, 1. We could set it to a smaller type,
+     * but there's no point because of struct padding and alignment so
+     * it's simplest to keep it as a plain int. */
+    int balance;
+} tsk_avl_node_int_t;
+
+typedef struct {
+    tsk_avl_node_int_t head;
+    tsk_size_t size;
+    tsk_size_t height;
+} tsk_avl_tree_int_t;
+
+int tsk_avl_tree_int_init(tsk_avl_tree_int_t *self);
+int tsk_avl_tree_int_free(tsk_avl_tree_int_t *self);
+void tsk_avl_tree_int_print_state(tsk_avl_tree_int_t *self, FILE *out);
+int tsk_avl_tree_int_insert(tsk_avl_tree_int_t *self, tsk_avl_node_int_t *node);
+tsk_avl_node_int_t *tsk_avl_tree_int_search(const tsk_avl_tree_int_t *self, int64_t key);
+int tsk_avl_tree_int_ordered_nodes(
+    const tsk_avl_tree_int_t *self, tsk_avl_node_int_t **out);
+tsk_avl_node_int_t *tsk_avl_tree_int_get_root(const tsk_avl_tree_int_t *self);
+
 tsk_size_t tsk_search_sorted(const double *array, tsk_size_t size, double value);
+
 double tsk_round(double x, unsigned int ndigits);
 
+/**
+@brief Check if a number is TSK_UNKNOWN_TIME
+
+@rst
+Unknown time values in tskit are represented by a particular NaN value. Since NaN values
+are not equal to each other by definition, a simple comparison like
+``mutation.time == TSK_UNKNOWN_TIME`` will fail even if the mutation's time is
+TSK_UNKNOWN_TIME. This function compares the underlying bit representation of a double
+value and returns true iff it is equal to the specific NaN value TSK_UNKNOWN_TIME.
+@endrst
+
+@param val The number to check
+@return true if the number is TSK_UNKNOWN_TIME else false
+*/
 bool tsk_is_unknown_time(double val);
+
+/* We define local versions of isnan and isfinite to workaround some portability
+ * issues. */
+bool tsk_isnan(double val);
+bool tsk_isfinite(double val);
 
 #define TSK_UUID_SIZE 36
 int tsk_generate_uuid(char *dest, int flags);
@@ -479,6 +515,10 @@ void *tsk_memset(void *ptr, int fill, tsk_size_t size);
 void *tsk_memcpy(void *dest, const void *src, tsk_size_t size);
 void *tsk_memmove(void *dest, const void *src, tsk_size_t size);
 int tsk_memcmp(const void *s1, const void *s2, tsk_size_t size);
+
+/* Developer debug utilities. These are **not** threadsafe */
+void tsk_set_debug_stream(FILE *f);
+FILE *tsk_get_debug_stream(void);
 
 #ifdef __cplusplus
 }
