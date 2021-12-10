@@ -1,12 +1,5 @@
 //! Traits related to user-facing types
 
-use crate::edge_table::EdgeTableIterator;
-use crate::individual_table::IndividualTableIterator;
-use crate::migration_table::MigrationTableIterator;
-use crate::mutation_table::MutationTableIterator;
-use crate::node_table::NodeTableIterator;
-use crate::population_table::PopulationTableIterator;
-use crate::site_table::SiteTableIterator;
 use crate::table_iterator::make_table_iterator;
 use crate::EdgeTable;
 use crate::IndividualTable;
@@ -60,63 +53,64 @@ pub trait TableAccess {
     fn edges(&self) -> EdgeTable;
 
     /// Return an iterator over the edges.
-    /// See [`EdgeTable::iter`] for details.
-    fn edges_iter(&self) -> EdgeTableIterator {
-        make_table_iterator::<EdgeTable>(self.edges())
+    fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::edge_table::EdgeTableRow> + '_> {
+        Box::new(make_table_iterator::<EdgeTable>(self.edges()))
     }
 
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     fn nodes(&self) -> NodeTable;
 
     /// Return an iterator over the nodes.
-    /// See [`NodeTable::iter`] for details.
-    fn nodes_iter(&self) -> NodeTableIterator {
-        make_table_iterator::<NodeTable>(self.nodes())
+    fn nodes_iter(&self) -> Box<dyn Iterator<Item = crate::node_table::NodeTableRow> + '_> {
+        Box::new(make_table_iterator::<NodeTable>(self.nodes()))
     }
 
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     fn mutations(&self) -> MutationTable;
 
     /// Return an iterator over the mutations.
-    /// See [`MutationTable::iter`] for details.
-    fn mutations_iter(&self) -> MutationTableIterator {
-        make_table_iterator::<MutationTable>(self.mutations())
+    fn mutations_iter(
+        &self,
+    ) -> Box<dyn Iterator<Item = crate::mutation_table::MutationTableRow> + '_> {
+        Box::new(make_table_iterator::<MutationTable>(self.mutations()))
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).
     fn sites(&self) -> SiteTable;
 
     /// Return an iterator over the sites.
-    /// See [`SiteTable::iter`] for details.
-    fn sites_iter(&self) -> SiteTableIterator {
-        make_table_iterator::<SiteTable>(self.sites())
+    fn sites_iter(&self) -> Box<dyn Iterator<Item = crate::site_table::SiteTableRow> + '_> {
+        Box::new(make_table_iterator::<SiteTable>(self.sites()))
     }
 
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     fn populations(&self) -> PopulationTable;
 
     /// Return an iterator over the populations.
-    /// See [`PopulationTable::iter`] for details.
-    fn populations_iter(&self) -> PopulationTableIterator {
-        make_table_iterator::<PopulationTable>(self.populations())
+    fn populations_iter(
+        &self,
+    ) -> Box<dyn Iterator<Item = crate::population_table::PopulationTableRow> + '_> {
+        Box::new(make_table_iterator::<PopulationTable>(self.populations()))
     }
 
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).
     fn migrations(&self) -> MigrationTable;
 
     /// Return an iterator over the migration events.
-    /// See [`MigrationTable::iter`] for details.
-    fn migrations_iter(&self) -> MigrationTableIterator {
-        make_table_iterator::<MigrationTable>(self.migrations())
+    fn migrations_iter(
+        &self,
+    ) -> Box<dyn Iterator<Item = crate::migration_table::MigrationTableRow> + '_> {
+        Box::new(make_table_iterator::<MigrationTable>(self.migrations()))
     }
 
     /// Get reference to the [``IndividualTable``](crate::IndividualTable).
     fn individuals(&self) -> IndividualTable;
 
     /// Return an iterator over the individuals.
-    /// See [`IndividualTable::iter`] for details.
-    fn individuals_iter(&self) -> IndividualTableIterator {
-        make_table_iterator::<IndividualTable>(self.individuals())
+    fn individuals_iter(
+        &self,
+    ) -> Box<dyn Iterator<Item = crate::individual_table::IndividualTableRow> + '_> {
+        Box::new(make_table_iterator::<IndividualTable>(self.individuals()))
     }
 }
 

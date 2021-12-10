@@ -35,8 +35,8 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
     }
 }
 
-pub type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable<'a>>;
-pub type SiteTableIterator<'a> = crate::table_iterator::TableIterator<SiteTable<'a>>;
+pub(crate) type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable<'a>>;
+pub(crate) type SiteTableIterator<'a> = crate::table_iterator::TableIterator<SiteTable<'a>>;
 
 impl<'a> Iterator for SiteTableRefIterator<'a> {
     type Item = SiteTableRow;
@@ -120,7 +120,7 @@ impl<'a> SiteTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`SiteTableRow`].
-    pub fn iter(&self) -> SiteTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = SiteTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(self)
     }
 
