@@ -147,3 +147,27 @@ bitflags! {
         const BUILD_INDEXES = ll_bindings::TSK_BUILD_INDEXES;
     }
 }
+
+bitflags! {
+    #[derive(Default)]
+    pub struct TableIntegrityCheckFlags: tsk_flags_t {
+        /// Default behavior is a set of basic checks
+        const DEFAULT = 0;
+        /// Check that edges are ordered
+        const CHECK_EDGE_ORDERING =ll_bindings::TSK_CHECK_EDGE_ORDERING;
+        /// Check that sites are ordered
+        const CHECK_SITE_ORDERING =ll_bindings::TSK_CHECK_SITE_ORDERING;
+        /// Check for duplicated sites
+        const CHECK_SITE_DUPLICATES=ll_bindings::TSK_CHECK_SITE_DUPLICATES;
+        /// Check that mutations are ordered
+        const CHECK_MUTATION_ORDERING =ll_bindings::TSK_CHECK_MUTATION_ORDERING;
+        /// Check that individuals are ordered
+        const CHECK_INDIVIDUAL_ORDERING=ll_bindings::TSK_CHECK_INDIVIDUAL_ORDERING;
+        /// Check that migrations are ordered
+        const CHECK_MIGRATION_ORDERING= ll_bindings::TSK_CHECK_MIGRATION_ORDERING;
+        /// Check that table indexes are valid
+        const CHECK_INDEXES=ll_bindings::TSK_CHECK_INDEXES;
+        /// Check tree integrity.  Enables most or all of the preceding options.
+        const CHECK_TREES=ll_bindings::TSK_CHECK_TREES;
+    }
+}
