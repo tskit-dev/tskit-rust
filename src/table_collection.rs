@@ -14,6 +14,7 @@ use crate::SiteTable;
 use crate::TableAccess;
 use crate::TableClearOptions;
 use crate::TableEqualityOptions;
+use crate::TableIntegrityCheckFlags;
 use crate::TableOutputOptions;
 use crate::TableSortOptions;
 use crate::TreeSequenceFlags;
@@ -685,6 +686,56 @@ impl TableCollection {
                 false => None,
             }
         )
+    }
+
+    /// Validate the contents of the table collection
+    ///
+    /// # Parameters
+    ///
+    /// `flags` is an instance of [`TableIntegrityCheckFlags`]
+    ///
+    /// # Return value
+    ///
+    /// `0` upon success, or an error code.
+    /// However, if `flags` contains [`TableIntegrityCheckFlags::CHECK_TREES`],
+    /// and no error is returned, then the return value is the number
+    /// of trees.
+    ///
+    /// # Note
+    ///
+    /// Creating a [`crate::TreeSequence`] from a table collection will automatically
+    /// run an integrity check.
+    /// See [`TableCollection::tree_sequence`].
+    ///
+    /// # Examples
+    ///
+    /// There are many ways for a table colletion to be invalid.
+    /// These examples are just the tip of the iceberg.
+    ///
+    /// ```should_panic
+    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// // Right position is > sequence_length
+    /// tables.add_edge(0.0, 11.0, 0, 0);
+    /// tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).unwrap();
+    /// ```
+    ///
+    /// ```should_panic
+    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// // Left position is < 0.0
+    /// tables.add_edge(-1., 10.0, 0, 0);
+    /// tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).unwrap();
+    /// ```
+    ///
+    /// ```should_panic
+    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// // Edges cannot have null node ids
+    /// tables.add_edge(0., 10.0, tskit::NodeId::NULL, 0);
+    /// tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).unwrap();
+    /// ```
+    pub fn check_integrity(&self, flags: TableIntegrityCheckFlags) -> TskReturnValue {
+        let rv =
+            unsafe { ll_bindings::tsk_table_collection_check_integrity(self.inner, flags.bits()) };
+        handle_tsk_return_value!(rv)
     }
 }
 
