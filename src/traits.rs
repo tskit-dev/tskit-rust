@@ -145,7 +145,7 @@ pub trait NodeListGenerator: TableAccess {
     /// Get all nodes with time > 0.0:
     ///
     /// ```
-    /// use tskit::tsk_id_t;
+    /// use tskit::bindings::tsk_id_t;
     /// use tskit::TableAccess;
     /// use tskit::NodeListGenerator;
     ///

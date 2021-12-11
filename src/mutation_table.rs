@@ -1,6 +1,7 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
-use crate::{tsk_id_t, tsk_size_t, TskitError};
+use crate::SizeType;
+use crate::{tsk_id_t, TskitError};
 use crate::{MutationId, NodeId, SiteId};
 
 /// Row of a [`MutationTable`]
@@ -27,7 +28,12 @@ impl PartialEq for MutationTableRow {
 }
 
 fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<MutationTableRow> {
-    if pos < table.num_rows() as tsk_id_t {
+    use std::convert::TryFrom;
+    // panic is okay here, as we are handling a bad
+    // input value before we first call this to
+    // set up the iterator
+    let p = crate::SizeType::try_from(pos).unwrap();
+    if p < table.num_rows() {
         let rv = MutationTableRow {
             id: pos.into(),
             site: table.site(pos).unwrap(),
@@ -81,8 +87,8 @@ impl<'a> MutationTable<'a> {
     }
 
     /// Return the number of rows.
-    pub fn num_rows(&'a self) -> tsk_size_t {
-        self.table_.num_rows
+    pub fn num_rows(&'a self) -> SizeType {
+        self.table_.num_rows.into()
     }
 
     /// Return the ``site`` value from row ``row`` of the table.
@@ -178,6 +184,10 @@ impl<'a> MutationTable<'a> {
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
     pub fn row<M: Into<MutationId> + Copy>(&self, r: M) -> Result<MutationTableRow, TskitError> {
-        table_row_access!(r.into().0, self, make_mutation_table_row)
+        let ri = r.into();
+        if ri < 0 {
+            return Err(crate::TskitError::IndexError);
+        }
+        table_row_access!(ri.0, self, make_mutation_table_row)
     }
 }

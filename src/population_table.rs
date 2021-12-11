@@ -1,8 +1,9 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::tsk_id_t;
 use crate::PopulationId;
+use crate::SizeType;
 use crate::TskitError;
-use crate::{tsk_id_t, tsk_size_t};
 
 /// Row of a [`PopulationTable`]
 #[derive(Eq)]
@@ -18,7 +19,12 @@ impl PartialEq for PopulationTableRow {
 }
 
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
-    if pos < table.num_rows() as tsk_id_t {
+    use std::convert::TryFrom;
+    // panic is okay here, as we are handling a bad
+    // input value before we first call this to
+    // set up the iterator
+    let p = crate::SizeType::try_from(pos).unwrap();
+    if p < table.num_rows() {
         let rv = PopulationTableRow {
             id: pos.into(),
             metadata: table_row_decode_metadata!(table, pos),
@@ -69,8 +75,8 @@ impl<'a> PopulationTable<'a> {
     }
 
     /// Return the number of rows.
-    pub fn num_rows(&'a self) -> tsk_size_t {
-        self.table_.num_rows
+    pub fn num_rows(&'a self) -> SizeType {
+        self.table_.num_rows.into()
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
@@ -100,6 +106,10 @@ impl<'a> PopulationTable<'a> {
         &self,
         r: P,
     ) -> Result<PopulationTableRow, TskitError> {
-        table_row_access!(r.into().0, self, make_population_table_row)
+        let ri = r.into();
+        if ri < 0 {
+            return Err(crate::TskitError::IndexError);
+        }
+        table_row_access!(ri.0, self, make_population_table_row)
     }
 }
