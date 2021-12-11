@@ -42,8 +42,9 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
         None
     }
 }
-pub type MutationTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a MutationTable<'a>>;
-pub type MutationTableIterator<'a> = crate::table_iterator::TableIterator<MutationTable<'a>>;
+pub(crate) type MutationTableRefIterator<'a> =
+    crate::table_iterator::TableIterator<&'a MutationTable<'a>>;
+pub(crate) type MutationTableIterator<'a> = crate::table_iterator::TableIterator<MutationTable<'a>>;
 
 impl<'a> Iterator for MutationTableRefIterator<'a> {
     type Item = MutationTableRow;
@@ -163,7 +164,7 @@ impl<'a> MutationTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MutationTableRow`].
-    pub fn iter(&self) -> MutationTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = MutationTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(self)
     }
 

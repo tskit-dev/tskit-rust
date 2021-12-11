@@ -29,9 +29,10 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
     }
 }
 
-pub type PopulationTableRefIterator<'a> =
+pub(crate) type PopulationTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a PopulationTable<'a>>;
-pub type PopulationTableIterator<'a> = crate::table_iterator::TableIterator<PopulationTable<'a>>;
+pub(crate) type PopulationTableIterator<'a> =
+    crate::table_iterator::TableIterator<PopulationTable<'a>>;
 
 impl<'a> Iterator for PopulationTableRefIterator<'a> {
     type Item = PopulationTableRow;
@@ -82,7 +83,7 @@ impl<'a> PopulationTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`PopulationTableRow`].
-    pub fn iter(&self) -> PopulationTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = PopulationTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(self)
     }
 

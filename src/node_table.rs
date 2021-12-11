@@ -39,8 +39,8 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
     }
 }
 
-pub type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable<'a>>;
-pub type NodeTableIterator<'a> = crate::table_iterator::TableIterator<NodeTable<'a>>;
+pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable<'a>>;
+pub(crate) type NodeTableIterator<'a> = crate::table_iterator::TableIterator<NodeTable<'a>>;
 
 impl<'a> Iterator for NodeTableRefIterator<'a> {
     type Item = NodeTableRow;
@@ -169,7 +169,7 @@ impl<'a> NodeTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`NodeTableRow`].
-    pub fn iter(&self) -> NodeTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = NodeTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(self)
     }
 

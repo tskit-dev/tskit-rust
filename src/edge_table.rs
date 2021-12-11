@@ -40,8 +40,8 @@ fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow>
     }
 }
 
-pub type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable<'a>>;
-pub type EdgeTableIterator<'a> = crate::table_iterator::TableIterator<EdgeTable<'a>>;
+pub(crate) type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable<'a>>;
+pub(crate) type EdgeTableIterator<'a> = crate::table_iterator::TableIterator<EdgeTable<'a>>;
 
 impl<'a> Iterator for EdgeTableRefIterator<'a> {
     type Item = EdgeTableRow;
@@ -133,7 +133,7 @@ impl<'a> EdgeTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`EdgeTableRow`].
     ///
-    pub fn iter(&self) -> EdgeTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = EdgeTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(self)
     }
 

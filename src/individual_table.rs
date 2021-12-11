@@ -63,9 +63,10 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
     }
 }
 
-pub type IndividualTableRefIterator<'a> =
+pub(crate) type IndividualTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a IndividualTable<'a>>;
-pub type IndividualTableIterator<'a> = crate::table_iterator::TableIterator<IndividualTable<'a>>;
+pub(crate) type IndividualTableIterator<'a> =
+    crate::table_iterator::TableIterator<IndividualTable<'a>>;
 
 impl<'a> Iterator for IndividualTableRefIterator<'a> {
     type Item = IndividualTableRow;
@@ -163,7 +164,7 @@ impl<'a> IndividualTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`IndividualTableRow`].
     ///
-    pub fn iter(&self) -> IndividualTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = IndividualTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&IndividualTable<'a>>(self)
     }
 

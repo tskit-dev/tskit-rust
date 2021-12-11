@@ -45,9 +45,10 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
     }
 }
 
-pub type MigrationTableRefIterator<'a> =
+pub(crate) type MigrationTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a MigrationTable<'a>>;
-pub type MigrationTableIterator<'a> = crate::table_iterator::TableIterator<MigrationTable<'a>>;
+pub(crate) type MigrationTableIterator<'a> =
+    crate::table_iterator::TableIterator<MigrationTable<'a>>;
 
 impl<'a> Iterator for MigrationTableRefIterator<'a> {
     type Item = MigrationTableRow;
@@ -172,7 +173,7 @@ impl<'a> MigrationTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MigrationTableRow`].
-    pub fn iter(&self) -> MigrationTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = MigrationTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&MigrationTable<'a>>(self)
     }
 

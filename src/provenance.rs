@@ -254,7 +254,7 @@ impl<'a> ProvenanceTable<'a> {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`ProvenanceTableRow`].
-    pub fn iter(&self) -> ProvenanceTableRefIterator {
+    pub fn iter(&self) -> impl Iterator<Item = ProvenanceTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(self)
     }
 }
