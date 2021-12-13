@@ -211,7 +211,7 @@ impl TableCollection {
                 parent.into().0,
                 child.into().0,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
 
@@ -258,7 +258,7 @@ impl TableCollection {
                 parents.as_ptr() as *const tsk_id_t,
                 parents.len() as tsk_size_t,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
         handle_tsk_return_value!(rv, IndividualId::from(rv))
@@ -323,7 +323,7 @@ impl TableCollection {
                 source_dest.1.into().0,
                 time,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
         handle_tsk_return_value!(rv, MigrationId(rv))
@@ -374,7 +374,7 @@ impl TableCollection {
                 population.into().0,
                 individual.into().0,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
 
@@ -420,7 +420,7 @@ impl TableCollection {
                 astate.0,
                 astate.1,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
 
@@ -481,7 +481,7 @@ impl TableCollection {
                 dstate.0,
                 dstate.1,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
         handle_tsk_return_value!(rv, MutationId::from(rv))
@@ -510,7 +510,7 @@ impl TableCollection {
             ll_bindings::tsk_population_table_add_row(
                 &mut (*self.inner).populations,
                 md.as_ptr(),
-                md.len(),
+                md.len().into(),
             )
         };
 
@@ -665,7 +665,7 @@ impl TableCollection {
     ) -> Result<Option<Vec<NodeId>>, TskitError> {
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(self.nodes().num_rows() as usize, NodeId::NULL);
+            output_node_map.resize(usize::from(self.nodes().num_rows()), NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -926,21 +926,21 @@ mod test {
         assert!(tables.is_indexed());
         assert_eq!(
             tables.edge_insertion_order().unwrap().len(),
-            tables.edges().num_rows() as usize
+            tables.edges().num_rows().into()
         );
         assert_eq!(
             tables.edge_removal_order().unwrap().len(),
-            tables.edges().num_rows() as usize
+            tables.edges().num_rows().into()
         );
 
         for i in tables.edge_insertion_order().unwrap() {
             assert!(*i >= 0);
-            assert!(*i < tables.edges().num_rows() as tsk_id_t);
+            assert!(*i < tables.edges().num_rows());
         }
 
         for i in tables.edge_removal_order().unwrap() {
             assert!(*i >= 0);
-            assert!(*i < tables.edges().num_rows() as tsk_id_t);
+            assert!(*i < tables.edges().num_rows());
         }
 
         // The "transparent" casts are such black magic that we
@@ -1048,6 +1048,8 @@ mod test {
 
     #[test]
     fn test_add_mutation() {
+        use std::convert::TryFrom;
+
         let mut tables = TableCollection::new(1000.).unwrap();
 
         tables
@@ -1120,7 +1122,10 @@ mod test {
         for _ in tables.mutations().iter().skip(1) {
             nmuts += 1;
         }
-        assert_eq!(nmuts, tables.mutations().num_rows() - 1);
+        assert_eq!(
+            crate::SizeType::try_from(nmuts + 1).unwrap(),
+            tables.mutations().num_rows()
+        );
     }
 
     struct F {
@@ -1181,7 +1186,7 @@ mod test {
 
         let mut num_with_metadata = 0;
         let mut num_without_metadata = 0;
-        for i in 0..tables.mutations().num_rows() {
+        for i in 0..usize::from(tables.mutations().num_rows()) {
             match tables
                 .mutations()
                 .metadata::<F>((i as tsk_id_t).into())
@@ -1656,15 +1661,18 @@ mod test_adding_site {
                 Some(metadata[mi])
             );
         }
-        for i in 0..tables.sites().num_rows() as tsk_id_t {
+        for i in 0..usize::from(tables.sites().num_rows()) {
             assert!(
-                tables.sites().row(SiteId::from(i)).unwrap()
-                    == tables.sites().row(SiteId::from(i)).unwrap()
+                tables.sites().row(SiteId::from(i as tsk_id_t)).unwrap()
+                    == tables.sites().row(SiteId::from(i as tsk_id_t)).unwrap()
             );
             if i > 0 {
                 assert!(
-                    tables.sites().row(SiteId::from(i)).unwrap()
-                        != tables.sites().row(SiteId::from(i - 1)).unwrap()
+                    tables.sites().row(SiteId::from(i as tsk_id_t)).unwrap()
+                        != tables
+                            .sites()
+                            .row(SiteId::from((i - 1) as tsk_id_t))
+                            .unwrap()
                 );
             }
         }
@@ -1749,6 +1757,7 @@ mod test_adding_migrations {
     #[test]
     fn test_add_migration_with_metadata() {
         use crate::metadata::MetadataRoundtrip;
+        use std::convert::TryInto;
 
         let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 84 }];
 
@@ -1775,7 +1784,7 @@ mod test_adding_migrations {
             assert_eq!(row.node, NodeId(7 * id_i));
         }
 
-        for i in 0..tables.migrations().num_rows() as tsk_id_t {
+        for i in 0..tables.migrations().num_rows().try_into().unwrap() {
             assert!(
                 tables.migrations().row(MigrationId::from(i)).unwrap()
                     == tables.migrations().row(MigrationId::from(i)).unwrap()

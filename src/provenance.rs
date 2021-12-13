@@ -11,6 +11,7 @@
 //! See [`Provenance`] for examples.
 
 use crate::bindings as ll_bindings;
+use crate::SizeType;
 use crate::{tsk_id_t, tsk_size_t, ProvenanceId, TskitError};
 
 /// Enable provenance table access.
@@ -130,7 +131,12 @@ impl std::fmt::Display for ProvenanceTableRow {
 }
 
 fn make_provenance_table_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
-    if pos < table.num_rows() as tsk_id_t {
+    use std::convert::TryFrom;
+    // panic is okay here, as we are handling a bad
+    // input value before we first call this to
+    // set up the iterator
+    let p = crate::SizeType::try_from(pos).unwrap();
+    if p < table.num_rows() {
         Some(ProvenanceTableRow {
             id: pos.into(),
             timestamp: table.timestamp(pos).unwrap(),
@@ -186,8 +192,8 @@ impl<'a> ProvenanceTable<'a> {
     }
 
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> ll_bindings::tsk_size_t {
-        self.table_.num_rows
+    pub fn num_rows(&'a self) -> SizeType {
+        self.table_.num_rows.into()
     }
 
     /// Get the ISO-formatted time stamp for row `row`.
@@ -291,7 +297,7 @@ mod test_provenance_tables {
             assert!(row_id == ProvenanceId(i as crate::tsk_id_t));
             assert_eq!(tables.provenances().record(row_id).unwrap(), *r);
         }
-        assert_eq!(tables.provenances().num_rows() as usize, records.len());
+        assert_eq!(usize::from(tables.provenances().num_rows()), records.len());
         for (i, row) in tables.provenances_iter().enumerate() {
             assert_eq!(records[i], row.record);
         }

@@ -102,8 +102,9 @@ pub use bindings::TSK_NODE_IS_SAMPLE;
 
 // re-export types, too
 pub use bindings::tsk_flags_t;
-pub use bindings::tsk_id_t;
-pub use bindings::tsk_size_t;
+
+use bindings::tsk_id_t;
+use bindings::tsk_size_t;
 
 /// A node ID
 ///
@@ -116,7 +117,7 @@ pub use bindings::tsk_size_t;
 ///
 /// ```
 /// use tskit::NodeId;
-/// use tskit::tsk_id_t;
+/// use tskit::bindings::tsk_id_t;
 ///
 /// let x: tsk_id_t = 1;
 /// let y: NodeId = NodeId::from(x);
@@ -137,7 +138,7 @@ pub use bindings::tsk_size_t;
 ///
 /// ```
 /// use tskit::NodeId;
-/// use tskit::tsk_id_t;
+/// use tskit::bindings::tsk_id_t;
 ///
 /// fn interesting<N: Into<NodeId>>(x: N) -> NodeId {
 ///     x.into()
@@ -225,6 +226,112 @@ impl_id_traits!(SiteId);
 impl_id_traits!(MutationId);
 impl_id_traits!(MigrationId);
 impl_id_traits!(EdgeId);
+
+impl_size_type_comparisons_for_row_ids!(NodeId);
+impl_size_type_comparisons_for_row_ids!(EdgeId);
+impl_size_type_comparisons_for_row_ids!(SiteId);
+impl_size_type_comparisons_for_row_ids!(MutationId);
+impl_size_type_comparisons_for_row_ids!(PopulationId);
+impl_size_type_comparisons_for_row_ids!(MigrationId);
+
+/// Wraps `tsk_size_t`
+///
+/// This type plays the role of C's `size_t` in the `tskit` C library.
+///
+/// # Examples
+///
+/// ```
+/// let s = tskit::SizeType::from(1 as tskit::bindings::tsk_size_t);
+/// let mut t: tskit::bindings::tsk_size_t = s.into();
+/// assert!(t == s);
+/// assert!(t == 1);
+/// let u = tskit::SizeType::from(s);
+/// assert!(u == s);
+/// t += 1;
+/// assert!(t > s);
+/// assert!(s < t);
+/// ```
+///
+/// #[repr(transparent)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
+pub struct SizeType(tsk_size_t);
+
+impl std::fmt::Display for SizeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SizeType({})", self.0)
+    }
+}
+
+impl From<tsk_size_t> for SizeType {
+    fn from(value: tsk_size_t) -> Self {
+        Self(value)
+    }
+}
+
+impl From<SizeType> for tsk_size_t {
+    fn from(value: SizeType) -> Self {
+        value.0
+    }
+}
+
+impl From<SizeType> for usize {
+    fn from(value: SizeType) -> Self {
+        value.0 as usize
+    }
+}
+
+impl From<usize> for SizeType {
+    fn from(value: usize) -> Self {
+        Self(value as tsk_size_t)
+    }
+}
+
+impl std::convert::TryFrom<tsk_id_t> for SizeType {
+    type Error = crate::TskitError;
+
+    fn try_from(value: tsk_id_t) -> Result<Self, Self::Error> {
+        match value >= 0 {
+            true => Ok(Self(value as crate::bindings::tsk_size_t)),
+            false => Err(crate::TskitError::RangeError(stringify!(value.0))),
+        }
+    }
+}
+
+impl std::convert::TryFrom<SizeType> for tsk_id_t {
+    type Error = crate::TskitError;
+
+    fn try_from(value: SizeType) -> Result<Self, Self::Error> {
+        if value.0 > tsk_id_t::MAX as tsk_size_t {
+            Err(TskitError::RangeError(stringify!(value.0)))
+        } else {
+            Ok(value.0 as tsk_id_t)
+        }
+    }
+}
+
+impl PartialEq<SizeType> for tsk_size_t {
+    fn eq(&self, other: &SizeType) -> bool {
+        *self == other.0
+    }
+}
+
+impl PartialEq<tsk_size_t> for SizeType {
+    fn eq(&self, other: &tsk_size_t) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialOrd<tsk_size_t> for SizeType {
+    fn partial_cmp(&self, other: &tsk_size_t) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl PartialOrd<SizeType> for tsk_size_t {
+    fn partial_cmp(&self, other: &SizeType) -> Option<std::cmp::Ordering> {
+        self.partial_cmp(&other.0)
+    }
+}
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.

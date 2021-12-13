@@ -10,6 +10,7 @@ use crate::NodeTable;
 use crate::PopulationTable;
 use crate::SimplificationOptions;
 use crate::SiteTable;
+use crate::SizeType;
 use crate::TableAccess;
 use crate::TableOutputOptions;
 use crate::TreeFlags;
@@ -68,7 +69,7 @@ impl Tree {
             rv = unsafe {
                 ll_bindings::tsk_tree_set_tracked_samples(
                     tree.inner,
-                    ts.num_samples() as u64,
+                    ts.num_samples().into(),
                     (*tree.inner).samples,
                 )
             };
@@ -1095,8 +1096,8 @@ impl TreeSequence {
     }
 
     /// Get the number of trees.
-    pub fn num_trees(&self) -> tsk_size_t {
-        unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.inner) }
+    pub fn num_trees(&self) -> SizeType {
+        unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.inner) }.into()
     }
 
     /// Calculate the average Kendall-Colijn (`K-C`) distance between
@@ -1119,8 +1120,8 @@ impl TreeSequence {
     }
 
     // FIXME: document
-    pub fn num_samples(&self) -> tsk_size_t {
-        unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.inner) }
+    pub fn num_samples(&self) -> SizeType {
+        unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.inner) }.into()
     }
 
     /// Simplify tables and return a new tree sequence.
@@ -1147,7 +1148,7 @@ impl TreeSequence {
         let ts = tables.tree_sequence(TreeSequenceFlags::default())?;
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(self.nodes().num_rows() as usize, NodeId::NULL);
+            output_node_map.resize(usize::from(self.nodes().num_rows()), NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_treeseq_simplify(

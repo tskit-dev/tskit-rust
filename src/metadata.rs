@@ -164,6 +164,7 @@
 //!   into `Python` via the `tskit` `Python API`.
 
 use crate::bindings::{tsk_id_t, tsk_size_t};
+use crate::SizeType;
 use thiserror::Error;
 
 #[cfg(feature = "derive")]
@@ -233,8 +234,8 @@ impl EncodedMetadata {
         }
     }
 
-    pub(crate) fn len(&self) -> tsk_size_t {
-        self.encoded.len() as tsk_size_t
+    pub(crate) fn len(&self) -> SizeType {
+        self.encoded.len().into()
     }
 }
 
@@ -344,8 +345,8 @@ mod tests {
         let enc = EncodedMetadata::new(&f).unwrap();
         let p = enc.as_ptr();
         let mut d = vec![];
-        for i in 0..enc.len() {
-            d.push(unsafe { *p.add(i as usize) as u8 });
+        for i in 0..usize::from(enc.len()) {
+            d.push(unsafe { *p.add(i) as u8 });
         }
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
@@ -378,8 +379,8 @@ mod test_serde {
         let enc = EncodedMetadata::new(&f).unwrap();
         let p = enc.as_ptr();
         let mut d = vec![];
-        for i in 0..enc.len() {
-            d.push(unsafe { *p.add(i as usize) as u8 });
+        for i in 0..usize::from(enc.len()) {
+            d.push(unsafe { *p.add(i) as u8 });
         }
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
