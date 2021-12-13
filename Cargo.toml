@@ -3,7 +3,7 @@ name = "tskit"
 version = "0.6.1"
 authors = ["tskit developers <admin@tskit.dev>"]
 build = "build.rs"
-edition = "2018"
+edition = "2021"
 description = "rust interface to tskit"
 license = "MIT"
 homepage = "https://github.com/tskit-dev/tskit-rust"
@@ -24,7 +24,7 @@ humantime = {version = "2.1.0", optional = true}
 serde = {version = "1.0.118", features = ["derive"], optional = true}
 serde_json = {version = "1.0.67", optional = true}
 bincode = {version = "1.3.1", optional = true}
-tskit-derive = {version = "0.1.0", path = "tskit-derive", optional = true}
+tskit-derive = {version = "0.2.0", path = "tskit-derive", optional = true}
 
 [dev-dependencies]
 clap = "~2.34.0"

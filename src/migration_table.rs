@@ -30,7 +30,6 @@ impl PartialEq for MigrationTableRow {
 }
 
 fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
-    use std::convert::TryFrom;
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator

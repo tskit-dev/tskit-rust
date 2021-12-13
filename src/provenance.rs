@@ -131,7 +131,6 @@ impl std::fmt::Display for ProvenanceTableRow {
 }
 
 fn make_provenance_table_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
-    use std::convert::TryFrom;
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator

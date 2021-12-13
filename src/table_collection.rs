@@ -78,7 +78,7 @@ use ll_bindings::tsk_table_collection_free;
 ///         Ok(rv)
 ///     }
 ///     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
-///         use std::convert::TryInto;
+///         
 ///         let (x_int_bytes, rest) = md.split_at(std::mem::size_of::<i32>());
 ///         Ok(Self {
 ///             x: i32::from_le_bytes(x_int_bytes.try_into().unwrap()),
@@ -1048,8 +1048,6 @@ mod test {
 
     #[test]
     fn test_add_mutation() {
-        use std::convert::TryFrom;
-
         let mut tables = TableCollection::new(1000.).unwrap();
 
         tables
@@ -1141,7 +1139,6 @@ mod test {
             Ok(rv)
         }
         fn decode(md: &[u8]) -> Result<Self, MetadataError> {
-            use std::convert::TryInto;
             let (x_int_bytes, rest) = md.split_at(std::mem::size_of::<i32>());
             let (y_int_bytes, _) = rest.split_at(std::mem::size_of::<u32>());
             Ok(Self {
@@ -1757,7 +1754,6 @@ mod test_adding_migrations {
     #[test]
     fn test_add_migration_with_metadata() {
         use crate::metadata::MetadataRoundtrip;
-        use std::convert::TryInto;
 
         let metadata = vec![GenericMetadata::default(), GenericMetadata { data: 84 }];
 

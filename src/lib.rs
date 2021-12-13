@@ -286,7 +286,7 @@ impl From<usize> for SizeType {
     }
 }
 
-impl std::convert::TryFrom<tsk_id_t> for SizeType {
+impl TryFrom<tsk_id_t> for SizeType {
     type Error = crate::TskitError;
 
     fn try_from(value: tsk_id_t) -> Result<Self, Self::Error> {
@@ -297,7 +297,7 @@ impl std::convert::TryFrom<tsk_id_t> for SizeType {
     }
 }
 
-impl std::convert::TryFrom<SizeType> for tsk_id_t {
+impl TryFrom<SizeType> for tsk_id_t {
     type Error = crate::TskitError;
 
     fn try_from(value: SizeType) -> Result<Self, Self::Error> {
