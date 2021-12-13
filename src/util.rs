@@ -1,8 +1,3 @@
-pub(crate) fn f64_partial_cmp_equal(a: &f64, b: &f64) -> bool {
-    match a.partial_cmp(b) {
-        Some(std::cmp::Ordering::Equal) => true,
-        Some(std::cmp::Ordering::Less) => false,
-        Some(std::cmp::Ordering::Greater) => false,
-        None => false,
-    }
+pub(crate) fn partial_cmp_equal<T: PartialOrd>(lhs: &T, rhs: &T) -> bool {
+    matches!(lhs.partial_cmp(rhs), Some(std::cmp::Ordering::Equal))
 }

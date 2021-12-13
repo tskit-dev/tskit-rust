@@ -1,13 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::SizeType;
+use crate::Time;
 use crate::{tsk_flags_t, tsk_id_t, TskitError};
 use crate::{IndividualId, NodeId, PopulationId};
 
 /// Row of a [`NodeTable`]
 pub struct NodeTableRow {
     pub id: NodeId,
-    pub time: f64,
+    pub time: Time,
     pub flags: tsk_flags_t,
     pub population: PopulationId,
     pub individual: IndividualId,
@@ -20,7 +21,7 @@ impl PartialEq for NodeTableRow {
             && self.flags == other.flags
             && self.population == other.population
             && self.individual == other.individual
-            && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
             && self.metadata == other.metadata
     }
 }
@@ -92,8 +93,11 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time)
+    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<Time, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time) {
+            Ok(t) => Ok(t.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -112,8 +116,13 @@ impl<'a> NodeTable<'a> {
     }
 
     /// Mutable access to node times.
-    pub fn time_array_mut(&mut self) -> &mut [f64] {
-        unsafe { std::slice::from_raw_parts_mut(self.table_.time, self.table_.num_rows as usize) }
+    pub fn time_array_mut(&mut self) -> &mut [Time] {
+        unsafe {
+            std::slice::from_raw_parts_mut(
+                self.table_.time as *mut Time,
+                self.table_.num_rows as usize,
+            )
+        }
     }
 
     /// Return the ``population`` value from row ``row`` of the table.

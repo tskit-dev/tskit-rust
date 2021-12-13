@@ -228,7 +228,7 @@ fn crossover_and_record_edges_details(
             Err(e) => panic!("{}", e),
         }
     } else {
-        let exp = match Exp::new(params.xovers / tables.sequence_length()) {
+        let exp = match Exp::new(params.xovers / f64::from(tables.sequence_length())) {
             Ok(e) => e,
             Err(e) => panic!("{}", e),
         };

@@ -1,13 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::Position;
 use crate::{tsk_id_t, TskitError};
 use crate::{EdgeId, NodeId};
 
 /// Row of an [`EdgeTable`]
 pub struct EdgeTableRow {
     pub id: EdgeId,
-    pub left: f64,
-    pub right: f64,
+    pub left: Position,
+    pub right: Position,
     pub parent: NodeId,
     pub child: NodeId,
     pub metadata: Option<Vec<u8>>,
@@ -18,8 +19,8 @@ impl PartialEq for EdgeTableRow {
         self.id == other.id
             && self.parent == other.parent
             && self.child == other.child
-            && crate::util::f64_partial_cmp_equal(&self.left, &other.left)
-            && crate::util::f64_partial_cmp_equal(&self.right, &other.right)
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
             && self.metadata == other.metadata
     }
 }
@@ -112,8 +113,11 @@ impl<'a> EdgeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left)
+    pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<Position, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left) {
+            Ok(p) => Ok(p.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
@@ -122,8 +126,11 @@ impl<'a> EdgeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right)
+    pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<Position, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right) {
+            Ok(p) => Ok(p.into()),
+            Err(e) => Err(e),
+        }
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(

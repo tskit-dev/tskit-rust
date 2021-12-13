@@ -365,6 +365,140 @@ macro_rules! impl_size_type_comparisons_for_row_ids {
     };
 }
 
+macro_rules! impl_f64_newtypes {
+    ($type: ty) => {
+        impl std::fmt::Display for $type {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{}({})", stringify!($idtype), self.0)
+            }
+        }
+
+        impl PartialEq<f64> for $type {
+            fn eq(&self, other: &f64) -> bool {
+                self.0.eq(other)
+            }
+        }
+
+        impl PartialEq<$type> for f64 {
+            fn eq(&self, other: &$type) -> bool {
+                self.eq(&other.0)
+            }
+        }
+
+        impl PartialOrd<f64> for $type {
+            fn partial_cmp(&self, other: &f64) -> Option<std::cmp::Ordering> {
+                self.0.partial_cmp(other)
+            }
+        }
+
+        impl PartialOrd<$type> for f64 {
+            fn partial_cmp(&self, other: &$type) -> Option<std::cmp::Ordering> {
+                self.partial_cmp(&other.0)
+            }
+        }
+
+        impl From<f64> for $type {
+            fn from(value: f64) -> Self {
+                Self(value)
+            }
+        }
+
+        impl From<$type> for f64 {
+            fn from(value: $type) -> Self {
+                value.0
+            }
+        }
+
+        impl std::ops::Sub for $type {
+            type Output = Self;
+
+            fn sub(self, rhs: Self) -> Self::Output {
+                Self(self.0 - rhs.0)
+            }
+        }
+
+        impl std::ops::SubAssign for $type {
+            fn sub_assign(&mut self, rhs: Self) {
+                self.0 -= rhs.0
+            }
+        }
+
+        impl std::ops::Add for $type {
+            type Output = Self;
+
+            fn add(self, rhs: Self) -> Self::Output {
+                Self(self.0 + rhs.0)
+            }
+        }
+
+        impl std::ops::AddAssign for $type {
+            fn add_assign(&mut self, rhs: Self) {
+                self.0 += rhs.0
+            }
+        }
+
+        impl std::ops::Mul for $type {
+            type Output = Self;
+
+            fn mul(self, rhs: Self) -> Self::Output {
+                Self(self.0 * rhs.0)
+            }
+        }
+
+        impl std::ops::MulAssign for $type {
+            fn mul_assign(&mut self, rhs: Self) {
+                self.0.mul_assign(&rhs.0)
+            }
+        }
+
+        impl std::ops::Div for $type {
+            type Output = Self;
+
+            fn div(self, rhs: Self) -> Self::Output {
+                Self(self.0 / rhs.0)
+            }
+        }
+
+        impl std::ops::DivAssign for $type {
+            fn div_assign(&mut self, rhs: Self) {
+                self.0.div_assign(&rhs.0)
+            }
+        }
+    };
+}
+
+macro_rules! impl_time_position_arithmetic {
+    ($lhs: ty, $rhs:ty) => {
+        impl std::ops::Mul<$rhs> for $lhs {
+            type Output = $lhs;
+
+            fn mul(self, other: $rhs) -> Self {
+                Self(self.0.mul(&other.0))
+            }
+        }
+
+        impl std::ops::MulAssign<$rhs> for $lhs {
+            fn mul_assign(&mut self, other: $rhs) {
+                self.0.mul_assign(&other.0)
+            }
+        }
+
+        impl std::ops::Div<$rhs> for $lhs {
+            type Output = $lhs;
+
+            fn div(self, other: $rhs) -> Self {
+                Self(self.0.div(&other.0))
+            }
+        }
+
+        impl std::ops::DivAssign<$rhs> for $lhs {
+            fn div_assign(&mut self, other: $rhs) {
+                self.0.div_assign(&other.0)
+            }
+        }
+    };
+}
+
 /// Convenience macro to handle implementing
 /// [`crate::metadata::MetadataRoundtrip`]
 #[macro_export]

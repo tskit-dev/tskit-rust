@@ -1,6 +1,7 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::tsk_id_t;
+use crate::Position;
 use crate::SiteId;
 use crate::SizeType;
 use crate::TskitError;
@@ -8,7 +9,7 @@ use crate::TskitError;
 /// Row of a [`SiteTable`]
 pub struct SiteTableRow {
     pub id: SiteId,
-    pub position: f64,
+    pub position: Position,
     pub ancestral_state: Option<Vec<u8>>,
     pub metadata: Option<Vec<u8>>,
 }
@@ -16,7 +17,7 @@ pub struct SiteTableRow {
 impl PartialEq for SiteTableRow {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
-            && crate::util::f64_partial_cmp_equal(&self.position, &other.position)
+            && crate::util::partial_cmp_equal(&self.position, &other.position)
             && self.ancestral_state == other.ancestral_state
             && self.metadata == other.metadata
     }
@@ -88,8 +89,11 @@ impl<'a> SiteTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn position<S: Into<SiteId> + Copy>(&'a self, row: S) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.position)
+    pub fn position<S: Into<SiteId> + Copy>(&'a self, row: S) -> Result<Position, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.position) {
+            Ok(p) => Ok(p.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Get the ``ancestral_state`` value from row ``row`` of the table.

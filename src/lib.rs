@@ -333,6 +333,77 @@ impl PartialOrd<SizeType> for tsk_size_t {
     }
 }
 
+/// A newtype for the concept of time.
+/// A `Time` value can represent either a point in time
+/// or the output of arithmetic involving time.
+///
+/// Wraps [`f64`].
+///
+/// # Examples
+///
+/// ```
+/// let t0 = tskit::Time::from(2.0);
+/// let t1 = tskit::Time::from(10.0);
+///
+/// let mut sum = t0 + t1;
+///
+/// match sum.partial_cmp(&12.0) {
+///    Some(std::cmp::Ordering::Equal) => (),
+///    _ => assert!(false),
+/// };
+///
+/// sum /= tskit::Time::from(2.0);
+///
+/// match sum.partial_cmp(&6.0) {
+///    Some(std::cmp::Ordering::Equal) => (),
+///    _ => assert!(false),
+/// };
+/// ```
+///
+/// # Notes
+///
+/// The current implementation of [`PartialOrd`] is based on
+/// the underlying implementation for [`f64`].
+///
+/// A `Time` can be multiplied and divided by a [`Position`]
+///
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct Time(f64);
+
+/// A newtype for the concept of "genomic position".
+/// A `Position` can represent either a locus or a
+/// distance between loci.
+///
+/// Wraps [`f64`].
+///
+/// For examples, see [`Time`].
+///
+/// This type can be multiplied and divided by [`Time`].
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct Position(f64);
+
+/// A newtype for the concept of location.
+/// A `Location` may represent a location or the
+/// output of arithmetic involving locations.
+///
+/// Wraps [`f64`].
+///
+/// For examples, see [`Time`].
+///
+#[repr(transparent)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct Location(f64);
+
+impl_f64_newtypes!(Time);
+impl_f64_newtypes!(Position);
+impl_f64_newtypes!(Location);
+
+// It is natural to be able to * and / times and positions
+impl_time_position_arithmetic!(Time, Position);
+impl_time_position_arithmetic!(Position, Time);
+
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
 // See bindgen issue 316.

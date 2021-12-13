@@ -1,18 +1,20 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::Position;
 use crate::SizeType;
+use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{MigrationId, NodeId, PopulationId};
 
 /// Row of a [`MigrationTable`]
 pub struct MigrationTableRow {
     pub id: MigrationId,
-    pub left: f64,
-    pub right: f64,
+    pub left: Position,
+    pub right: Position,
     pub node: NodeId,
     pub source: PopulationId,
     pub dest: PopulationId,
-    pub time: f64,
+    pub time: Time,
     pub metadata: Option<Vec<u8>>,
 }
 
@@ -22,9 +24,9 @@ impl PartialEq for MigrationTableRow {
             && self.node == other.node
             && self.source == other.source
             && self.dest == other.dest
-            && crate::util::f64_partial_cmp_equal(&self.left, &other.left)
-            && crate::util::f64_partial_cmp_equal(&self.right, &other.right)
-            && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
             && self.metadata == other.metadata
     }
 }
@@ -99,8 +101,11 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn left<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left)
+    pub fn left<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<Position, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left) {
+            Ok(p) => Ok(p.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Return the right coordinate for a given row.
@@ -108,8 +113,11 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn right<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right)
+    pub fn right<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<Position, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right) {
+            Ok(p) => Ok(p.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Return the node for a given row.
@@ -159,8 +167,11 @@ impl<'a> MigrationTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn time<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time)
+    pub fn time<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Result<Time, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time) {
+            Ok(t) => Ok(t.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Return the metadata for a given row.
