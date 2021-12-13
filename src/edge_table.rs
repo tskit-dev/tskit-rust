@@ -25,7 +25,6 @@ impl PartialEq for EdgeTableRow {
 }
 
 fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
-    use std::convert::TryFrom;
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator

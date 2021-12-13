@@ -23,7 +23,6 @@ impl PartialEq for SiteTableRow {
 }
 
 fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
-    use std::convert::TryFrom;
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator

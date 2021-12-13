@@ -49,7 +49,6 @@ pub struct IndividualTable<'a> {
 }
 
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
-    use std::convert::TryFrom;
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator

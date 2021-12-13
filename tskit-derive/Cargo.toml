@@ -1,7 +1,7 @@
 [package]
 name = "tskit-derive"
-version = "0.1.0"
-edition = "2018"
+version = "0.2.0"
+edition = "2021"
 authors = ["tskit developers <admin@tskit.dev>"]
 description = "procedural macros for tskit-rust"
 license = "MIT"

@@ -19,7 +19,6 @@ impl PartialEq for PopulationTableRow {
 }
 
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
-    use std::convert::TryFrom;
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator

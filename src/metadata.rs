@@ -313,7 +313,6 @@ mod tests {
             Ok(rv)
         }
         fn decode(md: &[u8]) -> Result<Self, MetadataError> {
-            use std::convert::TryInto;
             let (x_int_bytes, rest) = md.split_at(std::mem::size_of::<i32>());
             let (y_int_bytes, _) = rest.split_at(std::mem::size_of::<u32>());
             Ok(Self {

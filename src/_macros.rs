@@ -46,7 +46,6 @@ macro_rules! unsafe_tsk_column_access {
 
 macro_rules! unsafe_tsk_ragged_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
-        use std::convert::TryFrom;
         let i = crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
@@ -72,7 +71,6 @@ macro_rules! unsafe_tsk_ragged_column_access {
     }};
 
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr, $output_id_type: expr) => {{
-        use std::convert::TryFrom;
         let i = crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
@@ -103,7 +101,6 @@ macro_rules! unsafe_tsk_ragged_column_access {
 #[allow(unused_macros)]
 macro_rules! unsafe_tsk_ragged_char_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
-        use std::convert::TryFrom;
         let i = crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
@@ -305,7 +302,7 @@ macro_rules! impl_id_traits {
             }
         }
 
-        impl std::convert::TryFrom<$idtype> for crate::SizeType {
+        impl TryFrom<$idtype> for crate::SizeType {
             type Error = crate::TskitError;
 
             fn try_from(value: $idtype) -> Result<Self, Self::Error> {
