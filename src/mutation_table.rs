@@ -1,6 +1,7 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::SizeType;
+use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{MutationId, NodeId, SiteId};
 
@@ -10,7 +11,7 @@ pub struct MutationTableRow {
     pub site: SiteId,
     pub node: NodeId,
     pub parent: MutationId,
-    pub time: f64,
+    pub time: Time,
     pub derived_state: Option<Vec<u8>>,
     pub metadata: Option<Vec<u8>>,
 }
@@ -21,7 +22,7 @@ impl PartialEq for MutationTableRow {
             && self.site == other.site
             && self.node == other.node
             && self.parent == other.parent
-            && crate::util::f64_partial_cmp_equal(&self.time, &other.time)
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
             && self.derived_state == other.derived_state
             && self.metadata == other.metadata
     }
@@ -132,8 +133,11 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<f64, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time)
+    pub fn time<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<Time, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time) {
+            Ok(t) => Ok(t.into()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.

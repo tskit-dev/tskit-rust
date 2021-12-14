@@ -8,11 +8,13 @@ use crate::MutationTable;
 use crate::NodeId;
 use crate::NodeTable;
 use crate::PopulationTable;
+use crate::Position;
 use crate::SimplificationOptions;
 use crate::SiteTable;
 use crate::SizeType;
 use crate::TableAccess;
 use crate::TableOutputOptions;
+use crate::Time;
 use crate::TreeFlags;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
@@ -342,13 +344,18 @@ impl Tree {
     }
 
     /// Return the `[left, right)` coordinates of the tree.
-    pub fn interval(&self) -> (f64, f64) {
-        unsafe { ((*self.inner).interval.left, (*self.inner).interval.right) }
+    pub fn interval(&self) -> (Position, Position) {
+        unsafe {
+            (
+                (*self.inner).interval.left.into(),
+                (*self.inner).interval.right.into(),
+            )
+        }
     }
 
     /// Return the length of the genome for which this
     /// tree is the ancestry.
-    pub fn span(&self) -> f64 {
+    pub fn span(&self) -> Position {
         let i = self.interval();
         i.1 - i.0
     }
@@ -521,9 +528,9 @@ impl Tree {
     /// # Errors
     ///
     /// [`TskitError`] may be returned if a node index is out of range.
-    pub fn total_branch_length(&self, by_span: bool) -> Result<f64, TskitError> {
+    pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
         let nt = self.node_table();
-        let mut b = 0.;
+        let mut b = Time::from(0.);
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self.parent(n)?;
             if p != NodeId::NULL {

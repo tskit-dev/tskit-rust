@@ -1,13 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::IndividualId;
+use crate::Location;
 use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of a [`IndividualTable`]
 pub struct IndividualTableRow {
     pub id: IndividualId,
     pub flags: tsk_flags_t,
-    pub location: Option<Vec<f64>>,
+    pub location: Option<Vec<Location>>,
     pub parents: Option<Vec<IndividualId>>,
     pub metadata: Option<Vec<u8>>,
 }
@@ -27,7 +28,7 @@ impl PartialEq for IndividualTableRow {
                             false
                         } else {
                             for (i, j) in a.iter().enumerate() {
-                                if !crate::util::f64_partial_cmp_equal(j, &b[i]) {
+                                if !crate::util::partial_cmp_equal(&b[i], j) {
                                     return false;
                                 }
                             }
@@ -121,14 +122,15 @@ impl<'a> IndividualTable<'a> {
     pub fn location<I: Into<IndividualId> + Copy>(
         &self,
         row: I,
-    ) -> Result<Option<Vec<f64>>, TskitError> {
+    ) -> Result<Option<Vec<Location>>, TskitError> {
         unsafe_tsk_ragged_column_access!(
             row.into().0,
             0,
             self.num_rows(),
             self.table_.location,
             self.table_.location_offset,
-            self.table_.location_length
+            self.table_.location_length,
+            Location
         )
     }
 

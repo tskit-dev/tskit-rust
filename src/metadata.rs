@@ -88,7 +88,7 @@
 //! let individual = IndividualMetadata {
 //!     genetic_value: GeneticValue(0.0),
 //! };
-//! let id = tables.add_individual_with_metadata(0, &[], &[tskit::IndividualId::NULL], &individual).unwrap();
+//! let id = tables.add_individual_with_metadata(0, &[] as &[tskit::Location], &[tskit::IndividualId::NULL], &individual).unwrap();
 //! let decoded = tables.individuals().metadata::<IndividualMetadata>(id).unwrap().unwrap();
 //! assert_eq!(decoded.genetic_value.partial_cmp(&individual.genetic_value).unwrap(), std::cmp::Ordering::Equal);
 //! # }
