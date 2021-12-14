@@ -46,13 +46,13 @@
 //! * `provenance`
 //!     * Enables [`provenance`]
 //! * `derive` enables the following derive macros:
-//!     * [`MutationMetadata`]
-//!     * [`IndividualMetadata`]
-//!     * [`SiteMetadata`]
-//!     * [`EdgeMetadata`]
-//!     * [`NodeMetadata`]
-//!     * [`MigrationMetadata`]
-//!     * [`PopulationMetadata`]
+//!     * [`crate::metadata::MutationMetadata`]
+//!     * [`crate::metadata::IndividualMetadata`]
+//!     * [`crate::metadata::SiteMetadata`]
+//!     * [`crate::metadata::EdgeMetadata`]
+//!     * [`crate::metadata::NodeMetadata`]
+//!     * [`crate::metadata::MigrationMetadata`]
+//!     * [`crate::metadata::PopulationMetadata`]
 //!
 //!     To see these derive macros in action, take a look
 //!     [`here`](metadata).
