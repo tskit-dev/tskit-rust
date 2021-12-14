@@ -552,9 +552,9 @@ impl Tree {
     /// # Errors
     ///
     /// * [`TskitError`] if [`TreeFlags::NO_SAMPLE_COUNTS`].
-    pub fn num_tracked_samples(&self, u: NodeId) -> Result<u64, TskitError> {
-        let mut n = u64::MAX;
-        let np: *mut u64 = &mut n;
+    pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
+        let mut n = SizeType(tsk_size_t::MAX);
+        let np: *mut tsk_size_t = &mut n.0;
         let code = unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.0, np) };
         handle_tsk_return_value!(code, n)
     }
@@ -1365,7 +1365,7 @@ pub(crate) mod test_trees {
             assert_eq!(s.len(), 2);
             assert_eq!(
                 s.len(),
-                tree.num_tracked_samples(0.into()).unwrap() as usize
+                usize::from(tree.num_tracked_samples(0.into()).unwrap())
             );
             assert_eq!(s[0], 1);
             assert_eq!(s[1], 2);
@@ -1379,7 +1379,7 @@ pub(crate) mod test_trees {
                 assert_eq!(s[0], u);
                 assert_eq!(
                     s.len(),
-                    tree.num_tracked_samples(u.into()).unwrap() as usize
+                    usize::from(tree.num_tracked_samples(u.into()).unwrap())
                 );
             }
         } else {
