@@ -23,9 +23,10 @@ mod tests {
     use crate::bindings as ll_bindings;
     use crate::TskitTypeAccess;
     use ll_bindings::tsk_table_collection_free;
+    use mbox::MBox;
 
     pub struct TableCollectionMock {
-        inner: *mut ll_bindings::tsk_table_collection_t,
+        inner: MBox<ll_bindings::tsk_table_collection_t>,
     }
 
     build_tskit_type!(
@@ -41,15 +42,13 @@ mod tests {
             let rv = unsafe { ll_bindings::tsk_table_collection_init(s.as_mut_ptr(), 0) };
             assert_eq!(rv, 0);
 
-            unsafe {
-                (*s.inner).sequence_length = len;
-            }
+            (*s.inner).sequence_length = len;
 
             s
         }
 
         fn sequence_length(&self) -> f64 {
-            unsafe { (*self.inner).sequence_length }
+            (*self.inner).sequence_length
         }
     }
 

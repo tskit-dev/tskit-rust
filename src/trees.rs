@@ -21,12 +21,13 @@ use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t, TableCollection};
 use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
+use mbox::MBox;
 
 /// A Tree.
 ///
 /// Wrapper around `tsk_tree_t`.
 pub struct Tree {
-    pub(crate) inner: *mut ll_bindings::tsk_tree_t,
+    pub(crate) inner: MBox<ll_bindings::tsk_tree_t>,
     current_tree: i32,
     advanced: bool,
     num_nodes: tsk_size_t,
@@ -51,8 +52,9 @@ impl Tree {
         if temp.is_null() {
             panic!("out of memory");
         }
+        let mbox = unsafe { MBox::from_raw(temp as *mut ll_bindings::tsk_tree_t) };
         Self {
-            inner: temp,
+            inner: mbox,
             current_tree: 0,
             advanced: false,
             num_nodes,
@@ -61,8 +63,9 @@ impl Tree {
     }
 
     fn new(ts: &TreeSequence, flags: TreeFlags) -> Result<Self, TskitError> {
-        let tree = Self::wrap(unsafe { (*(*ts.inner).tables).nodes.num_rows }, flags);
-        let mut rv = unsafe { ll_bindings::tsk_tree_init(tree.inner, ts.inner, flags.bits()) };
+        let mut tree = Self::wrap(unsafe { (*(*ts.as_ptr()).tables).nodes.num_rows }, flags);
+        let mut rv =
+            unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), ts.as_ptr(), flags.bits()) };
         if rv < 0 {
             return Err(TskitError::ErrorCode { code: rv });
         }
@@ -70,9 +73,9 @@ impl Tree {
         if !flags.contains(TreeFlags::NO_SAMPLE_COUNTS) {
             rv = unsafe {
                 ll_bindings::tsk_tree_set_tracked_samples(
-                    tree.inner,
+                    tree.as_mut_ptr(),
                     ts.num_samples().into(),
-                    (*tree.inner).samples,
+                    (*tree.as_ptr()).samples,
                 )
             };
         }
@@ -345,12 +348,10 @@ impl Tree {
 
     /// Return the `[left, right)` coordinates of the tree.
     pub fn interval(&self) -> (Position, Position) {
-        unsafe {
-            (
-                (*self.inner).interval.left.into(),
-                (*self.inner).interval.right.into(),
-            )
-        }
+        (
+            (*self.inner).interval.left.into(),
+            (*self.inner).interval.right.into(),
+        )
     }
 
     /// Return the length of the genome for which this
@@ -552,7 +553,7 @@ impl Tree {
     pub fn num_tracked_samples(&self, u: NodeId) -> Result<u64, TskitError> {
         let mut n = u64::MAX;
         let np: *mut u64 = &mut n;
-        let code = unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.inner, u.0, np) };
+        let code = unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.0, np) };
         handle_tsk_return_value!(code, n)
     }
 
@@ -571,8 +572,9 @@ impl Tree {
     pub fn kc_distance(&self, other: &Tree, lambda: f64) -> Result<f64, TskitError> {
         let mut kc = f64::NAN;
         let kcp: *mut f64 = &mut kc;
-        let code =
-            unsafe { ll_bindings::tsk_tree_kc_distance(self.inner, other.inner, lambda, kcp) };
+        let code = unsafe {
+            ll_bindings::tsk_tree_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp)
+        };
         handle_tsk_return_value!(code, kc)
     }
 }
@@ -581,9 +583,9 @@ impl streaming_iterator::StreamingIterator for Tree {
     type Item = Tree;
     fn advance(&mut self) {
         let rv = if self.current_tree == 0 {
-            unsafe { ll_bindings::tsk_tree_first(self.inner) }
+            unsafe { ll_bindings::tsk_tree_first(self.as_mut_ptr()) }
         } else {
-            unsafe { ll_bindings::tsk_tree_next(self.inner) }
+            unsafe { ll_bindings::tsk_tree_next(self.as_mut_ptr()) }
         };
         if rv == 0 {
             self.advanced = false;
@@ -607,9 +609,9 @@ impl streaming_iterator::StreamingIterator for Tree {
 impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
     fn advance_back(&mut self) {
         let rv = if self.current_tree == 0 {
-            unsafe { ll_bindings::tsk_tree_last(self.inner) }
+            unsafe { ll_bindings::tsk_tree_last(self.as_mut_ptr()) }
         } else {
-            unsafe { ll_bindings::tsk_tree_prev(self.inner) }
+            unsafe { ll_bindings::tsk_tree_prev(self.as_mut_ptr()) }
         };
         if rv == 0 {
             self.advanced = false;
@@ -708,12 +710,12 @@ impl<'a> PostorderNodeIterator<'a> {
         let mut nodes = vec![
                 NodeId::NULL;
                 // NOTE: this fn does not return error codes
-                unsafe { ll_bindings::tsk_tree_get_size_bound(tree.inner) } as usize
+                unsafe { ll_bindings::tsk_tree_get_size_bound(tree.as_ptr()) } as usize
             ];
 
         let rv = unsafe {
             ll_bindings::tsk_tree_postorder(
-                tree.inner,
+                tree.as_ptr(),
                 NodeId::NULL.into(), // start from virtual root
                 nodes.as_mut_ptr() as *mut tsk_id_t,
                 ptr as *mut tsk_size_t,
@@ -761,7 +763,7 @@ impl<'a> RootIterator<'a> {
     fn new(tree: &'a Tree) -> Self {
         RootIterator {
             current_root: None,
-            next_root: unsafe { ll_bindings::tsk_tree_get_left_root(tree.inner).into() },
+            next_root: unsafe { ll_bindings::tsk_tree_get_left_root(tree.as_ptr()).into() },
             tree,
         }
     }
@@ -942,7 +944,7 @@ iterator_for_nodeiterator!(SamplesIterator<'_>);
 /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
 /// ```
 pub struct TreeSequence {
-    pub(crate) inner: *mut ll_bindings::tsk_treeseq_t,
+    pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
 }
 
 build_tskit_type!(TreeSequence, ll_bindings::tsk_treeseq_t, tsk_treeseq_free);
@@ -985,9 +987,11 @@ impl TreeSequence {
     /// tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
     pub fn new(tables: TableCollection, flags: TreeSequenceFlags) -> Result<Self, TskitError> {
-        let t = tables;
-        let treeseq = Self::wrap();
-        let rv = unsafe { ll_bindings::tsk_treeseq_init(treeseq.inner, t.inner, flags.bits()) };
+        let mut t = tables;
+        let mut treeseq = Self::wrap();
+        let rv = unsafe {
+            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), t.as_mut_ptr(), flags.bits())
+        };
         handle_tsk_return_value!(rv, treeseq)
     }
 
@@ -1001,13 +1005,8 @@ impl TreeSequence {
     ///
     pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
-        let rv = unsafe {
-            ll_bindings::tsk_treeseq_dump(
-                self.inner as *mut ll_bindings::tsk_treeseq_t,
-                c_str.as_ptr(),
-                options.bits(),
-            )
-        };
+        let rv =
+            unsafe { ll_bindings::tsk_treeseq_dump(self.as_ptr(), c_str.as_ptr(), options.bits()) };
 
         handle_tsk_return_value!(rv)
     }
@@ -1026,10 +1025,11 @@ impl TreeSequence {
     ///
     /// [`TskitError`] will be raised if the underlying C library returns an error code.
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
-        let copy = TableCollection::new(1.)?;
+        let mut copy = TableCollection::new(1.)?;
 
-        let rv =
-            unsafe { ll_bindings::tsk_table_collection_copy((*self.inner).tables, copy.inner, 0) };
+        let rv = unsafe {
+            ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, copy.as_mut_ptr(), 0)
+        };
 
         handle_tsk_return_value!(rv, copy)
     }
@@ -1086,11 +1086,11 @@ impl TreeSequence {
         note = "Please use TreeSequence::sample_nodes instead"
     )]
     pub fn samples_to_vec(&self) -> Vec<NodeId> {
-        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.inner) };
+        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         let mut rv = vec![];
 
         for i in 0..num_samples {
-            let u = NodeId::from(unsafe { *(*self.inner).samples.offset(i as isize) });
+            let u = NodeId::from(unsafe { *(*self.as_ptr()).samples.offset(i as isize) });
             rv.push(u);
         }
         rv
@@ -1098,13 +1098,13 @@ impl TreeSequence {
 
     /// Get the list of sample nodes as a slice.
     pub fn sample_nodes(&self) -> &[NodeId] {
-        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.inner) };
+        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
         tree_array_slice!(self, samples, num_samples)
     }
 
     /// Get the number of trees.
     pub fn num_trees(&self) -> SizeType {
-        unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.inner) }.into()
+        unsafe { ll_bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }.into()
     }
 
     /// Calculate the average Kendall-Colijn (`K-C`) distance between
@@ -1121,14 +1121,15 @@ impl TreeSequence {
     pub fn kc_distance(&self, other: &TreeSequence, lambda: f64) -> Result<f64, TskitError> {
         let mut kc: f64 = f64::NAN;
         let kcp: *mut f64 = &mut kc;
-        let code =
-            unsafe { ll_bindings::tsk_treeseq_kc_distance(self.inner, other.inner, lambda, kcp) };
+        let code = unsafe {
+            ll_bindings::tsk_treeseq_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp)
+        };
         handle_tsk_return_value!(code, kc)
     }
 
     // FIXME: document
     pub fn num_samples(&self) -> SizeType {
-        unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.inner) }.into()
+        unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) }.into()
     }
 
     /// Simplify tables and return a new tree sequence.
@@ -1152,19 +1153,19 @@ impl TreeSequence {
     ) -> Result<(Self, Option<Vec<NodeId>>), TskitError> {
         let mut tables = TableCollection::new(unsafe { (*(*self.inner).tables).sequence_length })?;
         tables.build_index().unwrap();
-        let ts = tables.tree_sequence(TreeSequenceFlags::default())?;
+        let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
             output_node_map.resize(usize::from(self.nodes().num_rows()), NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_treeseq_simplify(
-                self.inner,
+                self.as_ptr(),
                 // NOTE: casting away const-ness:
                 samples.as_ptr() as *mut tsk_id_t,
                 samples.len() as tsk_size_t,
                 options.bits(),
-                ts.inner,
+                ts.as_mut_ptr(),
                 match idmap {
                     true => output_node_map.as_mut_ptr() as *mut tsk_id_t,
                     false => std::ptr::null_mut(),
