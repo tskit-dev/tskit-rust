@@ -132,10 +132,6 @@ macro_rules! drop_for_tskit_type {
             fn drop(&mut self) {
                 let rv = unsafe { $drop(&mut *self.inner) };
                 panic_on_tskit_error!(rv);
-                unsafe {
-                    libc::free(self.inner as *mut libc::c_void);
-                }
-                self.inner = std::ptr::null_mut();
             }
         }
     };
@@ -145,11 +141,11 @@ macro_rules! tskit_type_access {
     ($name: ident, $ll_name: ty) => {
         impl $crate::TskitTypeAccess<$ll_name> for $name {
             fn as_ptr(&self) -> *const $ll_name {
-                self.inner
+                &*self.inner
             }
 
             fn as_mut_ptr(&mut self) -> *mut $ll_name {
-                self.inner
+                &mut *self.inner
             }
         }
     };
@@ -159,12 +155,15 @@ macro_rules! build_tskit_type {
     ($name: ident, $ll_name: ty, $drop: ident) => {
         impl $crate::ffi::WrapTskitType<$ll_name> for $name {
             fn wrap() -> Self {
+                use mbox::MBox;
                 let temp =
                     unsafe { libc::malloc(std::mem::size_of::<$ll_name>()) as *mut $ll_name };
-                if temp.is_null() {
-                    panic!("out of memory");
-                }
-                $name { inner: temp }
+                let nonnull = match std::ptr::NonNull::<$ll_name>::new(temp) {
+                    Some(x) => x,
+                    None => panic!("out of memory"),
+                };
+                let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
+                $name { inner: mbox }
             }
         }
         drop_for_tskit_type!($name, $drop);
