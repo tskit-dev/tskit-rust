@@ -769,6 +769,67 @@ impl TableCollection {
         };
         handle_tsk_return_value!(rv)
     }
+
+    #[cfg(feature = "provenance")]
+    /// Add provenance record with a time stamp.
+    ///
+    /// All implementation of this trait provided by `tskit` use
+    /// an `ISO 8601` format time stamp
+    /// written using the [RFC 3339](https://tools.ietf.org/html/rfc3339)
+    /// specification.
+    /// This formatting approach has been the most straightforward method
+    /// for supporting round trips to/from a [`crate::provenance::ProvenanceTable`].
+    /// The implementations used here use the [`humantime`](https://docs.rs/humantime/latest/humantime/) crate.
+    ///
+    /// # Parameters
+    ///
+    /// * `record`: the provenance record
+    ///
+    /// # Examples
+    /// ```
+    /// use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// tables.add_provenance(&String::from("Some provenance")).unwrap();
+    ///
+    /// // Get reference to the table
+    /// let prov_ref = tables.provenances();
+    ///
+    /// // Get the first row
+    /// let row_0 = prov_ref.row(0).unwrap();
+    ///
+    /// assert_eq!(row_0.record, "Some provenance");
+    ///
+    /// // Get the first record
+    /// let record_0 = prov_ref.record(0).unwrap();
+    /// assert_eq!(record_0, row_0.record);
+    ///
+    /// // Get the first time stamp
+    /// let timestamp = prov_ref.timestamp(0).unwrap();
+    /// assert_eq!(timestamp, row_0.timestamp);
+    ///
+    /// // You can get the `humantime::Timestamp` object back from the `String`:
+    /// use core::str::FromStr;
+    /// let timestamp_string = humantime::Timestamp::from_str(&timestamp).unwrap();
+    ///
+    /// // Provenance transfers to the tree sequences
+    /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// assert_eq!(treeseq.provenances().record(0).unwrap(), "Some provenance");
+    /// // We can still compare to row_0 because it is a copy of the row data:
+    /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
+    /// ```
+    pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
+        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
+        let rv = unsafe {
+            ll_bindings::tsk_provenance_table_add_row(
+                &mut (*self.inner).provenances,
+                timestamp.as_ptr() as *mut i8,
+                timestamp.len() as tsk_size_t,
+                record.as_ptr() as *mut i8,
+                record.len() as tsk_size_t,
+            )
+        };
+        handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
+    }
 }
 
 impl TableAccess for TableCollection {
@@ -799,30 +860,14 @@ impl TableAccess for TableCollection {
     fn populations(&self) -> PopulationTable {
         PopulationTable::new_from_table(&(*self.inner).populations)
     }
-}
 
-impl crate::traits::NodeListGenerator for TableCollection {}
-
-#[cfg(any(doc, feature = "provenance"))]
-impl crate::provenance::Provenance for TableCollection {
-    fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
-        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
-        let rv = unsafe {
-            ll_bindings::tsk_provenance_table_add_row(
-                &mut (*self.inner).provenances,
-                timestamp.as_ptr() as *mut i8,
-                timestamp.len() as tsk_size_t,
-                record.as_ptr() as *mut i8,
-                record.len() as tsk_size_t,
-            )
-        };
-        handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
-    }
-
+    #[cfg(feature = "provenance")]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
         crate::provenance::ProvenanceTable::new_from_table(&(*self.inner).provenances)
     }
 }
+
+impl crate::traits::NodeListGenerator for TableCollection {}
 
 #[cfg(test)]
 mod test {

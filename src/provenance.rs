@@ -3,105 +3,20 @@
 //! This module is enabled via the `"provenance"` feature and provides
 //! the following:
 //!
-//! * trait [`Provenance`], which enables populating and accessing
-//!   [`ProvenanceTable`].
+//! * [`crate::TableCollection::add_provenance`]
+//! * [`crate::TableCollection::provenances`]
+//! * [`crate::TableCollection::provenances_iter`]
+//! * [`crate::TreeSequence::add_provenance`]
+//! * [`crate::TreeSequence::provenances`]
+//! * [`crate::TreeSequence::provenances_iter`]
+//! * [`ProvenanceTable`].
 //! * [`ProvenanceTableRow`], which is the value type returned by
 //!   [`ProvenanceTable::iter`].
 //!
-//! See [`Provenance`] for examples.
 
 use crate::bindings as ll_bindings;
 use crate::SizeType;
 use crate::{tsk_id_t, tsk_size_t, ProvenanceId, TskitError};
-
-/// Enable provenance table access.
-///
-/// `tskit` provides implementations of this trait
-/// for [`crate::TableCollection`] and [`crate::TreeSequence`].
-#[cfg_attr(
-    feature = "provenance",
-    doc = r##"
-# Examples
-
-## For table collections
-
-```
-use tskit::provenance::Provenance;
-let mut tables = tskit::TableCollection::new(1000.).unwrap();
-tables.add_provenance(&String::from("Some provenance")).unwrap();
-
-// Get reference to the table
-let prov_ref = tables.provenances();
-
-// Get the first row
-let row_0 = prov_ref.row(0).unwrap();
-
-assert_eq!(row_0.record, "Some provenance");
-
-// Get the first record
-let record_0 = prov_ref.record(0).unwrap();
-assert_eq!(record_0, row_0.record);
-
-// Get the first time stamp
-let timestamp = prov_ref.timestamp(0).unwrap();
-assert_eq!(timestamp, row_0.timestamp);
-
-// You can get the `humantime::Timestamp` object back from the `String`:
-use core::str::FromStr;
-let timestamp_string = humantime::Timestamp::from_str(&timestamp).unwrap();
-
-// Provenance transfers to the tree sequences
-let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
-assert_eq!(treeseq.provenances().record(0).unwrap(), "Some provenance");
-// We can still compare to row_0 because it is a copy of the row data:
-assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
-```
-
-## For tree sequences
-
-```
-use tskit::provenance::Provenance;
-let mut tables = tskit::TableCollection::new(1000.).unwrap();
-let mut treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
-treeseq.add_provenance(&String::from("All your provenance r belong 2 us.")).unwrap();
-
-let prov_ref = treeseq.provenances();
-let row_0 = prov_ref.row(0).unwrap();
-assert_eq!(row_0.record, "All your provenance r belong 2 us.");
-let record_0 = prov_ref.record(0).unwrap();
-assert_eq!(record_0, row_0.record);
-let timestamp = prov_ref.timestamp(0).unwrap();
-assert_eq!(timestamp, row_0.timestamp);
-use core::str::FromStr;
-let dt_utc = humantime::Timestamp::from_str(&timestamp).unwrap();
-println!("utc = {}", dt_utc);
-```
-
-"##
-)]
-pub trait Provenance: crate::TableAccess {
-    /// Add provenance record with a time stamp.
-    ///
-    /// All implementation of this trait provided by `tskit` use
-    /// an `ISO 8601` format time stamp
-    /// written using the [RFC 3339](https://tools.ietf.org/html/rfc3339)
-    /// specification.
-    /// This formatting approach has been the most straightforward method
-    /// for supporting round trips to/from a [`ProvenanceTable`].
-    /// The implementations used here use the [`chrono`](https://docs.rs/chrono) crate.
-    ///
-    /// # Parameters
-    ///
-    /// * `record`: the provenance record
-    fn add_provenance(&mut self, record: &str) -> Result<ProvenanceId, TskitError>;
-    /// Return an immutable reference to the table, type [`ProvenanceTable`]
-    fn provenances(&self) -> ProvenanceTable;
-    /// Return an iterator over the rows of the [`ProvenanceTable`].
-    /// See [`ProvenanceTable::iter`] for details.
-    fn provenances_iter(&self) -> ProvenanceTableIterator {
-        crate::table_iterator::make_table_iterator::<ProvenanceTable>(self.provenances())
-    }
-}
 
 #[derive(Eq)]
 /// Row of a [`ProvenanceTable`].
@@ -130,7 +45,7 @@ impl std::fmt::Display for ProvenanceTableRow {
     }
 }
 
-fn make_provenance_table_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
+fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
     // panic is okay here, as we are handling a bad
     // input value before we first call this to
     // set up the iterator
@@ -153,7 +68,7 @@ impl<'a> Iterator for ProvenanceTableRefIterator<'a> {
     type Item = ProvenanceTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_provenance_table_row(self.table, self.pos);
+        let rv = make_provenance_row(self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -163,7 +78,7 @@ impl<'a> Iterator for ProvenanceTableIterator<'a> {
     type Item = ProvenanceTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_provenance_table_row(&self.table, self.pos);
+        let rv = make_provenance_row(&self.table, self.pos);
         self.pos += 1;
         rv
     }
@@ -172,7 +87,8 @@ impl<'a> Iterator for ProvenanceTableIterator<'a> {
 /// An immutable view of a provenance table.
 ///
 /// These are not created directly.
-/// Instead, use [`Provenance::provenances`]
+/// Instead, use [`crate::TableCollection::provenances`]
+/// or [`crate::TreeSequence::provenances`]
 /// to get a reference to an existing node table;
 ///
 /// # Notes
@@ -250,7 +166,7 @@ impl<'a> ProvenanceTable<'a> {
         if row.into() < 0 {
             Err(TskitError::IndexError)
         } else {
-            match make_provenance_table_row(self, row.into().0) {
+            match make_provenance_row(self, row.into().0) {
                 Some(x) => Ok(x),
                 None => Err(TskitError::IndexError),
             }
@@ -265,10 +181,10 @@ impl<'a> ProvenanceTable<'a> {
 }
 
 #[cfg(test)]
-mod test_provenance_tables {
+mod test_provenances {
     use super::*;
     use crate::test_fixtures::make_empty_table_collection;
-    use Provenance;
+    use crate::TableAccess;
 
     #[test]
     fn test_empty_record_string() {
