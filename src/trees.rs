@@ -1422,7 +1422,23 @@ pub(crate) mod test_trees {
         let treeseq = treeseq_from_small_table_collection_two_trees();
         assert_eq!(treeseq.num_trees(), 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::SAMPLE_LISTS).unwrap();
+        let expected_number_of_roots = vec![2, 1];
+        let mut expected_root_ids = vec![
+            vec![NodeId::from(0)],
+            vec![NodeId::from(1), NodeId::from(0)],
+        ];
         while let Some(tree) = tree_iter.next() {
+            let mut num_roots = 0;
+            let eroot_ids = expected_root_ids.pop().unwrap();
+            for (i, r) in tree.roots().enumerate() {
+                num_roots += 1;
+                assert_eq!(r, eroot_ids[i]);
+            }
+            assert_eq!(
+                expected_number_of_roots[(tree.current_tree - 1) as usize],
+                num_roots
+            );
+            assert_eq!(tree.roots().count(), eroot_ids.len());
             let mut preoder_nodes = vec![];
             let mut postoder_nodes = vec![];
             for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
