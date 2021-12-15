@@ -1,5 +1,41 @@
 # Change log
 
+## 2021-12-15, Version 0.7.0-alpha.0
+
+Breaking changes:
+
+* Update to tskit C API 0.99.15.
+* Add newtypes for Time, Position, and Location.
+* Add newtype SizeType, which wraps tsk_size_t.
+* tsk_id_t and tsk_size_t removed from library prelude.
+* The Provenance trait is removed and all "provenance stuff"
+  is now a first-class table API supported by the TableAccess trait.
+
+New features:
+
+* Update to tskit C API 0.99.15.
+* tskit C structs are now managed by MBox.
+* Support for virtual tree roots.
+* Add postorder node iterator for Tree
+
+### Commits
+- [[`272d0736e2`](https://github.com/tskit-dev/tskit-rust/commit/272d0736e2ace79d6c4bb880977396e748b7a6a0)] bump package version to 0.7.0-alpha.0 (molpopgen)
+- [[`b5946a4cc4`](https://github.com/tskit-dev/tskit-rust/commit/b5946a4cc4aec32cbdda6081a1bd188568178436)] Redesign provenance feature: (#207) (Kevin R. Thornton)
+- [[`5699aab37f`](https://github.com/tskit-dev/tskit-rust/commit/5699aab37f31b25b0fdbcdb48a5f87774b624bb7)] Change return time of Tree::num_tracked_samples. (#206) (Kevin R. Thornton)
+- [[`2391c9e587`](https://github.com/tskit-dev/tskit-rust/commit/2391c9e587a52638d63137017dbbd241cb5d8d8f)] Add support for virtual roots (#205) (Kevin R. Thornton)
+- [[`4cf3496d82`](https://github.com/tskit-dev/tskit-rust/commit/4cf3496d8237c8115cd36b896a8b3e9096644e5d)] Fix metadata links in lib.rs (#204) (Kevin R. Thornton)
+- [[`d7f70a7cfd`](https://github.com/tskit-dev/tskit-rust/commit/d7f70a7cfdb92d60d9522e7da95b2c3d0bc8b51e)] Use MBox<T> to manage lifetimes of tskit C structs. (#203) (Kevin R. Thornton)
+- [[`034204ed88`](https://github.com/tskit-dev/tskit-rust/commit/034204ed8832744806063dfd3848c66f3283632c)] Add newtypes for Time, Position, and for Location. (#199) (Kevin R. Thornton)
+- [[`4ba44ef0c5`](https://github.com/tskit-dev/tskit-rust/commit/4ba44ef0c5d69f660fb804194e463eb7a2db34f0)] Bump editions to 2021. (#198) (Kevin R. Thornton)
+- [[`c4cc6e875a`](https://github.com/tskit-dev/tskit-rust/commit/c4cc6e875ae403963bf95ea239b6b156a62e888c)] Add tskit::SizeType (#192) (Kevin R. Thornton)
+- [[`8429cc37d2`](https://github.com/tskit-dev/tskit-rust/commit/8429cc37d24fb13b7bc6e297d42794a11c5dbb8b)] Use type erasure for all table row iteration functions. (#189) (Kevin R. Thornton)
+- [[`f4cb6350e0`](https://github.com/tskit-dev/tskit-rust/commit/f4cb6350e0b33deae70a2eedce26ee2403053eea)] Add TableCollection::check_integrity. (#188) (Kevin R. Thornton)
+- [[`562014b04f`](https://github.com/tskit-dev/tskit-rust/commit/562014b04f24565c696088cf762f416a40335413)] Add preorder node traversal using latest tskit C API. (#186) (Kevin R. Thornton)
+- [[`db8550f6d7`](https://github.com/tskit-dev/tskit-rust/commit/db8550f6d759f464203c32a32f59f4db3b118864)] Replace Box with malloc'd raw pointer for tskit types. (#184) (Kevin R. Thornton)
+- [[`90a2d84a9d`](https://github.com/tskit-dev/tskit-rust/commit/90a2d84a9da1a5c59689863fdda029776fefcc44)] Update to C API 0.99.15 (breaking) (#183) (Kevin R. Thornton)
+- [[`58e7c5ed73`](https://github.com/tskit-dev/tskit-rust/commit/58e7c5ed73557b1001e808d2dc5c596ebaaf60f1)] Update clap requirement from ~2.33.3 to ~2.34.0 (#176) (dependabot[bot])
+
+
 ## 2021-11-29, Version 0.6.1
 
 ### Commits
