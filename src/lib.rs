@@ -486,10 +486,32 @@ pub fn c_api_version() -> String {
 #[cfg(test)]
 mod tests {
     use super::c_api_version;
+    use super::Location;
+    use super::Position;
+    use super::Time;
 
     #[test]
     fn test_c_api_version() {
         let _ = c_api_version();
+    }
+
+    #[test]
+    fn test_f64_newtype_Display() {
+        let x = Position::from(1.0);
+        let mut output = String::new();
+        std::fmt::write(&mut output, format_args!("{}", x))
+            .expect("Error occurred while trying to write in String");
+        assert_eq!(output, "Position(1)".to_string());
+        let x = Time::from(1.0);
+        let mut output = String::new();
+        std::fmt::write(&mut output, format_args!("{}", x))
+            .expect("Error occurred while trying to write in String");
+        assert_eq!(output, "Time(1)".to_string());
+        let x = Location::from(1.0);
+        let mut output = String::new();
+        std::fmt::write(&mut output, format_args!("{}", x))
+            .expect("Error occurred while trying to write in String");
+        assert_eq!(output, "Location(1)".to_string());
     }
 }
 
