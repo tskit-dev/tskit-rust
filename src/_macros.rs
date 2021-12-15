@@ -368,7 +368,7 @@ macro_rules! impl_f64_newtypes {
     ($type: ty) => {
         impl std::fmt::Display for $type {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                write!(f, "{}({})", stringify!($idtype), self.0)
+                write!(f, "{}({})", stringify!($type), self.0)
             }
         }
 
