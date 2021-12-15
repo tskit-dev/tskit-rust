@@ -1,5 +1,16 @@
 # Change log
 
+## 2021-12-15, Version 0.7.0-alpha.1
+
+Fixes various minor issues with the first alpha.
+
+### Commits
+
+- [[`44965969c0`](https://github.com/tskit-dev/tskit-rust/commit/44965969c04be8fa963bcaa01f11869b61d37547)] Bump version to 0.7.0.alpha.1 (molpopgen)
+- [[`5d6a289490`](https://github.com/tskit-dev/tskit-rust/commit/5d6a28949087bad1632bcac41dfaefa984800113)] Fix issues with Time, Position, Location newtypes (#212) (Kevin R. Thornton)
+- [[`99930e8bb0`](https://github.com/tskit-dev/tskit-rust/commit/99930e8bb013af2fc38d915b7fa3d3637bb4c847)] Add explicit tests of tree roots. (#211) (Kevin R. Thornton)
+
+
 ## 2021-12-15, Version 0.7.0-alpha.0
 
 Breaking changes:
@@ -19,6 +30,7 @@ New features:
 * Add postorder node iterator for Tree
 
 ### Commits
+
 - [[`272d0736e2`](https://github.com/tskit-dev/tskit-rust/commit/272d0736e2ace79d6c4bb880977396e748b7a6a0)] bump package version to 0.7.0-alpha.0 (molpopgen)
 - [[`b5946a4cc4`](https://github.com/tskit-dev/tskit-rust/commit/b5946a4cc4aec32cbdda6081a1bd188568178436)] Redesign provenance feature: (#207) (Kevin R. Thornton)
 - [[`5699aab37f`](https://github.com/tskit-dev/tskit-rust/commit/5699aab37f31b25b0fdbcdb48a5f87774b624bb7)] Change return time of Tree::num_tracked_samples. (#206) (Kevin R. Thornton)
