@@ -22,23 +22,7 @@ Tree 2 is fully coalesced:
 ```
 
 ```rust
-{{#rustdoc_include ../../examples/tree_traversals.rs:test}}
+# extern crate tskit;
+{{#include ../../examples/tree_traversals.rs:test}}
 ```
-
-```rust
-{{#rustdoc_include tables_and_tree_sequences.rs:addfirstnode}}
-```
-
-```rust
-{{#rustdoc_include tables_and_tree_sequences.rs:addremainingnodes}}
-```
-
-```rust
-{{#rustdoc_include tables_and_tree_sequences.rs:addedges}}
-```
-
-```rust
-{{#include ../../examples/tree_traversals.rs}}
-```
-
 
