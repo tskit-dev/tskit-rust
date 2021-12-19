@@ -68,6 +68,7 @@ mod tests {
         // +-+-+ |
         // 2 4 5 3
 
+        // ANCHOR: test
         let mut tables = tskit::TableCollection::new(1000.).unwrap();
         tables
             .add_node(0, 2.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL)
@@ -117,6 +118,7 @@ mod tests {
             .full_sort(tskit::TableSortOptions::default())
             .unwrap();
         tables.build_index().unwrap();
+        // ANCHOR_END: test
         tables
     }
 
