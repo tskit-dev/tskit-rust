@@ -1,0 +1,41 @@
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+name: mdbook
+
+run-tests:
+  runs-on: ${{ matrix.os }}
+  #container:
+  #  image: ubuntu:20.10
+  strategy:
+    matrix:
+      os: [ubuntu-latest]
+      rust:
+        - stable
+  steps:
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.6.0
+      with:
+        access_token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        submodules: recursive
+    - run: sudo apt-get update -y
+      if: matrix.os == 'ubuntu-latest'
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        override: true
+    - name: cargo build all features
+      run: cargo build --all-features
+    - name: Setup mdBook
+      uses: peaceiris/actions-mdbook@v1
+      with:
+        mdbook-version: 'latest'
+    - name: Run guide doctests
+      run: mdbook test guide -L target/debug/deps/
+    - name: Build guide
+      run: mdbook build guide
