@@ -146,19 +146,23 @@ mod tests {
         }
         // ANCHOR_END: index_tables
 
+        // ANCHOR: check_integrity_lite
         match tables.check_integrity(tskit::TableIntegrityCheckFlags::default()) {
             Ok(rv) => {
                 assert_eq!(rv, 0)
             }
             Err(e) => panic!("{}", e),
         }
+        // ANCHOR_END: check_integrity_lite
 
+        // ANCHOR: check_integrity_full
         match tables.check_integrity(tskit::TableIntegrityCheckFlags::all()) {
             Ok(num_trees) => {
                 assert_eq!(num_trees, 2)
             }
             Err(e) => panic!("{}", e),
         }
+        // ANCHOR_END: check_integrity_full
 
         tables
     }

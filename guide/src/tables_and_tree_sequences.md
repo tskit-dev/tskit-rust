@@ -51,3 +51,11 @@ Tree 2 is fully coalesced:
 {{#include ../../examples/tree_traversals.rs:index_tables}}
 ```
 
+```rust, noplayground, ignore
+{{#include ../../examples/tree_traversals.rs:check_integrity_lite}}
+```
+
+```rust, noplayground, ignore
+{{#include ../../examples/tree_traversals.rs:check_integrity_full}}
+```
+
