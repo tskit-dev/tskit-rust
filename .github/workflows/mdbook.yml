@@ -6,7 +6,7 @@ on:
 name: mdbook
 
 jobs:
-  build-and-test-guide:
+  mdbook:
     runs-on: ${{ matrix.os }}
     #container:
     #  image: ubuntu:20.10
