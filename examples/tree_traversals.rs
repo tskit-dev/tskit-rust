@@ -132,14 +132,33 @@ mod tests {
 
         // ANCHOR: sort_tables
         match tables.full_sort(tskit::TableSortOptions::default()) {
-            Ok() => (),
+            Ok(rv) => {
+                assert_eq!(rv, 0);
+            }
             Err(e) => panic!("{}", e),
         }
         // ANCHOR_END: sort_tables
 
         // ANCHOR: index_tables
-        tables.build_index().unwrap();
+        match tables.build_index() {
+            Ok(_) => (),
+            Err(e) => panic!("{}", e),
+        }
         // ANCHOR_END: index_tables
+
+        match tables.check_integrity(tskit::TableIntegrityCheckFlags::default()) {
+            Ok(rv) => {
+                assert_eq!(rv, 0)
+            }
+            Err(e) => panic!("{}", e),
+        }
+
+        match tables.check_integrity(tskit::TableIntegrityCheckFlags::all()) {
+            Ok(num_trees) => {
+                assert_eq!(num_trees, 2)
+            }
+            Err(e) => panic!("{}", e),
+        }
 
         tables
     }
