@@ -23,31 +23,31 @@ Tree 2 is fully coalesced:
 2 4 5 3
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:init_table}}
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:add_first_node}}
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:add_second_node}}
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:add_sample_nodes}}
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:add_edges}}
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:sort_tables}}
 ```
 
-```rust, noplayground
+```rust, noplayground, ignore
 {{#include ../../examples/tree_traversals.rs:index_tables}}
 ```
 
