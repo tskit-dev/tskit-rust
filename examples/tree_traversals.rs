@@ -179,9 +179,13 @@ mod tests {
     #[test]
     fn test_traverse_upwards() {
         let tables = make_small_table_collection_two_trees();
-        let ts = tables
-            .tree_sequence(tskit::TreeSequenceFlags::default())
-            .unwrap();
+
+        // ANCHOR: init_ts
+        let ts = match tables.tree_sequence(tskit::TreeSequenceFlags::default()) {
+            Ok(ts) => ts,
+            Err(e) => panic!("{}", e),
+        };
+        // ANCHOR_END: init_ts
 
         let mut tree_iterator = ts.tree_iterator(tskit::TreeFlags::default()).unwrap();
 
