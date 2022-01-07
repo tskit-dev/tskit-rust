@@ -1,4 +1,4 @@
-use clap::{value_t_or_exit, App, Arg};
+use clap::{App, Arg};
 use tskit::prelude::*;
 
 // "Manual" traversal from samples to root
@@ -27,15 +27,15 @@ fn preorder_traversal(tree: &tskit::Tree) {
 fn main() {
     let matches = App::new("tree_traversals")
         .arg(
-            Arg::with_name("treefile")
-                .short("t")
+            Arg::new("treefile")
+                .short('t')
                 .long("treefile")
                 .help("Tree file name")
                 .takes_value(true),
         )
         .get_matches();
 
-    let treefile = value_t_or_exit!(matches.value_of("treefile"), String);
+    let treefile: String = matches.value_of_t_or_exit("treefile");
 
     let treeseq = tskit::TreeSequence::load(&treefile).unwrap();
 

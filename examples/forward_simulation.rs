@@ -18,7 +18,7 @@
  *   and numbers of crossovers, etc.., from being entered
  *   on the command line.
  */
-use clap::{value_t, App, Arg};
+use clap::{App, Arg};
 use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
@@ -67,73 +67,75 @@ impl SimParams {
 
         let matches = App::new("forward_simulation")
             .arg(
-                Arg::with_name("popsize")
-                    .short("N")
+                Arg::new("popsize")
+                    .short('N')
                     .long("popsize")
                     .help("Diploid population size. Default = 1,000.")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("nsteps")
-                    .short("n")
+                Arg::new("nsteps")
+                    .short('n')
                     .long("nsteps")
                     .help("Number of birth steps to simulate. For non-overlapping generations, this is the number of generations to simulate. Default = 1,000.")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("xovers")
-                    .short("x")
+                Arg::new("xovers")
+                    .short('x')
                     .long("xovers")
                     .help("Mean number of crossovers per meiosis. The number of crossovers is Poisson-distributed with this value. Default = 0.0.")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("genome_length")
-                    .short("L")
+                Arg::new("genome_length")
+                    .short('L')
                     .long("genome_length")
                     .help("Genome length (continuous units).  Default = 1e6.")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("simplification_interval")
-                    .short("s")
+                Arg::new("simplification_interval")
+                    .short('s')
                     .long("simplify")
                     .help("Number of birth steps between simplifications. Default = 100.")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("treefile")
-                    .short("t")
+                Arg::new("treefile")
+                    .short('t')
                     .long("treefile")
                     .help("Name of output file. The format is a tskit \"trees\" file. Default = \"treefile.trees\".")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("seed")
-                    .short("S")
+                Arg::new("seed")
+                    .short('S')
                     .long("seed")
                     .help("Random number seed. Default = 0.")
                     .takes_value(true),
             )
             .arg(
-                Arg::with_name("psurvival")
-                    .short("P")
+                Arg::new("psurvival")
+                    .short('P')
                     .long("psurvival")
                     .help("Survival probability. A value of 0.0 is the Wright-Fisher model of non-overlapping generations.  Values must b 0.0 <= p < 1.0.  Default = 0.0.")
                     .takes_value(true),
             )
             .get_matches();
 
-        params.popsize = value_t!(matches.value_of("popsize"), u32).unwrap_or(params.popsize);
-        params.nsteps = value_t!(matches.value_of("nsteps"), u32).unwrap_or(params.nsteps);
-        params.xovers = value_t!(matches.value_of("xovers"), f64).unwrap_or(params.xovers);
-        params.genome_length =
-            value_t!(matches.value_of("genome_length"), f64).unwrap_or(params.genome_length);
-        params.simplification_interval = value_t!(matches.value_of("simplification_interval"), u32)
+        params.popsize = matches.value_of_t("popsize").unwrap_or(params.popsize);
+        params.nsteps = matches.value_of_t("nsteps").unwrap_or(params.nsteps);
+        params.xovers = matches.value_of_t("xovers").unwrap_or(params.xovers);
+        params.genome_length = matches
+            .value_of_t("genome_length")
+            .unwrap_or(params.genome_length);
+        params.simplification_interval = matches
+            .value_of_t("simplification_interval")
             .unwrap_or(params.simplification_interval);
-        params.seed = value_t!(matches.value_of("seed"), u64).unwrap_or(params.seed);
-        params.psurvival = value_t!(matches.value_of("psurvival"), f64).unwrap_or(params.psurvival);
-        params.treefile = value_t!(matches.value_of("treefile"), String).unwrap_or(params.treefile);
+        params.seed = matches.value_of_t("seed").unwrap_or(params.seed);
+        params.psurvival = matches.value_of_t("psurvival").unwrap_or(params.psurvival);
+        params.treefile = matches.value_of_t("treefile").unwrap_or(params.treefile);
 
         params
     }
