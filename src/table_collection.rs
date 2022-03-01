@@ -1240,7 +1240,7 @@ mod test {
         assert_eq!(md.y, 666);
 
         for row in tables.mutations().iter() {
-            assert!(!row.metadata.is_none());
+            assert!(row.metadata.is_some());
             let md = F::decode(&row.metadata.unwrap()).unwrap();
             assert_eq!(md.x, -3);
             assert_eq!(md.y, 666);
@@ -1458,10 +1458,10 @@ mod test_adding_node {
         // We are playing a dangerous game here,
         // in that we do not have any populations.
         // Fortunately, we are range-checked everywhere.
-        assert!(!tables
+        assert!(tables
             .populations()
             .row(tables.nodes().population(row_id).unwrap())
-            .is_ok());
+            .is_err());
 
         let row_id = tables
             .add_node(0, 0.0, PopulationId::NULL, IndividualId::from(17))
@@ -1473,10 +1473,10 @@ mod test_adding_node {
         );
         assert_eq!(tables.nodes().individual(row_id).unwrap(), IndividualId(17));
 
-        assert!(!tables
+        assert!(tables
             .individuals()
             .row(tables.nodes().individual(row_id).unwrap())
-            .is_ok());
+            .is_err());
     }
 
     #[test]
