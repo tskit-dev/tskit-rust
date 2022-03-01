@@ -18,7 +18,7 @@
  *   and numbers of crossovers, etc.., from being entered
  *   on the command line.
  */
-use clap::{App, Arg};
+use clap::{Command, Arg};
 use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
@@ -65,7 +65,7 @@ impl SimParams {
     fn new() -> Self {
         let mut params = SimParams::default();
 
-        let matches = App::new("forward_simulation")
+        let matches = Command::new("forward_simulation")
             .arg(
                 Arg::new("popsize")
                     .short('N')

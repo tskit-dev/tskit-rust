@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{Command, Arg};
 use tskit::prelude::*;
 
 // "Manual" traversal from samples to root
@@ -25,7 +25,7 @@ fn preorder_traversal(tree: &tskit::Tree) {
 }
 
 fn main() {
-    let matches = App::new("tree_traversals")
+    let matches = Command::new("tree_traversals")
         .arg(
             Arg::new("treefile")
                 .short('t')
