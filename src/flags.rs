@@ -104,6 +104,15 @@ bitflags! {
 }
 
 bitflags! {
+    /// Modify behavior of [`crate::TableCollection::sort_individuals`].
+    #[derive(Default)]
+    pub struct IndividualTableSortOptions : tsk_flags_t {
+        /// Default behavior.
+        const NONE = 0;
+    }
+}
+
+bitflags! {
     /// Specify the behavior of iterating over [`Tree`] objects.
     /// See [`TreeSequence::tree_iterator`].
     #[derive(Default)]

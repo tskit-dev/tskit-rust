@@ -1,4 +1,4 @@
-use clap::{Command, Arg};
+use clap::{Arg, Command};
 use tskit::prelude::*;
 
 // "Manual" traversal from samples to root
