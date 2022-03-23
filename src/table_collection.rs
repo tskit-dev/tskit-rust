@@ -5,6 +5,7 @@ use crate::metadata::*;
 use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::IndividualTable;
+use crate::IndividualTableSortOptions;
 use crate::Location;
 use crate::MigrationTable;
 use crate::MutationTable;
@@ -597,6 +598,12 @@ impl TableCollection {
     /// Sort the tables.  
     /// The [``bookmark``](crate::types::Bookmark) can
     /// be used to affect where sorting starts from for each table.
+    ///
+    /// # Note
+    ///
+    /// As of `0.7.0`, this function does not sort the individual table!
+    /// See
+    /// [``topological_sort_individuals``](crate::TableCollection::topological_sort_individuals).
     pub fn sort(&mut self, start: &Bookmark, options: TableSortOptions) -> TskReturnValue {
         let rv = unsafe {
             ll_bindings::tsk_table_collection_sort(
@@ -611,9 +618,71 @@ impl TableCollection {
 
     /// Fully sort all functions.
     /// Implemented via a call to [``sort``](crate::TableCollection::sort).
+    ///
+    /// # Note
+    ///
+    /// As of `0.7.0`, this function does not sort the individual table!
+    /// See
+    /// [``topological_sort_individuals``](crate::TableCollection::topological_sort_individuals).
     pub fn full_sort(&mut self, options: TableSortOptions) -> TskReturnValue {
         let b = Bookmark::new();
         self.sort(&b, options)
+    }
+
+    /// Sorts the individual table in place, so that parents come before children,
+    /// and the parent column is remapped as required. Node references to individuals
+    /// are also updated.
+    ///
+    /// This function is needed because neither [``sort``](crate::TableCollection::sort) nor
+    /// [``full_sort``](crate::TableCollection::full_sort) sorts
+    /// the individual table!
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Parent comes AFTER the child
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let i0 = tables.add_individual::<i32, f64>(0,&[],&[1]).unwrap();
+    /// assert_eq!(i0, 0);
+    /// let i1 = tables.add_individual::<i32, f64>(0,&[],&[]).unwrap();
+    /// assert_eq!(i1, 1);
+    /// let n0 = tables.add_node(0, 0.0, -1, i1).unwrap();
+    /// assert_eq!(n0, 0);
+    /// let n1 = tables.add_node(0, 1.0, -1, i0).unwrap();
+    /// assert_eq!(n1, 1);
+    ///
+    /// // Testing for valid individual order will Err:
+    /// match tables.check_integrity(tskit::TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING) {
+    ///     Ok(_) => panic!("expected Err"),
+    ///     Err(_) => (),
+    /// };
+    ///
+    /// // The standard sort doesn't fix the Err...:
+    /// tables.full_sort(tskit::TableSortOptions::default()).unwrap();
+    /// match tables.check_integrity(tskit::TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING) {
+    ///     Ok(_) => panic!("expected Err"),
+    ///     Err(_) => (),
+    /// };
+    ///
+    /// // ... so we need to intentionally sort the individuals.
+    /// let _ = tables.topological_sort_individuals(tskit::IndividualTableSortOptions::default()).unwrap();
+    /// tables.check_integrity(tskit::TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING).unwrap();
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Will return an error code if the underlying `C` function returns an error.
+    pub fn topological_sort_individuals(
+        &mut self,
+        options: IndividualTableSortOptions,
+    ) -> TskReturnValue {
+        let rv = unsafe {
+            ll_bindings::tsk_table_collection_individual_topological_sort(
+                self.as_mut_ptr(),
+                options.bits(),
+            )
+        };
+        handle_tsk_return_value!(rv)
     }
 
     /// Dump the table collection to file.

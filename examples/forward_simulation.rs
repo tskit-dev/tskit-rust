@@ -18,7 +18,7 @@
  *   and numbers of crossovers, etc.., from being entered
  *   on the command line.
  */
-use clap::{Command, Arg};
+use clap::{Arg, Command};
 use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
