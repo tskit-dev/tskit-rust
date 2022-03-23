@@ -609,7 +609,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Fully sort all functions.
+    /// Fully sort all tables.
     /// Implemented via a call to [``sort``](crate::TableCollection::sort).
     pub fn full_sort(&mut self, options: TableSortOptions) -> TskReturnValue {
         let b = Bookmark::new();
