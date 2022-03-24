@@ -22,9 +22,7 @@ fn vector_row_id_examples() -> Vec<NodeId> {
     // ANCHOR: create_vec_node_id
     let mut v = vec![];
 
-    // For convenience, NodeID can
-    // be created from usize
-    for i in 0..5 {
+    for i in 0..5_i32 {
         v.push(NodeId::from(i));
     }
     // ANCHOR_END: create_vec_node_id
