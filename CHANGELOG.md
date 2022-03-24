@@ -1,5 +1,16 @@
 # Change log
 
+## 2022-03-24, Version 0.7.0
+
+### Commits
+
+- [[`8427c2fea7`](https://github.com/tskit-dev/tskit-rust/commit/8427c2fea78a045cea9ad2927b783a4a5bf423b4)] Change order of generics to match argument order for all "add" (#221) (Kevin R. Thornton)
+- [[`6ef0406731`](https://github.com/tskit-dev/tskit-rust/commit/6ef040673171f1c69d549f09d67b8b393b72769d)] Fix typo in docstring for TableCollection::full_sort. (#219) (Kevin R. Thornton)
+- [[`a1a7e12208`](https://github.com/tskit-dev/tskit-rust/commit/a1a7e1220878182f22b2a46b3a189e7dfdbe6218)] Add TableCollection::topological_sort_individuals. (#218) (Kevin R. Thornton)
+- [[`4c17ca62a2`](https://github.com/tskit-dev/tskit-rust/commit/4c17ca62a25ded88e1205e6321178529d3c5120a)] Update clap requirement from ~3.0.0 to ~3.1.3 (#215) (dependabot[bot])
+- [[`f40562a56a`](https://github.com/tskit-dev/tskit-rust/commit/f40562a56aaf9eb8e6e42e4cd1bdf7579ea15cfe)] Fix lint found by clippy. (#216) (Kevin R. Thornton)
+- [[`4efddb6f5d`](https://github.com/tskit-dev/tskit-rust/commit/4efddb6f5d62b57292304fb6aec88708343a5cfa)] Update clap requirement from ~2.34.0 to ~3.0.0 (#214) (dependabot[bot])
+
 ## 2021-12-15, Version 0.7.0-alpha.1
 
 Fixes various minor issues with the first alpha.
