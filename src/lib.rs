@@ -290,9 +290,9 @@ impl TryFrom<tsk_id_t> for SizeType {
     type Error = crate::TskitError;
 
     fn try_from(value: tsk_id_t) -> Result<Self, Self::Error> {
-        match value >= 0 {
-            true => Ok(Self(value as crate::bindings::tsk_size_t)),
-            false => Err(crate::TskitError::RangeError(stringify!(value.0))),
+        match tsk_size_t::try_from(value) {
+            Ok(v) => Ok(Self(v)),
+            Err(_) => Err(crate::TskitError::RangeError(stringify!(value.0))),
         }
     }
 }

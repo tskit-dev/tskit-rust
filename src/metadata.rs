@@ -257,15 +257,23 @@ pub(crate) fn char_column_to_vector(
     num_rows: tsk_size_t,
     column_length: tsk_size_t,
 ) -> Result<Option<Vec<u8>>, crate::TskitError> {
-    if row < 0 || (row as tsk_size_t) >= num_rows {
+    let row = match tsk_size_t::try_from(row) {
+        Ok(r) => r,
+        Err(_) => return Err(TskitError::IndexError),
+    };
+    if row >= num_rows {
         return Err(crate::TskitError::IndexError {});
     }
     if column_length == 0 {
         return Ok(None);
     }
-    let start = unsafe { *column_offset.offset(row as isize) };
+    let row_isize = match isize::try_from(row) {
+        Ok(r) => r,
+        Err(_) => return Err(TskitError::RangeError("could not convert u64 to isize")),
+    };
+    let start = unsafe { *column_offset.offset(row_isize) };
     let stop = if (row as tsk_size_t) < num_rows {
-        unsafe { *column_offset.offset((row + 1) as isize) }
+        unsafe { *column_offset.offset(row_isize + 1) }
     } else {
         column_length
     };
@@ -278,6 +286,7 @@ pub(crate) fn char_column_to_vector(
     let mut buffer = vec![];
     for i in start..stop {
         match isize::try_from(i) {
+            // NOTE: cast_sign_loss pedantic lint is a false +ve here.
             Ok(o) => buffer.push(unsafe { *column.offset(o) } as u8),
             Err(_) => return Err(TskitError::RangeError("could not convert value to isize")),
         };
