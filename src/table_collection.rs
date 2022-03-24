@@ -231,7 +231,7 @@ impl TableCollection {
     }
 
     /// Add a row to the individual table
-    pub fn add_individual<I: Into<IndividualId>, L: Into<Location>>(
+    pub fn add_individual<L: Into<Location>, I: Into<IndividualId>>(
         &mut self,
         flags: tsk_flags_t,
         location: &[L],
@@ -254,8 +254,8 @@ impl TableCollection {
 
     /// Add a row with metadata to the individual table
     pub fn add_individual_with_metadata<
-        I: Into<IndividualId>,
         L: Into<Location>,
+        I: Into<IndividualId>,
         M: IndividualMetadata,
     >(
         &mut self,
@@ -356,7 +356,7 @@ impl TableCollection {
     }
 
     /// Add a row to the node table
-    pub fn add_node<I: Into<IndividualId>, POP: Into<PopulationId>, T: Into<Time>>(
+    pub fn add_node<T: Into<Time>, POP: Into<PopulationId>, I: Into<IndividualId>>(
         &mut self,
         flags: ll_bindings::tsk_flags_t,
         time: T,
@@ -380,9 +380,9 @@ impl TableCollection {
 
     /// Add a row with optional metadata to the node table
     pub fn add_node_with_metadata<
-        I: Into<IndividualId>,
-        POP: Into<PopulationId>,
         T: Into<Time>,
+        POP: Into<PopulationId>,
+        I: Into<IndividualId>,
         M: NodeMetadata,
     >(
         &mut self,
@@ -455,7 +455,7 @@ impl TableCollection {
     }
 
     /// Add a row to the mutation table.
-    pub fn add_mutation<N: Into<NodeId>, M: Into<MutationId>, S: Into<SiteId>, T: Into<Time>>(
+    pub fn add_mutation<S: Into<SiteId>, N: Into<NodeId>, M: Into<MutationId>, T: Into<Time>>(
         &mut self,
         site: S,
         node: N,
@@ -482,9 +482,9 @@ impl TableCollection {
 
     /// Add a row with optional metadata to the mutation table.
     pub fn add_mutation_with_metadata<
+        S: Into<SiteId>,
         N: Into<NodeId>,
         M: Into<MutationId>,
-        S: Into<SiteId>,
         MD: MutationMetadata,
         T: Into<Time>,
     >(
@@ -642,9 +642,9 @@ impl TableCollection {
     /// ```
     /// // Parent comes AFTER the child
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let i0 = tables.add_individual::<i32, f64>(0,&[],&[1]).unwrap();
+    /// let i0 = tables.add_individual::<f64, i32>(0,&[],&[1]).unwrap();
     /// assert_eq!(i0, 0);
-    /// let i1 = tables.add_individual::<i32, f64>(0,&[],&[]).unwrap();
+    /// let i1 = tables.add_individual::<f64, i32>(0,&[],&[]).unwrap();
     /// assert_eq!(i1, 1);
     /// let n0 = tables.add_node(0, 0.0, -1, i1).unwrap();
     /// assert_eq!(n0, 0);
