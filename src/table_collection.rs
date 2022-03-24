@@ -150,14 +150,17 @@ impl TableCollection {
     }
 
     /// Load a table collection from a file.
+    ///
+    /// # Panics
+    ///
+    /// This function allocates a `CString` to pass the file name to the C API.
+    /// A panic will occur if the system runs out of memory.
     pub fn new_from_file(filename: &str) -> Result<Self, TskitError> {
-        let tables = TableCollection::new(1.0); // Arbitrary sequence_length.
-        match tables {
-            Ok(_) => (),
+        // Arbitrary sequence_length.
+        let mut tables = match TableCollection::new(1.0) {
+            Ok(t) => (t),
             Err(e) => return Err(e),
-        }
-
-        let mut tables = tables.unwrap();
+        };
 
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
@@ -241,9 +244,9 @@ impl TableCollection {
             ll_bindings::tsk_individual_table_add_row(
                 &mut (*self.as_mut_ptr()).individuals,
                 flags,
-                location.as_ptr() as *const f64,
+                location.as_ptr().cast::<f64>(),
                 location.len() as tsk_size_t,
-                parents.as_ptr() as *const tsk_id_t,
+                parents.as_ptr().cast::<tsk_id_t>(),
                 parents.len() as tsk_size_t,
                 std::ptr::null(),
                 0,
@@ -269,9 +272,9 @@ impl TableCollection {
             ll_bindings::tsk_individual_table_add_row(
                 &mut (*self.as_mut_ptr()).individuals,
                 flags,
-                location.as_ptr() as *const f64,
+                location.as_ptr().cast::<f64>(),
                 location.len() as tsk_size_t,
-                parents.as_ptr() as *const tsk_id_t,
+                parents.as_ptr().cast::<tsk_id_t>(),
                 parents.len() as tsk_size_t,
                 md.as_ptr(),
                 md.len().into(),
@@ -687,6 +690,10 @@ impl TableCollection {
 
     /// Dump the table collection to file.
     ///
+    /// # Panics
+    ///
+    /// This function allocates a `CString` to pass the file name to the C API.
+    /// A panic will occur if the system runs out of memory.
     pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
@@ -770,11 +777,11 @@ impl TableCollection {
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
                 self.as_mut_ptr(),
-                samples.as_ptr() as *const tsk_id_t,
+                samples.as_ptr().cast::<tsk_id_t>(),
                 samples.len() as tsk_size_t,
                 options.bits(),
                 match idmap {
-                    true => output_node_map.as_mut_ptr() as *mut tsk_id_t,
+                    true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
                     false => std::ptr::null_mut(),
                 },
             )

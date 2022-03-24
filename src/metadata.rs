@@ -164,7 +164,7 @@
 //!   into `Python` via the `tskit` `Python API`.
 
 use crate::bindings::{tsk_id_t, tsk_size_t};
-use crate::SizeType;
+use crate::{SizeType, TskitError};
 use thiserror::Error;
 
 #[cfg(feature = "derive")]
@@ -230,7 +230,7 @@ impl EncodedMetadata {
         if self.encoded.is_empty() {
             std::ptr::null()
         } else {
-            self.encoded.as_ptr() as *const libc::c_char
+            self.encoded.as_ptr().cast::<i8>()
         }
     }
 
@@ -277,7 +277,10 @@ pub(crate) fn char_column_to_vector(
     }
     let mut buffer = vec![];
     for i in start..stop {
-        buffer.push(unsafe { *column.offset(i as isize) } as u8);
+        match isize::try_from(i) {
+            Ok(o) => buffer.push(unsafe { *column.offset(o) } as u8),
+            Err(_) => return Err(TskitError::RangeError("could not convert value to isize")),
+        };
     }
     Ok(Some(buffer))
 }
