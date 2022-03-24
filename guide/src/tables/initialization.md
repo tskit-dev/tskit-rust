@@ -1,5 +1,5 @@
 # Initialization
 
 ```rust, noplayground, ignore
-{{#include ../../../examples/tree_traversals.rs:init_table}}
+{{#include ../../../tests/test_tables_without_metadata.rs:initialization}}
 ```
