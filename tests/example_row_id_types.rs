@@ -56,14 +56,14 @@ fn test_vector_row_id_examples() {
 
     // ANCHOR: call_mock_tsk_fn
     tsk_foo(
-        v.as_ptr() as *const tskit::bindings::tsk_id_t,
+        v.as_ptr().cast::<tskit::bindings::tsk_id_t>(),
         v.len() as tskit::bindings::tsk_size_t,
     );
     // ANCHOR_END: call_mock_tsk_fn
 
     // ANCHOR: call_mock_tsk_fn_mut
     tsk_foo2(
-        v.as_mut_ptr() as *mut tskit::bindings::tsk_id_t,
+        v.as_mut_ptr().cast::<tskit::bindings::tsk_id_t>(),
         v.len() as tskit::bindings::tsk_size_t,
     );
     // ANCHOR_END: call_mock_tsk_fn_mut
