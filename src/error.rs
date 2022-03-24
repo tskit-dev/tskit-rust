@@ -81,6 +81,11 @@ pub fn panic_on_tskit_error(code: i32) {
 /// let x = tskit::error::get_tskit_error_message(-207);
 /// assert_eq!(x, "Individual out of bounds");
 /// ```
+///
+/// # Panics
+///
+/// This function must allocate a C string, which may panic
+/// if the system runs out of memory.
 pub fn get_tskit_error_message(code: i32) -> String {
     let c_str = unsafe { std::ffi::CStr::from_ptr(crate::bindings::tsk_strerror(code)) };
     c_str.to_str().unwrap().to_owned()

@@ -48,12 +48,12 @@ impl Tree {
     fn wrap(num_nodes: tsk_size_t, flags: TreeFlags) -> Self {
         let temp = unsafe {
             libc::malloc(std::mem::size_of::<ll_bindings::tsk_tree_t>())
-                as *mut ll_bindings::tsk_tree_t
+                .cast::<ll_bindings::tsk_tree_t>()
         };
         if temp.is_null() {
             panic!("out of memory");
         }
-        let mbox = unsafe { MBox::from_raw(temp as *mut ll_bindings::tsk_tree_t) };
+        let mbox = unsafe { MBox::from_raw(temp.cast::<ll_bindings::tsk_tree_t>()) };
         Self {
             inner: mbox,
             current_tree: 0,
@@ -410,6 +410,10 @@ impl Tree {
 
     /// Obtain the list of samples for the current tree/tree sequence
     /// as a vector.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if the number of samples is too large to cast to a valid id.
     #[deprecated(since = "0.2.3", note = "Please use Tree::sample_nodes instead")]
     pub fn samples_to_vec(&self) -> Vec<NodeId> {
         let num_samples =
@@ -417,7 +421,10 @@ impl Tree {
         let mut rv = vec![];
 
         for i in 0..num_samples {
-            let u = unsafe { *(*(*self.inner).tree_sequence).samples.offset(i as isize) };
+            let u = match isize::try_from(i) {
+                Ok(o) => unsafe { *(*(*self.inner).tree_sequence).samples.offset(o) },
+                Err(e) => panic!("{e}"),
+            };
             rv.push(u.into());
         }
         rv
@@ -713,8 +720,8 @@ impl<'a> PostorderNodeIterator<'a> {
             ll_bindings::tsk_tree_postorder(
                 tree.as_ptr(),
                 NodeId::NULL.into(), // start from virtual root
-                nodes.as_mut_ptr() as *mut tsk_id_t,
-                ptr as *mut tsk_size_t,
+                nodes.as_mut_ptr().cast::<tsk_id_t>(),
+                ptr.cast::<tsk_size_t>(),
             )
         };
 
@@ -999,6 +1006,10 @@ impl TreeSequence {
     ///   This behavior may change in a future release, which could
     ///   break `API`.
     ///
+    /// # Panics
+    ///
+    /// This function allocates a `CString` to pass the file name to the C API.
+    /// A panic will occur if the system runs out of memory.
     pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv =
@@ -1077,6 +1088,9 @@ impl TreeSequence {
     }
 
     /// Get the list of samples as a vector.
+    /// # Panics
+    ///
+    /// Will panic if the number of samples is too large to cast to a valid id.
     #[deprecated(
         since = "0.2.3",
         note = "Please use TreeSequence::sample_nodes instead"
@@ -1086,7 +1100,10 @@ impl TreeSequence {
         let mut rv = vec![];
 
         for i in 0..num_samples {
-            let u = NodeId::from(unsafe { *(*self.as_ptr()).samples.offset(i as isize) });
+            let u = match isize::try_from(i) {
+                Ok(o) => NodeId::from(unsafe { *(*self.as_ptr()).samples.offset(o) }),
+                Err(e) => panic!("{e}"),
+            };
             rv.push(u);
         }
         rv
@@ -1148,7 +1165,10 @@ impl TreeSequence {
         idmap: bool,
     ) -> Result<(Self, Option<Vec<NodeId>>), TskitError> {
         let mut tables = TableCollection::new(unsafe { (*(*self.inner).tables).sequence_length })?;
-        tables.build_index().unwrap();
+        match tables.build_index() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        }
         let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
@@ -1158,12 +1178,12 @@ impl TreeSequence {
             ll_bindings::tsk_treeseq_simplify(
                 self.as_ptr(),
                 // NOTE: casting away const-ness:
-                samples.as_ptr() as *mut tsk_id_t,
+                samples.as_ptr().cast::<tsk_id_t>(),
                 samples.len() as tsk_size_t,
                 options.bits(),
                 ts.as_mut_ptr(),
                 match idmap {
-                    true => output_node_map.as_mut_ptr() as *mut tsk_id_t,
+                    true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
                     false => std::ptr::null_mut(),
                 },
             )

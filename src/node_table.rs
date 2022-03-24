@@ -119,7 +119,7 @@ impl<'a> NodeTable<'a> {
     pub fn time_array_mut(&mut self) -> &mut [Time] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.table_.time as *mut Time,
+                self.table_.time.cast::<Time>(),
                 self.table_.num_rows as usize,
             )
         }
