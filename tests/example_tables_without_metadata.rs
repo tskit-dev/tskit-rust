@@ -48,7 +48,7 @@ fn add_rows(tables: &mut TableCollection) -> Vec<NodeId> {
     // ANCHOR_END: add_second_node
 
     // ANCHOR: add_sample_nodes
-    for i in 2..6 as tskit::bindings::tsk_id_t {
+    for i in 2..6_i32 {
         match tables.add_node(
             tskit::TSK_NODE_IS_SAMPLE,
             0.0,
