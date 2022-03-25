@@ -708,7 +708,7 @@ struct PostorderNodeIterator<'a> {
 
 impl<'a> PostorderNodeIterator<'a> {
     fn new(tree: &'a Tree) -> Self {
-        let mut num_nodes_current_tree: usize = 0;
+        let mut num_nodes_current_tree: tsk_size_t = 0;
         let ptr = std::ptr::addr_of_mut!(num_nodes_current_tree);
         let mut nodes = vec![
             NodeId::NULL;
@@ -723,7 +723,7 @@ impl<'a> PostorderNodeIterator<'a> {
                 tree.as_ptr(),
                 NodeId::NULL.into(), // start from virtual root
                 nodes.as_mut_ptr().cast::<tsk_id_t>(),
-                ptr.cast::<tsk_size_t>(),
+                ptr,
             )
         };
 
@@ -738,7 +738,7 @@ impl<'a> PostorderNodeIterator<'a> {
         Self {
             nodes,
             current_node_index: 0,
-            num_nodes_current_tree,
+            num_nodes_current_tree: crate::util::handle_u64_to_usize(num_nodes_current_tree),
             tree: std::marker::PhantomData,
         }
     }
