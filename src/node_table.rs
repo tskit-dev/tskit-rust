@@ -112,7 +112,12 @@ impl<'a> NodeTable<'a> {
 
     /// Mutable access to node flags.
     pub fn flags_array_mut(&mut self) -> &mut [tsk_flags_t] {
-        unsafe { std::slice::from_raw_parts_mut(self.table_.flags, self.table_.num_rows as usize) }
+        unsafe {
+            std::slice::from_raw_parts_mut(
+                self.table_.flags,
+                crate::util::handle_u64_to_usize(self.table_.num_rows),
+            )
+        }
     }
 
     /// Mutable access to node times.
@@ -120,7 +125,7 @@ impl<'a> NodeTable<'a> {
         unsafe {
             std::slice::from_raw_parts_mut(
                 self.table_.time.cast::<Time>(),
-                self.table_.num_rows as usize,
+                crate::util::handle_u64_to_usize(self.table_.num_rows),
             )
         }
     }

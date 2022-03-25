@@ -276,7 +276,7 @@ impl From<SizeType> for tsk_size_t {
 
 impl From<SizeType> for usize {
     fn from(value: SizeType) -> Self {
-        value.0 as usize
+        crate::util::handle_u64_to_usize(value.0)
     }
 }
 
@@ -290,9 +290,11 @@ impl TryFrom<tsk_id_t> for SizeType {
     type Error = crate::TskitError;
 
     fn try_from(value: tsk_id_t) -> Result<Self, Self::Error> {
-        match value >= 0 {
-            true => Ok(Self(value as crate::bindings::tsk_size_t)),
-            false => Err(crate::TskitError::RangeError(stringify!(value.0))),
+        match tsk_size_t::try_from(value) {
+            Ok(v) => Ok(Self(v)),
+            Err(_) => Err(crate::TskitError::RangeError(
+                stringify!(value.0).to_string(),
+            )),
         }
     }
 }
@@ -301,10 +303,9 @@ impl TryFrom<SizeType> for tsk_id_t {
     type Error = crate::TskitError;
 
     fn try_from(value: SizeType) -> Result<Self, Self::Error> {
-        if value.0 > tsk_id_t::MAX as tsk_size_t {
-            Err(TskitError::RangeError(stringify!(value.0)))
-        } else {
-            Ok(value.0 as tsk_id_t)
+        match tsk_id_t::try_from(value.0) {
+            Ok(v) => Ok(v),
+            Err(_) => Err(TskitError::RangeError(stringify!(value.0).to_string())),
         }
     }
 }

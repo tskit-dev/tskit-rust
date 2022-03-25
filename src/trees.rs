@@ -708,20 +708,22 @@ struct PostorderNodeIterator<'a> {
 
 impl<'a> PostorderNodeIterator<'a> {
     fn new(tree: &'a Tree) -> Self {
-        let mut num_nodes_current_tree: usize = 0;
+        let mut num_nodes_current_tree: tsk_size_t = 0;
         let ptr = std::ptr::addr_of_mut!(num_nodes_current_tree);
         let mut nodes = vec![
-                NodeId::NULL;
-                // NOTE: this fn does not return error codes
-                unsafe { ll_bindings::tsk_tree_get_size_bound(tree.as_ptr()) } as usize
-            ];
+            NodeId::NULL;
+            // NOTE: this fn does not return error codes
+            crate::util::handle_u64_to_usize(unsafe {
+                ll_bindings::tsk_tree_get_size_bound(tree.as_ptr())
+            })
+        ];
 
         let rv = unsafe {
             ll_bindings::tsk_tree_postorder(
                 tree.as_ptr(),
                 NodeId::NULL.into(), // start from virtual root
                 nodes.as_mut_ptr().cast::<tsk_id_t>(),
-                ptr.cast::<tsk_size_t>(),
+                ptr,
             )
         };
 
@@ -736,7 +738,7 @@ impl<'a> PostorderNodeIterator<'a> {
         Self {
             nodes,
             current_node_index: 0,
-            num_nodes_current_tree,
+            num_nodes_current_tree: crate::util::handle_u64_to_usize(num_nodes_current_tree),
             tree: std::marker::PhantomData,
         }
     }
@@ -838,7 +840,16 @@ struct ParentsIterator<'a> {
 
 impl<'a> ParentsIterator<'a> {
     fn new(tree: &'a Tree, u: NodeId) -> Result<Self, TskitError> {
-        match u.0 >= tree.num_nodes as tsk_id_t {
+        let num_nodes = match tsk_id_t::try_from(tree.num_nodes) {
+            Ok(n) => n,
+            Err(_) => {
+                return Err(TskitError::RangeError(format!(
+                    "could not convert {} into tsk_id_t",
+                    stringify!(num_nodes)
+                )))
+            }
+        };
+        match u.0 >= num_nodes {
             true => Err(TskitError::IndexError),
             false => Ok(ParentsIterator {
                 current_node: None,

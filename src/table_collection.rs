@@ -574,7 +574,7 @@ impl TableCollection {
             Some(unsafe {
                 std::slice::from_raw_parts(
                     (*self.as_ptr()).indexes.edge_insertion_order as *const EdgeId,
-                    (*self.as_ptr()).indexes.num_edges as usize,
+                    crate::util::handle_u64_to_usize((*self.as_ptr()).indexes.num_edges),
                 )
             })
         } else {
@@ -590,7 +590,7 @@ impl TableCollection {
             Some(unsafe {
                 std::slice::from_raw_parts(
                     (*self.as_ptr()).indexes.edge_removal_order as *const EdgeId,
-                    (*self.as_ptr()).indexes.num_edges as usize,
+                    crate::util::handle_u64_to_usize((*self.as_ptr()).indexes.num_edges),
                 )
             })
         } else {
