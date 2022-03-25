@@ -4,11 +4,13 @@ use crate::ffi::WrapTskitType;
 use crate::metadata::*;
 use crate::types::Bookmark;
 use crate::EdgeTable;
+use crate::IndividualFlags;
 use crate::IndividualTable;
 use crate::IndividualTableSortOptions;
 use crate::Location;
 use crate::MigrationTable;
 use crate::MutationTable;
+use crate::NodeFlags;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::Position;
@@ -24,7 +26,7 @@ use crate::Time;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
-use crate::{tsk_flags_t, tsk_id_t, tsk_size_t};
+use crate::{tsk_id_t, tsk_size_t};
 use crate::{EdgeId, IndividualId, MigrationId, MutationId, NodeId, PopulationId, SiteId};
 use ll_bindings::tsk_table_collection_free;
 use mbox::MBox;
@@ -234,16 +236,16 @@ impl TableCollection {
     }
 
     /// Add a row to the individual table
-    pub fn add_individual<L: Into<Location>, I: Into<IndividualId>>(
+    pub fn add_individual<F: Into<IndividualFlags>, L: Into<Location>, I: Into<IndividualId>>(
         &mut self,
-        flags: tsk_flags_t,
+        flags: F,
         location: &[L],
         parents: &[I],
     ) -> Result<IndividualId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_individual_table_add_row(
                 &mut (*self.as_mut_ptr()).individuals,
-                flags,
+                flags.into().bits(),
                 location.as_ptr().cast::<f64>(),
                 location.len() as tsk_size_t,
                 parents.as_ptr().cast::<tsk_id_t>(),
@@ -257,12 +259,13 @@ impl TableCollection {
 
     /// Add a row with metadata to the individual table
     pub fn add_individual_with_metadata<
+        F: Into<IndividualFlags>,
         L: Into<Location>,
         I: Into<IndividualId>,
         M: IndividualMetadata,
     >(
         &mut self,
-        flags: tsk_flags_t,
+        flags: F,
         location: &[L],
         parents: &[I],
         metadata: &M,
@@ -271,7 +274,7 @@ impl TableCollection {
         let rv = unsafe {
             ll_bindings::tsk_individual_table_add_row(
                 &mut (*self.as_mut_ptr()).individuals,
-                flags,
+                flags.into().bits(),
                 location.as_ptr().cast::<f64>(),
                 location.len() as tsk_size_t,
                 parents.as_ptr().cast::<tsk_id_t>(),
@@ -359,9 +362,14 @@ impl TableCollection {
     }
 
     /// Add a row to the node table
-    pub fn add_node<T: Into<Time>, POP: Into<PopulationId>, I: Into<IndividualId>>(
+    pub fn add_node<
+        F: Into<NodeFlags>,
+        T: Into<Time>,
+        POP: Into<PopulationId>,
+        I: Into<IndividualId>,
+    >(
         &mut self,
-        flags: ll_bindings::tsk_flags_t,
+        flags: F,
         time: T,
         population: POP,
         individual: I,
@@ -369,7 +377,7 @@ impl TableCollection {
         let rv = unsafe {
             ll_bindings::tsk_node_table_add_row(
                 &mut (*self.as_mut_ptr()).nodes,
-                flags,
+                flags.into().bits(),
                 time.into().0,
                 population.into().0,
                 individual.into().0,
@@ -383,13 +391,14 @@ impl TableCollection {
 
     /// Add a row with optional metadata to the node table
     pub fn add_node_with_metadata<
+        F: Into<NodeFlags>,
         T: Into<Time>,
         POP: Into<PopulationId>,
         I: Into<IndividualId>,
         M: NodeMetadata,
     >(
         &mut self,
-        flags: ll_bindings::tsk_flags_t,
+        flags: F,
         time: T,
         population: POP,
         individual: I,
@@ -399,7 +408,7 @@ impl TableCollection {
         let rv = unsafe {
             ll_bindings::tsk_node_table_add_row(
                 &mut (*self.as_mut_ptr()).nodes,
-                flags,
+                flags.into().bits(),
                 time.into().0,
                 population.into().0,
                 individual.into().0,
@@ -607,12 +616,16 @@ impl TableCollection {
     /// As of `0.7.0`, this function does not sort the individual table!
     /// See
     /// [``topological_sort_individuals``](crate::TableCollection::topological_sort_individuals).
-    pub fn sort(&mut self, start: &Bookmark, options: TableSortOptions) -> TskReturnValue {
+    pub fn sort<O: Into<TableSortOptions>>(
+        &mut self,
+        start: &Bookmark,
+        options: O,
+    ) -> TskReturnValue {
         let rv = unsafe {
             ll_bindings::tsk_table_collection_sort(
                 self.as_mut_ptr(),
                 &start.offsets,
-                options.bits(),
+                options.into().bits(),
             )
         };
 
@@ -627,7 +640,7 @@ impl TableCollection {
     /// As of `0.7.0`, this function does not sort the individual table!
     /// See
     /// [``topological_sort_individuals``](crate::TableCollection::topological_sort_individuals).
-    pub fn full_sort(&mut self, options: TableSortOptions) -> TskReturnValue {
+    pub fn full_sort<O: Into<TableSortOptions>>(&mut self, options: O) -> TskReturnValue {
         let b = Bookmark::new();
         self.sort(&b, options)
     }
@@ -645,9 +658,9 @@ impl TableCollection {
     /// ```
     /// // Parent comes AFTER the child
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let i0 = tables.add_individual::<f64, i32>(0,&[],&[1]).unwrap();
+    /// let i0 = tables.add_individual(0,&[] as &[f64],&[1] as &[i32]).unwrap();
     /// assert_eq!(i0, 0);
-    /// let i1 = tables.add_individual::<f64, i32>(0,&[],&[]).unwrap();
+    /// let i1 = tables.add_individual(0,&[] as &[f64],&[] as &[i32]).unwrap();
     /// assert_eq!(i1, 1);
     /// let n0 = tables.add_node(0, 0.0, -1, i1).unwrap();
     /// assert_eq!(n0, 0);
@@ -675,14 +688,14 @@ impl TableCollection {
     /// # Errors
     ///
     /// Will return an error code if the underlying `C` function returns an error.
-    pub fn topological_sort_individuals(
+    pub fn topological_sort_individuals<O: Into<IndividualTableSortOptions>>(
         &mut self,
-        options: IndividualTableSortOptions,
+        options: O,
     ) -> TskReturnValue {
         let rv = unsafe {
             ll_bindings::tsk_table_collection_individual_topological_sort(
                 self.as_mut_ptr(),
-                options.bits(),
+                options.into().bits(),
             )
         };
         handle_tsk_return_value!(rv)
@@ -694,10 +707,14 @@ impl TableCollection {
     ///
     /// This function allocates a `CString` to pass the file name to the C API.
     /// A panic will occur if the system runs out of memory.
-    pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
+    pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_dump(self.as_ptr(), c_str.as_ptr(), options.bits())
+            ll_bindings::tsk_table_collection_dump(
+                self.as_ptr(),
+                c_str.as_ptr(),
+                options.into().bits(),
+            )
         };
 
         handle_tsk_return_value!(rv)
@@ -707,9 +724,10 @@ impl TableCollection {
     /// Does not release memory.
     /// Memory will be released when the object goes out
     /// of scope.
-    pub fn clear(&mut self, options: TableClearOptions) -> TskReturnValue {
-        let rv =
-            unsafe { ll_bindings::tsk_table_collection_clear(self.as_mut_ptr(), options.bits()) };
+    pub fn clear<O: Into<TableClearOptions>>(&mut self, options: O) -> TskReturnValue {
+        let rv = unsafe {
+            ll_bindings::tsk_table_collection_clear(self.as_mut_ptr(), options.into().bits())
+        };
 
         handle_tsk_return_value!(rv)
     }
@@ -725,9 +743,17 @@ impl TableCollection {
 
     /// Return ``true`` if ``self`` contains the same
     /// data as ``other``, and ``false`` otherwise.
-    pub fn equals(&self, other: &TableCollection, options: TableEqualityOptions) -> bool {
+    pub fn equals<O: Into<TableEqualityOptions>>(
+        &self,
+        other: &TableCollection,
+        options: O,
+    ) -> bool {
         unsafe {
-            ll_bindings::tsk_table_collection_equals(self.as_ptr(), other.as_ptr(), options.bits())
+            ll_bindings::tsk_table_collection_equals(
+                self.as_ptr(),
+                other.as_ptr(),
+                options.into().bits(),
+            )
         }
     }
 
@@ -764,10 +790,10 @@ impl TableCollection {
     ///   in length to the input node table.  For each input node,
     ///   this vector either contains the node's new index or [`NodeId::NULL`]
     ///   if the input node is not part of the simplified history.
-    pub fn simplify<N: Into<NodeId>>(
+    pub fn simplify<N: Into<NodeId>, O: Into<SimplificationOptions>>(
         &mut self,
         samples: &[N],
-        options: SimplificationOptions,
+        options: O,
         idmap: bool,
     ) -> Result<Option<Vec<NodeId>>, TskitError> {
         let mut output_node_map: Vec<NodeId> = vec![];
@@ -779,7 +805,7 @@ impl TableCollection {
                 self.as_mut_ptr(),
                 samples.as_ptr().cast::<tsk_id_t>(),
                 samples.len() as tsk_size_t,
-                options.bits(),
+                options.into().bits(),
                 match idmap {
                     true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
                     false => std::ptr::null_mut(),
@@ -1003,7 +1029,7 @@ mod test {
         let mut nodes = tables.nodes();
         let f = nodes.flags_array_mut();
         for i in f {
-            *i = 11;
+            *i = NodeFlags::from(11);
         }
 
         for t in nodes.time_array_mut() {
@@ -1011,7 +1037,7 @@ mod test {
         }
 
         for i in tables.nodes_iter() {
-            assert_eq!(i.flags, 11);
+            assert_eq!(i.flags.bits(), 11);
             assert_eq!(f64::from(i.time) as i64, -33);
         }
     }
