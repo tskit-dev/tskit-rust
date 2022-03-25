@@ -292,7 +292,9 @@ impl TryFrom<tsk_id_t> for SizeType {
     fn try_from(value: tsk_id_t) -> Result<Self, Self::Error> {
         match tsk_size_t::try_from(value) {
             Ok(v) => Ok(Self(v)),
-            Err(_) => Err(crate::TskitError::RangeError(stringify!(value.0))),
+            Err(_) => Err(crate::TskitError::RangeError(
+                stringify!(value.0).to_string(),
+            )),
         }
     }
 }
@@ -302,7 +304,7 @@ impl TryFrom<SizeType> for tsk_id_t {
 
     fn try_from(value: SizeType) -> Result<Self, Self::Error> {
         if value.0 > tsk_id_t::MAX as tsk_size_t {
-            Err(TskitError::RangeError(stringify!(value.0)))
+            Err(TskitError::RangeError(stringify!(value.0).to_string()))
         } else {
             Ok(value.0 as tsk_id_t)
         }

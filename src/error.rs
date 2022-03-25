@@ -7,7 +7,7 @@ use thiserror::Error;
 pub enum TskitError {
     /// Returned when conversion attempts fail
     #[error("range error: {}", *.0)]
-    RangeError(&'static str),
+    RangeError(String),
     /// Used when bad input is encountered.
     #[error("we received {} but expected {}",*got, *expected)]
     ValueError { got: String, expected: String },

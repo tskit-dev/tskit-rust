@@ -269,7 +269,12 @@ pub(crate) fn char_column_to_vector(
     }
     let row_isize = match isize::try_from(row) {
         Ok(r) => r,
-        Err(_) => return Err(TskitError::RangeError("could not convert u64 to isize")),
+        Err(_) => {
+            return Err(TskitError::RangeError(format!(
+                "could not convert u64 value {} to isize",
+                stringify!(row)
+            )))
+        }
     };
     let start = unsafe { *column_offset.offset(row_isize) };
     let stop = if (row as tsk_size_t) < num_rows {
@@ -288,7 +293,12 @@ pub(crate) fn char_column_to_vector(
         match isize::try_from(i) {
             // NOTE: cast_sign_loss pedantic lint is a false +ve here.
             Ok(o) => buffer.push(unsafe { *column.offset(o) } as u8),
-            Err(_) => return Err(TskitError::RangeError("could not convert value to isize")),
+            Err(_) => {
+                return Err(TskitError::RangeError(format!(
+                    "cauld not convert value {} to isize",
+                    stringify!(i)
+                )))
+            }
         };
     }
     Ok(Some(buffer))
