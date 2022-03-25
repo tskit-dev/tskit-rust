@@ -303,10 +303,9 @@ impl TryFrom<SizeType> for tsk_id_t {
     type Error = crate::TskitError;
 
     fn try_from(value: SizeType) -> Result<Self, Self::Error> {
-        if value.0 > tsk_id_t::MAX as tsk_size_t {
-            Err(TskitError::RangeError(stringify!(value.0).to_string()))
-        } else {
-            Ok(value.0 as tsk_id_t)
+        match tsk_id_t::try_from(value.0) {
+            Ok(v) => Ok(v),
+            Err(_) => Err(TskitError::RangeError(stringify!(value.0).to_string())),
         }
     }
 }

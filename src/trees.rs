@@ -711,10 +711,12 @@ impl<'a> PostorderNodeIterator<'a> {
         let mut num_nodes_current_tree: usize = 0;
         let ptr = std::ptr::addr_of_mut!(num_nodes_current_tree);
         let mut nodes = vec![
-                NodeId::NULL;
-                // NOTE: this fn does not return error codes
-           crate::util::handle_u64_to_usize(    unsafe { ll_bindings::tsk_tree_get_size_bound(tree.as_ptr()) } )
-            ];
+            NodeId::NULL;
+            // NOTE: this fn does not return error codes
+            crate::util::handle_u64_to_usize(unsafe {
+                ll_bindings::tsk_tree_get_size_bound(tree.as_ptr())
+            })
+        ];
 
         let rv = unsafe {
             ll_bindings::tsk_tree_postorder(
@@ -838,7 +840,16 @@ struct ParentsIterator<'a> {
 
 impl<'a> ParentsIterator<'a> {
     fn new(tree: &'a Tree, u: NodeId) -> Result<Self, TskitError> {
-        match u.0 >= tree.num_nodes as tsk_id_t {
+        let num_nodes = match tsk_id_t::try_from(tree.num_nodes) {
+            Ok(n) => n,
+            Err(_) => {
+                return Err(TskitError::RangeError(format!(
+                    "could not convert {} into tsk_id_t",
+                    stringify!(num_nodes)
+                )))
+            }
+        };
+        match u.0 >= num_nodes {
             true => Err(TskitError::IndexError),
             false => Ok(ParentsIterator {
                 current_node: None,
