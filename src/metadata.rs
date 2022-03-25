@@ -292,6 +292,9 @@ pub(crate) fn char_column_to_vector(
     for i in start..stop {
         match isize::try_from(i) {
             // NOTE: cast_sign_loss pedantic lint is a false +ve here.
+            // The metadata live as C strings on the tskit-C side, so
+            // the integer cast exists as part of the round trip.
+            #[allow(clippy::cast_sign_loss)]
             Ok(o) => buffer.push(unsafe { *column.offset(o) } as u8),
             Err(_) => {
                 return Err(TskitError::RangeError(format!(
