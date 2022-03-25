@@ -276,7 +276,7 @@ impl From<SizeType> for tsk_size_t {
 
 impl From<SizeType> for usize {
     fn from(value: SizeType) -> Self {
-        value.0 as usize
+        crate::util::handle_u64_to_usize(value.0)
     }
 }
 

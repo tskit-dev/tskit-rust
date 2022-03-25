@@ -713,7 +713,7 @@ impl<'a> PostorderNodeIterator<'a> {
         let mut nodes = vec![
                 NodeId::NULL;
                 // NOTE: this fn does not return error codes
-                unsafe { ll_bindings::tsk_tree_get_size_bound(tree.as_ptr()) } as usize
+           crate::util::handle_u64_to_usize(    unsafe { ll_bindings::tsk_tree_get_size_bound(tree.as_ptr()) } )
             ];
 
         let rv = unsafe {
