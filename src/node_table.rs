@@ -1,15 +1,16 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::NodeFlags;
 use crate::SizeType;
 use crate::Time;
-use crate::{tsk_flags_t, tsk_id_t, TskitError};
+use crate::{tsk_id_t, TskitError};
 use crate::{IndividualId, NodeId, PopulationId};
 
 /// Row of a [`NodeTable`]
 pub struct NodeTableRow {
     pub id: NodeId,
     pub time: Time,
-    pub flags: tsk_flags_t,
+    pub flags: NodeFlags,
     pub population: PopulationId,
     pub individual: IndividualId,
     pub metadata: Option<Vec<u8>>,
@@ -106,15 +107,18 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<tsk_flags_t, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags)
+    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<NodeFlags, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags) {
+            Ok(f) => Ok(NodeFlags::from(f)),
+            Err(e) => Err(e),
+        }
     }
 
     /// Mutable access to node flags.
-    pub fn flags_array_mut(&mut self) -> &mut [tsk_flags_t] {
+    pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.table_.flags,
+                self.table_.flags.cast::<NodeFlags>(),
                 crate::util::handle_u64_to_usize(self.table_.num_rows),
             )
         }
@@ -215,7 +219,7 @@ impl<'a> NodeTable<'a> {
     pub fn samples_as_vector(&self) -> Vec<NodeId> {
         let mut samples: Vec<NodeId> = vec![];
         for row in self.iter() {
-            if row.flags & crate::TSK_NODE_IS_SAMPLE > 0 {
+            if row.flags.contains(NodeFlags::IS_SAMPLE) {
                 samples.push(row.id);
             }
         }

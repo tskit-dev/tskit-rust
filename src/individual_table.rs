@@ -1,13 +1,14 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::IndividualFlags;
 use crate::IndividualId;
 use crate::Location;
-use crate::{tsk_flags_t, tsk_id_t, tsk_size_t, TskitError};
+use crate::{tsk_id_t, tsk_size_t, TskitError};
 
 /// Row of a [`IndividualTable`]
 pub struct IndividualTableRow {
     pub id: IndividualId,
-    pub flags: tsk_flags_t,
+    pub flags: IndividualFlags,
     pub location: Option<Vec<Location>>,
     pub parents: Option<Vec<IndividualId>>,
     pub metadata: Option<Vec<u8>>,
@@ -110,8 +111,14 @@ impl<'a> IndividualTable<'a> {
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Result<tsk_flags_t, TskitError> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags)
+    pub fn flags<I: Into<IndividualId> + Copy>(
+        &self,
+        row: I,
+    ) -> Result<IndividualFlags, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags) {
+            Ok(f) => Ok(IndividualFlags::from(f)),
+            Err(e) => Err(e),
+        }
     }
 
     /// Return the locations for a given row.

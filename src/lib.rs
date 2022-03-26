@@ -449,6 +449,9 @@ impl_id_traits!(ProvenanceId);
 /// the error message is stored for diplay.
 pub type TskReturnValue = Result<i32, TskitError>;
 
+/// Alias for tsk_flags_t
+pub type RawFlags = crate::bindings::tsk_flags_t;
+
 /// Version of the rust crate.
 ///
 /// To get the C API version, see:

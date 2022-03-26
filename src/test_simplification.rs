@@ -2,17 +2,17 @@
 mod tests {
     use crate::test_fixtures::make_small_table_collection_two_trees;
     use crate::test_fixtures::treeseq_from_small_table_collection_two_trees;
+    use crate::NodeFlags;
     use crate::NodeId;
     use crate::SimplificationOptions;
     use crate::TableAccess;
-    use crate::TSK_NODE_IS_SAMPLE;
 
     #[test]
     fn test_simplify_tables() {
         let mut tables = make_small_table_collection_two_trees();
         let mut samples: Vec<NodeId> = vec![];
         for (i, row) in tables.nodes_iter().enumerate() {
-            if row.flags & TSK_NODE_IS_SAMPLE > 0 {
+            if row.flags.contains(NodeFlags::IS_SAMPLE) {
                 samples.push((i as i32).into());
             }
         }

@@ -1,5 +1,5 @@
 use crate::bindings as ll_bindings;
-use crate::tsk_flags_t;
+use crate::RawFlags;
 use bitflags::bitflags;
 
 bitflags! {
@@ -39,7 +39,8 @@ bitflags! {
     /// assert!(!flags.contains(SO::FILTER_POPULATIONS));
     /// ```
     #[derive(Default)]
-    pub struct SimplificationOptions: tsk_flags_t {
+    #[repr(transparent)]
+    pub struct SimplificationOptions: RawFlags {
         /// Default behavior
         const NONE = 0;
         const FILTER_SITES = ll_bindings::TSK_FILTER_SITES;
@@ -70,7 +71,8 @@ bitflags! {
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::clear`].
     #[derive(Default)]
-    pub struct TableClearOptions : tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TableClearOptions : RawFlags {
         /// Default behavior.
         const NONE = 0;
         const CLEAR_METADATA_SCHEMAS = ll_bindings::TSK_CLEAR_METADATA_SCHEMAS;
@@ -82,7 +84,8 @@ bitflags! {
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::equals`].
     #[derive(Default)]
-    pub struct TableEqualityOptions : tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TableEqualityOptions : RawFlags {
         /// Default behavior.
         const NONE = 0;
         const IGNORE_METADATA = ll_bindings::TSK_CMP_IGNORE_METADATA;
@@ -95,7 +98,8 @@ bitflags! {
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::sort`].
     #[derive(Default)]
-    pub struct TableSortOptions : tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TableSortOptions : RawFlags {
         /// Default behavior.
         const NONE = 0;
         /// Do not validate contents of edge table.
@@ -106,7 +110,8 @@ bitflags! {
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::sort_individuals`].
     #[derive(Default)]
-    pub struct IndividualTableSortOptions : tsk_flags_t {
+    #[repr(transparent)]
+    pub struct IndividualTableSortOptions : RawFlags {
         /// Default behavior.
         const NONE = 0;
     }
@@ -116,7 +121,8 @@ bitflags! {
     /// Specify the behavior of iterating over [`Tree`] objects.
     /// See [`TreeSequence::tree_iterator`].
     #[derive(Default)]
-    pub struct TreeFlags: tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TreeFlags: RawFlags {
         /// Default behavior.
         const NONE = 0;
         /// Update sample lists, enabling [`Tree::samples`].
@@ -140,7 +146,8 @@ bitflags! {
     /// call [`crate::TableCollection::build_index`] prior to calling
     /// [`crate::TableCollection::dump`].
     #[derive(Default)]
-    pub struct TableOutputOptions : tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TableOutputOptions : RawFlags {
         const NONE = 0;
     }
 }
@@ -149,7 +156,8 @@ bitflags! {
     /// Modify behavior of [`crate::TableCollection::tree_sequence`]
     /// and [`crate::TreeSequence::new`].
     #[derive(Default)]
-    pub struct TreeSequenceFlags: tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TreeSequenceFlags: RawFlags {
         /// Default behavior
         const NONE = 0;
         /// If used, then build table indexes if they are not present.
@@ -159,9 +167,10 @@ bitflags! {
 
 bitflags! {
     #[derive(Default)]
-    pub struct TableIntegrityCheckFlags: tsk_flags_t {
+    #[repr(transparent)]
+    pub struct TableIntegrityCheckFlags: RawFlags {
         /// Default behavior is a set of basic checks
-        const DEFAULT = 0;
+        const NONE = 0;
         /// Check that edges are ordered
         const CHECK_EDGE_ORDERING =ll_bindings::TSK_CHECK_EDGE_ORDERING;
         /// Check that sites are ordered
@@ -178,5 +187,83 @@ bitflags! {
         const CHECK_INDEXES=ll_bindings::TSK_CHECK_INDEXES;
         /// Check tree integrity.  Enables most or all of the preceding options.
         const CHECK_TREES=ll_bindings::TSK_CHECK_TREES;
+    }
+}
+
+bitflags! {
+    #[derive(Default)]
+    #[repr(transparent)]
+    /// Node flags
+    pub struct NodeFlags : RawFlags {
+        /// Default (empty)
+        const NONE = 0;
+        /// Node is a sample
+        const IS_SAMPLE = ll_bindings::TSK_NODE_IS_SAMPLE;
+    }
+}
+
+bitflags! {
+    #[derive(Default)]
+    #[repr(transparent)]
+    /// Individual flags
+    pub struct IndividualFlags : RawFlags {
+        /// Default (empty)
+        const NONE = 0;
+    }
+}
+
+impl_flags!(SimplificationOptions);
+impl_flags!(TableClearOptions);
+impl_flags!(TableEqualityOptions);
+impl_flags!(TreeSequenceFlags);
+impl_flags!(TableSortOptions);
+impl_flags!(TreeFlags);
+impl_flags!(IndividualTableSortOptions);
+impl_flags!(TableIntegrityCheckFlags);
+impl_flags!(TableOutputOptions);
+
+impl_from_for_flag_types!(SimplificationOptions);
+impl_from_for_flag_types!(TableClearOptions);
+impl_from_for_flag_types!(TableEqualityOptions);
+impl_from_for_flag_types!(TreeSequenceFlags);
+impl_from_for_flag_types!(TableSortOptions);
+impl_from_for_flag_types!(TreeFlags);
+impl_from_for_flag_types!(IndividualTableSortOptions);
+impl_from_for_flag_types!(TableIntegrityCheckFlags);
+impl_from_for_flag_types!(TableOutputOptions);
+
+impl From<RawFlags> for NodeFlags {
+    fn from(flags: RawFlags) -> Self {
+        // Safety: node flags can contain user-defined values.
+        // It is an error on the user's part to define flags
+        // in the first 16 bits, as per the C API docs.
+        unsafe { Self::from_bits_unchecked(flags) }
+    }
+}
+
+impl From<RawFlags> for IndividualFlags {
+    fn from(flags: RawFlags) -> Self {
+        // Safety: node flags can contain user-defined values.
+        // It is an error on the user's part to define flags
+        // in the first 16 bits, as per the C API docs.
+        unsafe { Self::from_bits_unchecked(flags) }
+    }
+}
+
+impl NodeFlags {
+    /// We do not enforce valid flags in the library.
+    /// This function will return `true` if any bits
+    /// are set that do not correspond to allowed flags.
+    pub fn is_valid(&self) -> bool {
+        true
+    }
+}
+
+impl IndividualFlags {
+    /// We do not enforce valid flags in the library.
+    /// This function will return `true` if any bits
+    /// are set that do not correspond to allowed flags.
+    pub fn is_valid(&self) -> bool {
+        true
     }
 }

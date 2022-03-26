@@ -64,7 +64,8 @@ impl Tree {
         }
     }
 
-    fn new(ts: &TreeSequence, flags: TreeFlags) -> Result<Self, TskitError> {
+    fn new<F: Into<TreeFlags>>(ts: &TreeSequence, flags: F) -> Result<Self, TskitError> {
+        let flags = flags.into();
         let mut tree = Self::wrap(unsafe { (*(*ts.as_ptr()).tables).nodes.num_rows }, flags);
         let mut rv =
             unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), ts.as_ptr(), flags.bits()) };
@@ -1000,11 +1001,14 @@ impl TreeSequence {
     /// let tree_sequence = tskit::TreeSequence::new(tables,
     /// tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
-    pub fn new(tables: TableCollection, flags: TreeSequenceFlags) -> Result<Self, TskitError> {
+    pub fn new<F: Into<TreeSequenceFlags>>(
+        tables: TableCollection,
+        flags: F,
+    ) -> Result<Self, TskitError> {
         let mut t = tables;
         let mut treeseq = Self::wrap();
         let rv = unsafe {
-            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), t.as_mut_ptr(), flags.bits())
+            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), t.as_mut_ptr(), flags.into().bits())
         };
         handle_tsk_return_value!(rv, treeseq)
     }
@@ -1021,10 +1025,11 @@ impl TreeSequence {
     ///
     /// This function allocates a `CString` to pass the file name to the C API.
     /// A panic will occur if the system runs out of memory.
-    pub fn dump(&self, filename: &str, options: TableOutputOptions) -> TskReturnValue {
+    pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).unwrap();
-        let rv =
-            unsafe { ll_bindings::tsk_treeseq_dump(self.as_ptr(), c_str.as_ptr(), options.bits()) };
+        let rv = unsafe {
+            ll_bindings::tsk_treeseq_dump(self.as_ptr(), c_str.as_ptr(), options.into().bits())
+        };
 
         handle_tsk_return_value!(rv)
     }
@@ -1092,7 +1097,7 @@ impl TreeSequence {
     /// while let Some(tree) = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap().next() {
     /// }
     /// ```
-    pub fn tree_iterator(&self, flags: TreeFlags) -> Result<Tree, TskitError> {
+    pub fn tree_iterator<F: Into<TreeFlags>>(&self, flags: F) -> Result<Tree, TskitError> {
         let tree = Tree::new(self, flags)?;
 
         Ok(tree)
@@ -1169,10 +1174,10 @@ impl TreeSequence {
     ///   in length to the input node table.  For each input node,
     ///   this vector either contains the node's new index or [`NodeId::NULL`]
     ///   if the input node is not part of the simplified history.
-    pub fn simplify(
+    pub fn simplify<O: Into<SimplificationOptions>>(
         &self,
         samples: &[NodeId],
-        options: SimplificationOptions,
+        options: O,
         idmap: bool,
     ) -> Result<(Self, Option<Vec<NodeId>>), TskitError> {
         let mut tables = TableCollection::new(unsafe { (*(*self.inner).tables).sequence_length })?;
@@ -1191,7 +1196,7 @@ impl TreeSequence {
                 // NOTE: casting away const-ness:
                 samples.as_ptr().cast::<tsk_id_t>(),
                 samples.len() as tsk_size_t,
-                options.bits(),
+                options.into().bits(),
                 ts.as_mut_ptr(),
                 match idmap {
                     true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
