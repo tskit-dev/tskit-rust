@@ -11,3 +11,4 @@
   - [Checking integrity](./tables/check_integrity.md)
 - [Tree sequences and Trees](./treeseqs/README.md)
   - [Initialization](./treeseqs/initialization.md)
+* [Developer's guide](./developers/README.md)
