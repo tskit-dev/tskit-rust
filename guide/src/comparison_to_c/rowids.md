@@ -72,3 +72,4 @@ In summary:
   of the correct ID type.
   Code trying to pass in the wrong ID type will fail to compile.
 * The examples here only mention `NodeId`, but the same principles apply to `EdgeId`, `SiteId`, `MutationId`, etc..
+
