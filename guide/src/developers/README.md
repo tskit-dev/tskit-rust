@@ -18,4 +18,4 @@ To test all features and tests found in `examples/`:
 cargo test --all-targets --all-features
 ```
 
-## Running clippy
+## Static code analysis
