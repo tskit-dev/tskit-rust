@@ -722,7 +722,6 @@ impl<'a> PostorderNodeIterator<'a> {
         let rv = unsafe {
             ll_bindings::tsk_tree_postorder(
                 tree.as_ptr(),
-                NodeId::NULL.into(), // start from virtual root
                 nodes.as_mut_ptr().cast::<tsk_id_t>(),
                 ptr,
             )
@@ -1509,7 +1508,6 @@ pub(crate) mod test_trees {
                 unsafe {
                     ll_bindings::tsk_tree_preorder(
                         tree.as_ptr(),
-                        -1,
                         nodes.as_mut_ptr() as *mut tsk_id_t,
                         ptr,
                     );

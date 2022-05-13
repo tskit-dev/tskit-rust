@@ -79,7 +79,7 @@ pub fn panic_on_tskit_error(code: i32) {
 ///
 /// ```
 /// let x = tskit::error::get_tskit_error_message(-207);
-/// assert_eq!(x, "Individual out of bounds");
+/// assert!(x.contains("Individual out of bounds"));
 /// ```
 ///
 /// # Panics
@@ -121,14 +121,14 @@ mod test {
         let x = mock_error();
         let mut s: String = "nope!".to_string();
         x.map_or_else(|e: TskitError| s = format!("{}", e), |_| ());
-        assert_eq!(s, "Individual out of bounds");
+        assert!(s.contains("Individual out of bounds"));
     }
 
     #[test]
     fn test_extract_error_message() {
         let x = mock_error();
         match extract_error_message(x) {
-            Some(s) => assert_eq!(s, "Individual out of bounds"),
+            Some(s) => assert!(s.contains("Individual out of bounds")),
             None => panic!(),
         }
 
