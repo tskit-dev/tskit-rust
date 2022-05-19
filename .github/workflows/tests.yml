@@ -26,6 +26,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
+      - uses: Swatinem/rust-cache@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
       - run: sudo apt-get update -y
         if: matrix.os == 'ubuntu-latest'
       - uses: actions-rs/toolchain@v1
