@@ -15,7 +15,6 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         rust:
           - stable
-          - beta
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
