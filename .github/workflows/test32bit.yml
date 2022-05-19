@@ -1,0 +1,44 @@
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+name: 32-bit CI
+
+jobs:
+  run-tests:
+    runs-on: ${{ matrix.os }}
+    #container:
+    #  image: ubuntu:20.10
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust:
+          - stable
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.6.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      - name: Install Linux tooling for 32 bit builds
+        run: |
+          sudo apt-get update -y
+          sudo apt-get -f install gcc-multilib
+      - name: Install rust tooling for 32 bit builds
+        run: |
+          rustup target install i686-unknown-linux-gnu
+      - name: cargo tests
+        run: |
+            cargo test --target=i686-unknown-linux-gnu
+      - name: cargo tests (all feaures)
+        run: |
+            cargo test --target=i686-unknown-linux-gnu --all-features
