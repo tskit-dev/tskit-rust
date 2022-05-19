@@ -30,6 +30,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
+      - uses: Swatinem/rust-cache@v1
       - name: cargo build all features
         run: cargo build --all-features
       - name: Setup mdBook
