@@ -3,7 +3,7 @@ on:
     branches: [main, dev]
   pull_request:
 
-name: CI
+name: 64-bit CI
 
 jobs:
   run-tests:
