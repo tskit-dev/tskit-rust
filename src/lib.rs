@@ -274,9 +274,19 @@ impl From<SizeType> for tsk_size_t {
     }
 }
 
-impl From<SizeType> for usize {
-    fn from(value: SizeType) -> Self {
-        crate::util::handle_u64_to_usize(value.0)
+// SizeType is u64, so converstion
+// can fail on systems with smaller pointer widths.
+impl TryFrom<SizeType> for usize {
+    type Error = TskitError;
+
+    fn try_from(value: SizeType) -> Result<Self, Self::Error> {
+        match usize::try_from(value.0) {
+            Ok(x) => Ok(x),
+            Err(_) => Err(TskitError::RangeError(format!(
+                "could not convert {} to usize",
+                value
+            ))),
+        }
     }
 }
 

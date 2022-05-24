@@ -119,7 +119,7 @@ impl<'a> NodeTable<'a> {
         unsafe {
             std::slice::from_raw_parts_mut(
                 self.table_.flags.cast::<NodeFlags>(),
-                crate::util::handle_u64_to_usize(self.table_.num_rows),
+                usize::try_from(self.table_.num_rows).unwrap(),
             )
         }
     }
@@ -129,7 +129,7 @@ impl<'a> NodeTable<'a> {
         unsafe {
             std::slice::from_raw_parts_mut(
                 self.table_.time.cast::<Time>(),
-                crate::util::handle_u64_to_usize(self.table_.num_rows),
+                usize::try_from(self.table_.num_rows).unwrap(),
             )
         }
     }
