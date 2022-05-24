@@ -1,5 +1,19 @@
 # Change log
 
+## 2022-05-24, Version 0.8.0
+
+### Commits
+- [[`e463302ced`](https://github.com/tskit-dev/tskit-rust/commit/e463302cedb4f7b622e296fa92f7e1b36b51087f)] Bump package version to 0.8.0 (molpopgen)
+- [[`deffc58127`](https://github.com/tskit-dev/tskit-rust/commit/deffc58127134b964686bd34b8fe2df53c857b14)] Replace From<SizeType> for usize with TryFrom. (#234) (Kevin R. Thornton)
+- [[`a7c04213a1`](https://github.com/tskit-dev/tskit-rust/commit/a7c04213a14d39ac5826b299f4ea88ae54a728ab)] update to CAPI 1.0.0 (#229) (Kevin R. Thornton)
+- [[`7c0b6169a3`](https://github.com/tskit-dev/tskit-rust/commit/7c0b6169a3a9e50ad17d48cb8f9cfa66fb5ea0c1)] Add CI for 32 bit Linux builds (#232) (Kevin R. Thornton)
+- [[`7458d85163`](https://github.com/tskit-dev/tskit-rust/commit/7458d851637d0cd674a8f96b85763b4f31888e14)] Invoke rust dependency caching after setting up rustc (#233) (Kevin R. Thornton)
+- [[`203a43a0e8`](https://github.com/tskit-dev/tskit-rust/commit/203a43a0e8611a949e8e87012180ff556fe7a726)] Only run CI for rust/stable. (#231) (Kevin R. Thornton)
+- [[`fb2128c0a5`](https://github.com/tskit-dev/tskit-rust/commit/fb2128c0a54f2fe3bc54c17c77b6c3124e167621)] Add dependency caching for CI. (#230) (Kevin R. Thornton)
+- [[`aff053c786`](https://github.com/tskit-dev/tskit-rust/commit/aff053c786b5e0294d90d053be2b538c82105f3f)] Improvements to handling of tsk_flags_t: (#227) (Kevin R. Thornton)
+- [[`5f558cb051`](https://github.com/tskit-dev/tskit-rust/commit/5f558cb0514af85573de9425c1b9bdd7b42bdf3d)] Audit pedantic lints re: integer casts (#223) (Kevin R. Thornton)
+- [[`609546185c`](https://github.com/tskit-dev/tskit-rust/commit/609546185c8e69def5d82116fc9c28ee8d53a070)] Fix several "pedantic" lints from clippy: (#222) (Kevin R. Thornton)
+
 ## 2022-03-24, Version 0.7.0
 
 ### Commits
