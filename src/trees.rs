@@ -714,9 +714,9 @@ impl<'a> PostorderNodeIterator<'a> {
         let mut nodes = vec![
             NodeId::NULL;
             // NOTE: this fn does not return error codes
-            crate::util::handle_u64_to_usize(unsafe {
+            usize::try_from(unsafe {
                 ll_bindings::tsk_tree_get_size_bound(tree.as_ptr())
-            })
+            }).unwrap()
         ];
 
         let rv = unsafe {
@@ -738,7 +738,7 @@ impl<'a> PostorderNodeIterator<'a> {
         Self {
             nodes,
             current_node_index: 0,
-            num_nodes_current_tree: crate::util::handle_u64_to_usize(num_nodes_current_tree),
+            num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap(),
             tree: std::marker::PhantomData,
         }
     }
@@ -1187,7 +1187,7 @@ impl TreeSequence {
         let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(usize::from(self.nodes().num_rows()), NodeId::NULL);
+            output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_treeseq_simplify(
@@ -1430,7 +1430,7 @@ pub(crate) mod test_trees {
             assert_eq!(s.len(), 2);
             assert_eq!(
                 s.len(),
-                usize::from(tree.num_tracked_samples(0.into()).unwrap())
+                usize::try_from(tree.num_tracked_samples(0.into()).unwrap()).unwrap()
             );
             assert_eq!(s[0], 1);
             assert_eq!(s[1], 2);
@@ -1444,7 +1444,7 @@ pub(crate) mod test_trees {
                 assert_eq!(s[0], u);
                 assert_eq!(
                     s.len(),
-                    usize::from(tree.num_tracked_samples(u.into()).unwrap())
+                    usize::try_from(tree.num_tracked_samples(u.into()).unwrap()).unwrap()
                 );
             }
         } else {

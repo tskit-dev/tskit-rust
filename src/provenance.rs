@@ -212,7 +212,10 @@ mod test_provenances {
             assert!(row_id == ProvenanceId(i as crate::tsk_id_t));
             assert_eq!(tables.provenances().record(row_id).unwrap(), *r);
         }
-        assert_eq!(usize::from(tables.provenances().num_rows()), records.len());
+        assert_eq!(
+            usize::try_from(tables.provenances().num_rows()).unwrap(),
+            records.len()
+        );
         for (i, row) in tables.provenances_iter().enumerate() {
             assert_eq!(records[i], row.record);
         }

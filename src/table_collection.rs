@@ -583,7 +583,7 @@ impl TableCollection {
             Some(unsafe {
                 std::slice::from_raw_parts(
                     (*self.as_ptr()).indexes.edge_insertion_order as *const EdgeId,
-                    crate::util::handle_u64_to_usize((*self.as_ptr()).indexes.num_edges),
+                    usize::try_from((*self.as_ptr()).indexes.num_edges).unwrap(),
                 )
             })
         } else {
@@ -599,7 +599,7 @@ impl TableCollection {
             Some(unsafe {
                 std::slice::from_raw_parts(
                     (*self.as_ptr()).indexes.edge_removal_order as *const EdgeId,
-                    crate::util::handle_u64_to_usize((*self.as_ptr()).indexes.num_edges),
+                    usize::try_from((*self.as_ptr()).indexes.num_edges).unwrap(),
                 )
             })
         } else {
@@ -798,7 +798,7 @@ impl TableCollection {
     ) -> Result<Option<Vec<NodeId>>, TskitError> {
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(usize::from(self.nodes().num_rows()), NodeId::NULL);
+            output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -1105,11 +1105,11 @@ mod test {
         assert!(tables.is_indexed());
         assert_eq!(
             tables.edge_insertion_order().unwrap().len(),
-            tables.edges().num_rows().into()
+            tables.edges().num_rows().try_into().unwrap()
         );
         assert_eq!(
             tables.edge_removal_order().unwrap().len(),
-            tables.edges().num_rows().into()
+            tables.edges().num_rows().try_into().unwrap()
         );
 
         for i in tables.edge_insertion_order().unwrap() {
@@ -1362,7 +1362,7 @@ mod test {
 
         let mut num_with_metadata = 0;
         let mut num_without_metadata = 0;
-        for i in 0..usize::from(tables.mutations().num_rows()) {
+        for i in 0..usize::try_from(tables.mutations().num_rows()).unwrap() {
             match tables
                 .mutations()
                 .metadata::<F>((i as tsk_id_t).into())
@@ -1837,7 +1837,7 @@ mod test_adding_site {
                 Some(metadata[mi])
             );
         }
-        for i in 0..usize::from(tables.sites().num_rows()) {
+        for i in 0..usize::try_from(tables.sites().num_rows()).unwrap() {
             assert!(
                 tables.sites().row(SiteId::from(i as tsk_id_t)).unwrap()
                     == tables.sites().row(SiteId::from(i as tsk_id_t)).unwrap()
