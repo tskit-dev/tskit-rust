@@ -1000,15 +1000,22 @@ impl TreeSequence {
     /// let tree_sequence = tskit::TreeSequence::new(tables,
     /// tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
+    ///
+    /// ## Note
+    ///
+    /// This function makes *no extra copies* of the tables.
+    /// There is, however, a temporary allocation of an empty table collection
+    /// in order to convince rust that we are safely handling all memory.
     pub fn new<F: Into<TreeSequenceFlags>>(
         tables: TableCollection,
         flags: F,
     ) -> Result<Self, TskitError> {
-        let mut t = tables;
         let mut treeseq = Self::wrap();
-        let rv = unsafe {
-            ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), t.as_mut_ptr(), flags.into().bits())
-        };
+        let mut flags: u32 = flags.into().bits();
+        flags |= ll_bindings::TSK_TAKE_OWNERSHIP;
+        let raw_tables_ptr = tables.into_raw()?;
+        let rv =
+            unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), raw_tables_ptr, flags) };
         handle_tsk_return_value!(rv, treeseq)
     }
 
