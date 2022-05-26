@@ -80,18 +80,12 @@ fn add_rows(tables: &mut TableCollection) -> Vec<NodeId> {
     node_ids
 }
 
-#[cfg(test)]
-mod test_example_tables_without_metadata {
-
-    use super::*;
-
-    #[test]
-    fn test_initialize() {
+fn main() {
+    {
         let _ = initialize();
     }
 
-    #[test]
-    fn test_add_rows() {
+    {
         let mut tables = initialize();
         let _ = add_rows(&mut tables);
     }
