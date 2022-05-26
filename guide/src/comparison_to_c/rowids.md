@@ -13,11 +13,11 @@ Trying to do so will fail to compile.
 ## Node IDs
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:create_node_id}}
+{{#include ../../../examples/example_row_id_types.rs:create_node_id}}
 ```
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:create_null_node_id}}
+{{#include ../../../examples/example_row_id_types.rs:create_null_node_id}}
 ```
 
 ## Vectors of IDs
@@ -28,17 +28,17 @@ A vector of IDs can be treated as a raw C array of the underlying integer type w
 First, let's create a vector of node IDs to play with:
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:create_vec_node_id}}
+{{#include ../../../examples/example_row_id_types.rs:create_vec_node_id}}
 ```
 
 A `Vec<NodeId>` can be passed to rust functions in the usual fashion:
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:mock_rust_fn}}
+{{#include ../../../examples/example_row_id_types.rs:mock_rust_fn}}
 ```
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:call_mock_rust_fn}}
+{{#include ../../../examples/example_row_id_types.rs:call_mock_rust_fn}}
 ```
 
 Consider the following two C functions that model common patterns in the C API:
@@ -54,11 +54,11 @@ void tsk_foo2(tsk_id_t * samples, tsk_size_t num_samples) {}
 We can call these functions directly, but we have to cast to the correct pointer and size types:
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:call_mock_tsk_fn}}
+{{#include ../../../examples/example_row_id_types.rs:call_mock_tsk_fn}}
 ```
 
 ```rust, noplayground, ignore
-{{#include ../../../tests/example_row_id_types.rs:call_mock_tsk_fn_mut}}
+{{#include ../../../examples/example_row_id_types.rs:call_mock_tsk_fn_mut}}
 ```
 
 In summary:
