@@ -151,6 +151,21 @@ impl TableCollection {
         Ok(tables)
     }
 
+    pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
+        let mut tables = self;
+        // rust won't let use move inner out b/c this type implements Drop.
+        // So we have to replace the existing pointer with a new one.
+        let table_ptr = unsafe {
+            libc::malloc(std::mem::size_of::<ll_bindings::tsk_table_collection_t>())
+                as *mut ll_bindings::tsk_table_collection_t
+        };
+        let rv = unsafe { ll_bindings::tsk_table_collection_init(table_ptr, 0) };
+
+        let mut temp = unsafe { MBox::from_raw(table_ptr) };
+        std::mem::swap(&mut temp, &mut tables.inner);
+        handle_tsk_return_value!(rv, MBox::into_raw(temp))
+    }
+
     /// Load a table collection from a file.
     ///
     /// # Panics
