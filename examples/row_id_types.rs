@@ -41,13 +41,9 @@ extern "C" fn tsk_foo(_: *const tskit::bindings::tsk_id_t, _: tskit::bindings::t
 extern "C" fn tsk_foo2(_: *mut tskit::bindings::tsk_id_t, _: tskit::bindings::tsk_size_t) {}
 // ANCHOR_END: mock_tsk_fn_mut
 
-#[test]
-fn test_row_id_examples() {
+fn main() {
     row_id_examples();
-}
 
-#[test]
-fn test_vector_row_id_examples() {
     let mut v = vector_row_id_examples();
 
     // ANCHOR: call_mock_rust_fn
