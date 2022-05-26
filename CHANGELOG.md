@@ -1,5 +1,13 @@
 # Change log
 
+## 2022-05-26, Version 0.8.1
+
+### Commits
+
+- [[`bd72b689ac`](https://github.com/tskit-dev/tskit-rust/commit/bd72b689ac5a81d1f2522666c9b25908ba56b79b)] Bump version to 0.8.1 (molpopgen)
+- [[`b0abdfad5c`](https://github.com/tskit-dev/tskit-rust/commit/b0abdfad5cb0f964583aec4056a512b9d3935c2b)] impl TryFrom<TableCollection> for TreeSequence (#236) (Kevin R. Thornton)
+- [[`71e927a9bb`](https://github.com/tskit-dev/tskit-rust/commit/71e927a9bb221309afa72cb601038e3232e3e180)] TreeSequence::new now takes ownership of the TableCollection. (#235) (Kevin R. Thornton)
+
 ## 2022-05-24, Version 0.8.0
 
 ### Commits
