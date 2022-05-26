@@ -48,6 +48,9 @@ jobs:
         run: |
             cargo test --all-features
             cargo test --all-features --examples
+      - name: run examples
+        run: |
+            cargo run --example row_id_types
 
   fmt:
     name: rust fmt
