@@ -981,7 +981,7 @@ impl TreeSequence {
     /// ```
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// tables.build_index();
-    /// let tree_sequence = tskit::TreeSequence::new(tables, tskit::TreeSequenceFlags::default()).unwrap();
+    /// let tree_sequence = tskit::TreeSequence::try_from(tables).unwrap();
     /// ```
     ///
     /// The following may be preferred to the previous example, and more closely
@@ -997,8 +997,7 @@ impl TreeSequence {
     ///
     /// ```should_panic
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
-    /// let tree_sequence = tskit::TreeSequence::new(tables,
-    /// tskit::TreeSequenceFlags::default()).unwrap();
+    /// let tree_sequence = tskit::TreeSequence::try_from(tables).unwrap();
     /// ```
     ///
     /// ## Note
@@ -1266,6 +1265,14 @@ impl TreeSequence {
             )
         };
         handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
+    }
+}
+
+impl TryFrom<TableCollection> for TreeSequence {
+    type Error = TskitError;
+
+    fn try_from(value: TableCollection) -> Result<Self, Self::Error> {
+        Self::new(value, TreeSequenceFlags::default())
     }
 }
 
