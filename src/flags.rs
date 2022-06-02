@@ -251,11 +251,22 @@ impl From<RawFlags> for IndividualFlags {
 }
 
 impl NodeFlags {
+    /// Create a new flags instance with `IS_SAMPLE` set.
+    pub fn new_sample() -> Self {
+        Self::IS_SAMPLE
+    }
+
     /// We do not enforce valid flags in the library.
     /// This function will return `true` if any bits
     /// are set that do not correspond to allowed flags.
     pub fn is_valid(&self) -> bool {
         true
+    }
+
+    /// Returns `true` if flags contains `IS_SAMPLE`,
+    /// and `false` otherwise.
+    pub fn is_sample(&self) -> bool {
+        self.contains(NodeFlags::IS_SAMPLE)
     }
 }
 
@@ -265,5 +276,22 @@ impl IndividualFlags {
     /// are set that do not correspond to allowed flags.
     pub fn is_valid(&self) -> bool {
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn node_is_not_sample() {
+        let n = NodeFlags::default();
+        assert!(!n.is_sample());
+    }
+
+    #[test]
+    fn node_is_sample() {
+        let n = NodeFlags::new_sample();
+        assert!(n.is_sample());
     }
 }
