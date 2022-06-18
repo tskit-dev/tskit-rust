@@ -79,7 +79,7 @@ pub mod bindings;
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_table;
 pub mod error;
-pub mod ffi;
+mod ffi;
 mod flags;
 mod individual_table;
 pub mod metadata;
