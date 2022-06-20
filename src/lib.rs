@@ -74,6 +74,7 @@
 #![allow(non_snake_case)]
 
 #[allow(deref_nullptr)]
+#[allow(rustdoc::broken_intra_doc_links)]
 pub mod bindings;
 
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
