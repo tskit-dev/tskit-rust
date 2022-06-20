@@ -626,11 +626,10 @@ impl TableCollection {
     /// The [``bookmark``](crate::types::Bookmark) can
     /// be used to affect where sorting starts from for each table.
     ///
-    /// # Note
+    /// # Details
     ///
-    /// As of `0.7.0`, this function does not sort the individual table!
-    /// See
-    /// [``topological_sort_individuals``](crate::TableCollection::topological_sort_individuals).
+    /// See [`full_sort`](crate::TableCollection::full_sort)
+    /// for more details about which tables are sorted.
     pub fn sort<O: Into<TableSortOptions>>(
         &mut self,
         start: &Bookmark,
@@ -650,10 +649,20 @@ impl TableCollection {
     /// Fully sort all tables.
     /// Implemented via a call to [``sort``](crate::TableCollection::sort).
     ///
-    /// # Note
+    /// # Details
     ///
-    /// As of `0.7.0`, this function does not sort the individual table!
-    /// See
+    /// This function only sorts the tables that have a strict sortedness
+    /// requirement according to the `tskit` [data
+    /// model](https://tskit.dev/tskit/docs/stable/data-model.html).
+    ///
+    /// These tables are:
+    ///
+    /// * edges
+    /// * mutations
+    /// * sites
+    ///
+    /// For some use cases it is desirable to have the individual table
+    /// sorted so that parents appear before offspring. See
     /// [``topological_sort_individuals``](crate::TableCollection::topological_sort_individuals).
     pub fn full_sort<O: Into<TableSortOptions>>(&mut self, options: O) -> TskReturnValue {
         let b = Bookmark::new();

@@ -975,6 +975,8 @@ impl TreeSequence {
     /// # Errors
     ///
     /// * [`TskitError`] if the tables are not indexed.
+    /// * [`TskitError`] if the tables are not properly sorted.
+    ///   See [`TableCollection::full_sort`](crate::TableCollection::full_sort).
     ///
     /// # Examples
     ///
