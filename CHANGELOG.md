@@ -1,5 +1,13 @@
 # Change log
 
+## 2022-06-20, Version 0.9.0
+
+### Commits
+- [[`068fdccdea`](https://github.com/tskit-dev/tskit-rust/commit/068fdccdeabcb7c5df7898f4f020918817bbdbc2)] Bump version to 0.9.0 (Kevin R. Thornton)
+- [[`d700af7294`](https://github.com/tskit-dev/tskit-rust/commit/d700af729404fef6674ddade97288b354d7b3429)] doc sorting requirements (#243) (Kevin R. Thornton)
+- [[`6114d2bd65`](https://github.com/tskit-dev/tskit-rust/commit/6114d2bd6566676e1fdce800f12d3c2941cbc67d)] Change ffi to private visibility. (#241) (Kevin R. Thornton)
+- [[`b53105112a`](https://github.com/tskit-dev/tskit-rust/commit/b53105112a694ce6e83637ec6bd3015fbef1ff34)] Add new_sample and is_sample to NodeFlags public API. (#238) (Kevin R. Thornton)
+
 ## 2022-05-26, Version 0.8.1
 
 ### Commits
