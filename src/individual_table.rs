@@ -163,9 +163,84 @@ impl<'a> IndividualTable<'a> {
 
     /// Return the metadata for a given row.
     ///
+    /// # Returns
+    ///
+    /// The result type is `Option<T>`
+    /// where `T`: [`tskit::metadata::IndividualMetadata`](crate::metadata::IndividualMetadata).
+    /// `Some(T)` if there is metadata.  `None` if the metadata field is empty for a given
+    /// row.
+    ///
     /// # Errors
     ///
     /// * [`TskitError::IndexError`] if `row` is out of range.
+    ///
+    /// # Examples
+    ///
+    /// For all examples, this is our metadata type.
+    /// We will add all instances with a value of `x = 1`.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
+    /// #[serializer("serde_json")]
+    /// struct IndividualMetadata {
+    ///    x: i32,
+    /// }
+    /// # }
+    /// ```
+    ///
+    /// ## Without matches
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # use tskit::TableAccess;
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct IndividualMetadata {
+    /// #    x: i32,
+    /// # }
+    /// # let metadata = IndividualMetadata{x: 1};
+    /// # assert!(tables.add_individual_with_metadata(0, None, None,
+    /// #                                             &metadata).is_ok());
+    /// // We know the metadata are here, so we unwrap the Result and the Option
+    /// let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
+    /// assert_eq!(decoded.x, 1);
+    /// # }
+    /// ```
+    ///
+    /// ## Checking for errors and absence of metadata
+    ///
+    /// Handling both the possibility of error and optional metadata leads to some verbosity:
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # use tskit::TableAccess;
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct IndividualMetadata {
+    /// #     x: i32,
+    /// # }
+    /// # let metadata = IndividualMetadata { x: 1 };
+    /// # assert!(tables
+    /// #     .add_individual_with_metadata(0, None, None, &metadata)
+    /// #     .is_ok());
+    /// // First, check the Result.
+    /// let decoded_option = match tables
+    ///     .individuals()
+    ///     .metadata::<IndividualMetadata>(0.into())
+    /// {
+    ///     Ok(metadata_option) => metadata_option,
+    ///     Err(e) => panic!("error: {:?}", e),
+    /// };
+    /// // Now, check the contents of the Option
+    /// match decoded_option {
+    ///     Some(metadata) => assert_eq!(metadata.x, 1),
+    ///     None => panic!("we expected Some(metadata)?"),
+    /// }
+    /// # }
+    /// ```
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: IndividualId,
