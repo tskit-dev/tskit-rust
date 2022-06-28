@@ -470,7 +470,7 @@ pub type RawFlags = crate::bindings::tsk_flags_t;
 /// * [`c_api_minor_version`]
 /// * [`c_api_patch_version`]
 pub fn version() -> &'static str {
-    return env!("CARGO_PKG_VERSION");
+     env!("CARGO_PKG_VERSION")
 }
 
 /// C API major version
