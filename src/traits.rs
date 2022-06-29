@@ -208,3 +208,118 @@ pub trait NodeListGenerator: TableAccess {
         self.nodes().create_node_id_vector(f)
     }
 }
+
+/// Abstraction of individual location.
+///
+/// This trait exists to streamline the API of
+/// [`TableCollection::add_individual`](crate::TableCollection::add_individual)
+/// and
+/// [`TableCollection::add_individual_with_metadata`](crate::TableCollection::add_individual_with_metadata).
+pub trait IndividualLocation {
+    fn get_slice(&self) -> &[crate::Location];
+}
+
+impl IndividualLocation for Option<&[crate::Location]> {
+    fn get_slice(&self) -> &[crate::Location] {
+        match self {
+            Some(s) => s,
+            None => &[],
+        }
+    }
+}
+
+impl IndividualLocation for &[crate::Location] {
+    fn get_slice(&self) -> &[crate::Location] {
+        self
+    }
+}
+
+impl IndividualLocation for &Vec<crate::Location> {
+    fn get_slice(&self) -> &[crate::Location] {
+        self.as_slice()
+    }
+}
+
+impl IndividualLocation for &[f64] {
+    fn get_slice(&self) -> &[crate::Location] {
+        // SAFETY: input is a valid slice, so output is a valid slice.
+        unsafe { std::slice::from_raw_parts(self.as_ptr() as *const crate::Location, self.len()) }
+    }
+}
+
+impl IndividualLocation for &Vec<f64> {
+    fn get_slice(&self) -> &[crate::Location] {
+        // SAFETY: input is a valid slice, so output is a valid slice.
+        unsafe { std::slice::from_raw_parts(self.as_ptr() as *const crate::Location, self.len()) }
+    }
+}
+
+impl<const N: usize> IndividualLocation for &[f64; N] {
+    fn get_slice(&self) -> &[crate::Location] {
+        // SAFETY: input is a valid slice, so output is a valid slice.
+        unsafe { std::slice::from_raw_parts(self.as_ptr() as *const crate::Location, self.len()) }
+    }
+}
+
+/// Abstraction of individual parents.
+///
+/// This trait exists to streamline the API of
+/// [`TableCollection::add_individual`](crate::TableCollection::add_individual)
+/// and
+/// [`TableCollection::add_individual_with_metadata`](crate::TableCollection::add_individual_with_metadata).
+pub trait IndividualParents {
+    fn get_slice(&self) -> &[crate::IndividualId];
+}
+
+impl IndividualParents for Option<&[crate::IndividualId]> {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        match self {
+            Some(s) => *s,
+            None => &[],
+        }
+    }
+}
+
+impl IndividualParents for &[crate::IndividualId] {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        self
+    }
+}
+
+impl IndividualParents for &Vec<crate::IndividualId> {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        self.as_slice()
+    }
+}
+
+impl IndividualParents for &Vec<crate::tsk_id_t> {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        // SAFETY: input is a valid slice, so output is a valid slice.
+        unsafe {
+            std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
+        }
+    }
+}
+
+impl IndividualParents for &[crate::bindings::tsk_id_t] {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        // SAFETY: input is a valid slice, so output is a valid slice.
+        unsafe {
+            std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
+        }
+    }
+}
+
+impl<const N: usize> IndividualParents for &[crate::IndividualId; N] {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        self.as_slice()
+    }
+}
+
+impl<const N: usize> IndividualParents for &[crate::bindings::tsk_id_t; N] {
+    fn get_slice(&self) -> &[crate::IndividualId] {
+        unsafe {
+            std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
+        }
+    }
+}

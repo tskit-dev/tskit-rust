@@ -2,12 +2,13 @@ use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::ffi::WrapTskitType;
 use crate::metadata::*;
+use crate::traits::IndividualLocation;
+use crate::traits::IndividualParents;
 use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::IndividualFlags;
 use crate::IndividualTable;
 use crate::IndividualTableSortOptions;
-use crate::Location;
 use crate::MigrationTable;
 use crate::MutationTable;
 use crate::NodeFlags;
@@ -251,20 +252,29 @@ impl TableCollection {
     }
 
     /// Add a row to the individual table
-    pub fn add_individual<F: Into<IndividualFlags>, L: Into<Location>, I: Into<IndividualId>>(
+    ///
+    /// # Examples
+    ///
+    /// ## No flags, location, nor parents
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// tables.add_individual(0, None, None).unwrap();
+    /// ```
+    pub fn add_individual<F: Into<IndividualFlags>, L: IndividualLocation, I: IndividualParents>(
         &mut self,
         flags: F,
-        location: &[L],
-        parents: &[I],
+        location: L,
+        parents: I,
     ) -> Result<IndividualId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_individual_table_add_row(
                 &mut (*self.as_mut_ptr()).individuals,
                 flags.into().bits(),
-                location.as_ptr().cast::<f64>(),
-                location.len() as tsk_size_t,
-                parents.as_ptr().cast::<tsk_id_t>(),
-                parents.len() as tsk_size_t,
+                location.get_slice().as_ptr().cast::<f64>(),
+                location.get_slice().len() as tsk_size_t,
+                parents.get_slice().as_ptr().cast::<tsk_id_t>(),
+                parents.get_slice().len() as tsk_size_t,
                 std::ptr::null(),
                 0,
             )
@@ -275,14 +285,14 @@ impl TableCollection {
     /// Add a row with metadata to the individual table
     pub fn add_individual_with_metadata<
         F: Into<IndividualFlags>,
-        L: Into<Location>,
-        I: Into<IndividualId>,
+        L: IndividualLocation,
+        I: IndividualParents,
         M: IndividualMetadata,
     >(
         &mut self,
         flags: F,
-        location: &[L],
-        parents: &[I],
+        location: L,
+        parents: I,
         metadata: &M,
     ) -> Result<IndividualId, TskitError> {
         let md = EncodedMetadata::new(metadata)?;
@@ -290,10 +300,10 @@ impl TableCollection {
             ll_bindings::tsk_individual_table_add_row(
                 &mut (*self.as_mut_ptr()).individuals,
                 flags.into().bits(),
-                location.as_ptr().cast::<f64>(),
-                location.len() as tsk_size_t,
-                parents.as_ptr().cast::<tsk_id_t>(),
-                parents.len() as tsk_size_t,
+                location.get_slice().as_ptr().cast::<f64>(),
+                location.get_slice().len() as tsk_size_t,
+                parents.get_slice().as_ptr().cast::<tsk_id_t>(),
+                parents.get_slice().len() as tsk_size_t,
                 md.as_ptr(),
                 md.len().into(),
             )

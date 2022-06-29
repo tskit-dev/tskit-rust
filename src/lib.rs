@@ -432,6 +432,8 @@ pub use node_table::{NodeTable, NodeTableRow};
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
+pub use traits::IndividualLocation;
+pub use traits::IndividualParents;
 pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
 pub use traits::TskitTypeAccess;
@@ -470,7 +472,7 @@ pub type RawFlags = crate::bindings::tsk_flags_t;
 /// * [`c_api_minor_version`]
 /// * [`c_api_patch_version`]
 pub fn version() -> &'static str {
-     env!("CARGO_PKG_VERSION")
+    env!("CARGO_PKG_VERSION")
 }
 
 /// C API major version
