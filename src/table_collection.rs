@@ -1531,6 +1531,38 @@ mod test {
 
         assert!(tables.individuals().row(0).unwrap() == tables.individuals().row(0).unwrap());
     }
+
+    #[test]
+    fn test_add_individual_many_ways() {
+        {
+            let mut tables = TableCollection::new(1.).unwrap();
+            let location = vec![0., 1., 2.];
+            let parents = [0, 1, 2, 3, 4];
+            tables.add_individual(0, location, parents).unwrap();
+        }
+        {
+            let mut tables = TableCollection::new(1.).unwrap();
+            let location = vec![0., 1., 2.];
+            let parents = [0, 1, 2, 3, 4];
+            tables
+                .add_individual(0, location.as_slice(), parents.as_slice())
+                .unwrap();
+        }
+        {
+            let mut tables = TableCollection::new(1.).unwrap();
+            let location = [0., 1., 2.];
+            let parents = vec![0, 1, 2, 3, 4];
+            tables.add_individual(0, location, parents).unwrap();
+        }
+        {
+            let mut tables = TableCollection::new(1.).unwrap();
+            let location = [0., 1., 2.];
+            let parents = vec![0, 1, 2, 3, 4];
+            tables
+                .add_individual(0, location.as_slice(), parents.as_slice())
+                .unwrap();
+        }
+    }
 }
 
 #[cfg(test)]
