@@ -34,9 +34,12 @@ use mbox::MBox;
 
 /// A table collection.
 ///
-/// This is a thin wrapper around the C type `tsk_table_collection_t`.
+/// This is a thin wrapper around the C type
+/// [`tsk_table_collection_t`](crate::bindings::tsk_table_collection_t).
 ///
-/// # Current limitations
+/// # See also
+///
+/// * [`metadata`](crate::metadata)
 ///
 /// # Examples
 ///
@@ -62,65 +65,6 @@ use mbox::MBox;
 /// assert_eq!(nodes.num_rows(), 1);
 /// ```
 ///
-/// ## Metadata round trips and table iteration
-///
-/// ```
-/// use tskit;
-/// use tskit::TableAccess;
-/// use tskit::metadata::MetadataRoundtrip;
-///
-/// // Define a type for metadata
-/// struct F {
-///     x: i32,
-/// }
-///
-/// // Implement our metadata trait for type F.
-/// // NOTE: this is hard because we are only using the
-/// // rust standard library here.  See the examples/
-/// // directory of the repository for examples using
-/// // other, more convenient, crates.
-/// impl tskit::metadata::MetadataRoundtrip for F {
-///     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
-///         let mut rv = vec![];
-///         rv.extend(self.x.to_le_bytes().iter().copied());
-///         Ok(rv)
-///     }
-///     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError> {
-///         
-///         let (x_int_bytes, rest) = md.split_at(std::mem::size_of::<i32>());
-///         Ok(Self {
-///             x: i32::from_le_bytes(x_int_bytes.try_into().unwrap()),
-///         })
-///     }
-/// }
-///
-/// impl tskit::metadata::MutationMetadata for F {}
-///
-/// // Crate a table and add a mutation with metadata
-/// let mut tables = tskit::TableCollection::new(100.).unwrap();
-///
-/// // The metadata takes a reference in the event that it could
-/// // be data store in some container somewhere, and you don't want
-/// // it moved.
-/// tables.add_mutation_with_metadata(0, 0, 0, 0., None, &F{x: -33}).unwrap();
-///
-/// // Iterate over each row in the table.
-/// // The "true" means to include (a copy of) the
-/// // encoded metadata, if any exist.
-/// for row in tables.mutations().iter() {
-///     // Decode the metadata if any exists.
-///     if !row.metadata.is_none() {
-///         let md = F::decode(&row.metadata.unwrap()).unwrap();
-///         assert_eq!(md.x, -33);
-///     }
-/// }
-/// ```
-///
-/// # Future road map
-///
-/// 1. Support all table types.  Currently, we only support
-///    those needed for current goals in ongoing projects.
-/// 2. Strengthen some of the error handling.
 pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
 }
@@ -133,6 +77,18 @@ build_tskit_type!(
 
 impl TableCollection {
     /// Create a new table collection with a sequence length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let tables = tskit::TableCollection::new(55.0).unwrap();
+    /// ```
+    ///
+    /// Negative sequence lengths are errors:
+    ///
+    /// ```{should_panic}
+    /// let tables = tskit::TableCollection::new(-55.0).unwrap();
+    /// ```
     pub fn new<P: Into<Position>>(sequence_length: P) -> Result<Self, TskitError> {
         let sequence_length = sequence_length.into();
         if sequence_length <= 0. {
@@ -169,6 +125,15 @@ impl TableCollection {
 
     /// Load a table collection from a file.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
+    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
+    /// let tables = tskit::TableCollection::new_from_file("trees.file").unwrap();
+    /// # std::fs::remove_file("trees.file").unwrap();
+    /// ```
+    ///
     /// # Panics
     ///
     /// This function allocates a `CString` to pass the file name to the C API.
@@ -193,11 +158,58 @@ impl TableCollection {
     }
 
     /// Length of the sequence/"genome".
+    /// # Examples
+    ///
+    /// ```
+    /// let tables = tskit::TableCollection::new(100.).unwrap();
+    /// assert_eq!(tables.sequence_length(), 100.0);
+    /// ```
     pub fn sequence_length(&self) -> Position {
         unsafe { (*self.as_ptr()).sequence_length }.into()
     }
 
     /// Add a row to the edge table
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    ///
+    /// // left, right, parent, child
+    /// match tables.add_edge(0., 53., 1, 11) {
+    ///     // This is the first edge, so its id will be
+    ///     // zero (0).
+    ///     Ok(edge_id) => assert_eq!(edge_id, 0),
+    ///     Err(e) => panic!("{:?}", e),
+    /// }
+    /// ```
+    ///
+    /// You may also use [`Position`] and [`NodeId`] as inputs.
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// let left = tskit::Position::from(0.0);
+    /// let right = tskit::Position::from(53.0);
+    /// let parent = tskit::NodeId::from(1);
+    /// let child = tskit::NodeId::from(11);
+    /// match tables.add_edge(left, right, parent, child) {
+    ///     Ok(edge_id) => assert_eq!(edge_id, 0),
+    ///     Err(e) => panic!("{:?}", e),
+    /// }
+    /// ```
+    ///
+    /// Adding invalid data is allowed at this point:
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// assert!(tables.add_edge(0., 53.,
+    ///                         tskit::NodeId::NULL,
+    ///                         tskit::NodeId::NULL).is_ok());
+    /// # assert!(tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).is_err());
+    /// ```
+    ///
+    /// See [`TableCollection::check_integrity`] for how to catch these data model
+    /// violations.
     pub fn add_edge<L: Into<Position>, R: Into<Position>, P: Into<NodeId>, C: Into<NodeId>>(
         &mut self,
         left: L,
@@ -221,6 +233,25 @@ impl TableCollection {
     }
 
     /// Add a row with optional metadata to the edge table
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::EdgeMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct EdgeMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = EdgeMetadata{x: 1};
+    /// assert!(tables.add_edge_with_metadata(0., 53., 1, 11, &metadata).is_ok());
+    /// # }
+    /// ```
     pub fn add_edge_with_metadata<
         L: Into<Position>,
         R: Into<Position>,
@@ -258,9 +289,36 @@ impl TableCollection {
     /// ## No flags, location, nor parents
     ///
     /// ```
+    /// # use tskit::TableAccess;
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, None, None).unwrap();
+    /// # assert!(tables.individuals().location(0).unwrap().is_none());
+    /// # assert!(tables.individuals().parents(0).unwrap().is_none());
     /// ```
+    ///
+    /// ## No flags, a 3d location, no parents
+    ///
+    /// ```
+    /// # use tskit::TableAccess;
+    /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// tables.add_individual(0, &[-0.5, 0.3, 10.0], None).unwrap();
+    /// # match tables.individuals().location(0).unwrap() {
+    /// #     Some(loc) => loc.iter().zip([-0.5, 0.3, 10.0].iter()).for_each(|(a,b)| assert_eq!(a, b)),
+    /// #     None => panic!("expected a location"),
+    /// # }
+    /// ```
+    ///
+    /// ## No flags, no location, two parents
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// # use tskit::TableAccess;
+    /// tables.add_individual(0, None, &[1, 11]).unwrap();
+    /// # match tables.individuals().parents(0).unwrap() {
+    /// #     Some(parents) => parents.iter().zip([1, 11].iter()).for_each(|(a,b)| assert_eq!(a, b)),
+    /// #     None => panic!("expected parents"),
+    /// # }
+    /// ```
+    ///
     pub fn add_individual<F: Into<IndividualFlags>, L: IndividualLocation, I: IndividualParents>(
         &mut self,
         flags: F,
@@ -283,6 +341,28 @@ impl TableCollection {
     }
 
     /// Add a row with metadata to the individual table
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// use tskit::TableAccess;
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct IndividualMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = IndividualMetadata{x: 1};
+    /// assert!(tables.add_individual_with_metadata(0, None, None,
+    ///                                             &metadata).is_ok());
+    /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
+    /// # assert_eq!(decoded.x, 1);
+    /// # }
     pub fn add_individual_with_metadata<
         F: Into<IndividualFlags>,
         L: IndividualLocation,
@@ -317,6 +397,15 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
+    /// # Examples
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// assert!(tables.add_migration((0.5, 100.0),
+    ///                              3,
+    ///                              (0, 1),
+    ///                              53.5).is_ok());
+    /// ```
     pub fn add_migration<
         L: Into<Position>,
         R: Into<Position>,
@@ -348,6 +437,29 @@ impl TableCollection {
     }
 
     /// Add a row with optional metadata to the migration table
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MigrationMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct MigrationMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = MigrationMetadata{x: 1};
+    /// assert!(tables.add_migration_with_metadata((0.5, 100.0),
+    ///                                            3,
+    ///                                            (0, 1),
+    ///                                            53.5,
+    ///                                            &metadata).is_ok());
+    /// # }
+    /// ```
     ///
     /// # Warnings
     ///
@@ -415,6 +527,25 @@ impl TableCollection {
     }
 
     /// Add a row with optional metadata to the node table
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::NodeMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct NodeMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = NodeMetadata{x: 1};
+    /// assert!(tables.add_node_with_metadata(0, 0.0, -1, -1, &metadata).is_ok());
+    /// # }
+    /// ```
     pub fn add_node_with_metadata<
         F: Into<NodeFlags>,
         T: Into<Time>,
@@ -468,6 +599,27 @@ impl TableCollection {
     }
 
     /// Add a row with optional metadata to the site table
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::SiteMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct SiteMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = SiteMetadata{x: 1};
+    /// assert!(tables.add_site_with_metadata(tskit::Position::from(111.0),
+    ///                                       Some(&[111]),
+    ///                                       &metadata).is_ok());
+    /// # }
+    /// ```
     pub fn add_site_with_metadata<P: Into<Position>, M: SiteMetadata>(
         &mut self,
         position: P,
@@ -518,6 +670,26 @@ impl TableCollection {
     }
 
     /// Add a row with optional metadata to the mutation table.
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct MutationMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = MutationMetadata{x: 1};
+    /// assert!(tables.add_mutation_with_metadata(0, 0, 0, 100.0, None,
+    ///                                           &metadata).is_ok());
+    /// # }
+    /// ```
     pub fn add_mutation_with_metadata<
         S: Into<SiteId>,
         N: Into<NodeId>,
@@ -553,6 +725,13 @@ impl TableCollection {
     }
 
     /// Add a row to the population_table
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
+    /// tables.add_population().unwrap();
+    /// ```
     pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_population_table_add_row(
@@ -566,6 +745,24 @@ impl TableCollection {
     }
 
     /// Add a row with optional metadata to the population_table
+    ///
+    /// # Examples
+    ///
+    /// See [`metadata`](crate::metadata) for more details about required
+    /// trait implementations.
+    /// Those details have been omitted from this example.
+    ///
+    /// ```
+    /// # #[cfg(feature = "derive")] {
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::PopulationMetadata)]
+    /// # #[serializer("serde_json")]
+    /// # struct PopulationMetadata {
+    /// #    x: i32,
+    /// # }
+    /// let metadata = PopulationMetadata{x: 1};
+    /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
+    /// # }
     pub fn add_population_with_metadata<M: PopulationMetadata>(
         &mut self,
         metadata: &M,
@@ -692,9 +889,9 @@ impl TableCollection {
     /// ```
     /// // Parent comes AFTER the child
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let i0 = tables.add_individual(0,&[] as &[f64],&[1] as &[i32]).unwrap();
+    /// let i0 = tables.add_individual(0, None, &[1]).unwrap();
     /// assert_eq!(i0, 0);
-    /// let i1 = tables.add_individual(0,&[] as &[f64],&[] as &[i32]).unwrap();
+    /// let i1 = tables.add_individual(0, None, None).unwrap();
     /// assert_eq!(i1, 1);
     /// let n0 = tables.add_node(0, 0.0, -1, i1).unwrap();
     /// assert_eq!(n0, 0);
@@ -887,14 +1084,14 @@ impl TableCollection {
     /// ```
     ///
     /// ```should_panic
-    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// # let mut tables = tskit::TableCollection::new(10.0).unwrap();
     /// // Left position is < 0.0
     /// tables.add_edge(-1., 10.0, 0, 0);
     /// tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).unwrap();
     /// ```
     ///
     /// ```should_panic
-    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// # let mut tables = tskit::TableCollection::new(10.0).unwrap();
     /// // Edges cannot have null node ids
     /// tables.add_edge(0., 10.0, tskit::NodeId::NULL, 0);
     /// tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).unwrap();
@@ -1505,31 +1702,6 @@ mod test {
         }
         assert!(tables.nodes().row(0).unwrap() != tables.nodes().row(1).unwrap());
         assert!(tables.nodes().row(1).unwrap() != tables.nodes().row(2).unwrap());
-    }
-
-    #[test]
-    fn test_add_individual_with_location_and_parents() {
-        let mut tables = TableCollection::new(1.).unwrap();
-        let location = vec![0., 1., 2.];
-        let parents = [0, 1, 2, 3, 4];
-        tables.add_individual(0, &location, &parents).unwrap();
-
-        match tables.individuals().parents(0).unwrap() {
-            Some(x) => assert!(x == parents),
-            None => panic!("expected some parents"),
-        }
-
-        match tables.individuals().location(0).unwrap() {
-            Some(x) => {
-                assert_eq!(x.len(), location.len());
-                for (i, l) in x.iter().enumerate() {
-                    assert!(crate::util::partial_cmp_equal(&f64::from(*l), &location[i]));
-                }
-            }
-            None => panic!("expected some locations"),
-        }
-
-        assert!(tables.individuals().row(0).unwrap() == tables.individuals().row(0).unwrap());
     }
 
     #[test]
