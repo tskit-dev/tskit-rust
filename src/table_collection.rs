@@ -127,6 +127,8 @@ impl TableCollection {
     ///
     /// # Examples
     ///
+    /// The function is generic over references to `str`:
+    ///
     /// ```
     /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
     /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
@@ -134,18 +136,46 @@ impl TableCollection {
     /// # std::fs::remove_file("trees.file").unwrap();
     /// ```
     ///
+    /// ```
+    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
+    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
+    /// let filename = String::from("trees.file");
+    /// // Move filename
+    /// let tables = tskit::TableCollection::new_from_file(filename).unwrap();
+    /// # std::fs::remove_file("trees.file").unwrap();
+    /// ```
+    ///
+    /// ```
+    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
+    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
+    /// let filename = String::from("trees.file");
+    /// // Pass filename by reference
+    /// let tables = tskit::TableCollection::new_from_file(&filename).unwrap();
+    /// # std::fs::remove_file("trees.file").unwrap();
+    /// ```
+    ///
+    /// Boxed `String`s are an unlikely use case, but can be made to work:
+    ///
+    /// ```
+    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
+    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
+    /// let filename = Box::new(String::from("trees.file"));
+    /// let tables = tskit::TableCollection::new_from_file(&*filename.as_ref()).unwrap();
+    /// # std::fs::remove_file("trees.file").unwrap();
+    /// ```
+    ///
     /// # Panics
     ///
     /// This function allocates a `CString` to pass the file name to the C API.
     /// A panic will occur if the system runs out of memory.
-    pub fn new_from_file(filename: &str) -> Result<Self, TskitError> {
+    pub fn new_from_file(filename: impl AsRef<str>) -> Result<Self, TskitError> {
         // Arbitrary sequence_length.
         let mut tables = match TableCollection::new(1.0) {
             Ok(t) => (t),
             Err(e) => return Err(e),
         };
 
-        let c_str = std::ffi::CString::new(filename).unwrap();
+        let c_str = std::ffi::CString::new(filename.as_ref()).unwrap();
         let rv = unsafe {
             ll_bindings::tsk_table_collection_load(
                 tables.as_mut_ptr(),
