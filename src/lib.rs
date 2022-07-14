@@ -440,15 +440,15 @@ pub use traits::TskitTypeAccess;
 pub use trees::{NodeTraversalOrder, Tree, TreeSequence};
 
 // Optional features
-#[cfg(feature = "provenance")]
+#[cfg(any(feature = "provenance", doc))]
 pub mod provenance;
 
+#[cfg(any(feature = "provenance", doc))]
 /// A provenance ID
 ///
 /// This is an integer referring to a row of a [``provenance::ProvenanceTable``].
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
-#[cfg(feature = "provenance")]
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct ProvenanceId(tsk_id_t);

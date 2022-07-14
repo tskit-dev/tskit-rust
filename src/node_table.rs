@@ -72,7 +72,7 @@ impl<'a> Iterator for NodeTableIterator<'a> {
 /// An immtable view of a node table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::nodes`](crate::TableCollection::nodes)
+/// Instead, use [`TableAccess::nodes`](crate::TableAccess::nodes)
 /// to get a reference to an existing node table;
 pub struct NodeTable<'a> {
     table_: &'a ll_bindings::tsk_node_table_t,

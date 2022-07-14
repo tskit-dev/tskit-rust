@@ -80,7 +80,7 @@ impl<'a> Iterator for MigrationTableIterator<'a> {
 /// An immutable view of a migration table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::migrations`](crate::TableCollection::migrations)
+/// Instead, use [`TableAccess::migrations`](crate::TableAccess::migrations)
 /// to get a reference to an existing node table;
 pub struct MigrationTable<'a> {
     table_: &'a ll_bindings::tsk_migration_table_t,

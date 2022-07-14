@@ -1226,7 +1226,7 @@ impl TreeSequence {
         )
     }
 
-    #[cfg(feature = "provenance")]
+    #[cfg(any(feature = "provenance", doc))]
     /// Add provenance record with a time stamp.
     ///
     /// All implementation of this trait provided by `tskit` use
@@ -1245,6 +1245,7 @@ impl TreeSequence {
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// let mut treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// # #[cfg(feature = "provenance")] {
     /// treeseq.add_provenance(&String::from("All your provenance r belong 2 us.")).unwrap();
     ///
     /// let prov_ref = treeseq.provenances();
@@ -1257,6 +1258,7 @@ impl TreeSequence {
     /// use core::str::FromStr;
     /// let dt_utc = humantime::Timestamp::from_str(&timestamp).unwrap();
     /// println!("utc = {}", dt_utc);
+    /// # }
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
@@ -1310,7 +1312,7 @@ impl TableAccess for TreeSequence {
         PopulationTable::new_from_table(unsafe { &(*(*self.inner).tables).populations })
     }
 
-    #[cfg(feature = "provenance")]
+    #[cfg(any(feature = "provenance", doc))]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
         crate::provenance::ProvenanceTable::new_from_table(unsafe {
             &(*(*self.inner).tables).provenances

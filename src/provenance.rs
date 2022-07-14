@@ -4,11 +4,9 @@
 //! the following:
 //!
 //! * [`crate::TableCollection::add_provenance`]
-//! * [`crate::TableCollection::provenances`]
-//! * [`crate::TableCollection::provenances_iter`]
+//! * [`crate::TableAccess::provenances`]
+//! * [`crate::TableAccess::provenances_iter`]
 //! * [`crate::TreeSequence::add_provenance`]
-//! * [`crate::TreeSequence::provenances`]
-//! * [`crate::TreeSequence::provenances_iter`]
 //! * [`ProvenanceTable`].
 //! * [`ProvenanceTableRow`], which is the value type returned by
 //!   [`ProvenanceTable::iter`].
@@ -87,9 +85,8 @@ impl<'a> Iterator for ProvenanceTableIterator<'a> {
 /// An immutable view of a provenance table.
 ///
 /// These are not created directly.
-/// Instead, use [`crate::TableCollection::provenances`]
-/// or [`crate::TreeSequence::provenances`]
-/// to get a reference to an existing node table;
+/// Instead, use [`crate::TableAccess::provenances`]
+/// to get a reference to an existing provenance table;
 ///
 /// # Notes
 ///
