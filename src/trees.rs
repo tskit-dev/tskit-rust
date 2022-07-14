@@ -1042,8 +1042,11 @@ impl TreeSequence {
     }
 
     /// Load from a file.
-    pub fn load(filename: &str) -> Result<Self, TskitError> {
-        let tables = TableCollection::new_from_file(filename)?;
+    ///
+    /// This function calls [`TableCollection::new_from_file`] with
+    /// [`TreeSequenceFlags::default`].
+    pub fn load(filename: impl AsRef<str>) -> Result<Self, TskitError> {
+        let tables = TableCollection::new_from_file(filename.as_ref())?;
 
         Self::new(tables, TreeSequenceFlags::default())
     }
