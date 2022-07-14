@@ -62,7 +62,7 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
 /// An immutable view of site table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::populations`](crate::TableCollection::populations)
+/// Instead, use [`TableAccess::populations`](crate::TableAccess::populations)
 /// to get a reference to an existing population table;
 pub struct PopulationTable<'a> {
     table_: &'a ll_bindings::tsk_population_table_t,

@@ -1133,7 +1133,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    #[cfg(feature = "provenance")]
+    #[cfg(any(feature = "provenance", doc))]
     /// Add provenance record with a time stamp.
     ///
     /// All implementation of this trait provided by `tskit` use
@@ -1152,6 +1152,7 @@ impl TableCollection {
     /// ```
     /// use tskit::TableAccess;
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// # #[cfg(feature = "provenance")] {
     /// tables.add_provenance(&String::from("Some provenance")).unwrap();
     ///
     /// // Get reference to the table
@@ -1179,6 +1180,7 @@ impl TableCollection {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), "Some provenance");
     /// // We can still compare to row_0 because it is a copy of the row data:
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
+    /// # }
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
@@ -1224,7 +1226,7 @@ impl TableAccess for TableCollection {
         PopulationTable::new_from_table(&(*self.inner).populations)
     }
 
-    #[cfg(feature = "provenance")]
+    #[cfg(any(feature = "provenance", doc))]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
         crate::provenance::ProvenanceTable::new_from_table(&(*self.inner).provenances)
     }

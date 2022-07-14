@@ -67,7 +67,7 @@ impl<'a> Iterator for SiteTableIterator<'a> {
 /// An immutable view of site table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::sites`](crate::TableCollection::sites)
+/// Instead, use [`TableAccess::sites`](crate::TableAccess::sites)
 /// to get a reference to an existing site table;
 pub struct SiteTable<'a> {
     table_: &'a ll_bindings::tsk_site_table_t,

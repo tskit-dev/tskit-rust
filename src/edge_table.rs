@@ -71,7 +71,7 @@ impl<'a> Iterator for EdgeTableIterator<'a> {
 /// An immutable view of an edge table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::edges`](crate::TableCollection::edges)
+/// Instead, use [`TableAccess::edges`](crate::TableAccess::edges)
 /// to get a reference to an existing edge table;
 pub struct EdgeTable<'a> {
     table_: &'a ll_bindings::tsk_edge_table_t,

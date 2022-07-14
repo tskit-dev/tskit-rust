@@ -44,7 +44,7 @@ impl PartialEq for IndividualTableRow {
 /// An immutable view of a individual table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::individuals`](crate::TableCollection::individuals)
+/// Instead, use [`TableAccess::individuals`](crate::TableAccess::individuals)
 /// to get a reference to an existing node table;
 pub struct IndividualTable<'a> {
     table_: &'a ll_bindings::tsk_individual_table_t,

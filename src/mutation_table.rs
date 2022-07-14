@@ -75,7 +75,7 @@ impl<'a> Iterator for MutationTableIterator<'a> {
 /// An immutable view of site table.
 ///
 /// These are not created directly.
-/// Instead, use [`TableCollection::mutations`](crate::TableCollection::mutations)
+/// Instead, use [`TableAccess::mutations`](crate::TableAccess::mutations)
 /// to get a reference to an existing mutation table;
 pub struct MutationTable<'a> {
     table_: &'a ll_bindings::tsk_mutation_table_t,
