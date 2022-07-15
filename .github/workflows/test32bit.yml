@@ -29,6 +29,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: Swatinem/rust-cache@v1
+      - uses: taiki-e/install-action@cargo-hack
       - name: Install Linux tooling for 32 bit builds
         run: |
           sudo apt-get update -y
@@ -38,7 +39,4 @@ jobs:
           rustup target install i686-unknown-linux-gnu
       - name: cargo tests
         run: |
-            cargo test --target=i686-unknown-linux-gnu
-      - name: cargo tests (all feaures)
-        run: |
-            cargo test --target=i686-unknown-linux-gnu --all-features
+            cargo hack test --target=i686-unknown-linux-gnu --feature-powerset
