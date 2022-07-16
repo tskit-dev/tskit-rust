@@ -33,13 +33,14 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         Some(NodeTableRow {
             id: pos.into(),
             time: table.time(pos).unwrap(),
             flags: table.flags(pos).unwrap(),
             population: table.population(pos).unwrap(),
             individual: table.individual(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         })
     } else {
         None
@@ -186,7 +187,8 @@ impl<'a> NodeTable<'a> {
         &'a self,
         row: NodeId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

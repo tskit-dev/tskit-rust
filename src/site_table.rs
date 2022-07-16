@@ -29,11 +29,12 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         let rv = SiteTableRow {
             id: pos.into(),
             position: table.position(pos).unwrap(),
             ancestral_state: table.ancestral_state(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         };
         Some(rv)
     } else {
@@ -123,7 +124,8 @@ impl<'a> SiteTable<'a> {
         &'a self,
         row: SiteId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

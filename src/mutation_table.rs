@@ -34,6 +34,7 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         let rv = MutationTableRow {
             id: pos.into(),
             site: table.site(pos).unwrap(),
@@ -41,7 +42,7 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
             parent: table.parent(pos).unwrap(),
             time: table.time(pos).unwrap(),
             derived_state: table.derived_state(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         };
         Some(rv)
     } else {
@@ -167,7 +168,8 @@ impl<'a> MutationTable<'a> {
         &'a self,
         row: MutationId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

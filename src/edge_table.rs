@@ -31,13 +31,14 @@ fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow>
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         let rv = EdgeTableRow {
             id: pos.into(),
             left: table.left(pos).unwrap(),
             right: table.right(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
             child: table.child(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         };
         Some(rv)
     } else {
@@ -137,7 +138,8 @@ impl<'a> EdgeTable<'a> {
         &'a self,
         row: EdgeId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

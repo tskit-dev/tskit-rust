@@ -56,12 +56,13 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         let rv = IndividualTableRow {
             id: pos.into(),
             flags: table.flags(pos).unwrap(),
             location: table.location(pos).unwrap(),
             parents: table.parents(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         };
         Some(rv)
     } else {
@@ -245,7 +246,8 @@ impl<'a> IndividualTable<'a> {
         &'a self,
         row: IndividualId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
