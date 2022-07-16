@@ -4,6 +4,79 @@ mod experimental_features {
 
     use tskit::TableAccess;
 
+    // Goal: proc macro this up
+    // Design notes for future:
+    // * We can probably drop this trait.
+    // * We want a derive macro based on XMetadataRetrieval,
+    //   where X is a table type.
+    // * So hopefully we can start there.
+    trait MetadataRetrieval<R> {
+        type Metadata: tskit::metadata::MetadataRoundtrip;
+        fn metadata(&self, r: impl Into<R>) -> Result<Option<Self::Metadata>, tskit::TskitError>;
+    }
+
+    // Specific traits cover the various row id types
+    trait MutationMetadataRetrieval: MetadataRetrieval<tskit::MutationId> {
+        fn mutation_metadata(
+            &self,
+            row: impl Into<tskit::MutationId>,
+        ) -> Result<
+            Option<<Self as MetadataRetrieval<tskit::MutationId>>::Metadata>,
+            tskit::TskitError,
+        >
+        where
+            <Self as MetadataRetrieval<tskit::MutationId>>::Metadata:
+                tskit::metadata::MutationMetadata;
+    }
+
+    // Blanket implementations are possible given the above
+    // two defnitions, putting all boiler plate out of sight!
+    impl<T> MutationMetadataRetrieval for T
+    where
+        T: MetadataRetrieval<tskit::MutationId>,
+        <Self as MetadataRetrieval<tskit::MutationId>>::Metadata: tskit::metadata::MutationMetadata,
+    {
+        fn mutation_metadata(
+            &self,
+            row: impl Into<tskit::MutationId>,
+        ) -> Result<
+            Option<<Self as MetadataRetrieval<tskit::MutationId>>::Metadata>,
+            tskit::TskitError,
+        > {
+            self.metadata(row)
+        }
+    }
+
+    trait IndividualMetadataRetrieval: MetadataRetrieval<tskit::IndividualId> {
+        fn individual_metadata(
+            &self,
+            row: impl Into<tskit::IndividualId>,
+        ) -> Result<
+            Option<<Self as MetadataRetrieval<tskit::IndividualId>>::Metadata>,
+            tskit::TskitError,
+        >
+        where
+            <Self as MetadataRetrieval<tskit::IndividualId>>::Metadata:
+                tskit::metadata::MutationMetadata;
+    }
+
+    impl<T> IndividualMetadataRetrieval for T
+    where
+        T: MetadataRetrieval<tskit::IndividualId>,
+        <Self as MetadataRetrieval<tskit::IndividualId>>::Metadata:
+            tskit::metadata::IndividualMetadata,
+    {
+        fn individual_metadata(
+            &self,
+            row: impl Into<tskit::IndividualId>,
+        ) -> Result<
+            Option<<Self as MetadataRetrieval<tskit::IndividualId>>::Metadata>,
+            tskit::TskitError,
+        > {
+            self.metadata(row)
+        }
+    }
+
     // Name is not great.
     // We'd like to have this be : tskit::TableAccess,
     // but that's a big ask at this stage.
@@ -20,6 +93,13 @@ mod experimental_features {
     #[serializer("serde_json")]
     struct MutationMetadataType {
         effect_size: f64,
+    }
+
+    #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
+    #[serializer("serde_json")]
+    struct IndividualMetadataType {
+        fitness: f64,
+        location: [f64; 3],
     }
 
     // Goal:
@@ -57,6 +137,28 @@ mod experimental_features {
         }
     }
 
+    impl MetadataRetrieval<tskit::MutationId> for MyTableCollection {
+        type Metadata = MutationMetadataType;
+        fn metadata(
+            &self,
+            row: impl Into<tskit::MutationId>,
+        ) -> Result<Option<MutationMetadataType>, tskit::TskitError> {
+            self.mutations()
+                .metadata::<MutationMetadataType>(row.into())
+        }
+    }
+
+    impl MetadataRetrieval<tskit::IndividualId> for MyTableCollection {
+        type Metadata = IndividualMetadataType;
+        fn metadata(
+            &self,
+            row: impl Into<tskit::IndividualId>,
+        ) -> Result<Option<IndividualMetadataType>, tskit::TskitError> {
+            self.individuals()
+                .metadata::<IndividualMetadataType>(row.into())
+        }
+    }
+
     #[test]
     fn test_table_collection_newtype() {
         let mut tables = MyTableCollection(tskit::TableCollection::new(1.0).unwrap());
@@ -65,6 +167,23 @@ mod experimental_features {
             .add_mutation_with_metadata(0, 0, 0, 0.0, None, &md)
             .unwrap();
         let decoded = tables.get_mutation_metadata(0).unwrap().unwrap();
+        assert_eq!(decoded.effect_size, 0.10);
+
+        // More ergonomic here...
+        // NOTE: this can no longer compile b/c we've
+        // got the pattern in place for > 1 trait.
+        // let decoded = tables.metadata(0).unwrap().unwrap();
+        // assert_eq!(decoded.effect_size, 0.10);
+
+        // ...but not here, which is how it would normally be called...
+        let decoded =
+            <MyTableCollection as MetadataRetrieval<tskit::MutationId>>::metadata(&tables, 0)
+                .unwrap()
+                .unwrap();
+        assert_eq!(decoded.effect_size, 0.10);
+
+        // ... but blanket impl may be a path to glory.
+        let decoded = tables.mutation_metadata(0).unwrap().unwrap();
         assert_eq!(decoded.effect_size, 0.10);
 
         // current API requires
