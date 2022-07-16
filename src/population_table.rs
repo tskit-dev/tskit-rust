@@ -24,9 +24,10 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         let rv = PopulationTableRow {
             id: pos.into(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         };
         Some(rv)
     } else {
@@ -82,7 +83,8 @@ impl<'a> PopulationTable<'a> {
         &'a self,
         row: PopulationId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

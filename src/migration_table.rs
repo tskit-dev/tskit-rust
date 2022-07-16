@@ -37,6 +37,7 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
+        let table_ref = table.table_;
         Some(MigrationTableRow {
             id: pos.into(),
             left: table.left(pos).unwrap(),
@@ -45,7 +46,7 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
             source: table.source(pos).unwrap(),
             dest: table.dest(pos).unwrap(),
             time: table.time(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, pos),
+            metadata: table_row_decode_metadata!(table_ref, pos),
         })
     } else {
         None
@@ -183,7 +184,8 @@ impl<'a> MigrationTable<'a> {
         &'a self,
         row: MigrationId,
     ) -> Result<Option<T>, TskitError> {
-        let buffer = metadata_to_vector!(self, row.0)?;
+        let table_ref = self.table_;
+        let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
