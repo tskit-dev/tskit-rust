@@ -157,6 +157,18 @@ impl std::ops::Deref for OwningPopulationTable {
     }
 }
 
+impl Drop for OwningPopulationTable {
+    fn drop(&mut self) {
+        unsafe {
+            ll_bindings::tsk_population_table_free(
+                self.table_ as *mut ll_bindings::tsk_population_table_t,
+            )
+        };
+        assert!(!self.0.table_.is_null());
+        unsafe { libc::free(self.0.table_ as *mut libc::c_void) };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
