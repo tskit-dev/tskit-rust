@@ -214,6 +214,7 @@ mod test_provenances {
             .unwrap();
         let row_id = ts.add_provenance(&s).unwrap();
         assert_eq!(row_id, 1);
+        assert_eq!(ts.provenances().num_rows(), 2);
         let _ = ts.provenances().timestamp(row_id).unwrap();
         let _ = ts.provenances().record(row_id).unwrap();
         let _ = ts.provenances().row(row_id).unwrap();
