@@ -74,8 +74,20 @@ impl PopulationTable {
         unsafe { &(*self.table_) }
     }
 
-    pub(crate) fn new_from_table(mutations: &ll_bindings::tsk_population_table_t) -> Self {
-        PopulationTable { table_: mutations }
+    pub(crate) fn new_from_table(populations: &ll_bindings::tsk_population_table_t) -> Self {
+        PopulationTable {
+            table_: populations,
+        }
+    }
+
+    pub(crate) fn new_null() -> Self {
+        Self {
+            table_: std::ptr::null(),
+        }
+    }
+
+    pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_population_table_t) {
+        self.table_ = ptr;
     }
 
     /// Return the number of rows.
