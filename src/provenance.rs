@@ -208,6 +208,7 @@ mod test_provenances {
         let row_id = tables.add_provenance(&s).unwrap();
         let _ = tables.provenances().row(row_id).unwrap();
         assert_eq!(tables.provenances().num_rows(), 1);
+        let _ = tables.provenances().row(row_id).unwrap();
 
         // and for tree sequences...
         tables.build_index().unwrap();
