@@ -24,7 +24,7 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
-        let table_ref = table.table_;
+        let table_ref = table.as_ll_ref();
         let rv = PopulationTableRow {
             id: pos.into(),
             metadata: table_row_decode_metadata!(table_ref, pos),
@@ -36,9 +36,8 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
 }
 
 pub(crate) type PopulationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a PopulationTable<'a>>;
-pub(crate) type PopulationTableIterator<'a> =
-    crate::table_iterator::TableIterator<PopulationTable<'a>>;
+    crate::table_iterator::TableIterator<&'a PopulationTable>;
+pub(crate) type PopulationTableIterator<'a> = crate::table_iterator::TableIterator<PopulationTable>;
 
 impl<'a> Iterator for PopulationTableRefIterator<'a> {
     type Item = PopulationTableRow;
@@ -65,25 +64,29 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
 /// These are not created directly.
 /// Instead, use [`TableAccess::populations`](crate::TableAccess::populations)
 /// to get a reference to an existing population table;
-pub struct PopulationTable<'a> {
-    table_: &'a ll_bindings::tsk_population_table_t,
+pub struct PopulationTable {
+    table_: *const ll_bindings::tsk_population_table_t,
 }
 
-impl<'a> PopulationTable<'a> {
-    pub(crate) fn new_from_table(mutations: &'a ll_bindings::tsk_population_table_t) -> Self {
+impl PopulationTable {
+    fn as_ll_ref(&self) -> &ll_bindings::tsk_population_table_t {
+        unsafe { &(*self.table_) }
+    }
+
+    pub(crate) fn new_from_table(mutations: &ll_bindings::tsk_population_table_t) -> Self {
         PopulationTable { table_: mutations }
     }
 
     /// Return the number of rows.
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ll_ref().num_rows.into()
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
-        &'a self,
+        &self,
         row: PopulationId,
     ) -> Result<Option<T>, TskitError> {
-        let table_ref = self.table_;
+        let table_ref = unsafe { *self.table_ };
         let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
@@ -91,7 +94,7 @@ impl<'a> PopulationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`PopulationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = PopulationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&PopulationTable>(self)
     }
 
     /// Return row `r` of the table.
