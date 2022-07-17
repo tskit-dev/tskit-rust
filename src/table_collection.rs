@@ -65,6 +65,13 @@ use mbox::MBox;
 /// assert_eq!(nodes.num_rows(), 1);
 /// ```
 ///
+/// ```compile_fail
+/// use tskit::TableAccess;
+/// let tables = tskit::TableCollection::new(100.).unwrap();
+/// let populations = tables.populations();
+/// drop(tables);
+/// assert_eq!(populations.num_rows(), 0);
+/// ```
 pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
 }
