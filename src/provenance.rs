@@ -130,14 +130,13 @@ impl ProvenanceTable {
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
     pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Result<String, TskitError> {
-        let ptr = unsafe { *self.table_ };
         match unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            ptr.timestamp,
-            ptr.timestamp_offset,
-            ptr.timestamp_length
+            self.as_ll_ref().timestamp,
+            self.as_ll_ref().timestamp_offset,
+            self.as_ll_ref().timestamp_length
         ) {
             Ok(Some(string)) => Ok(string),
             Ok(None) => Err(crate::TskitError::ValueError {
@@ -154,14 +153,13 @@ impl ProvenanceTable {
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
     pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Result<String, TskitError> {
-        let ptr = unsafe { *self.table_ };
         match unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            ptr.record,
-            ptr.record_offset,
-            ptr.record_length
+            self.as_ll_ref().record,
+            self.as_ll_ref().record_offset,
+            self.as_ll_ref().record_length
         ) {
             Ok(Some(string)) => Ok(string),
             Ok(None) => Ok(String::from("")),
@@ -215,6 +213,9 @@ mod test_provenances {
             .tree_sequence(crate::TreeSequenceFlags::default())
             .unwrap();
         let row_id = ts.add_provenance(&s).unwrap();
+        assert_eq!(row_id, 1);
+        let _ = ts.provenances().timestamp(row_id).unwrap();
+        let _ = ts.provenances().record(row_id).unwrap();
         let _ = ts.provenances().row(row_id).unwrap();
     }
 
