@@ -67,13 +67,37 @@ use mbox::MBox;
 ///
 pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
+    populations: PopulationTable,
 }
 
-build_tskit_type!(
-    TableCollection,
-    ll_bindings::tsk_table_collection_t,
-    tsk_table_collection_free
-);
+//build_tskit_type!(
+//    TableCollection,
+//    ll_bindings::tsk_table_collection_t,
+//    tsk_table_collection_free
+//);
+impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCollection {
+    fn wrap() -> Self {
+        let temp = unsafe {
+            libc::malloc(std::mem::size_of::<ll_bindings::tsk_table_collection_t>())
+                as *mut ll_bindings::tsk_table_collection_t
+        };
+        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_table_collection_t>::new(temp) {
+            Some(x) => x,
+            None => panic!("out of memory"),
+        };
+        let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
+        let populations = PopulationTable::new_from_table(std::ptr::null());
+        let mut rv = Self {
+            inner: mbox,
+            populations,
+        };
+        rv.populations.table_ = &unsafe { *rv.as_ptr() }.populations;
+        rv
+    }
+}
+
+drop_for_tskit_type!(TableCollection, tsk_table_collection_free);
+tskit_type_access!(TableCollection, ll_bindings::tsk_table_collection_t);
 
 impl TableCollection {
     /// Create a new table collection with a sequence length.
@@ -1223,7 +1247,7 @@ impl TableAccess for TableCollection {
     }
 
     fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(&unsafe{*self.as_ptr()}.populations)
+        self.populations
     }
 
     #[cfg(any(feature = "provenance", doc))]

@@ -64,8 +64,9 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
 /// These are not created directly.
 /// Instead, use [`TableAccess::populations`](crate::TableAccess::populations)
 /// to get a reference to an existing population table;
+#[derive(Copy, Clone)] // FIXME: not what we want!
 pub struct PopulationTable {
-    table_: *const ll_bindings::tsk_population_table_t,
+    pub(crate) table_: *const ll_bindings::tsk_population_table_t,
 }
 
 impl PopulationTable {
@@ -74,7 +75,7 @@ impl PopulationTable {
     }
 
     pub(crate) fn new_from_table(populations: *const ll_bindings::tsk_population_table_t) -> Self {
-        assert!(!populations.is_null());
+        // assert!(!populations.is_null());
         PopulationTable {
             table_: populations,
         }
@@ -122,7 +123,7 @@ impl PopulationTable {
 }
 
 pub struct OwningPopulationTable {
-    pointer: *mut ll_bindings::tsk_population_table_t,
+    pointer: mbox::MBox<ll_bindings::tsk_population_table_t>,
     deref_target: PopulationTable,
 }
 
@@ -132,22 +133,30 @@ impl OwningPopulationTable {
             libc::malloc(std::mem::size_of::<ll_bindings::tsk_population_table_t>())
                 as *mut ll_bindings::tsk_population_table_t
         };
-        assert!(!pointer.is_null());
+        // Gotta validate this code
+        let code = unsafe { ll_bindings::tsk_population_table_init(pointer, 0) };
+        assert!(!pointer.is_null()); // Should Err here if true!
         let deref_target = PopulationTable::new_from_table(std::ptr::null());
+        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_population_table_t>::new(pointer) {
+            Some(x) => x,
+            None => panic!("out of memory"),
+        };
+        let mbox = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
         let mut rv = Self {
-            pointer,
+            pointer: mbox,
             deref_target,
         };
-        rv.deref_target.table_ = rv.pointer as *const ll_bindings::tsk_population_table_t;
+        rv.deref_target.table_ = &(*rv.pointer) as *const ll_bindings::tsk_population_table_t;
         rv
     }
 }
 
 impl OwningPopulationTable {
-    fn add_row(&mut self) -> i32 {
-        let rv =
-            unsafe { ll_bindings::tsk_population_table_add_row(self.pointer, std::ptr::null(), 0) };
-        rv
+    fn add_row(&mut self) -> Result<PopulationId, TskitError> {
+        let rv = unsafe {
+            ll_bindings::tsk_population_table_add_row(&mut (*self.pointer), std::ptr::null(), 0)
+        };
+        handle_tsk_return_value!(rv, rv.into())
     }
 }
 
@@ -160,13 +169,14 @@ impl std::ops::Deref for OwningPopulationTable {
 
 impl Drop for OwningPopulationTable {
     fn drop(&mut self) {
-        unsafe {
+        let rv = unsafe {
             ll_bindings::tsk_population_table_free(
-                self.table_ as *mut ll_bindings::tsk_population_table_t,
+                &mut (*self.pointer) as *mut ll_bindings::tsk_population_table_t,
             )
         };
-        assert!(!self.pointer.is_null());
-        unsafe { libc::free(self.pointer as *mut libc::c_void) };
+        assert_eq!(rv, 0);
+        //assert!(!self.pointer.is_null());
+        //unsafe { libc::free(self.pointer as *mut libc::c_void) };
     }
 }
 
@@ -177,7 +187,7 @@ mod tests {
     #[test]
     fn add_population() {
         let mut p = OwningPopulationTable::new();
-        let x = p.add_row();
+        let x = p.add_row().unwrap();
         assert_eq!(x, 0);
         assert_eq!(p.num_rows(), 1);
     }
