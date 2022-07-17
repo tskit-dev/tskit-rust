@@ -1309,7 +1309,7 @@ impl TableAccess for TreeSequence {
     }
 
     fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(unsafe { &(*(*self.inner).tables).populations })
+        PopulationTable::new_from_table(&unsafe{*(*self.as_ptr()).tables}.populations)
     }
 
     #[cfg(any(feature = "provenance", doc))]

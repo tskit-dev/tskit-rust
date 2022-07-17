@@ -1223,7 +1223,7 @@ impl TableAccess for TableCollection {
     }
 
     fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(&(*self.inner).populations)
+        PopulationTable::new_from_table(&unsafe{*self.as_ptr()}.populations)
     }
 
     #[cfg(any(feature = "provenance", doc))]
