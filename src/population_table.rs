@@ -129,6 +129,7 @@ impl OwningPopulationTable {
             libc::malloc(std::mem::size_of::<ll_bindings::tsk_population_table_t>())
                 as *mut ll_bindings::tsk_population_table_t
         };
+        assert!(!table_.is_null());
         //let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_population_table_t>::new(temp) {
         //    Some(x) => x,
         //    None => panic!("out of memory"),
