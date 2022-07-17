@@ -70,6 +70,7 @@ pub struct PopulationTable {
 
 impl PopulationTable {
     fn as_ll_ref(&self) -> &ll_bindings::tsk_population_table_t {
+        // SAFETY: cannot be constructed with null pointer
         unsafe { &(*self.table_) }
     }
 
@@ -86,6 +87,7 @@ impl PopulationTable {
         &self,
         row: PopulationId,
     ) -> Result<Option<T>, TskitError> {
+        // SAFETY: cannot be constructed with null pointer
         let table_ref = unsafe { *self.table_ };
         let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
