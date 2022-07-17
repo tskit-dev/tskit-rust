@@ -75,6 +75,9 @@ use mbox::MBox;
 pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
     populations: PopulationTable,
+
+    #[cfg(feature = "provenance")]
+    provenances: crate::provenance::ProvenanceTable,
 }
 
 impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCollection {
@@ -89,7 +92,24 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_null();
-        Self { inner: mbox, populations }
+
+        #[cfg(not(feature = "provenance"))]
+        {
+            Self {
+                inner: mbox,
+                populations,
+            }
+        }
+
+        #[cfg(feature = "provenance")]
+        {
+            let provenances = crate::provenance::ProvenanceTable::new_null();
+            Self {
+                inner: mbox,
+                populations,
+                provenances,
+            }
+        }
     }
 }
 
@@ -127,6 +147,10 @@ impl TableCollection {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
         tables.populations.set_ptr(&(*tables.inner).populations);
+
+        #[cfg(feature = "provenance")]
+        tables.provenances.set_ptr(&(*tables.inner).provenances);
+
         Ok(tables)
     }
 
@@ -1249,8 +1273,8 @@ impl TableAccess for TableCollection {
     }
 
     #[cfg(any(feature = "provenance", doc))]
-    fn provenances(&self) -> crate::provenance::ProvenanceTable {
-        crate::provenance::ProvenanceTable::new_from_table(&(*self.inner).provenances)
+    fn provenances(&self) -> &crate::provenance::ProvenanceTable {
+        &self.provenances
     }
 }
 

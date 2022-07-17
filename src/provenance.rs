@@ -59,8 +59,8 @@ fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<Provena
     }
 }
 
-type ProvenanceTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a ProvenanceTable<'a>>;
-type ProvenanceTableIterator<'a> = crate::table_iterator::TableIterator<ProvenanceTable<'a>>;
+type ProvenanceTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a ProvenanceTable>;
+type ProvenanceTableIterator<'a> = crate::table_iterator::TableIterator<ProvenanceTable>;
 
 impl<'a> Iterator for ProvenanceTableRefIterator<'a> {
     type Item = ProvenanceTableRow;
@@ -92,20 +92,36 @@ impl<'a> Iterator for ProvenanceTableIterator<'a> {
 ///
 /// * The type is enabled by the `"provenance"` feature.
 ///
-pub struct ProvenanceTable<'a> {
-    table_: &'a ll_bindings::tsk_provenance_table_t,
+pub struct ProvenanceTable {
+    table_: *const ll_bindings::tsk_provenance_table_t,
 }
 
-impl<'a> ProvenanceTable<'a> {
-    pub(crate) fn new_from_table(provenances: &'a ll_bindings::tsk_provenance_table_t) -> Self {
+impl ProvenanceTable {
+    fn as_ll_ref(&self) -> &ll_bindings::tsk_provenance_table_t {
+        // SAFETY: cannot be constructed with null pointer
+        unsafe { &(*self.table_) }
+    }
+
+    pub(crate) fn new_from_table(provenances: &ll_bindings::tsk_provenance_table_t) -> Self {
         ProvenanceTable {
             table_: provenances,
         }
     }
 
+    pub(crate) fn new_null() -> Self {
+        Self {
+            table_: std::ptr::null(),
+        }
+    }
+
+    pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_provenance_table_t) {
+        self.table_ = ptr;
+        assert!(!self.table_.is_null());
+    }
+
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ll_ref().num_rows.into()
     }
 
     /// Get the ISO-formatted time stamp for row `row`.
@@ -113,14 +129,15 @@ impl<'a> ProvenanceTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Result<String, TskitError> {
+    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Result<String, TskitError> {
+        let ptr = unsafe { *self.table_ };
         match unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.timestamp,
-            self.table_.timestamp_offset,
-            self.table_.timestamp_length
+            ptr.timestamp,
+            ptr.timestamp_offset,
+            ptr.timestamp_length
         ) {
             Ok(Some(string)) => Ok(string),
             Ok(None) => Err(crate::TskitError::ValueError {
@@ -136,14 +153,15 @@ impl<'a> ProvenanceTable<'a> {
     /// # Errors
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn record<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Result<String, TskitError> {
+    pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Result<String, TskitError> {
+        let ptr = unsafe { *self.table_ };
         match unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.record,
-            self.table_.record_offset,
-            self.table_.record_length
+            ptr.record,
+            ptr.record_offset,
+            ptr.record_length
         ) {
             Ok(Some(string)) => Ok(string),
             Ok(None) => Ok(String::from("")),
@@ -157,7 +175,7 @@ impl<'a> ProvenanceTable<'a> {
     ///
     /// [`TskitError::IndexError`] if `r` is out of range.
     pub fn row<P: Into<ProvenanceId> + Copy>(
-        &'a self,
+        &self,
         row: P,
     ) -> Result<ProvenanceTableRow, TskitError> {
         if row.into() < 0 {
@@ -173,7 +191,7 @@ impl<'a> ProvenanceTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`ProvenanceTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = ProvenanceTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&ProvenanceTable>(self)
     }
 }
 

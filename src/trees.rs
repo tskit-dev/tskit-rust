@@ -960,6 +960,9 @@ iterator_for_nodeiterator!(SamplesIterator<'_>);
 pub struct TreeSequence {
     pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
     populations: PopulationTable,
+
+    #[cfg(feature = "provenance")]
+    provenances: crate::provenance::ProvenanceTable,
 }
 
 impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
@@ -974,9 +977,22 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_null();
-        Self {
-            inner: mbox,
-            populations,
+        #[cfg(not(feature = "provenance"))]
+        {
+            Self {
+                inner: mbox,
+                populations,
+            }
+        }
+
+        #[cfg(feature = "provenance")]
+        {
+            let provenances = crate::provenance::ProvenanceTable::new_null();
+            Self {
+                inner: mbox,
+                populations,
+                provenances,
+            }
         }
     }
 }
@@ -1041,6 +1057,12 @@ impl TreeSequence {
         treeseq
             .populations
             .set_ptr(&unsafe { *((*treeseq.inner).tables) }.populations);
+        #[cfg(feature = "provenance")]
+        {
+            treeseq
+                .provenances
+                .set_ptr(&unsafe { *((*treeseq.inner).tables) }.provenances);
+        }
         handle_tsk_return_value!(rv, treeseq)
     }
 
@@ -1337,10 +1359,8 @@ impl TableAccess for TreeSequence {
     }
 
     #[cfg(any(feature = "provenance", doc))]
-    fn provenances(&self) -> crate::provenance::ProvenanceTable {
-        crate::provenance::ProvenanceTable::new_from_table(unsafe {
-            &(*(*self.inner).tables).provenances
-        })
+    fn provenances(&self) -> &crate::provenance::ProvenanceTable {
+        &self.provenances
     }
 }
 

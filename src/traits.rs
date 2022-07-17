@@ -115,7 +115,7 @@ pub trait TableAccess {
 
     #[cfg(any(feature = "provenance", doc))]
     /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
-    fn provenances(&self) -> crate::provenance::ProvenanceTable;
+    fn provenances(&self) -> &crate::provenance::ProvenanceTable;
 
     #[cfg(any(feature = "provenance", doc))]
     /// Return an iterator over provenances
@@ -123,7 +123,7 @@ pub trait TableAccess {
         &self,
     ) -> Box<dyn Iterator<Item = crate::provenance::ProvenanceTableRow> + '_> {
         Box::new(crate::table_iterator::make_table_iterator::<
-            crate::provenance::ProvenanceTable,
+            &crate::provenance::ProvenanceTable,
         >(self.provenances()))
     }
 }
