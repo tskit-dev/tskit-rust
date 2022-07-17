@@ -130,11 +130,6 @@ impl OwningPopulationTable {
                 as *mut ll_bindings::tsk_population_table_t
         };
         assert!(!table_.is_null());
-        //let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_population_table_t>::new(temp) {
-        //    Some(x) => x,
-        //    None => panic!("out of memory"),
-        //};
-        //let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         Self {
             0: PopulationTable { table_ },
         }
