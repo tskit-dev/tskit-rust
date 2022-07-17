@@ -1061,7 +1061,7 @@ impl TreeSequence {
         {
             treeseq
                 .provenances
-                .set_ptr(&unsafe { *((*treeseq.inner).tables) }.provenances);
+                .set_ptr(&unsafe { *(*treeseq.inner).tables }.provenances);
         }
         handle_tsk_return_value!(rv, treeseq)
     }

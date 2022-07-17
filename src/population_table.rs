@@ -87,6 +87,7 @@ impl PopulationTable {
     }
 
     pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_population_table_t) {
+        assert!(!ptr.is_null());
         self.table_ = ptr;
     }
 

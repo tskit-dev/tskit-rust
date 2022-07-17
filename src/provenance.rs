@@ -115,12 +115,13 @@ impl ProvenanceTable {
     }
 
     pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_provenance_table_t) {
+        assert!(!ptr.is_null());
         self.table_ = ptr;
-        assert!(!self.table_.is_null());
     }
 
     /// Return the number of rows
     pub fn num_rows(&self) -> SizeType {
+        println!("{}", unsafe{*self.table_}.num_rows);
         self.as_ll_ref().num_rows.into()
     }
 
@@ -206,6 +207,7 @@ mod test_provenances {
         let s = String::from("");
         let row_id = tables.add_provenance(&s).unwrap();
         let _ = tables.provenances().row(row_id).unwrap();
+        assert_eq!(tables.provenances().num_rows(), 1);
 
         // and for tree sequences...
         tables.build_index().unwrap();
