@@ -121,27 +121,32 @@ impl PopulationTable {
     }
 }
 
-pub struct OwningPopulationTable(PopulationTable);
+pub struct OwningPopulationTable {
+    pointer: *mut ll_bindings::tsk_population_table_t,
+    deref_target: PopulationTable,
+}
 
 impl OwningPopulationTable {
     fn new() -> Self {
-        let table_ = unsafe {
+        let pointer = unsafe {
             libc::malloc(std::mem::size_of::<ll_bindings::tsk_population_table_t>())
                 as *mut ll_bindings::tsk_population_table_t
         };
-        assert!(!table_.is_null());
-        Self {
-            0: PopulationTable { table_ },
-        }
+        assert!(!pointer.is_null());
+        let deref_target = PopulationTable::new_from_table(std::ptr::null());
+        let mut rv = Self {
+            pointer,
+            deref_target,
+        };
+        rv.deref_target.table_ = rv.pointer as *const ll_bindings::tsk_population_table_t;
+        rv
     }
 }
 
 impl OwningPopulationTable {
     fn add_row(&mut self) -> i32 {
-        let rv = unsafe {
-            let ptr = self.0.table_ as *mut ll_bindings::tsk_population_table_t;
-            ll_bindings::tsk_population_table_add_row(ptr, std::ptr::null(), 0)
-        };
+        let rv =
+            unsafe { ll_bindings::tsk_population_table_add_row(self.pointer, std::ptr::null(), 0) };
         rv
     }
 }
@@ -149,7 +154,7 @@ impl OwningPopulationTable {
 impl std::ops::Deref for OwningPopulationTable {
     type Target = PopulationTable;
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.deref_target
     }
 }
 
@@ -160,8 +165,8 @@ impl Drop for OwningPopulationTable {
                 self.table_ as *mut ll_bindings::tsk_population_table_t,
             )
         };
-        assert!(!self.0.table_.is_null());
-        unsafe { libc::free(self.0.table_ as *mut libc::c_void) };
+        assert!(!self.pointer.is_null());
+        unsafe { libc::free(self.pointer as *mut libc::c_void) };
     }
 }
 
