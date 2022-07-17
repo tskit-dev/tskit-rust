@@ -64,7 +64,6 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
 /// These are not created directly.
 /// Instead, use [`TableAccess::populations`](crate::TableAccess::populations)
 /// to get a reference to an existing population table;
-#[derive(Copy, Clone)] // FIXME: not what we want!
 pub struct PopulationTable {
     pub(crate) table_: *const ll_bindings::tsk_population_table_t,
 }

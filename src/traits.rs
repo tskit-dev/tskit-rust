@@ -84,13 +84,13 @@ pub trait TableAccess {
     }
 
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
-    fn populations(&self) -> PopulationTable;
+    fn populations(&self) -> &PopulationTable;
 
     /// Return an iterator over the populations.
     fn populations_iter(
         &self,
     ) -> Box<dyn Iterator<Item = crate::population_table::PopulationTableRow> + '_> {
-        Box::new(make_table_iterator::<PopulationTable>(self.populations()))
+        Box::new(make_table_iterator::<&PopulationTable>(self.populations()))
     }
 
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).

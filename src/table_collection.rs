@@ -87,11 +87,10 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_from_table(std::ptr::null());
-        let mut rv = Self {
+        let rv = Self {
             inner: mbox,
             populations,
         };
-        rv.populations.table_ = &unsafe { *rv.as_ptr() }.populations;
         rv
     }
 }
@@ -126,6 +125,9 @@ impl TableCollection {
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
+
+        // NOTE: gotta be like this
+        tables.populations.table_ = &(*tables.inner).populations;
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
@@ -1246,8 +1248,8 @@ impl TableAccess for TableCollection {
         MutationTable::new_from_table(&(*self.inner).mutations)
     }
 
-    fn populations(&self) -> PopulationTable {
-        self.populations
+    fn populations(&self) -> &PopulationTable {
+        &self.populations
     }
 
     #[cfg(any(feature = "provenance", doc))]

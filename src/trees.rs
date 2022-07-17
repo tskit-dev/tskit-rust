@@ -959,9 +959,32 @@ iterator_for_nodeiterator!(SamplesIterator<'_>);
 /// ```
 pub struct TreeSequence {
     pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
+    populations: PopulationTable,
+}
+impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
+    fn wrap() -> Self {
+        let temp = unsafe {
+            libc::malloc(std::mem::size_of::<ll_bindings::tsk_treeseq_t >())
+                as *mut ll_bindings::tsk_treeseq_t  
+        };
+        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_treeseq_t  >::new(temp) {
+            Some(x) => x,
+            None => panic!("out of memory"),
+        };
+        let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
+        let populations = PopulationTable::new_from_table(std::ptr::null());
+        let mut rv = Self {
+            inner: mbox,
+            populations,
+        };
+        rv
+    }
 }
 
-build_tskit_type!(TreeSequence, ll_bindings::tsk_treeseq_t, tsk_treeseq_free);
+drop_for_tskit_type!(TreeSequence, tsk_treeseq_free);
+tskit_type_access!(TreeSequence, ll_bindings::tsk_treeseq_t);
+
+//build_tskit_type!(TreeSequence, ll_bindings::tsk_treeseq_t, tsk_treeseq_free);
 
 impl TreeSequence {
     /// Create a tree sequence from a [`TableCollection`].
@@ -1017,6 +1040,7 @@ impl TreeSequence {
         let raw_tables_ptr = tables.into_raw()?;
         let rv =
             unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), raw_tables_ptr, flags) };
+        treeseq.populations.table_ = &unsafe { *(*treeseq.inner).tables }.populations;
         handle_tsk_return_value!(rv, treeseq)
     }
 
@@ -1308,8 +1332,8 @@ impl TableAccess for TreeSequence {
         MutationTable::new_from_table(unsafe { &(*(*self.inner).tables).mutations })
     }
 
-    fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(&unsafe{*(*self.as_ptr()).tables}.populations)
+    fn populations(&self) -> &PopulationTable {
+        &self.populations
     }
 
     #[cfg(any(feature = "provenance", doc))]
