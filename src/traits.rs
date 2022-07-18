@@ -76,11 +76,11 @@ pub trait TableAccess {
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).
-    fn sites(&self) -> SiteTable;
+    fn sites(&self) -> &SiteTable;
 
     /// Return an iterator over the sites.
     fn sites_iter(&self) -> Box<dyn Iterator<Item = crate::site_table::SiteTableRow> + '_> {
-        Box::new(make_table_iterator::<SiteTable>(self.sites()))
+        Box::new(make_table_iterator::<&SiteTable>(self.sites()))
     }
 
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).

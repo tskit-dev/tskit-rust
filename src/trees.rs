@@ -960,6 +960,7 @@ iterator_for_nodeiterator!(SamplesIterator<'_>);
 pub struct TreeSequence {
     pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
     populations: PopulationTable,
+    sites: SiteTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -977,11 +978,13 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_null();
+        let sites = SiteTable::new_null();
         #[cfg(not(feature = "provenance"))]
         {
             Self {
                 inner: mbox,
                 populations,
+                sites,
             }
         }
 
@@ -991,6 +994,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
             Self {
                 inner: mbox,
                 populations,
+                sites,
                 provenances,
             }
         }
@@ -1057,6 +1061,9 @@ impl TreeSequence {
         treeseq
             .populations
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).populations });
+        treeseq
+            .sites
+            .set_ptr(unsafe { &(*(*treeseq.inner).tables).sites });
         #[cfg(feature = "provenance")]
         {
             treeseq
@@ -1347,8 +1354,8 @@ impl TableAccess for TreeSequence {
         NodeTable::new_from_table(unsafe { &(*(*self.inner).tables).nodes })
     }
 
-    fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(unsafe { &(*(*self.inner).tables).sites })
+    fn sites(&self) -> &SiteTable {
+        &self.sites
     }
 
     fn mutations(&self) -> MutationTable {

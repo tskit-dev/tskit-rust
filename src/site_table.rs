@@ -84,6 +84,17 @@ impl SiteTable {
         SiteTable { table_: sites }
     }
 
+    pub(crate) fn new_null() -> Self {
+        Self {
+            table_: std::ptr::null(),
+        }
+    }
+
+    pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_site_table_t) {
+        assert!(!ptr.is_null());
+        self.table_ = ptr;
+    }
+
     /// Return the number of rows
     pub fn num_rows(&self) -> SizeType {
         self.as_ll_ref().num_rows.into()

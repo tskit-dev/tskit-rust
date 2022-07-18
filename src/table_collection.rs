@@ -75,6 +75,7 @@ use mbox::MBox;
 pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
     populations: PopulationTable,
+    sites: SiteTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -92,12 +93,14 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_null();
+        let sites = SiteTable::new_null();
 
         #[cfg(not(feature = "provenance"))]
         {
             Self {
                 inner: mbox,
                 populations,
+                sites,
             }
         }
 
@@ -107,6 +110,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
             Self {
                 inner: mbox,
                 populations,
+                sites,
                 provenances,
             }
         }
@@ -147,6 +151,7 @@ impl TableCollection {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
         tables.populations.set_ptr(&(*tables.inner).populations);
+        tables.sites.set_ptr(&(*tables.inner).sites);
 
         #[cfg(feature = "provenance")]
         tables.provenances.set_ptr(&(*tables.inner).provenances);
@@ -1260,8 +1265,8 @@ impl TableAccess for TableCollection {
         NodeTable::new_from_table(&(*self.inner).nodes)
     }
 
-    fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(&(*self.inner).sites)
+    fn sites(&self) -> &SiteTable {
+        &self.sites
     }
 
     fn mutations(&self) -> MutationTable {
