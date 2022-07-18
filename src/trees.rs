@@ -988,34 +988,20 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
         let individuals = IndividualTable::new_null();
         let mutations = MutationTable::new_null();
         let nodes = NodeTable::new_null();
-        #[cfg(not(feature = "provenance"))]
-        {
-            Self {
-                inner: mbox,
-                populations,
-                sites,
-                edges,
-                migrations,
-                individuals,
-                mutations,
-                nodes,
-            }
-        }
 
         #[cfg(feature = "provenance")]
-        {
-            let provenances = crate::provenance::ProvenanceTable::new_null();
-            Self {
-                inner: mbox,
-                populations,
-                sites,
-                edges,
-                migrations,
-                individuals,
-                mutations,
-                nodes,
-                provenances,
-            }
+        let provenances = crate::provenance::ProvenanceTable::new_null();
+        Self {
+            inner: mbox,
+            populations,
+            sites,
+            edges,
+            migrations,
+            individuals,
+            mutations,
+            nodes,
+            #[cfg(feature = "provenance")]
+            provenances,
         }
     }
 }

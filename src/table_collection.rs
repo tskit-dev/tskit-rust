@@ -105,34 +105,20 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         let mutations = MutationTable::new_null();
         let nodes = NodeTable::new_null();
 
-        #[cfg(not(feature = "provenance"))]
-        {
-            Self {
-                inner: mbox,
-                populations,
-                sites,
-                edges,
-                migrations,
-                individuals,
-                mutations,
-                nodes,
-            }
-        }
-
         #[cfg(feature = "provenance")]
-        {
-            let provenances = crate::provenance::ProvenanceTable::new_null();
-            Self {
-                inner: mbox,
-                populations,
-                sites,
-                edges,
-                provenances,
-                migrations,
-                individuals,
-                mutations,
-                nodes,
-            }
+        let provenances = crate::provenance::ProvenanceTable::new_null();
+
+        Self {
+            inner: mbox,
+            populations,
+            sites,
+            edges,
+            migrations,
+            individuals,
+            mutations,
+            nodes,
+            #[cfg(feature = "provenance")]
+            provenances,
         }
     }
 }
