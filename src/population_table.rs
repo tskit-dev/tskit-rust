@@ -4,6 +4,7 @@ use crate::tsk_id_t;
 use crate::PopulationId;
 use crate::SizeType;
 use crate::TskitError;
+use ll_bindings::{tsk_population_table_free, tsk_population_table_init};
 
 /// Row of a [`PopulationTable`]
 #[derive(Eq)]
@@ -164,19 +165,6 @@ pub struct OwnedPopulationTable {
 }
 
 impl OwnedPopulationTable {
-    fn new() -> Self {
-        let temp = unsafe {
-            libc::malloc(std::mem::size_of::<ll_bindings::tsk_population_table_t>())
-                as *mut ll_bindings::tsk_population_table_t
-        };
-        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_population_table_t>::new(temp) {
-            Some(x) => x,
-            None => panic!("out of memory"),
-        };
-        let table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
-        Self { table }
-    }
-
     pub fn add_row(&mut self) -> Result<PopulationId, TskitError> {
         let rv = unsafe {
             ll_bindings::tsk_population_table_add_row(&mut (*self.table), std::ptr::null(), 0)
@@ -202,18 +190,10 @@ impl OwnedPopulationTable {
     }
 }
 
-impl std::ops::Deref for OwnedPopulationTable {
-    type Target = PopulationTable<'static>;
-
-    fn deref(&self) -> &Self::Target {
-        // SAFETY: that T* and &T have same layout,
-        // and Target is repr(transparent).
-        unsafe { std::mem::transmute(&self.table) }
-    }
-}
-
-impl Default for OwnedPopulationTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+build_owned_tables!(
+    OwnedPopulationTable,
+    PopulationTable,
+    ll_bindings::tsk_population_table_t,
+    tsk_population_table_init,
+    tsk_population_table_free
+);

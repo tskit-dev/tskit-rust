@@ -533,6 +533,49 @@ macro_rules! handle_metadata_return {
     };
 }
 
+macro_rules! build_owned_tables {
+    ($name: ty, $deref: ident, $llname: ty, $init: ident, $free: ident) => {
+        impl $name {
+            fn new() -> Self {
+                let temp = unsafe { libc::malloc(std::mem::size_of::<$llname>()) as *mut $llname };
+                let nonnull = match std::ptr::NonNull::<$llname>::new(temp) {
+                    Some(x) => x,
+                    None => panic!("out of memory"),
+                };
+                let mut table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
+                let rv = unsafe { $init(&mut (*table), 0) };
+                assert_eq!(rv, 0);
+                Self { table }
+            }
+        }
+
+        impl Default for $name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
+        impl std::ops::Deref for $name {
+            type Target = $deref<'static>;
+
+            fn deref(&self) -> &Self::Target {
+                // SAFETY: that T* and &T have same layout,
+                // and Target is repr(transparent).
+                unsafe { std::mem::transmute(&self.table) }
+            }
+        }
+
+        impl Drop for $name {
+            fn drop(&mut self) {
+                let rv = unsafe { $free(&mut (*self.table)) };
+                if rv != 0 {
+                    panic!("error when calling {}: {}", stringify!(free), rv);
+                }
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
