@@ -121,7 +121,6 @@ impl ProvenanceTable {
 
     /// Return the number of rows
     pub fn num_rows(&self) -> SizeType {
-        println!("check = {}", unsafe { *self.table_ }.num_rows);
         self.as_ll_ref().num_rows.into()
     }
 
