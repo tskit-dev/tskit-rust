@@ -133,32 +133,15 @@ impl TableCollection {
     /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
     /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
     /// let tables = tskit::TableCollection::new_from_file("trees.file").unwrap();
-    /// # std::fs::remove_file("trees.file").unwrap();
-    /// ```
     ///
-    /// ```
-    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
-    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
-    /// let filename = String::from("trees.file");
-    /// // Move filename
-    /// let tables = tskit::TableCollection::new_from_file(filename).unwrap();
-    /// # std::fs::remove_file("trees.file").unwrap();
-    /// ```
-    ///
-    /// ```
-    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
-    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
     /// let filename = String::from("trees.file");
     /// // Pass filename by reference
     /// let tables = tskit::TableCollection::new_from_file(&filename).unwrap();
-    /// # std::fs::remove_file("trees.file").unwrap();
-    /// ```
     ///
-    /// Boxed `String`s are an unlikely use case, but can be made to work:
+    /// // Move filename
+    /// let tables = tskit::TableCollection::new_from_file(filename).unwrap();
     ///
-    /// ```
-    /// # let empty_tables = tskit::TableCollection::new(100.).unwrap();
-    /// # empty_tables.dump("trees.file", tskit::TableOutputOptions::default()).unwrap();
+    /// // Boxed String are an unlikely use case, but can be made to work:
     /// let filename = Box::new(String::from("trees.file"));
     /// let tables = tskit::TableCollection::new_from_file(&*filename.as_ref()).unwrap();
     /// # std::fs::remove_file("trees.file").unwrap();
