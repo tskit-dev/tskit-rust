@@ -1058,9 +1058,12 @@ impl TreeSequence {
             .populations
             .set_ptr(&unsafe { *(*treeseq.inner).tables }.populations);
         #[cfg(feature = "provenance")]
-        treeseq
-            .provenances
-            .set_ptr(&unsafe { *(*treeseq.inner).tables }.provenances);
+        {
+            treeseq
+                .provenances
+                .set_ptr(&unsafe { *(*treeseq.inner).tables }.provenances);
+        }
+
         handle_tsk_return_value!(rv, treeseq)
     }
 
@@ -1308,7 +1311,8 @@ impl TreeSequence {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
-                &mut (*(*self.inner).tables).provenances,
+                &mut (*(*self.inner).tables).provenances
+                    as *mut ll_bindings::tsk_provenance_table_t,
                 timestamp.as_ptr() as *mut i8,
                 timestamp.len() as tsk_size_t,
                 record.as_ptr() as *mut i8,
