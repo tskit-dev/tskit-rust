@@ -131,26 +131,6 @@ impl NodeTable {
         }
     }
 
-    /// Mutable access to node flags.
-    // pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
-    //     unsafe {
-    //         std::slice::from_raw_parts_mut(
-    //             self.as_ll_ref().flags.cast::<NodeFlags>(),
-    //             usize::try_from(self.as_ll_ref().num_rows).unwrap(),
-    //         )
-    //     }
-    // }
-
-    /// Mutable access to node times.
-    // pub fn time_array_mut(&mut self) -> &mut [Time] {
-    //     unsafe {
-    //         std::slice::from_raw_parts_mut(
-    //             self.as_ll_ref().time.cast::<Time>(),
-    //             usize::try_from(self.as_ll_ref().num_rows).unwrap(),
-    //         )
-    //     }
-    // }
-
     /// Return the ``population`` value from row ``row`` of the table.
     ///
     /// # Errors
