@@ -1062,7 +1062,7 @@ impl TreeSequence {
     ///
     /// [`TskitError`] will be raised if the underlying C library returns an error code.
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
-        let mut copy = TableCollection::new(1.)?;
+        let mut copy = TableCollection::new_uninit();
 
         let rv = unsafe {
             ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, copy.as_mut_ptr(), 0)
