@@ -1070,8 +1070,7 @@ impl TreeSequence {
                 .set_ptr(&unsafe { *(*treeseq.inner).tables }.provenances);
             let old_nrows_again = unsafe { unsafe { *(raw_tables_ptr) }.provenances.num_rows };
             assert_eq!(old_nrows, old_nrows_again);
-            let whats_happening =
-                unsafe { unsafe { (*(*treeseq.inner).tables) }.provenances.num_rows };
+            let whats_happening = unsafe { (*(*treeseq.inner).tables) }.provenances.num_rows;
             assert_eq!(
                 old_nrows, whats_happening,
                 "{} {}",
@@ -1323,6 +1322,10 @@ impl TreeSequence {
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
+        assert_eq!(
+            unsafe { *(*self.inner).tables }.provenances.num_rows,
+            self.provenances().num_rows()
+        );
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
                 &mut (*(*self.inner).tables).provenances,
