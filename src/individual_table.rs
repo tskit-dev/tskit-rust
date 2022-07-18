@@ -46,8 +46,8 @@ impl PartialEq for IndividualTableRow {
 /// These are not created directly.
 /// Instead, use [`TableAccess::individuals`](crate::TableAccess::individuals)
 /// to get a reference to an existing node table;
-pub struct IndividualTable<'a> {
-    table_: &'a ll_bindings::tsk_individual_table_t,
+pub struct IndividualTable {
+    table_: *const ll_bindings::tsk_individual_table_t,
 }
 
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
@@ -56,7 +56,7 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
-        let table_ref = table.table_;
+        let table_ref = &unsafe { *table.table_ };
         let rv = IndividualTableRow {
             id: pos.into(),
             flags: table.flags(pos).unwrap(),
@@ -71,9 +71,8 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
 }
 
 pub(crate) type IndividualTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a IndividualTable<'a>>;
-pub(crate) type IndividualTableIterator<'a> =
-    crate::table_iterator::TableIterator<IndividualTable<'a>>;
+    crate::table_iterator::TableIterator<&'a IndividualTable>;
+pub(crate) type IndividualTableIterator<'a> = crate::table_iterator::TableIterator<IndividualTable>;
 
 impl<'a> Iterator for IndividualTableRefIterator<'a> {
     type Item = IndividualTableRow;
@@ -95,16 +94,31 @@ impl<'a> Iterator for IndividualTableIterator<'a> {
     }
 }
 
-impl<'a> IndividualTable<'a> {
-    pub(crate) fn new_from_table(individuals: &'a ll_bindings::tsk_individual_table_t) -> Self {
+impl IndividualTable {
+    pub(crate) fn as_ll_ref(&self) -> &ll_bindings::tsk_individual_table_t {
+        unsafe { &(*self.table_) }
+    }
+
+    pub(crate) fn new_from_table(individuals: &ll_bindings::tsk_individual_table_t) -> Self {
         IndividualTable {
             table_: individuals,
         }
     }
 
+    pub(crate) fn new_null() -> Self {
+        Self {
+            table_: std::ptr::null(),
+        }
+    }
+
+    pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_individual_table_t) {
+        assert!(!ptr.is_null());
+        self.table_ = ptr;
+    }
+
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> crate::SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> crate::SizeType {
+        self.as_ll_ref().num_rows.into()
     }
 
     /// Return the flags for a given row.
@@ -116,7 +130,7 @@ impl<'a> IndividualTable<'a> {
         &self,
         row: I,
     ) -> Result<IndividualFlags, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags) {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.as_ll_ref().flags) {
             Ok(f) => Ok(IndividualFlags::from(f)),
             Err(e) => Err(e),
         }
@@ -135,9 +149,9 @@ impl<'a> IndividualTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.location,
-            self.table_.location_offset,
-            self.table_.location_length,
+            self.as_ll_ref().location,
+            self.as_ll_ref().location_offset,
+            self.as_ll_ref().location_length,
             Location
         )
     }
@@ -155,9 +169,9 @@ impl<'a> IndividualTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.parents,
-            self.table_.parents_offset,
-            self.table_.parents_length,
+            self.as_ll_ref().parents,
+            self.as_ll_ref().parents_offset,
+            self.as_ll_ref().parents_length,
             IndividualId
         )
     }
@@ -243,10 +257,10 @@ impl<'a> IndividualTable<'a> {
     /// # }
     /// ```
     pub fn metadata<T: metadata::MetadataRoundtrip>(
-        &'a self,
+        &self,
         row: IndividualId,
     ) -> Result<Option<T>, TskitError> {
-        let table_ref = self.table_;
+        let table_ref = &unsafe { *self.table_ };
         let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
@@ -255,7 +269,7 @@ impl<'a> IndividualTable<'a> {
     /// The value of the iterator is [`IndividualTableRow`].
     ///
     pub fn iter(&self) -> impl Iterator<Item = IndividualTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&IndividualTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&IndividualTable>(self)
     }
 
     /// Return row `r` of the table.

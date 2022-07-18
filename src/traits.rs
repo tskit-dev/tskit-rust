@@ -104,13 +104,13 @@ pub trait TableAccess {
     }
 
     /// Get reference to the [``IndividualTable``](crate::IndividualTable).
-    fn individuals(&self) -> IndividualTable;
+    fn individuals(&self) -> &IndividualTable;
 
     /// Return an iterator over the individuals.
     fn individuals_iter(
         &self,
     ) -> Box<dyn Iterator<Item = crate::individual_table::IndividualTableRow> + '_> {
-        Box::new(make_table_iterator::<IndividualTable>(self.individuals()))
+        Box::new(make_table_iterator::<&IndividualTable>(self.individuals()))
     }
 
     #[cfg(any(feature = "provenance", doc))]
