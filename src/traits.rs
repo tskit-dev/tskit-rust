@@ -50,11 +50,11 @@ pub trait TskitTypeAccess<T> {
 /// ```
 pub trait TableAccess {
     /// Get reference to the [``EdgeTable``](crate::EdgeTable).
-    fn edges(&self) -> EdgeTable;
+    fn edges(&self) -> &EdgeTable;
 
     /// Return an iterator over the edges.
     fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::edge_table::EdgeTableRow> + '_> {
-        Box::new(make_table_iterator::<EdgeTable>(self.edges()))
+        Box::new(make_table_iterator::<&EdgeTable>(self.edges()))
     }
 
     /// Get reference to the [``NodeTable``](crate::NodeTable).

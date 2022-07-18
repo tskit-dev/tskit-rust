@@ -76,6 +76,7 @@ pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
     populations: PopulationTable,
     sites: SiteTable,
+    edges: EdgeTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -94,6 +95,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_null();
         let sites = SiteTable::new_null();
+        let edges = EdgeTable::new_null();
 
         #[cfg(not(feature = "provenance"))]
         {
@@ -101,6 +103,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
                 inner: mbox,
                 populations,
                 sites,
+                edges,
             }
         }
 
@@ -111,6 +114,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
                 inner: mbox,
                 populations,
                 sites,
+                edges,
                 provenances,
             }
         }
@@ -152,6 +156,7 @@ impl TableCollection {
         }
         tables.populations.set_ptr(&(*tables.inner).populations);
         tables.sites.set_ptr(&(*tables.inner).sites);
+        tables.edges.set_ptr(&(*tables.inner).edges);
 
         #[cfg(feature = "provenance")]
         tables.provenances.set_ptr(&(*tables.inner).provenances);
@@ -1249,8 +1254,8 @@ impl TableCollection {
 }
 
 impl TableAccess for TableCollection {
-    fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(&(*self.inner).edges)
+    fn edges(&self) -> &EdgeTable {
+        &self.edges
     }
 
     fn individuals(&self) -> IndividualTable {

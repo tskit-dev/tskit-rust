@@ -961,6 +961,7 @@ pub struct TreeSequence {
     pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
     populations: PopulationTable,
     sites: SiteTable,
+    edges: EdgeTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -979,12 +980,14 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
         let populations = PopulationTable::new_null();
         let sites = SiteTable::new_null();
+        let edges = EdgeTable::new_null();
         #[cfg(not(feature = "provenance"))]
         {
             Self {
                 inner: mbox,
                 populations,
                 sites,
+                edges,
             }
         }
 
@@ -995,6 +998,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
                 inner: mbox,
                 populations,
                 sites,
+                edges,
                 provenances,
             }
         }
@@ -1064,6 +1068,9 @@ impl TreeSequence {
         treeseq
             .sites
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).sites });
+        treeseq
+            .edges
+            .set_ptr(unsafe { &(*(*treeseq.inner).tables).edges });
         #[cfg(feature = "provenance")]
         {
             treeseq
@@ -1338,8 +1345,8 @@ impl TryFrom<TableCollection> for TreeSequence {
 }
 
 impl TableAccess for TreeSequence {
-    fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(unsafe { &(*(*self.inner).tables).edges })
+    fn edges(&self) -> &EdgeTable {
+        &self.edges
     }
 
     fn individuals(&self) -> IndividualTable {
