@@ -161,6 +161,7 @@ impl TableCollection {
         tables.populations.set_ptr(&(*tables.inner).populations);
         tables.sites.set_ptr(&(*tables.inner).sites);
         tables.edges.set_ptr(&(*tables.inner).edges);
+        tables.migrations.set_ptr(&(*tables.inner).migrations);
 
         #[cfg(feature = "provenance")]
         tables.provenances.set_ptr(&(*tables.inner).provenances);
