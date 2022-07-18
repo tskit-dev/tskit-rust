@@ -1431,6 +1431,7 @@ pub(crate) mod test_trees {
             ntrees += 1;
             assert_eq!(tree.current_tree, ntrees);
             let samples = tree.sample_nodes();
+            let _ = tree.node_table();
             assert_eq!(samples.len(), 2);
             for i in 1..3 {
                 assert_eq!(samples[i - 1], NodeId::from(i as tsk_id_t));
