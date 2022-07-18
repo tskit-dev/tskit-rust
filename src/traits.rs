@@ -94,13 +94,13 @@ pub trait TableAccess {
     }
 
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).
-    fn migrations(&self) -> MigrationTable;
+    fn migrations(&self) -> &MigrationTable;
 
     /// Return an iterator over the migration events.
     fn migrations_iter(
         &self,
     ) -> Box<dyn Iterator<Item = crate::migration_table::MigrationTableRow> + '_> {
-        Box::new(make_table_iterator::<MigrationTable>(self.migrations()))
+        Box::new(make_table_iterator::<&MigrationTable>(self.migrations()))
     }
 
     /// Get reference to the [``IndividualTable``](crate::IndividualTable).

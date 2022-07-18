@@ -77,6 +77,7 @@ pub struct TableCollection {
     populations: PopulationTable,
     sites: SiteTable,
     edges: EdgeTable,
+    migrations: MigrationTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -96,6 +97,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         let populations = PopulationTable::new_null();
         let sites = SiteTable::new_null();
         let edges = EdgeTable::new_null();
+        let migrations = MigrationTable::new_null();
 
         #[cfg(not(feature = "provenance"))]
         {
@@ -104,6 +106,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
                 populations,
                 sites,
                 edges,
+                migrations,
             }
         }
 
@@ -116,6 +119,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
                 sites,
                 edges,
                 provenances,
+                migrations,
             }
         }
     }
@@ -1262,8 +1266,8 @@ impl TableAccess for TableCollection {
         IndividualTable::new_from_table(&(*self.inner).individuals)
     }
 
-    fn migrations(&self) -> MigrationTable {
-        MigrationTable::new_from_table(&(*self.inner).migrations)
+    fn migrations(&self) -> &MigrationTable {
+        &self.migrations
     }
 
     fn nodes(&self) -> NodeTable {
