@@ -1311,8 +1311,7 @@ impl TreeSequence {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
-                &mut (*(*self.inner).tables).provenances
-                    as *mut ll_bindings::tsk_provenance_table_t,
+                &mut (*(*self.inner).tables).provenances,
                 timestamp.as_ptr() as *mut i8,
                 timestamp.len() as tsk_size_t,
                 record.as_ptr() as *mut i8,
