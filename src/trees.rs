@@ -1020,6 +1020,10 @@ impl TreeSequence {
         handle_tsk_return_value!(rv, treeseq)
     }
 
+    fn new_uninit() -> Self {
+        Self::wrap()
+    }
+
     /// Dump the tree sequence to file.
     ///
     /// # Note
@@ -1190,12 +1194,9 @@ impl TreeSequence {
         options: O,
         idmap: bool,
     ) -> Result<(Self, Option<Vec<NodeId>>), TskitError> {
-        let mut tables = TableCollection::new(unsafe { (*(*self.inner).tables).sequence_length })?;
-        match tables.build_index() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        }
-        let mut ts = tables.tree_sequence(TreeSequenceFlags::default())?;
+        // The output is an UNINITIALIZED treeseq,
+        // else we leak memory.
+        let mut ts = Self::new_uninit();
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
             output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
