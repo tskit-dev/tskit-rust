@@ -33,6 +33,7 @@ pub struct Tree {
     num_nodes: tsk_size_t,
     array_len: tsk_size_t,
     flags: TreeFlags,
+    nodes: NodeTable,
 }
 
 // Trait defining iteration over nodes.
@@ -54,6 +55,7 @@ impl Tree {
             panic!("out of memory");
         }
         let mbox = unsafe { MBox::from_raw(temp.cast::<ll_bindings::tsk_tree_t>()) };
+        let nodes = NodeTable::new_null();
         Self {
             inner: mbox,
             current_tree: 0,
@@ -61,6 +63,7 @@ impl Tree {
             num_nodes,
             array_len: num_nodes + 1,
             flags,
+            nodes,
         }
     }
 
@@ -82,6 +85,9 @@ impl Tree {
                 )
             };
         }
+
+        tree.nodes
+            .set_ptr(unsafe { &(*(*(*tree.inner).tree_sequence).tables).nodes });
 
         handle_tsk_return_value!(rv, tree)
     }
@@ -525,7 +531,6 @@ impl Tree {
     ///
     /// This is a convenience function for accessing node times, etc..
     pub fn node_table(&self) -> crate::NodeTable {
-        unimplemented!("we haven't done this one right yet");
         crate::NodeTable::new_from_table(unsafe { &(*(*(*self.inner).tree_sequence).tables).nodes })
     }
 
