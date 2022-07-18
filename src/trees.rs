@@ -1054,17 +1054,13 @@ impl TreeSequence {
         let raw_tables_ptr = tables.into_raw()?;
         let rv =
             unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), raw_tables_ptr, flags) };
-        treeseq.populations.set_ptr(
-            &unsafe { *(*treeseq.inner).tables }.populations
-                as *const ll_bindings::tsk_population_table_t,
-        );
+        treeseq
+            .populations
+            .set_ptr(&unsafe { *(*treeseq.inner).tables }.populations);
         #[cfg(feature = "provenance")]
-        {
-            treeseq.provenances.set_ptr(
-                &unsafe { *(*treeseq.inner).tables }.provenances
-                    as *const ll_bindings::tsk_provenance_table_t,
-            );
-        }
+        treeseq
+            .provenances
+            .set_ptr(&unsafe { *(*treeseq.inner).tables }.provenances);
         handle_tsk_return_value!(rv, treeseq)
     }
 
