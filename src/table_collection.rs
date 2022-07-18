@@ -108,7 +108,7 @@ impl TableCollection {
         Ok(tables)
     }
 
-    fn new_uninit() -> Self {
+    pub(crate) fn new_uninit() -> Self {
         Self::wrap()
     }
 
