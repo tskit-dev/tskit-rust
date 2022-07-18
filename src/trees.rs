@@ -524,10 +524,9 @@ impl Tree {
     /// (and the tree sequence from which it came).
     ///
     /// This is a convenience function for accessing node times, etc..
-    pub fn node_table<'a>(&'a self) -> crate::NodeTable<'a> {
-        crate::NodeTable::<'a>::new_from_table(unsafe {
-            &(*(*(*self.inner).tree_sequence).tables).nodes
-        })
+    pub fn node_table(&self) -> crate::NodeTable {
+        unimplemented!("we haven't done this one right yet");
+        crate::NodeTable::new_from_table(unsafe { &(*(*(*self.inner).tree_sequence).tables).nodes })
     }
 
     /// Calculate the total length of the tree via a preorder traversal.
@@ -965,6 +964,7 @@ pub struct TreeSequence {
     migrations: MigrationTable,
     individuals: IndividualTable,
     mutations: MutationTable,
+    nodes: NodeTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -987,6 +987,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
         let migrations = MigrationTable::new_null();
         let individuals = IndividualTable::new_null();
         let mutations = MutationTable::new_null();
+        let nodes = NodeTable::new_null();
         #[cfg(not(feature = "provenance"))]
         {
             Self {
@@ -997,6 +998,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
                 migrations,
                 individuals,
                 mutations,
+                nodes,
             }
         }
 
@@ -1011,6 +1013,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
                 migrations,
                 individuals,
                 mutations,
+                nodes,
                 provenances,
             }
         }
@@ -1092,6 +1095,9 @@ impl TreeSequence {
         treeseq
             .mutations
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).mutations });
+        treeseq
+            .nodes
+            .set_ptr(unsafe { &(*(*treeseq.inner).tables).nodes });
         #[cfg(feature = "provenance")]
         {
             treeseq
@@ -1378,8 +1384,8 @@ impl TableAccess for TreeSequence {
         &self.migrations
     }
 
-    fn nodes(&self) -> NodeTable {
-        NodeTable::new_from_table(unsafe { &(*(*self.inner).tables).nodes })
+    fn nodes(&self) -> &NodeTable {
+        &self.nodes
     }
 
     fn sites(&self) -> &SiteTable {

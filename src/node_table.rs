@@ -33,7 +33,7 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
     // set up the iterator
     let p = crate::SizeType::try_from(pos).unwrap();
     if p < table.num_rows() {
-        let table_ref = table.table_;
+        let table_ref = &unsafe { *table.table_ };
         Some(NodeTableRow {
             id: pos.into(),
             time: table.time(pos).unwrap(),
@@ -47,8 +47,8 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
     }
 }
 
-pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable<'a>>;
-pub(crate) type NodeTableIterator<'a> = crate::table_iterator::TableIterator<NodeTable<'a>>;
+pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable>;
+pub(crate) type NodeTableIterator<'a> = crate::table_iterator::TableIterator<NodeTable>;
 
 impl<'a> Iterator for NodeTableRefIterator<'a> {
     type Item = NodeTableRow;
@@ -75,18 +75,34 @@ impl<'a> Iterator for NodeTableIterator<'a> {
 /// These are not created directly.
 /// Instead, use [`TableAccess::nodes`](crate::TableAccess::nodes)
 /// to get a reference to an existing node table;
-pub struct NodeTable<'a> {
-    table_: &'a ll_bindings::tsk_node_table_t,
+pub struct NodeTable {
+    table_: *const ll_bindings::tsk_node_table_t,
 }
 
-impl<'a> NodeTable<'a> {
-    pub(crate) fn new_from_table(nodes: &'a ll_bindings::tsk_node_table_t) -> Self {
+impl NodeTable {
+    fn as_ll_ref(&self) -> &ll_bindings::tsk_node_table_t {
+        // SAFETY: cannot be constructed with null pointer
+        unsafe { &(*self.table_) }
+    }
+
+    pub(crate) fn new_from_table(nodes: &ll_bindings::tsk_node_table_t) -> Self {
         NodeTable { table_: nodes }
     }
 
+    pub(crate) fn new_null() -> Self {
+        Self {
+            table_: std::ptr::null(),
+        }
+    }
+
+    pub(crate) fn set_ptr(&mut self, ptr: *const ll_bindings::tsk_node_table_t) {
+        assert!(!ptr.is_null());
+        self.table_ = ptr;
+    }
+
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ll_ref().num_rows.into()
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -95,8 +111,8 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<Time, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time) {
+    pub fn time<N: Into<NodeId> + Copy>(&self, row: N) -> Result<Time, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.as_ll_ref().time) {
             Ok(t) => Ok(t.into()),
             Err(e) => Err(e),
         }
@@ -108,8 +124,8 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<NodeFlags, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags) {
+    pub fn flags<N: Into<NodeId> + Copy>(&self, row: N) -> Result<NodeFlags, TskitError> {
+        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.as_ll_ref().flags) {
             Ok(f) => Ok(NodeFlags::from(f)),
             Err(e) => Err(e),
         }
@@ -119,8 +135,8 @@ impl<'a> NodeTable<'a> {
     pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.table_.flags.cast::<NodeFlags>(),
-                usize::try_from(self.table_.num_rows).unwrap(),
+                self.as_ll_ref().flags.cast::<NodeFlags>(),
+                usize::try_from(self.as_ll_ref().num_rows).unwrap(),
             )
         }
     }
@@ -129,8 +145,8 @@ impl<'a> NodeTable<'a> {
     pub fn time_array_mut(&mut self) -> &mut [Time] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.table_.time.cast::<Time>(),
-                usize::try_from(self.table_.num_rows).unwrap(),
+                self.as_ll_ref().time.cast::<Time>(),
+                usize::try_from(self.as_ll_ref().num_rows).unwrap(),
             )
         }
     }
@@ -141,15 +157,12 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn population<N: Into<NodeId> + Copy>(
-        &'a self,
-        row: N,
-    ) -> Result<PopulationId, TskitError> {
+    pub fn population<N: Into<NodeId> + Copy>(&self, row: N) -> Result<PopulationId, TskitError> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.population,
+            self.as_ll_ref().population,
             PopulationId
         )
     }
@@ -160,7 +173,7 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<PopulationId, TskitError> {
+    pub fn deme<N: Into<NodeId> + Copy>(&self, row: N) -> Result<PopulationId, TskitError> {
         self.population(row)
     }
 
@@ -170,24 +183,21 @@ impl<'a> NodeTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn individual<N: Into<NodeId> + Copy>(
-        &'a self,
-        row: N,
-    ) -> Result<IndividualId, TskitError> {
+    pub fn individual<N: Into<NodeId> + Copy>(&self, row: N) -> Result<IndividualId, TskitError> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.individual,
+            self.as_ll_ref().individual,
             IndividualId
         )
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
-        &'a self,
+        &self,
         row: NodeId,
     ) -> Result<Option<T>, TskitError> {
-        let table_ref = self.table_;
+        let table_ref = &unsafe { *self.table_ };
         let buffer = metadata_to_vector!(table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
@@ -195,7 +205,7 @@ impl<'a> NodeTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`NodeTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = NodeTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&NodeTable>(self)
     }
 
     /// Return row `r` of the table.

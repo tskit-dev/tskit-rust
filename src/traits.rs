@@ -58,11 +58,11 @@ pub trait TableAccess {
     }
 
     /// Get reference to the [``NodeTable``](crate::NodeTable).
-    fn nodes(&self) -> NodeTable;
+    fn nodes(&self) -> &NodeTable;
 
     /// Return an iterator over the nodes.
     fn nodes_iter(&self) -> Box<dyn Iterator<Item = crate::node_table::NodeTableRow> + '_> {
-        Box::new(make_table_iterator::<NodeTable>(self.nodes()))
+        Box::new(make_table_iterator::<&NodeTable>(self.nodes()))
     }
 
     /// Get reference to the [``MutationTable``](crate::MutationTable).
