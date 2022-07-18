@@ -958,16 +958,7 @@ iterator_for_nodeiterator!(SamplesIterator<'_>);
 /// ```
 pub struct TreeSequence {
     pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
-    populations: PopulationTable,
-    sites: SiteTable,
-    edges: EdgeTable,
-    migrations: MigrationTable,
-    individuals: IndividualTable,
-    mutations: MutationTable,
-    nodes: NodeTable,
-
-    #[cfg(feature = "provenance")]
-    provenances: crate::provenance::ProvenanceTable,
+    table_references: crate::util::TableReferences,
 }
 
 impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
@@ -981,27 +972,11 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
             None => panic!("out of memory"),
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
-        let populations = PopulationTable::new_null();
-        let sites = SiteTable::new_null();
-        let edges = EdgeTable::new_null();
-        let migrations = MigrationTable::new_null();
-        let individuals = IndividualTable::new_null();
-        let mutations = MutationTable::new_null();
-        let nodes = NodeTable::new_null();
+        let table_references = crate::util::TableReferences::default();
 
-        #[cfg(feature = "provenance")]
-        let provenances = crate::provenance::ProvenanceTable::new_null();
         Self {
             inner: mbox,
-            populations,
-            sites,
-            edges,
-            migrations,
-            individuals,
-            mutations,
-            nodes,
-            #[cfg(feature = "provenance")]
-            provenances,
+            table_references,
         }
     }
 }
@@ -1064,29 +1039,37 @@ impl TreeSequence {
         let rv =
             unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), raw_tables_ptr, flags) };
         treeseq
+            .table_references
             .populations
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).populations });
         treeseq
+            .table_references
             .sites
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).sites });
         treeseq
+            .table_references
             .edges
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).edges });
         treeseq
+            .table_references
             .migrations
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).migrations });
         treeseq
+            .table_references
             .individuals
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).individuals });
         treeseq
+            .table_references
             .mutations
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).mutations });
         treeseq
+            .table_references
             .nodes
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).nodes });
         #[cfg(feature = "provenance")]
         {
             treeseq
+                .table_references
                 .provenances
                 .set_ptr(unsafe { &(*(*treeseq.inner).tables).provenances });
         }
@@ -1359,36 +1342,36 @@ impl TryFrom<TableCollection> for TreeSequence {
 
 impl TableAccess for TreeSequence {
     fn edges(&self) -> &EdgeTable {
-        &self.edges
+        &self.table_references.edges
     }
 
     fn individuals(&self) -> &IndividualTable {
-        &self.individuals
+        &self.table_references.individuals
     }
 
     fn migrations(&self) -> &MigrationTable {
-        &self.migrations
+        &self.table_references.migrations
     }
 
     fn nodes(&self) -> &NodeTable {
-        &self.nodes
+        &self.table_references.nodes
     }
 
     fn sites(&self) -> &SiteTable {
-        &self.sites
+        &self.table_references.sites
     }
 
     fn mutations(&self) -> &MutationTable {
-        &self.mutations
+        &self.table_references.mutations
     }
 
     fn populations(&self) -> &PopulationTable {
-        &self.populations
+        &self.table_references.populations
     }
 
     #[cfg(any(feature = "provenance", doc))]
     fn provenances(&self) -> &crate::provenance::ProvenanceTable {
-        &self.provenances
+        &self.table_references.provenances
     }
 }
 
