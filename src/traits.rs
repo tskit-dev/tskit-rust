@@ -66,13 +66,13 @@ pub trait TableAccess {
     }
 
     /// Get reference to the [``MutationTable``](crate::MutationTable).
-    fn mutations(&self) -> MutationTable;
+    fn mutations(&self) -> &MutationTable;
 
     /// Return an iterator over the mutations.
     fn mutations_iter(
         &self,
     ) -> Box<dyn Iterator<Item = crate::mutation_table::MutationTableRow> + '_> {
-        Box::new(make_table_iterator::<MutationTable>(self.mutations()))
+        Box::new(make_table_iterator::<&MutationTable>(self.mutations()))
     }
 
     /// Get reference to the [``SiteTable``](crate::SiteTable).

@@ -79,6 +79,7 @@ pub struct TableCollection {
     edges: EdgeTable,
     migrations: MigrationTable,
     individuals: IndividualTable,
+    mutations: MutationTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -100,6 +101,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
         let edges = EdgeTable::new_null();
         let migrations = MigrationTable::new_null();
         let individuals = IndividualTable::new_null();
+        let mutations = MutationTable::new_null();
 
         #[cfg(not(feature = "provenance"))]
         {
@@ -110,6 +112,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
                 edges,
                 migrations,
                 individuals,
+                mutations,
             }
         }
 
@@ -124,6 +127,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
                 provenances,
                 migrations,
                 individuals,
+                mutations,
             }
         }
     }
@@ -167,6 +171,7 @@ impl TableCollection {
         tables.edges.set_ptr(&(*tables.inner).edges);
         tables.migrations.set_ptr(&(*tables.inner).migrations);
         tables.individuals.set_ptr(&(*tables.inner).individuals);
+        tables.mutations.set_ptr(&(*tables.inner).mutations);
 
         #[cfg(feature = "provenance")]
         tables.provenances.set_ptr(&(*tables.inner).provenances);
@@ -1284,8 +1289,8 @@ impl TableAccess for TableCollection {
         &self.sites
     }
 
-    fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(&(*self.inner).mutations)
+    fn mutations(&self) -> &MutationTable {
+        &self.mutations
     }
 
     fn populations(&self) -> &PopulationTable {

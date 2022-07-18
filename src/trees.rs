@@ -964,6 +964,7 @@ pub struct TreeSequence {
     edges: EdgeTable,
     migrations: MigrationTable,
     individuals: IndividualTable,
+    mutations: MutationTable,
 
     #[cfg(feature = "provenance")]
     provenances: crate::provenance::ProvenanceTable,
@@ -985,6 +986,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
         let edges = EdgeTable::new_null();
         let migrations = MigrationTable::new_null();
         let individuals = IndividualTable::new_null();
+        let mutations = MutationTable::new_null();
         #[cfg(not(feature = "provenance"))]
         {
             Self {
@@ -994,6 +996,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
                 edges,
                 migrations,
                 individuals,
+                mutations,
             }
         }
 
@@ -1007,6 +1010,7 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
                 edges,
                 migrations,
                 individuals,
+                mutations,
                 provenances,
             }
         }
@@ -1085,6 +1089,9 @@ impl TreeSequence {
         treeseq
             .individuals
             .set_ptr(unsafe { &(*(*treeseq.inner).tables).individuals });
+        treeseq
+            .mutations
+            .set_ptr(unsafe { &(*(*treeseq.inner).tables).mutations });
         #[cfg(feature = "provenance")]
         {
             treeseq
@@ -1379,8 +1386,8 @@ impl TableAccess for TreeSequence {
         &self.sites
     }
 
-    fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(unsafe { &(*(*self.inner).tables).mutations })
+    fn mutations(&self) -> &MutationTable {
+        &self.mutations
     }
 
     fn populations(&self) -> &PopulationTable {
