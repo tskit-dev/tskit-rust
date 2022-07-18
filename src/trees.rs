@@ -1322,10 +1322,6 @@ impl TreeSequence {
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
-        assert_eq!(
-            unsafe { *(*self.inner).tables }.provenances.num_rows,
-            self.provenances().num_rows()
-        );
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
                 &mut (*(*self.inner).tables).provenances,
