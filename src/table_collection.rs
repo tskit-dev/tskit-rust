@@ -108,6 +108,10 @@ impl TableCollection {
         Ok(tables)
     }
 
+    fn new_uninit() -> Self {
+        Self::wrap()
+    }
+
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
         let mut tables = self;
         // rust won't let use move inner out b/c this type implements Drop.
@@ -1003,7 +1007,9 @@ impl TableCollection {
 
     /// Return a "deep" copy of the tables.
     pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
-        let mut copy = TableCollection::new(1.)?;
+        // The output is UNINITIALIZED tables,
+        // else we leak memory
+        let mut copy = Self::new_uninit();
 
         let rv =
             unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), copy.as_mut_ptr(), 0) };
