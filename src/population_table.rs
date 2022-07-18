@@ -65,6 +65,7 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
 /// These are not created directly.
 /// Instead, use [`TableAccess::populations`](crate::TableAccess::populations)
 /// to get a reference to an existing population table;
+#[repr(transparent)]
 pub struct PopulationTable<'a> {
     table_: &'a ll_bindings::tsk_population_table_t,
 }
@@ -112,5 +113,107 @@ impl<'a> PopulationTable<'a> {
             return Err(crate::TskitError::IndexError);
         }
         table_row_access!(ri.0, self, make_population_table_row)
+    }
+}
+
+/// A standalone population table that owns its data.
+///
+/// # Examples
+///
+/// ```
+/// use tskit::OwnedPopulationTable;
+///
+/// let mut populations = OwnedPopulationTable::default();
+/// let rowid = populations.add_row().unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(populations.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::OwnedPopulationTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::PopulationMetadata)]
+/// #[serializer("serde_json")]
+/// struct PopulationMetadata {
+///     name: String,
+/// }
+///
+/// let metadata = PopulationMetadata{name: "YRB".to_string()};
+///
+/// let mut populations = OwnedPopulationTable::default();
+///
+/// let rowid = populations.add_row_with_metadata(&metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// if let Some(decoded) = populations.metadata::<PopulationMetadata>(rowid).unwrap() {
+///     assert_eq!(&decoded.name, "YRB");
+/// } else {
+///     panic!("hmm...we expected some metadata!");
+/// }
+///
+/// # }
+/// ```
+pub struct OwnedPopulationTable {
+    table: mbox::MBox<ll_bindings::tsk_population_table_t>,
+}
+
+impl OwnedPopulationTable {
+    fn new() -> Self {
+        let temp = unsafe {
+            libc::malloc(std::mem::size_of::<ll_bindings::tsk_population_table_t>())
+                as *mut ll_bindings::tsk_population_table_t
+        };
+        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_population_table_t>::new(temp) {
+            Some(x) => x,
+            None => panic!("out of memory"),
+        };
+        let table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
+        Self { table }
+    }
+
+    pub fn add_row(&mut self) -> Result<PopulationId, TskitError> {
+        let rv = unsafe {
+            ll_bindings::tsk_population_table_add_row(&mut (*self.table), std::ptr::null(), 0)
+        };
+
+        handle_tsk_return_value!(rv, PopulationId::from(rv))
+    }
+
+    pub fn add_row_with_metadata<M: crate::metadata::PopulationMetadata>(
+        &mut self,
+        metadata: &M,
+    ) -> Result<PopulationId, TskitError> {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let rv = unsafe {
+            ll_bindings::tsk_population_table_add_row(
+                &mut (*self.table),
+                md.as_ptr(),
+                md.len().into(),
+            )
+        };
+
+        handle_tsk_return_value!(rv, PopulationId::from(rv))
+    }
+}
+
+impl std::ops::Deref for OwnedPopulationTable {
+    type Target = PopulationTable<'static>;
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY: that T* and &T have same layout,
+        // and Target is repr(transparent).
+        unsafe { std::mem::transmute(&self.table) }
+    }
+}
+
+impl Default for OwnedPopulationTable {
+    fn default() -> Self {
+        Self::new()
     }
 }

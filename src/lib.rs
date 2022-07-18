@@ -429,7 +429,7 @@ pub use individual_table::{IndividualTable, IndividualTableRow};
 pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow};
 pub use node_table::{NodeTable, NodeTableRow};
-pub use population_table::{PopulationTable, PopulationTableRow};
+pub use population_table::{OwnedPopulationTable, PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
