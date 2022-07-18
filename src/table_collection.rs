@@ -74,16 +74,7 @@ use mbox::MBox;
 /// ```
 pub struct TableCollection {
     pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
-    populations: PopulationTable,
-    sites: SiteTable,
-    edges: EdgeTable,
-    migrations: MigrationTable,
-    individuals: IndividualTable,
-    mutations: MutationTable,
-    nodes: NodeTable,
-
-    #[cfg(feature = "provenance")]
-    provenances: crate::provenance::ProvenanceTable,
+    table_references: crate::util::TableReferences,
 }
 
 impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCollection {
@@ -97,28 +88,11 @@ impl crate::ffi::WrapTskitType<ll_bindings::tsk_table_collection_t> for TableCol
             None => panic!("out of memory"),
         };
         let mbox = unsafe { MBox::from_non_null_raw(nonnull) };
-        let populations = PopulationTable::new_null();
-        let sites = SiteTable::new_null();
-        let edges = EdgeTable::new_null();
-        let migrations = MigrationTable::new_null();
-        let individuals = IndividualTable::new_null();
-        let mutations = MutationTable::new_null();
-        let nodes = NodeTable::new_null();
-
-        #[cfg(feature = "provenance")]
-        let provenances = crate::provenance::ProvenanceTable::new_null();
+        let table_references = crate::util::TableReferences::default();
 
         Self {
             inner: mbox,
-            populations,
-            sites,
-            edges,
-            migrations,
-            individuals,
-            mutations,
-            nodes,
-            #[cfg(feature = "provenance")]
-            provenances,
+            table_references,
         }
     }
 }
@@ -156,16 +130,40 @@ impl TableCollection {
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
-        tables.populations.set_ptr(&(*tables.inner).populations);
-        tables.sites.set_ptr(&(*tables.inner).sites);
-        tables.edges.set_ptr(&(*tables.inner).edges);
-        tables.migrations.set_ptr(&(*tables.inner).migrations);
-        tables.individuals.set_ptr(&(*tables.inner).individuals);
-        tables.mutations.set_ptr(&(*tables.inner).mutations);
-        tables.nodes.set_ptr(&(*tables.inner).nodes);
+        tables
+            .table_references
+            .populations
+            .set_ptr(&(*tables.inner).populations);
+        tables
+            .table_references
+            .sites
+            .set_ptr(&(*tables.inner).sites);
+        tables
+            .table_references
+            .edges
+            .set_ptr(&(*tables.inner).edges);
+        tables
+            .table_references
+            .migrations
+            .set_ptr(&(*tables.inner).migrations);
+        tables
+            .table_references
+            .individuals
+            .set_ptr(&(*tables.inner).individuals);
+        tables
+            .table_references
+            .mutations
+            .set_ptr(&(*tables.inner).mutations);
+        tables
+            .table_references
+            .nodes
+            .set_ptr(&(*tables.inner).nodes);
 
         #[cfg(feature = "provenance")]
-        tables.provenances.set_ptr(&(*tables.inner).provenances);
+        tables
+            .table_references
+            .provenances
+            .set_ptr(&(*tables.inner).provenances);
 
         Ok(tables)
     }
@@ -1261,36 +1259,36 @@ impl TableCollection {
 
 impl TableAccess for TableCollection {
     fn edges(&self) -> &EdgeTable {
-        &self.edges
+        &self.table_references.edges
     }
 
     fn individuals(&self) -> &IndividualTable {
-        &self.individuals
+        &self.table_references.individuals
     }
 
     fn migrations(&self) -> &MigrationTable {
-        &self.migrations
+        &self.table_references.migrations
     }
 
     fn nodes(&self) -> &NodeTable {
-        &self.nodes
+        &self.table_references.nodes
     }
 
     fn sites(&self) -> &SiteTable {
-        &self.sites
+        &self.table_references.sites
     }
 
     fn mutations(&self) -> &MutationTable {
-        &self.mutations
+        &self.table_references.mutations
     }
 
     fn populations(&self) -> &PopulationTable {
-        &self.populations
+        &self.table_references.populations
     }
 
     #[cfg(any(feature = "provenance", doc))]
     fn provenances(&self) -> &crate::provenance::ProvenanceTable {
-        &self.provenances
+        &self.table_references.provenances
     }
 }
 
