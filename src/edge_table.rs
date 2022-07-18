@@ -3,6 +3,7 @@ use crate::metadata;
 use crate::Position;
 use crate::{tsk_id_t, TskitError};
 use crate::{EdgeId, NodeId};
+use ll_bindings::{tsk_edge_table_free, tsk_edge_table_init};
 
 /// Row of an [`EdgeTable`]
 pub struct EdgeTableRow {
@@ -217,21 +218,6 @@ pub struct OwnedEdgeTable {
 }
 
 impl OwnedEdgeTable {
-    fn new() -> Self {
-        let temp = unsafe {
-            libc::malloc(std::mem::size_of::<ll_bindings::tsk_edge_table_t>())
-                as *mut ll_bindings::tsk_edge_table_t
-        };
-        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_edge_table_t>::new(temp) {
-            Some(x) => x,
-            None => panic!("out of memory"),
-        };
-        let mut table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
-        let rv = unsafe { ll_bindings::tsk_edge_table_init(&mut (*table), 0) };
-        assert_eq!(rv, 0);
-        Self { table }
-    }
-
     pub fn add_row(
         &mut self,
         left: impl Into<Position>,
@@ -279,27 +265,10 @@ impl OwnedEdgeTable {
     }
 }
 
-impl std::ops::Deref for OwnedEdgeTable {
-    type Target = EdgeTable<'static>;
-
-    fn deref(&self) -> &Self::Target {
-        // SAFETY: that T* and &T have same layout,
-        // and Target is repr(transparent).
-        unsafe { std::mem::transmute(&self.table) }
-    }
-}
-
-impl Default for OwnedEdgeTable {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Drop for OwnedEdgeTable {
-    fn drop(&mut self) {
-        let rv = unsafe { ll_bindings::tsk_edge_table_free(&mut (*self.table)) };
-        if rv != 0 {
-            panic!("error when calling tsk_edge_table_free: {}", rv);
-        }
-    }
-}
+build_owned_tables!(
+    OwnedEdgeTable,
+    EdgeTable,
+    ll_bindings::tsk_edge_table_t,
+    tsk_edge_table_init,
+    tsk_edge_table_free
+);
