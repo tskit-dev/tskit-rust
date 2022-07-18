@@ -215,6 +215,7 @@ mod test_provenances {
         let mut ts = tables
             .tree_sequence(crate::TreeSequenceFlags::default())
             .unwrap();
+        assert_eq!(ts.provenances().num_rows(), 1);
         let row_id = ts.add_provenance(&s).unwrap();
         assert_eq!(row_id, 1);
         assert_eq!(ts.provenances().num_rows(), 2);

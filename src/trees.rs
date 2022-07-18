@@ -1052,6 +1052,10 @@ impl TreeSequence {
         let mut flags: u32 = flags.into().bits();
         flags |= ll_bindings::TSK_TAKE_OWNERSHIP;
         let raw_tables_ptr = tables.into_raw()?;
+        println!(
+            "here = {}",
+            unsafe { *(raw_tables_ptr) }.provenances.num_rows
+        );
         let rv =
             unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), raw_tables_ptr, flags) };
         treeseq
@@ -1059,9 +1063,20 @@ impl TreeSequence {
             .set_ptr(&unsafe { *((*treeseq.inner).tables) }.populations);
         #[cfg(feature = "provenance")]
         {
+            let old_nrows = unsafe { unsafe { *(raw_tables_ptr) }.provenances.num_rows };
+            println!("here on the inside = {}", old_nrows,);
             treeseq
                 .provenances
                 .set_ptr(&unsafe { *(*treeseq.inner).tables }.provenances);
+            let old_nrows_again = unsafe { unsafe { *(raw_tables_ptr) }.provenances.num_rows };
+            assert_eq!(old_nrows, old_nrows_again);
+            let whats_happening =
+                unsafe { unsafe { (*(*treeseq.inner).tables) }.provenances.num_rows };
+            assert_eq!(
+                old_nrows, whats_happening,
+                "{} {}",
+                old_nrows, whats_happening
+            );
         }
         handle_tsk_return_value!(rv, treeseq)
     }
