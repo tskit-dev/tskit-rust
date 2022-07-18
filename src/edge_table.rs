@@ -74,6 +74,7 @@ impl<'a> Iterator for EdgeTableIterator<'a> {
 /// These are not created directly.
 /// Instead, use [`TableAccess::edges`](crate::TableAccess::edges)
 /// to get a reference to an existing edge table;
+#[repr(transparent)]
 pub struct EdgeTable<'a> {
     table_: &'a ll_bindings::tsk_edge_table_t,
 }
@@ -165,5 +166,140 @@ impl<'a> EdgeTable<'a> {
             return Err(crate::TskitError::IndexError);
         }
         table_row_access!(ri.0, self, make_edge_table_row)
+    }
+}
+
+/// A standalone edge table that owns its data.
+///
+/// # Examples
+///
+/// ```
+/// use tskit::OwnedEdgeTable;
+///
+/// let mut edges = OwnedEdgeTable::default();
+/// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(edges.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::OwnedEdgeTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::EdgeMetadata)]
+/// #[serializer("serde_json")]
+/// struct EdgeMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = EdgeMetadata{value: 42};
+///
+/// let mut edges = OwnedEdgeTable::default();
+///
+/// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// if let Some(decoded) = edges.metadata::<EdgeMetadata>(rowid).unwrap() {
+///     assert_eq!(decoded.value, 42);
+/// } else {
+///     panic!("hmm...we expected some metadata!");
+/// }
+///
+/// # }
+/// ```
+pub struct OwnedEdgeTable {
+    table: mbox::MBox<ll_bindings::tsk_edge_table_t>,
+}
+
+impl OwnedEdgeTable {
+    fn new() -> Self {
+        let temp = unsafe {
+            libc::malloc(std::mem::size_of::<ll_bindings::tsk_edge_table_t>())
+                as *mut ll_bindings::tsk_edge_table_t
+        };
+        let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_edge_table_t>::new(temp) {
+            Some(x) => x,
+            None => panic!("out of memory"),
+        };
+        let mut table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
+        let rv = unsafe { ll_bindings::tsk_edge_table_init(&mut (*table), 0) };
+        assert_eq!(rv, 0);
+        Self { table }
+    }
+
+    pub fn add_row(
+        &mut self,
+        left: impl Into<Position>,
+        right: impl Into<Position>,
+        parent: impl Into<NodeId>,
+        child: impl Into<NodeId>,
+    ) -> Result<EdgeId, TskitError> {
+        let rv = unsafe {
+            ll_bindings::tsk_edge_table_add_row(
+                &mut (*self.table),
+                left.into().0,
+                right.into().0,
+                parent.into().0,
+                child.into().0,
+                std::ptr::null(),
+                0,
+            )
+        };
+
+        handle_tsk_return_value!(rv, EdgeId::from(rv))
+    }
+
+    pub fn add_row_with_metadata<M: crate::metadata::EdgeMetadata>(
+        &mut self,
+        left: impl Into<Position>,
+        right: impl Into<Position>,
+        parent: impl Into<NodeId>,
+        child: impl Into<NodeId>,
+        metadata: &M,
+    ) -> Result<EdgeId, TskitError> {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let rv = unsafe {
+            ll_bindings::tsk_edge_table_add_row(
+                &mut (*self.table),
+                left.into().0,
+                right.into().0,
+                parent.into().0,
+                child.into().0,
+                md.as_ptr(),
+                md.len().into(),
+            )
+        };
+
+        handle_tsk_return_value!(rv, EdgeId::from(rv))
+    }
+}
+
+impl std::ops::Deref for OwnedEdgeTable {
+    type Target = EdgeTable<'static>;
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY: that T* and &T have same layout,
+        // and Target is repr(transparent).
+        unsafe { std::mem::transmute(&self.table) }
+    }
+}
+
+impl Default for OwnedEdgeTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Drop for OwnedEdgeTable {
+    fn drop(&mut self) {
+        let rv = unsafe { ll_bindings::tsk_edge_table_free(&mut (*self.table)) };
+        if rv != 0 {
+            panic!("error when calling tsk_edge_table_free: {}", rv);
+        }
     }
 }

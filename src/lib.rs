@@ -422,7 +422,7 @@ impl_time_position_arithmetic!(Position, Time);
 /// "Null" identifier value.
 pub(crate) const TSK_NULL: tsk_id_t = -1;
 
-pub use edge_table::{EdgeTable, EdgeTableRow};
+pub use edge_table::{EdgeTable, EdgeTableRow, OwnedEdgeTable};
 pub use error::TskitError;
 pub use flags::*;
 pub use individual_table::{IndividualTable, IndividualTableRow};
