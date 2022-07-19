@@ -11,7 +11,6 @@ use crate::IndividualTable;
 use crate::IndividualTableSortOptions;
 use crate::MigrationTable;
 use crate::MutationTable;
-use crate::NodeFlags;
 use crate::NodeTable;
 use crate::PopulationTable;
 use crate::Position;
@@ -515,33 +514,12 @@ impl TableCollection {
         handle_tsk_return_value!(rv, MigrationId(rv))
     }
 
+    node_table_add_row!(
     /// Add a row to the node table
-    pub fn add_node<
-        F: Into<NodeFlags>,
-        T: Into<Time>,
-        POP: Into<PopulationId>,
-        I: Into<IndividualId>,
-    >(
-        &mut self,
-        flags: F,
-        time: T,
-        population: POP,
-        individual: I,
-    ) -> Result<NodeId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_node_table_add_row(
-                &mut (*self.as_mut_ptr()).nodes,
-                flags.into().bits(),
-                time.into().0,
-                population.into().0,
-                individual.into().0,
-                std::ptr::null(),
-                0,
-            )
-        };
+    => add_node, self, inner, nodes
+    );
 
-        handle_tsk_return_value!(rv, rv.into())
-    }
+    node_table_add_row_with_metadata!(
 
     /// Add a row with optional metadata to the node table
     ///
@@ -563,35 +541,7 @@ impl TableCollection {
     /// assert!(tables.add_node_with_metadata(0, 0.0, -1, -1, &metadata).is_ok());
     /// # }
     /// ```
-    pub fn add_node_with_metadata<
-        F: Into<NodeFlags>,
-        T: Into<Time>,
-        POP: Into<PopulationId>,
-        I: Into<IndividualId>,
-        M: NodeMetadata,
-    >(
-        &mut self,
-        flags: F,
-        time: T,
-        population: POP,
-        individual: I,
-        metadata: &M,
-    ) -> Result<NodeId, TskitError> {
-        let md = EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_node_table_add_row(
-                &mut (*self.as_mut_ptr()).nodes,
-                flags.into().bits(),
-                time.into().0,
-                population.into().0,
-                individual.into().0,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-
-        handle_tsk_return_value!(rv, rv.into())
-    }
+    => add_node_with_metadata, self, inner, nodes);
 
     /// Add a row to the site table
     pub fn add_site<P: Into<Position>>(
@@ -1226,6 +1176,7 @@ impl crate::traits::NodeListGenerator for TableCollection {}
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::NodeFlags;
 
     fn make_small_table_collection() -> TableCollection {
         let mut tables = TableCollection::new(1000.).unwrap();

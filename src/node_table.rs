@@ -293,53 +293,8 @@ pub struct OwnedNodeTable {
 }
 
 impl OwnedNodeTable {
-    pub fn add_row(
-        &mut self,
-        flags: impl Into<NodeFlags>,
-        time: impl Into<Time>,
-        population: impl Into<PopulationId>,
-        individual: impl Into<IndividualId>,
-    ) -> Result<NodeId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_node_table_add_row(
-                &mut (*self.table),
-                flags.into().bits(),
-                time.into().0,
-                population.into().0,
-                individual.into().0,
-                std::ptr::null(),
-                0,
-            )
-        };
-
-        handle_tsk_return_value!(rv, rv.into())
-    }
-
-    pub fn add_row_with_metadata<M>(
-        &mut self,
-        flags: impl Into<NodeFlags>,
-        time: impl Into<Time>,
-        population: impl Into<PopulationId>,
-        individual: impl Into<IndividualId>,
-        metadata: &M,
-    ) -> Result<NodeId, TskitError>
-    where
-        M: crate::metadata::NodeMetadata,
-    {
-        let md = crate::metadata::EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_node_table_add_row(
-                &mut (*self.table),
-                flags.into().bits(),
-                time.into().0,
-                population.into().0,
-                individual.into().0,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-        handle_tsk_return_value!(rv, rv.into())
-    }
+    node_table_add_row!(=> add_row, self, table);
+    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, table);
 }
 
 build_owned_tables!(

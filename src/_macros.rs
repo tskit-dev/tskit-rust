@@ -576,6 +576,64 @@ macro_rules! build_owned_tables {
     };
 }
 
+macro_rules! node_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
+        $(#[$attr])*
+        pub fn $name(
+            &mut $self,
+            flags: impl Into<$crate::NodeFlags>,
+            time: impl Into<$crate::Time>,
+            population: impl Into<$crate::PopulationId>,
+            individual: impl Into<$crate::IndividualId>,
+        ) -> Result<$crate::NodeId, $crate::TskitError> {
+            let rv = unsafe {
+                $crate::bindings::tsk_node_table_add_row(
+                    &mut (*$self.$table)$(.$table2)?,
+                    flags.into().bits(),
+                    time.into().0,
+                    population.into().0,
+                    individual.into().0,
+                    std::ptr::null(),
+                    0,
+                )
+            };
+
+            handle_tsk_return_value!(rv, rv.into())
+        }
+    };
+}
+
+macro_rules! node_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
+        $(#[$attr])*
+        pub fn $name<M>(
+            &mut $self,
+            flags: impl Into<$crate::NodeFlags>,
+            time: impl Into<$crate::Time>,
+            population: impl Into<$crate::PopulationId>,
+            individual: impl Into<$crate::IndividualId>,
+            metadata: &M,
+        ) -> Result<$crate::NodeId, $crate::TskitError>
+        where
+            M: $crate::metadata::NodeMetadata,
+        {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            let rv = unsafe {
+                $crate::bindings::tsk_node_table_add_row(
+                    &mut (*$self.$table)$(.$table2)?,
+                    flags.into().bits(),
+                    time.into().0,
+                    population.into().0,
+                    individual.into().0,
+                    md.as_ptr(),
+                    md.len().into(),
+                )
+            };
+            handle_tsk_return_value!(rv, rv.into())
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
