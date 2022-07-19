@@ -576,6 +576,29 @@ macro_rules! build_owned_tables {
     };
 }
 
+macro_rules! node_table_add_row_details {
+    ($flags: ident,
+     $time: ident,
+     $population: ident,
+     $individual: ident,
+     $metadata: expr,
+     $metadata_len: expr,
+     $table: expr) => {{
+        let rv = unsafe {
+            $crate::bindings::tsk_node_table_add_row(
+                &mut $table,
+                $flags.into().bits(),
+                $time.into().0,
+                $population.into().0,
+                $individual.into().0,
+                $metadata,
+                $metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
 macro_rules! node_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
         $(#[$attr])*
@@ -586,19 +609,13 @@ macro_rules! node_table_add_row {
             population: impl Into<$crate::PopulationId>,
             individual: impl Into<$crate::IndividualId>,
         ) -> Result<$crate::NodeId, $crate::TskitError> {
-            let rv = unsafe {
-                $crate::bindings::tsk_node_table_add_row(
-                    &mut (*$self.$table)$(.$table2)?,
-                    flags.into().bits(),
-                    time.into().0,
-                    population.into().0,
-                    individual.into().0,
-                    std::ptr::null(),
-                    0,
-                )
-            };
-
-            handle_tsk_return_value!(rv, rv.into())
+            node_table_add_row_details!(flags,
+                                        time,
+                                        population,
+                                        individual,
+                                        std::ptr::null(),
+                                        0,
+                                        (*$self.$table)$(.$table2)?)
         }
     };
 }
@@ -618,15 +635,372 @@ macro_rules! node_table_add_row_with_metadata {
             M: $crate::metadata::NodeMetadata,
         {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            node_table_add_row_details!(flags,
+                                        time,
+                                        population,
+                                        individual,
+                                        md.as_ptr(),
+                                        md.len().into(),
+                                        (*$self.$table)$(.$table2)?)
+        }
+    };
+}
+
+macro_rules! edge_table_add_row_details {
+    ($left: ident,
+     $right: ident,
+     $parent: ident,
+     $child: ident,
+     $metadata: expr,
+     $metadata_len: expr,
+     $table: expr) => {{
+        let rv = unsafe {
+            $crate::bindings::tsk_edge_table_add_row(
+                &mut $table,
+                $left.into().0,
+                $right.into().0,
+                $parent.into().0,
+                $child.into().0,
+                $metadata,
+                $metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
+macro_rules! edge_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(
+            &mut $self,
+            left: impl Into<$crate::Position>,
+            right: impl Into<$crate::Position>,
+            parent: impl Into<$crate::NodeId>,
+            child: impl Into<$crate::NodeId>,
+        ) -> Result<$crate::EdgeId, $crate::TskitError> {
+            edge_table_add_row_details!(left,
+                                        right,
+                                        parent,
+                                        child,
+                                        std::ptr::null(),
+                                        0,
+                                        $table)
+        }
+    };
+}
+
+macro_rules! edge_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name<M>(
+            &mut $self,
+            left: impl Into<$crate::Position>,
+            right: impl Into<$crate::Position>,
+            parent: impl Into<$crate::NodeId>,
+            child: impl Into<$crate::NodeId>,
+            metadata: &M,
+        ) -> Result<$crate::EdgeId, $crate::TskitError>
+        where
+            M: $crate::metadata::EdgeMetadata {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            edge_table_add_row_details!(left,
+                                        right,
+                                        parent,
+                                        child,
+                                        md.as_ptr(),
+                                        md.len().into(),
+                                        $table)
+        }
+    };
+}
+
+macro_rules! population_table_add_row_details {
+    ($metadata: expr, $metadata_len: expr, $table: expr) => {{
+        let rv = unsafe {
+            $crate::bindings::tsk_population_table_add_row(&mut $table, $metadata, $metadata_len)
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
+macro_rules! population_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(&mut $self) -> Result<$crate::PopulationId, $crate::TskitError> {
+            population_table_add_row_details!(std::ptr::null(), 0, $table)
+        }
+    };
+}
+
+macro_rules! population_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name<M>(&mut $self, metadata: &M) -> Result<$crate::PopulationId, $crate::TskitError>
+        where M: $crate::metadata::PopulationMetadata {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            population_table_add_row_details!(md.as_ptr(), md.len().into(), $table)
+        }
+    };
+}
+
+macro_rules! individual_table_add_row_details {
+    ($flags: ident,
+     $location: ident,
+     $parents: ident,
+     $metadata: expr,
+     $metadata_len: expr,
+     $table: expr) => {{
+        let rv = unsafe {
+            $crate::bindings::tsk_individual_table_add_row(
+                &mut $table,
+                $flags.into().bits(),
+                $location.get_slice().as_ptr().cast::<f64>(),
+                $location.get_slice().len() as $crate::bindings::tsk_size_t,
+                $parents
+                    .get_slice()
+                    .as_ptr()
+                    .cast::<$crate::bindings::tsk_id_t>(),
+                $parents.get_slice().len() as $crate::bindings::tsk_size_t,
+                $metadata,
+                $metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
+macro_rules! individual_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(&mut $self,
+        flags: impl Into<$crate::IndividualFlags>,
+        location: impl $crate::IndividualLocation,
+        parents: impl $crate::IndividualParents,
+        ) -> Result<$crate::IndividualId, $crate::TskitError> {
+            individual_table_add_row_details!(flags,
+                                              location,
+                                              parents,
+                                              std::ptr::null(),
+                                              0,
+                                              $table)
+        }
+    };
+}
+
+macro_rules! individual_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name<M>(&mut $self,
+                        flags: impl Into<$crate::IndividualFlags>,
+                        location: impl $crate::IndividualLocation,
+                        parents: impl $crate::IndividualParents,
+                        metadata: &M,
+        ) -> Result<$crate::IndividualId, $crate::TskitError>
+            where M: $crate::metadata::IndividualMetadata {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            individual_table_add_row_details!(flags,
+                                              location,
+                                              parents,
+                                              md.as_ptr(),
+                                              md.len().into(),
+                                              $table)
+        }
+    };
+}
+
+macro_rules! mutation_table_add_row_details {
+    ($site: ident, $node: ident, $parent: ident,
+     $time: ident, $derived_state: ident,
+     $metadata: expr,
+     $metadata_len: expr,
+     $table: expr) => {{
+        let dstate = process_state_input!($derived_state);
+        let rv = unsafe {
+            $crate::bindings::tsk_mutation_table_add_row(
+                &mut $table,
+                $site.into().0,
+                $node.into().0,
+                $parent.into().0,
+                $time.into().0,
+                dstate.0,
+                dstate.1,
+                $metadata,
+                $metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
+macro_rules! mutation_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(&mut $self,
+                     site: impl Into<$crate::SiteId>,
+                     node: impl Into<$crate::NodeId>,
+                     parent: impl Into<$crate::MutationId>,
+                     time: impl Into<$crate::Time>,
+                     derived_state: Option<&[u8]>) -> Result<$crate::MutationId, $crate::TskitError>
+        {
+            mutation_table_add_row_details!(site,
+                                            node,
+                                            parent,
+                                            time,
+                                            derived_state,
+                                            std::ptr::null(),
+                                            0,
+                                            $table)
+        }
+    };
+}
+
+macro_rules! mutation_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name<M>(&mut $self,
+                        site: impl Into<$crate::SiteId>,
+                        node: impl Into<$crate::NodeId>,
+                        parent: impl Into<$crate::MutationId>,
+                        time: impl Into<$crate::Time>,
+                        derived_state: Option<&[u8]>,
+                        metadata: &M) -> Result<$crate::MutationId, $crate::TskitError>
+            where
+                M: $crate::metadata::MutationMetadata
+        {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            mutation_table_add_row_details!(site,
+                                            node,
+                                            parent,
+                                            time,
+                                            derived_state,
+                                            md.as_ptr(),
+                                            md.len().into(),
+                                            $table)
+        }
+    };
+}
+
+macro_rules! site_table_add_row_details {
+    ($position: ident,
+     $ancestral_state: ident,
+     $metadata: expr,
+     $metadata_len: expr,
+     $table: expr) => {{
+        let astate = process_state_input!($ancestral_state);
+        let rv = unsafe {
+            $crate::bindings::tsk_site_table_add_row(
+                &mut $table,
+                $position.into().0,
+                astate.0,
+                astate.1,
+                $metadata,
+                $metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
+macro_rules! site_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(&mut $self,
+                     position: impl Into<$crate::Position>,
+                     ancestral_state: Option<&[u8]>) -> Result<$crate::SiteId, $crate::TskitError> {
+            site_table_add_row_details!(position, ancestral_state,
+                                        std::ptr::null(), 0, $table)
+        }
+    };
+}
+
+macro_rules! site_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name<M>(&mut $self,
+                        position: impl Into<$crate::Position>,
+                        ancestral_state: Option<&[u8]>,
+                        metadata: &M) -> Result<$crate::SiteId, $crate::TskitError>
+        where M: $crate::metadata::SiteMetadata {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            site_table_add_row_details!(position, ancestral_state,
+                                        md.as_ptr(),
+                                        md.len().into(),
+                                        $table)
+        }
+    };
+}
+
+macro_rules! migration_table_add_row_details {
+    ($span: ident,
+     $node: ident,
+     $source_dest: ident,
+     $time: ident,
+     $metadata: expr,
+     $metadata_len: expr,
+     $table: expr) => {{
+        let rv = unsafe {
+            $crate::bindings::tsk_migration_table_add_row(
+                &mut $table,
+                $span.0.into().0,
+                $span.1.into().0,
+                $node.into().0,
+                $source_dest.0.into().0,
+                $source_dest.1.into().0,
+                $time.into().0,
+                $metadata,
+                $metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }};
+}
+
+macro_rules! migration_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(&mut $self,
+                     span: (impl Into<$crate::Position>, impl Into<$crate::Position>),
+                     node: impl Into<$crate::NodeId>,
+                     source_dest: (impl Into<$crate::PopulationId>, impl Into<$crate::PopulationId>),
+                     time: impl Into<$crate::Time>)
+        -> Result<$crate::MigrationId, $crate::TskitError> {
+            migration_table_add_row_details!(span, node, source_dest, time, std::ptr::null(), 0, $table)
+        }
+    };
+}
+
+macro_rules! migration_table_add_row_with_metadata {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name<M>(&mut $self,
+                        span: (impl Into<$crate::Position>, impl Into<$crate::Position>),
+                        node: impl Into<$crate::NodeId>,
+                        source_dest: (impl Into<$crate::PopulationId>, impl Into<$crate::PopulationId>),
+                        time: impl Into<$crate::Time>,
+                        metadata: &M)
+        -> Result<$crate::MigrationId, $crate::TskitError>
+        where M: $crate::metadata::MigrationMetadata {
+            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            migration_table_add_row_details!(span, node, source_dest, time,
+                                             md.as_ptr(), md.len().into(), $table)
+        }
+    };
+}
+
+#[cfg(any(doc, feature = "provenance"))]
+macro_rules! provenance_table_add_row {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
+        $(#[$attr])*
+        pub fn $name(&mut $self, record: &str) -> Result<$crate::ProvenanceId, $crate::TskitError> {
+            let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
             let rv = unsafe {
-                $crate::bindings::tsk_node_table_add_row(
-                    &mut (*$self.$table)$(.$table2)?,
-                    flags.into().bits(),
-                    time.into().0,
-                    population.into().0,
-                    individual.into().0,
-                    md.as_ptr(),
-                    md.len().into(),
+                $crate::bindings::tsk_provenance_table_add_row(
+                    &mut $table,
+                    timestamp.as_ptr() as *mut i8,
+                    timestamp.len() as tsk_size_t,
+                    record.as_ptr() as *mut i8,
+                    record.len() as tsk_size_t,
                 )
             };
             handle_tsk_return_value!(rv, rv.into())

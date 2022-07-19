@@ -218,51 +218,8 @@ pub struct OwnedEdgeTable {
 }
 
 impl OwnedEdgeTable {
-    pub fn add_row(
-        &mut self,
-        left: impl Into<Position>,
-        right: impl Into<Position>,
-        parent: impl Into<NodeId>,
-        child: impl Into<NodeId>,
-    ) -> Result<EdgeId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_edge_table_add_row(
-                &mut (*self.table),
-                left.into().0,
-                right.into().0,
-                parent.into().0,
-                child.into().0,
-                std::ptr::null(),
-                0,
-            )
-        };
-
-        handle_tsk_return_value!(rv, EdgeId::from(rv))
-    }
-
-    pub fn add_row_with_metadata<M: crate::metadata::EdgeMetadata>(
-        &mut self,
-        left: impl Into<Position>,
-        right: impl Into<Position>,
-        parent: impl Into<NodeId>,
-        child: impl Into<NodeId>,
-        metadata: &M,
-    ) -> Result<EdgeId, TskitError> {
-        let md = crate::metadata::EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_edge_table_add_row(
-                &mut (*self.table),
-                left.into().0,
-                right.into().0,
-                parent.into().0,
-                child.into().0,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-
-        handle_tsk_return_value!(rv, EdgeId::from(rv))
-    }
+    edge_table_add_row!(=> add_row, self, *self.table);
+    edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
 
 build_owned_tables!(
