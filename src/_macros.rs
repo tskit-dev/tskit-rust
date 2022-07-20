@@ -46,7 +46,7 @@ macro_rules! unsafe_tsk_column_access {
 
 macro_rules! unsafe_tsk_ragged_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
-        let i = crate::SizeType::try_from($i)?;
+        let i = $crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
         } else if $offset_array_len == 0 {
@@ -71,7 +71,7 @@ macro_rules! unsafe_tsk_ragged_column_access {
     }};
 
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr, $output_id_type: expr) => {{
-        let i = crate::SizeType::try_from($i)?;
+        let i = $crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
         } else if $offset_array_len == 0 {
@@ -101,7 +101,7 @@ macro_rules! unsafe_tsk_ragged_column_access {
 #[allow(unused_macros)]
 macro_rules! unsafe_tsk_ragged_char_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
-        let i = crate::SizeType::try_from($i)?;
+        let i = $crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
         } else if $offset_array_len == 0 {
@@ -301,11 +301,11 @@ macro_rules! impl_id_traits {
             }
         }
 
-        impl TryFrom<$idtype> for crate::SizeType {
-            type Error = crate::TskitError;
+        impl TryFrom<$idtype> for $crate::SizeType {
+            type Error = $crate::TskitError;
 
             fn try_from(value: $idtype) -> Result<Self, Self::Error> {
-                crate::SizeType::try_from(value.0)
+                $crate::SizeType::try_from(value.0)
             }
         }
 
@@ -337,28 +337,28 @@ macro_rules! impl_id_traits {
 
 macro_rules! impl_size_type_comparisons_for_row_ids {
     ($idtype: ty) => {
-        impl PartialEq<$idtype> for crate::SizeType {
+        impl PartialEq<$idtype> for $crate::SizeType {
             fn eq(&self, other: &$idtype) -> bool {
-                self.0 == other.0 as crate::bindings::tsk_size_t
+                self.0 == other.0 as $crate::bindings::tsk_size_t
             }
         }
 
-        impl PartialEq<crate::SizeType> for $idtype {
-            fn eq(&self, other: &crate::SizeType) -> bool {
-                (self.0 as crate::bindings::tsk_size_t) == other.0
+        impl PartialEq<$crate::SizeType> for $idtype {
+            fn eq(&self, other: &$crate::SizeType) -> bool {
+                (self.0 as $crate::bindings::tsk_size_t) == other.0
             }
         }
 
-        impl PartialOrd<$idtype> for crate::SizeType {
+        impl PartialOrd<$idtype> for $crate::SizeType {
             fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
                 self.0
-                    .partial_cmp(&(other.0 as crate::bindings::tsk_size_t))
+                    .partial_cmp(&(other.0 as $crate::bindings::tsk_size_t))
             }
         }
 
-        impl PartialOrd<crate::SizeType> for $idtype {
-            fn partial_cmp(&self, other: &crate::SizeType) -> Option<std::cmp::Ordering> {
-                (self.0 as crate::bindings::tsk_size_t).partial_cmp(&other.0)
+        impl PartialOrd<$crate::SizeType> for $idtype {
+            fn partial_cmp(&self, other: &$crate::SizeType) -> Option<std::cmp::Ordering> {
+                (self.0 as $crate::bindings::tsk_size_t).partial_cmp(&other.0)
             }
         }
     };
