@@ -427,7 +427,7 @@ pub use error::TskitError;
 pub use flags::*;
 pub use individual_table::{IndividualTable, IndividualTableRow};
 pub use migration_table::{MigrationTable, MigrationTableRow};
-pub use mutation_table::{MutationTable, MutationTableRow};
+pub use mutation_table::{MutationTable, MutationTableRow, OwnedMutationTable};
 pub use node_table::{NodeTable, NodeTableRow, OwnedNodeTable};
 pub use population_table::{OwnedPopulationTable, PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
