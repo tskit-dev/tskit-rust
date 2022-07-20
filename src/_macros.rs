@@ -534,7 +534,7 @@ macro_rules! handle_metadata_return {
 }
 
 macro_rules! build_owned_tables {
-    ($name: ty, $deref: ident, $llname: ty, $init: ident, $free: ident) => {
+    ($name: ty, $deref: ident, $llname: ty, $init: ident, $free: ident, $clear: expr) => {
         impl $name {
             fn new() -> Self {
                 let temp = unsafe { libc::malloc(std::mem::size_of::<$llname>()) as *mut $llname };
@@ -546,6 +546,12 @@ macro_rules! build_owned_tables {
                 let rv = unsafe { $init(&mut (*table), 0) };
                 assert_eq!(rv, 0);
                 Self { table }
+            }
+
+            /// Clear the table.
+            pub fn clear(&mut self) -> $crate::TskReturnValue {
+                let rv = unsafe { $clear(self.as_mut_ptr()) };
+                handle_tsk_return_value!(rv)
             }
         }
 
@@ -1019,7 +1025,12 @@ macro_rules! provenance_table_add_row {
 }
 
 macro_rules! build_owned_table_type {
-    ($(#[$attr:meta])* => $name: ident, $deref_type: ident, $tskname: ident, $tskinit: ident, $tskfree: ident) => {
+    ($(#[$attr:meta])* => $name: ident,
+    $deref_type: ident,
+    $tskname: ident,
+    $tskinit: ident,
+    $tskfree: ident,
+    $tskclear: expr) => {
         $(#[$attr])*
         pub struct $name {
             table: mbox::MBox<$crate::bindings::$tskname>,
@@ -1030,7 +1041,8 @@ macro_rules! build_owned_table_type {
             $deref_type,
             $crate::bindings::$tskname,
             $tskinit,
-            $tskfree
+            $tskfree,
+            $tskclear
         );
     };
 }

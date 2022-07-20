@@ -293,7 +293,8 @@ build_owned_table_type!(
     NodeTable,
     tsk_node_table_t,
     tsk_node_table_init,
-    tsk_node_table_free
+    tsk_node_table_free,
+    ll_bindings::tsk_node_table_clear
 );
 
 impl OwnedNodeTable {

@@ -262,7 +262,8 @@ build_owned_table_type!(
     MigrationTable,
     tsk_migration_table_t,
     tsk_migration_table_init,
-    tsk_migration_table_free
+    tsk_migration_table_free,
+    ll_bindings::tsk_migration_table_clear
 );
 
 impl OwnedMigrationTable {

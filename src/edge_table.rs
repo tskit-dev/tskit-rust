@@ -182,6 +182,9 @@ build_owned_table_type!(
     /// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
     /// assert_eq!(rowid, 0);
     /// assert_eq!(edges.num_rows(), 1);
+    ///
+    /// edges.clear().unwrap();
+    /// assert_eq!(edges.num_rows(), 0);
     /// ```
     ///
     /// An example with metadata.
@@ -218,7 +221,8 @@ build_owned_table_type!(
     EdgeTable,
     tsk_edge_table_t,
     tsk_edge_table_init,
-    tsk_edge_table_free
+    tsk_edge_table_free,
+    crate::bindings::tsk_edge_table_clear
 );
 
 impl OwnedEdgeTable {

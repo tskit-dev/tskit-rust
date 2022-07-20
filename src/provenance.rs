@@ -196,7 +196,8 @@ build_owned_table_type!(
     ProvenanceTable,
     tsk_provenance_table_t,
     tsk_provenance_table_init,
-    tsk_provenance_table_free
+    tsk_provenance_table_free,
+    ll_bindings::tsk_provenance_table_clear
 );
 
 impl OwnedProvenanceTable {

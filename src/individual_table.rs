@@ -328,7 +328,8 @@ build_owned_table_type!(
     IndividualTable,
     tsk_individual_table_t,
     tsk_individual_table_init,
-    tsk_individual_table_free
+    tsk_individual_table_free,
+    crate::bindings::tsk_individual_table_clear
 );
 
 impl OwnedIndividualTable {
