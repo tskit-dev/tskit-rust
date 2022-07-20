@@ -165,29 +165,8 @@ pub struct OwnedPopulationTable {
 }
 
 impl OwnedPopulationTable {
-    pub fn add_row(&mut self) -> Result<PopulationId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_population_table_add_row(&mut (*self.table), std::ptr::null(), 0)
-        };
-
-        handle_tsk_return_value!(rv, PopulationId::from(rv))
-    }
-
-    pub fn add_row_with_metadata<M: crate::metadata::PopulationMetadata>(
-        &mut self,
-        metadata: &M,
-    ) -> Result<PopulationId, TskitError> {
-        let md = crate::metadata::EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_population_table_add_row(
-                &mut (*self.table),
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-
-        handle_tsk_return_value!(rv, PopulationId::from(rv))
-    }
+    population_table_add_row!(=> add_row, self, *self.table);
+    population_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
 
 build_owned_tables!(

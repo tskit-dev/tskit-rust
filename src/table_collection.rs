@@ -1,12 +1,8 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::ffi::WrapTskitType;
-use crate::metadata::*;
-use crate::traits::IndividualLocation;
-use crate::traits::IndividualParents;
 use crate::types::Bookmark;
 use crate::EdgeTable;
-use crate::IndividualFlags;
 use crate::IndividualTable;
 use crate::IndividualTableSortOptions;
 use crate::MigrationTable;
@@ -22,12 +18,11 @@ use crate::TableEqualityOptions;
 use crate::TableIntegrityCheckFlags;
 use crate::TableOutputOptions;
 use crate::TableSortOptions;
-use crate::Time;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t};
-use crate::{EdgeId, IndividualId, MigrationId, MutationId, NodeId, PopulationId, SiteId};
+use crate::{EdgeId, NodeId};
 use ll_bindings::tsk_table_collection_free;
 use mbox::MBox;
 
@@ -184,6 +179,7 @@ impl TableCollection {
         unsafe { (*self.as_ptr()).sequence_length }.into()
     }
 
+    edge_table_add_row!(
     /// Add a row to the edge table
     ///
     /// # Examples
@@ -226,28 +222,9 @@ impl TableCollection {
     ///
     /// See [`TableCollection::check_integrity`] for how to catch these data model
     /// violations.
-    pub fn add_edge<L: Into<Position>, R: Into<Position>, P: Into<NodeId>, C: Into<NodeId>>(
-        &mut self,
-        left: L,
-        right: R,
-        parent: P,
-        child: C,
-    ) -> Result<EdgeId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_edge_table_add_row(
-                &mut (*self.as_mut_ptr()).edges,
-                left.into().0,
-                right.into().0,
-                parent.into().0,
-                child.into().0,
-                std::ptr::null(),
-                0,
-            )
-        };
+    => add_edge, self, (*self.inner).edges);
 
-        handle_tsk_return_value!(rv, EdgeId::from(rv))
-    }
-
+    edge_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the edge table
     ///
     /// # Examples
@@ -268,36 +245,9 @@ impl TableCollection {
     /// assert!(tables.add_edge_with_metadata(0., 53., 1, 11, &metadata).is_ok());
     /// # }
     /// ```
-    pub fn add_edge_with_metadata<
-        L: Into<Position>,
-        R: Into<Position>,
-        P: Into<NodeId>,
-        C: Into<NodeId>,
-        M: EdgeMetadata,
-    >(
-        &mut self,
-        left: L,
-        right: R,
-        parent: P,
-        child: C,
-        metadata: &M,
-    ) -> Result<EdgeId, TskitError> {
-        let md = EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_edge_table_add_row(
-                &mut (*self.as_mut_ptr()).edges,
-                left.into().0,
-                right.into().0,
-                parent.into().0,
-                child.into().0,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
+    => add_edge_with_metadata, self, (*self.inner).edges);
 
-        handle_tsk_return_value!(rv, EdgeId::from(rv))
-    }
-
+    individual_table_add_row!(
     /// Add a row to the individual table
     ///
     /// # Examples
@@ -334,28 +284,9 @@ impl TableCollection {
     /// #     None => panic!("expected parents"),
     /// # }
     /// ```
-    ///
-    pub fn add_individual<F: Into<IndividualFlags>, L: IndividualLocation, I: IndividualParents>(
-        &mut self,
-        flags: F,
-        location: L,
-        parents: I,
-    ) -> Result<IndividualId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_individual_table_add_row(
-                &mut (*self.as_mut_ptr()).individuals,
-                flags.into().bits(),
-                location.get_slice().as_ptr().cast::<f64>(),
-                location.get_slice().len() as tsk_size_t,
-                parents.get_slice().as_ptr().cast::<tsk_id_t>(),
-                parents.get_slice().len() as tsk_size_t,
-                std::ptr::null(),
-                0,
-            )
-        };
-        handle_tsk_return_value!(rv, IndividualId::from(rv))
-    }
+    => add_individual, self, (*self.inner).individuals);
 
+    individual_table_add_row_with_metadata!(
     /// Add a row with metadata to the individual table
     ///
     /// # Examples
@@ -379,34 +310,9 @@ impl TableCollection {
     /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
     /// # assert_eq!(decoded.x, 1);
     /// # }
-    pub fn add_individual_with_metadata<
-        F: Into<IndividualFlags>,
-        L: IndividualLocation,
-        I: IndividualParents,
-        M: IndividualMetadata,
-    >(
-        &mut self,
-        flags: F,
-        location: L,
-        parents: I,
-        metadata: &M,
-    ) -> Result<IndividualId, TskitError> {
-        let md = EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_individual_table_add_row(
-                &mut (*self.as_mut_ptr()).individuals,
-                flags.into().bits(),
-                location.get_slice().as_ptr().cast::<f64>(),
-                location.get_slice().len() as tsk_size_t,
-                parents.get_slice().as_ptr().cast::<tsk_id_t>(),
-                parents.get_slice().len() as tsk_size_t,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-        handle_tsk_return_value!(rv, IndividualId::from(rv))
-    }
+    => add_individual_with_metadata, self, (*self.inner).individuals);
 
+    migration_table_add_row!(
     /// Add a row to the migration table
     ///
     /// # Warnings
@@ -422,36 +328,9 @@ impl TableCollection {
     ///                              (0, 1),
     ///                              53.5).is_ok());
     /// ```
-    pub fn add_migration<
-        L: Into<Position>,
-        R: Into<Position>,
-        N: Into<NodeId>,
-        SOURCE: Into<PopulationId>,
-        DEST: Into<PopulationId>,
-        T: Into<Time>,
-    >(
-        &mut self,
-        span: (L, R),
-        node: N,
-        source_dest: (SOURCE, DEST),
-        time: T,
-    ) -> Result<MigrationId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_migration_table_add_row(
-                &mut (*self.as_mut_ptr()).migrations,
-                span.0.into().0,
-                span.1.into().0,
-                node.into().0,
-                source_dest.0.into().0,
-                source_dest.1.into().0,
-                time.into().0,
-                std::ptr::null(),
-                0,
-            )
-        };
-        handle_tsk_return_value!(rv, MigrationId(rv))
-    }
+    => add_migration, self, (*self.inner).migrations);
 
+    migration_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the migration table
     ///
     /// # Examples
@@ -481,38 +360,7 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    pub fn add_migration_with_metadata<
-        L: Into<Position>,
-        R: Into<Position>,
-        N: Into<NodeId>,
-        SOURCE: Into<PopulationId>,
-        DEST: Into<PopulationId>,
-        MD: MigrationMetadata,
-        T: Into<Time>,
-    >(
-        &mut self,
-        span: (L, R),
-        node: N,
-        source_dest: (SOURCE, DEST),
-        time: T,
-        metadata: &MD,
-    ) -> Result<MigrationId, TskitError> {
-        let md = EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_migration_table_add_row(
-                &mut (*self.as_mut_ptr()).migrations,
-                span.0.into().0,
-                span.1.into().0,
-                node.into().0,
-                source_dest.0.into().0,
-                source_dest.1.into().0,
-                time.into().0,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-        handle_tsk_return_value!(rv, MigrationId(rv))
-    }
+    => add_migration_with_metadata, self, (*self.inner).migrations);
 
     node_table_add_row!(
     /// Add a row to the node table
@@ -543,28 +391,11 @@ impl TableCollection {
     /// ```
     => add_node_with_metadata, self, inner, nodes);
 
+    site_table_add_row!(
     /// Add a row to the site table
-    pub fn add_site<P: Into<Position>>(
-        &mut self,
-        position: P,
-        ancestral_state: Option<&[u8]>,
-    ) -> Result<SiteId, TskitError> {
-        let astate = process_state_input!(ancestral_state);
+    => add_site, self, (*self.inner).sites);
 
-        let rv = unsafe {
-            ll_bindings::tsk_site_table_add_row(
-                &mut (*self.as_mut_ptr()).sites,
-                position.into().0,
-                astate.0,
-                astate.1,
-                std::ptr::null(),
-                0,
-            )
-        };
-
-        handle_tsk_return_value!(rv, SiteId::from(rv))
-    }
-
+    site_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the site table
     ///
     /// # Examples
@@ -587,55 +418,13 @@ impl TableCollection {
     ///                                       &metadata).is_ok());
     /// # }
     /// ```
-    pub fn add_site_with_metadata<P: Into<Position>, M: SiteMetadata>(
-        &mut self,
-        position: P,
-        ancestral_state: Option<&[u8]>,
-        metadata: &M,
-    ) -> Result<SiteId, TskitError> {
-        let astate = process_state_input!(ancestral_state);
-        let md = EncodedMetadata::new(metadata)?;
+    => add_site_with_metadata, self, (*self.inner).sites);
 
-        let rv = unsafe {
-            ll_bindings::tsk_site_table_add_row(
-                &mut (*self.as_mut_ptr()).sites,
-                position.into().0,
-                astate.0,
-                astate.1,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-
-        handle_tsk_return_value!(rv, SiteId::from(rv))
-    }
-
+    mutation_table_add_row!(
     /// Add a row to the mutation table.
-    pub fn add_mutation<S: Into<SiteId>, N: Into<NodeId>, M: Into<MutationId>, T: Into<Time>>(
-        &mut self,
-        site: S,
-        node: N,
-        parent: M,
-        time: T,
-        derived_state: Option<&[u8]>,
-    ) -> Result<MutationId, TskitError> {
-        let dstate = process_state_input!(derived_state);
-        let rv = unsafe {
-            ll_bindings::tsk_mutation_table_add_row(
-                &mut (*self.as_mut_ptr()).mutations,
-                site.into().0,
-                node.into().0,
-                parent.into().0,
-                time.into().0,
-                dstate.0,
-                dstate.1,
-                std::ptr::null(),
-                0,
-            )
-        };
-        handle_tsk_return_value!(rv, MutationId::from(rv))
-    }
+    => add_mutation, self, (*self.inner).mutations);
 
+    mutation_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the mutation table.
     ///
     /// # Examples
@@ -657,40 +446,9 @@ impl TableCollection {
     ///                                           &metadata).is_ok());
     /// # }
     /// ```
-    pub fn add_mutation_with_metadata<
-        S: Into<SiteId>,
-        N: Into<NodeId>,
-        M: Into<MutationId>,
-        MD: MutationMetadata,
-        T: Into<Time>,
-    >(
-        &mut self,
-        site: S,
-        node: N,
-        parent: M,
-        time: T,
-        derived_state: Option<&[u8]>,
-        metadata: &MD,
-    ) -> Result<MutationId, TskitError> {
-        let dstate = process_state_input!(derived_state);
-        let md = EncodedMetadata::new(metadata)?;
+    => add_mutation_with_metadata, self, (*self.inner).mutations);
 
-        let rv = unsafe {
-            ll_bindings::tsk_mutation_table_add_row(
-                &mut (*self.as_mut_ptr()).mutations,
-                site.into().0,
-                node.into().0,
-                parent.into().0,
-                time.into().0,
-                dstate.0,
-                dstate.1,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-        handle_tsk_return_value!(rv, MutationId::from(rv))
-    }
-
+    population_table_add_row!(
     /// Add a row to the population_table
     ///
     /// # Examples
@@ -699,18 +457,9 @@ impl TableCollection {
     /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
     /// tables.add_population().unwrap();
     /// ```
-    pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
-        let rv = unsafe {
-            ll_bindings::tsk_population_table_add_row(
-                &mut (*self.as_mut_ptr()).populations,
-                std::ptr::null(),
-                0,
-            )
-        };
+    => add_population, self, (*self.inner).populations);
 
-        handle_tsk_return_value!(rv, PopulationId::from(rv))
-    }
-
+    population_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the population_table
     ///
     /// # Examples
@@ -730,21 +479,7 @@ impl TableCollection {
     /// let metadata = PopulationMetadata{x: 1};
     /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
     /// # }
-    pub fn add_population_with_metadata<M: PopulationMetadata>(
-        &mut self,
-        metadata: &M,
-    ) -> Result<PopulationId, TskitError> {
-        let md = EncodedMetadata::new(metadata)?;
-        let rv = unsafe {
-            ll_bindings::tsk_population_table_add_row(
-                &mut (*self.as_mut_ptr()).populations,
-                md.as_ptr(),
-                md.len().into(),
-            )
-        };
-
-        handle_tsk_return_value!(rv, PopulationId::from(rv))
-    }
+    => add_population_with_metadata, self, (*self.inner).populations);
 
     /// Build the "input" and "output"
     /// indexes for the edge table.
@@ -1073,6 +808,7 @@ impl TableCollection {
     }
 
     #[cfg(any(feature = "provenance", doc))]
+    provenance_table_add_row!(
     /// Add provenance record with a time stamp.
     ///
     /// All implementation of this trait provided by `tskit` use
@@ -1121,19 +857,7 @@ impl TableCollection {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
     /// # }
     /// ```
-    pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
-        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
-        let rv = unsafe {
-            ll_bindings::tsk_provenance_table_add_row(
-                &mut (*self.inner).provenances,
-                timestamp.as_ptr() as *mut i8,
-                timestamp.len() as tsk_size_t,
-                record.as_ptr() as *mut i8,
-                record.len() as tsk_size_t,
-            )
-        };
-        handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
-    }
+    => add_provenance, self, (*self.inner).provenances);
 }
 
 impl TableAccess for TableCollection {
@@ -1176,6 +900,8 @@ impl crate::traits::NodeListGenerator for TableCollection {}
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::metadata::*;
+    use crate::prelude::*;
     use crate::NodeFlags;
 
     fn make_small_table_collection() -> TableCollection {
@@ -1713,6 +1439,7 @@ mod test {
 mod test_bad_metadata {
     use super::*;
     use crate::test_fixtures::bad_metadata::*;
+    use crate::MutationId;
 
     #[test]
     fn test_bad_mutation_metadata_roundtrip() {
