@@ -573,6 +573,16 @@ macro_rules! build_owned_tables {
                 }
             }
         }
+
+        impl $name {
+            pub fn as_ptr(&self) -> *const $llname {
+                &*self.table
+            }
+
+            pub fn as_mut_ptr(&mut self) -> *mut $llname {
+                &mut *self.table as *mut $llname
+            }
+        }
     };
 }
 
