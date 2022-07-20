@@ -4,6 +4,7 @@ use crate::IndividualFlags;
 use crate::IndividualId;
 use crate::Location;
 use crate::{tsk_id_t, tsk_size_t, TskitError};
+use ll_bindings::{tsk_individual_table_free, tsk_individual_table_init};
 
 /// Row of a [`IndividualTable`]
 pub struct IndividualTableRow {
@@ -277,4 +278,60 @@ impl<'a> IndividualTable<'a> {
         }
         table_row_access!(ri.0, self, make_individual_table_row)
     }
+}
+
+build_owned_table_type!(
+    /// A standalone individual table that owns its data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::OwnedIndividualTable;
+    ///
+    /// let mut individuals = OwnedIndividualTable::default();
+    /// let rowid = individuals.add_row(0, None, None).unwrap();
+    /// assert_eq!(rowid, 0);
+    /// assert_eq!(individuals.num_rows(), 1);
+    /// ```
+    ///
+    /// An example with metadata.
+    /// This requires the cargo feature `"derive"` for `tskit`.
+    ///
+    /// ```
+    /// # #[cfg(any(feature="doc", feature="derive"))] {
+    /// use tskit::OwnedIndividualTable;
+    ///
+    /// #[derive(serde::Serialize,
+    ///          serde::Deserialize,
+    ///          tskit::metadata::IndividualMetadata)]
+    /// #[serializer("serde_json")]
+    /// struct IndividualMetadata {
+    ///     value: i32,
+    /// }
+    ///
+    /// let metadata = IndividualMetadata{value: 42};
+    ///
+    /// let mut individuals = OwnedIndividualTable::default();
+    ///
+    /// let rowid = individuals.add_row_with_metadata(0, None, None, &metadata).unwrap();
+    /// assert_eq!(rowid, 0);
+    ///
+    /// if let Some(decoded) = individuals.metadata::<IndividualMetadata>(rowid).unwrap() {
+    ///     assert_eq!(decoded.value, 42);
+    /// } else {
+    ///     panic!("hmm...we expected some metadata!");
+    /// }
+    ///
+    /// # }
+    /// ```
+    => OwnedIndividualTable,
+    IndividualTable,
+    tsk_individual_table_t,
+    tsk_individual_table_init,
+    tsk_individual_table_free
+);
+
+impl OwnedIndividualTable {
+    individual_table_add_row!(=> add_row, self, *self.table);
+    individual_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
