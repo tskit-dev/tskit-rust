@@ -5,6 +5,7 @@ use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{MigrationId, NodeId, PopulationId};
+use ll_bindings::{tsk_migration_table_free, tsk_migration_table_init};
 
 /// Row of a [`MigrationTable`]
 pub struct MigrationTableRow {
@@ -211,4 +212,60 @@ impl<'a> MigrationTable<'a> {
         }
         table_row_access!(r.into().0, self, make_migration_table_row)
     }
+}
+
+build_owned_table_type!(
+    /// A standalone migration table that owns its data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::OwnedMigrationTable;
+    ///
+    /// let mut migrations = OwnedMigrationTable::default();
+    /// let rowid = migrations.add_row((0., 1.), 1, (0, 1), 10.3).unwrap();
+    /// assert_eq!(rowid, 0);
+    /// assert_eq!(migrations.num_rows(), 1);
+    /// ```
+    ///
+    /// An example with metadata.
+    /// This requires the cargo feature `"derive"` for `tskit`.
+    ///
+    /// ```
+    /// # #[cfg(any(feature="doc", feature="derive"))] {
+    /// use tskit::OwnedMigrationTable;
+    ///
+    /// #[derive(serde::Serialize,
+    ///          serde::Deserialize,
+    ///          tskit::metadata::MigrationMetadata)]
+    /// #[serializer("serde_json")]
+    /// struct MigrationMetadata {
+    ///     value: i32,
+    /// }
+    ///
+    /// let metadata = MigrationMetadata{value: 42};
+    ///
+    /// let mut migrations = OwnedMigrationTable::default();
+    ///
+    /// let rowid = migrations.add_row_with_metadata((0., 1.), 1, (0, 1), 10.3, &metadata).unwrap();
+    /// assert_eq!(rowid, 0);
+    ///
+    /// if let Some(decoded) = migrations.metadata::<MigrationMetadata>(rowid).unwrap() {
+    ///     assert_eq!(decoded.value, 42);
+    /// } else {
+    ///     panic!("hmm...we expected some metadata!");
+    /// }
+    ///
+    /// # }
+    /// ```
+    => OwnedMigrationTable,
+    MigrationTable,
+    tsk_migration_table_t,
+    tsk_migration_table_init,
+    tsk_migration_table_free
+);
+
+impl OwnedMigrationTable {
+    migration_table_add_row!(=> add_row, self, *self.table);
+    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
