@@ -4,6 +4,7 @@ use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{MutationId, NodeId, SiteId};
+use ll_bindings::{tsk_mutation_table_free, tsk_mutation_table_init};
 
 /// Row of a [`MutationTable`]
 pub struct MutationTableRow {
@@ -196,3 +197,63 @@ impl<'a> MutationTable<'a> {
         table_row_access!(ri.0, self, make_mutation_table_row)
     }
 }
+
+/// A standalone mutation table that owns its data.
+///
+/// # Examples
+///
+/// ```
+/// use tskit::OwnedMutationTable;
+///
+/// let mut mutations = OwnedMutationTable::default();
+/// let rowid = mutations.add_row(1, 2, 0, 1.0, None).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(mutations.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::OwnedMutationTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::MutationMetadata)]
+/// #[serializer("serde_json")]
+/// struct MutationMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = MutationMetadata{value: 42};
+///
+/// let mut mutations = OwnedMutationTable::default();
+///
+/// let rowid = mutations.add_row_with_metadata(0, 1, 5, 10.0, None, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// if let Some(decoded) = mutations.metadata::<MutationMetadata>(rowid).unwrap() {
+///     assert_eq!(decoded.value, 42);
+/// } else {
+///     panic!("hmm...we expected some metadata!");
+/// }
+///
+/// # }
+/// ```
+pub struct OwnedMutationTable {
+    table: mbox::MBox<ll_bindings::tsk_mutation_table_t>,
+}
+
+impl OwnedMutationTable {
+    mutation_table_add_row!(=> add_row, self, *self.table);
+    mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+}
+
+build_owned_tables!(
+    OwnedMutationTable,
+    MutationTable,
+    ll_bindings::tsk_mutation_table_t,
+    tsk_mutation_table_init,
+    tsk_mutation_table_free
+);
