@@ -5,6 +5,7 @@ use crate::Position;
 use crate::SiteId;
 use crate::SizeType;
 use crate::TskitError;
+use ll_bindings::{tsk_site_table_free, tsk_site_table_init};
 
 /// Row of a [`SiteTable`]
 pub struct SiteTableRow {
@@ -151,4 +152,60 @@ impl<'a> SiteTable<'a> {
         }
         table_row_access!(r.into().0, self, make_site_table_row)
     }
+}
+
+build_owned_table_type!(
+    /// A standalone site table that owns its data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::OwnedSiteTable;
+    ///
+    /// let mut sites = OwnedSiteTable::default();
+    /// let rowid = sites.add_row(1., None).unwrap();
+    /// assert_eq!(rowid, 0);
+    /// assert_eq!(sites.num_rows(), 1);
+    /// ```
+    ///
+    /// An example with metadata.
+    /// This requires the cargo feature `"derive"` for `tskit`.
+    ///
+    /// ```
+    /// # #[cfg(any(feature="doc", feature="derive"))] {
+    /// use tskit::OwnedSiteTable;
+    ///
+    /// #[derive(serde::Serialize,
+    ///          serde::Deserialize,
+    ///          tskit::metadata::SiteMetadata)]
+    /// #[serializer("serde_json")]
+    /// struct SiteMetadata {
+    ///     value: i32,
+    /// }
+    ///
+    /// let metadata = SiteMetadata{value: 42};
+    ///
+    /// let mut sites = OwnedSiteTable::default();
+    ///
+    /// let rowid = sites.add_row_with_metadata(0., None, &metadata).unwrap();
+    /// assert_eq!(rowid, 0);
+    ///
+    /// if let Some(decoded) = sites.metadata::<SiteMetadata>(rowid).unwrap() {
+    ///     assert_eq!(decoded.value, 42);
+    /// } else {
+    ///     panic!("hmm...we expected some metadata!");
+    /// }
+    ///
+    /// # }
+    /// ```
+    => OwnedSiteTable,
+    SiteTable,
+    tsk_site_table_t,
+    tsk_site_table_init,
+    tsk_site_table_free
+);
+
+impl OwnedSiteTable {
+    site_table_add_row!(=> add_row, self, *self.table);
+    site_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
