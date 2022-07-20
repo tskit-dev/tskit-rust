@@ -165,7 +165,8 @@ build_owned_table_type!(
     PopulationTable,
     tsk_population_table_t,
     tsk_population_table_init,
-    tsk_population_table_free
+    tsk_population_table_free,
+    ll_bindings::tsk_population_table_clear
 );
 
 impl OwnedPopulationTable {

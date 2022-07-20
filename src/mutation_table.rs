@@ -246,7 +246,8 @@ build_owned_table_type!(
     MutationTable,
     tsk_mutation_table_t,
     tsk_mutation_table_init,
-    tsk_mutation_table_free
+    tsk_mutation_table_free,
+    ll_bindings::tsk_mutation_table_clear
 );
 
 impl OwnedMutationTable {

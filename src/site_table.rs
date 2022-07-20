@@ -202,7 +202,8 @@ build_owned_table_type!(
     SiteTable,
     tsk_site_table_t,
     tsk_site_table_init,
-    tsk_site_table_free
+    tsk_site_table_free,
+    ll_bindings::tsk_site_table_clear
 );
 
 impl OwnedSiteTable {
