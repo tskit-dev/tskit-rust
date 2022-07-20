@@ -425,7 +425,7 @@ pub(crate) const TSK_NULL: tsk_id_t = -1;
 pub use edge_table::{EdgeTable, EdgeTableRow, OwnedEdgeTable};
 pub use error::TskitError;
 pub use flags::*;
-pub use individual_table::{IndividualTable, IndividualTableRow};
+pub use individual_table::{IndividualTable, IndividualTableRow, OwnedIndividualTable};
 pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow, OwnedMutationTable};
 pub use node_table::{NodeTable, NodeTableRow, OwnedNodeTable};
