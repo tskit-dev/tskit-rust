@@ -15,6 +15,7 @@
 use crate::bindings as ll_bindings;
 use crate::SizeType;
 use crate::{tsk_id_t, tsk_size_t, ProvenanceId, TskitError};
+use ll_bindings::{tsk_provenance_table_free, tsk_provenance_table_init};
 
 #[derive(Eq)]
 /// Row of a [`ProvenanceTable`].
@@ -175,6 +176,31 @@ impl<'a> ProvenanceTable<'a> {
     pub fn iter(&self) -> impl Iterator<Item = ProvenanceTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(self)
     }
+}
+
+build_owned_table_type!(
+    /// A provenance table that owns its own data.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[cfg(any(doc, feature = "provenance"))] {
+    /// use tskit::provenance::OwnedProvenanceTable;
+    /// let mut provenances = OwnedProvenanceTable::default();
+    /// let id = provenances.add_row("message").unwrap();
+    /// assert_eq!(id, 0);
+    /// assert_eq!(provenances.num_rows(), 1);
+    /// # }
+    /// ```
+    => OwnedProvenanceTable,
+    ProvenanceTable,
+    tsk_provenance_table_t,
+    tsk_provenance_table_init,
+    tsk_provenance_table_free
+);
+
+impl OwnedProvenanceTable {
+    provenance_table_add_row!(=> add_row, self, *self.table);
 }
 
 #[cfg(test)]
