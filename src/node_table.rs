@@ -245,65 +245,61 @@ impl<'a> NodeTable<'a> {
     }
 }
 
-/// A standalone node table that owns its data.
-///
-/// # Examples
-///
-/// ```
-/// use tskit::OwnedNodeTable;
-///
-/// let mut nodes = OwnedNodeTable::default();
-/// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
-/// assert_eq!(rowid, 0);
-/// assert_eq!(nodes.num_rows(), 1);
-/// ```
-///
-/// An example with metadata.
-/// This requires the cargo feature `"derive"` for `tskit`.
-///
-/// ```
-/// # #[cfg(any(feature="doc", feature="derive"))] {
-/// use tskit::OwnedNodeTable;
-///
-/// #[derive(serde::Serialize,
-///          serde::Deserialize,
-///          tskit::metadata::NodeMetadata)]
-/// #[serializer("serde_json")]
-/// struct NodeMetadata {
-///     value: i32,
-/// }
-///
-/// let metadata = NodeMetadata{value: 42};
-///
-/// let mut nodes = OwnedNodeTable::default();
-///
-/// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
-/// assert_eq!(rowid, 0);
-///
-/// if let Some(decoded) = nodes.metadata::<NodeMetadata>(rowid).unwrap() {
-///     assert_eq!(decoded.value, 42);
-/// } else {
-///     panic!("hmm...we expected some metadata!");
-/// }
-///
-/// # }
-/// ```
-pub struct OwnedNodeTable {
-    table: mbox::MBox<ll_bindings::tsk_node_table_t>,
-}
+build_owned_table_type!(
+    /// A standalone node table that owns its data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::OwnedNodeTable;
+    ///
+    /// let mut nodes = OwnedNodeTable::default();
+    /// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
+    /// assert_eq!(rowid, 0);
+    /// assert_eq!(nodes.num_rows(), 1);
+    /// ```
+    ///
+    /// An example with metadata.
+    /// This requires the cargo feature `"derive"` for `tskit`.
+    ///
+    /// ```
+    /// # #[cfg(any(feature="doc", feature="derive"))] {
+    /// use tskit::OwnedNodeTable;
+    ///
+    /// #[derive(serde::Serialize,
+    ///          serde::Deserialize,
+    ///          tskit::metadata::NodeMetadata)]
+    /// #[serializer("serde_json")]
+    /// struct NodeMetadata {
+    ///     value: i32,
+    /// }
+    ///
+    /// let metadata = NodeMetadata{value: 42};
+    ///
+    /// let mut nodes = OwnedNodeTable::default();
+    ///
+    /// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
+    /// assert_eq!(rowid, 0);
+    ///
+    /// if let Some(decoded) = nodes.metadata::<NodeMetadata>(rowid).unwrap() {
+    ///     assert_eq!(decoded.value, 42);
+    /// } else {
+    ///     panic!("hmm...we expected some metadata!");
+    /// }
+    ///
+    /// # }
+    /// ```
+    => OwnedNodeTable,
+    NodeTable,
+    tsk_node_table_t,
+    tsk_node_table_init,
+    tsk_node_table_free
+);
 
 impl OwnedNodeTable {
     node_table_add_row!(=> add_row, self, table);
     node_table_add_row_with_metadata!(=> add_row_with_metadata, self, table);
 }
-
-build_owned_tables!(
-    OwnedNodeTable,
-    NodeTable,
-    ll_bindings::tsk_node_table_t,
-    tsk_node_table_init,
-    tsk_node_table_free
-);
 
 #[cfg(test)]
 mod test_owned_node_table {

@@ -1008,6 +1008,23 @@ macro_rules! provenance_table_add_row {
     };
 }
 
+macro_rules! build_owned_table_type {
+    ($(#[$attr:meta])* => $name: ident, $deref_type: ident, $tskname: ident, $tskinit: ident, $tskfree: ident) => {
+        $(#[$attr])*
+        pub struct $name {
+            table: mbox::MBox<$crate::bindings::$tskname>,
+        }
+
+        build_owned_tables!(
+            $name,
+            $deref_type,
+            $crate::bindings::$tskname,
+            $tskinit,
+            $tskfree
+        );
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;

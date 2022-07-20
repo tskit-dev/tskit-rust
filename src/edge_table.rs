@@ -170,62 +170,58 @@ impl<'a> EdgeTable<'a> {
     }
 }
 
-/// A standalone edge table that owns its data.
-///
-/// # Examples
-///
-/// ```
-/// use tskit::OwnedEdgeTable;
-///
-/// let mut edges = OwnedEdgeTable::default();
-/// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
-/// assert_eq!(rowid, 0);
-/// assert_eq!(edges.num_rows(), 1);
-/// ```
-///
-/// An example with metadata.
-/// This requires the cargo feature `"derive"` for `tskit`.
-///
-/// ```
-/// # #[cfg(any(feature="doc", feature="derive"))] {
-/// use tskit::OwnedEdgeTable;
-///
-/// #[derive(serde::Serialize,
-///          serde::Deserialize,
-///          tskit::metadata::EdgeMetadata)]
-/// #[serializer("serde_json")]
-/// struct EdgeMetadata {
-///     value: i32,
-/// }
-///
-/// let metadata = EdgeMetadata{value: 42};
-///
-/// let mut edges = OwnedEdgeTable::default();
-///
-/// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
-/// assert_eq!(rowid, 0);
-///
-/// if let Some(decoded) = edges.metadata::<EdgeMetadata>(rowid).unwrap() {
-///     assert_eq!(decoded.value, 42);
-/// } else {
-///     panic!("hmm...we expected some metadata!");
-/// }
-///
-/// # }
-/// ```
-pub struct OwnedEdgeTable {
-    table: mbox::MBox<ll_bindings::tsk_edge_table_t>,
-}
+build_owned_table_type!(
+    /// A standalone edge table that owns its data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::OwnedEdgeTable;
+    ///
+    /// let mut edges = OwnedEdgeTable::default();
+    /// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
+    /// assert_eq!(rowid, 0);
+    /// assert_eq!(edges.num_rows(), 1);
+    /// ```
+    ///
+    /// An example with metadata.
+    /// This requires the cargo feature `"derive"` for `tskit`.
+    ///
+    /// ```
+    /// # #[cfg(any(feature="doc", feature="derive"))] {
+    /// use tskit::OwnedEdgeTable;
+    ///
+    /// #[derive(serde::Serialize,
+    ///          serde::Deserialize,
+    ///          tskit::metadata::EdgeMetadata)]
+    /// #[serializer("serde_json")]
+    /// struct EdgeMetadata {
+    ///     value: i32,
+    /// }
+    ///
+    /// let metadata = EdgeMetadata{value: 42};
+    ///
+    /// let mut edges = OwnedEdgeTable::default();
+    ///
+    /// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
+    /// assert_eq!(rowid, 0);
+    ///
+    /// if let Some(decoded) = edges.metadata::<EdgeMetadata>(rowid).unwrap() {
+    ///     assert_eq!(decoded.value, 42);
+    /// } else {
+    ///     panic!("hmm...we expected some metadata!");
+    /// }
+    ///
+    /// # }
+    /// ```
+    => OwnedEdgeTable,
+    EdgeTable,
+    tsk_edge_table_t,
+    tsk_edge_table_init,
+    tsk_edge_table_free
+);
 
 impl OwnedEdgeTable {
     edge_table_add_row!(=> add_row, self, *self.table);
     edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
-
-build_owned_tables!(
-    OwnedEdgeTable,
-    EdgeTable,
-    ll_bindings::tsk_edge_table_t,
-    tsk_edge_table_init,
-    tsk_edge_table_free
-);
