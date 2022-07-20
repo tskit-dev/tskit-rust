@@ -198,6 +198,7 @@ impl<'a> MutationTable<'a> {
     }
 }
 
+build_owned_table_type!(
 /// A standalone mutation table that owns its data.
 ///
 /// # Examples
@@ -241,19 +242,14 @@ impl<'a> MutationTable<'a> {
 ///
 /// # }
 /// ```
-pub struct OwnedMutationTable {
-    table: mbox::MBox<ll_bindings::tsk_mutation_table_t>,
-}
+    => OwnedMutationTable,
+    MutationTable,
+    tsk_mutation_table_t,
+    tsk_mutation_table_init,
+    tsk_mutation_table_free
+);
 
 impl OwnedMutationTable {
     mutation_table_add_row!(=> add_row, self, *self.table);
     mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
-
-build_owned_tables!(
-    OwnedMutationTable,
-    MutationTable,
-    ll_bindings::tsk_mutation_table_t,
-    tsk_mutation_table_init,
-    tsk_mutation_table_free
-);

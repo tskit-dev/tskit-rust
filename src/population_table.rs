@@ -117,6 +117,7 @@ impl<'a> PopulationTable<'a> {
     }
 }
 
+build_owned_table_type!(
 /// A standalone population table that owns its data.
 ///
 /// # Examples
@@ -160,19 +161,14 @@ impl<'a> PopulationTable<'a> {
 ///
 /// # }
 /// ```
-pub struct OwnedPopulationTable {
-    table: mbox::MBox<ll_bindings::tsk_population_table_t>,
-}
+    => OwnedPopulationTable,
+    PopulationTable,
+    tsk_population_table_t,
+    tsk_population_table_init,
+    tsk_population_table_free
+);
 
 impl OwnedPopulationTable {
     population_table_add_row!(=> add_row, self, *self.table);
     population_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
-
-build_owned_tables!(
-    OwnedPopulationTable,
-    PopulationTable,
-    ll_bindings::tsk_population_table_t,
-    tsk_population_table_init,
-    tsk_population_table_free
-);
