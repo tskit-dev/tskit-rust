@@ -1219,29 +1219,6 @@ impl TableCollection {
     ///
     /// # Examples
     ///
-    /// ```rust
-    /// use tskit::TskitTypeAccess;
-    ///
-    /// let json_schema = "
-    /// {
-    ///    \"codec\": \"json\",
-    ///    \"type\": \"object\",
-    ///    \"name\": \"Population metadata\",
-    ///    \"properties\": {\"name\": {\"type\": \"string\"}},
-    /// }
-    /// ";
-    /// let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// assert!(tables.set_json_metadata_schema_from_str(
-    ///         tskit::TableLevel::Populations,
-    ///         json_schema).is_ok());
-    /// assert!(unsafe{
-    ///             (*tables.as_ptr()).populations.metadata_schema_length
-    ///         }> 0);
-    /// let schema = unsafe {
-    ///     std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema)
-    ///     };
-    /// assert_eq!(schema.to_str().unwrap(), json_schema);
-    /// ```
     pub fn set_json_metadata_schema_from_str(
         &mut self,
         level: TableLevel,
