@@ -61,8 +61,8 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
         let rv = IndividualTableRow {
             id: pos.into(),
             flags: table.flags(pos).unwrap(),
-            location: table.location(pos).unwrap(),
-            parents: table.parents(pos).unwrap(),
+            location: table.location(pos).unwrap().map(|s| s.to_vec()),
+            parents: table.parents(pos).unwrap().map(|s| s.to_vec()),
             metadata: table_row_decode_metadata!(table_ref, pos),
         };
         Some(rv)
@@ -131,7 +131,7 @@ impl<'a> IndividualTable<'a> {
     pub fn location<I: Into<IndividualId> + Copy>(
         &self,
         row: I,
-    ) -> Result<Option<Vec<Location>>, TskitError> {
+    ) -> Result<Option<&[Location]>, TskitError> {
         unsafe_tsk_ragged_column_access!(
             row.into().0,
             0,
@@ -151,7 +151,7 @@ impl<'a> IndividualTable<'a> {
     pub fn parents<I: Into<IndividualId> + Copy>(
         &self,
         row: I,
-    ) -> Result<Option<Vec<IndividualId>>, TskitError> {
+    ) -> Result<Option<&[IndividualId]>, TskitError> {
         unsafe_tsk_ragged_column_access!(
             row.into().0,
             0,
