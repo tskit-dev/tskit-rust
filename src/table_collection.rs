@@ -24,8 +24,22 @@ use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t};
 use crate::{EdgeId, NodeId};
+use libc::{c_char, strlen};
 use ll_bindings::tsk_table_collection_free;
 use mbox::MBox;
+
+pub enum TableLevel {
+    Toplevel,
+    Edges,
+    Nodes,
+    Sites,
+    Mutations,
+    Individuals,
+    Populations,
+    Migrations,
+    #[cfg(feature = "provenance")]
+    Provenance,
+}
 
 /// A table collection.
 ///
@@ -1200,6 +1214,58 @@ impl TableCollection {
         };
         handle_tsk_return_value!(rv)
     }
+
+    /// Set a metadata schema
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tskit::TskitTypeAccess;
+    ///
+    /// let json_schema = "
+    /// {
+    ///    \"codec\": \"json\",
+    ///    \"type\": \"object\",
+    ///    \"name\": \"Population metadata\",
+    ///    \"properties\": {\"name\": {\"type\": \"string\"}},
+    /// }
+    /// ";
+    /// let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// assert!(tables.set_metadata_schema(
+    ///         tskit::TableLevel::Populations,
+    ///         json_schema).is_ok());
+    /// assert!(unsafe{
+    ///             (*tables.as_ptr()).populations.metadata_schema_length
+    ///         }> 0);
+    /// let schema = unsafe {
+    ///     std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema)
+    ///     };
+    /// assert_eq!(schema.to_str().unwrap(), json_schema);
+    /// ```
+    pub fn set_metadata_schema(
+        &mut self,
+        level: TableLevel,
+        schema: impl AsRef<str>,
+    ) -> TskReturnValue {
+        println!("{} {}", schema.as_ref(), schema.as_ref().len());
+        let cstr = std::ffi::CString::new(schema.as_ref()).unwrap();
+        println!("{:?}", cstr);
+        let len = unsafe { strlen(cstr.as_bytes_with_nul().as_ptr() as *const c_char) };
+        println!("{:?}", cstr);
+        println!("{}", len);
+        let rv = match level {
+            TableLevel::Populations => unsafe {
+                ll_bindings::tsk_population_table_set_metadata_schema(
+                    &mut (*self.inner).populations,
+                    cstr.as_bytes_with_nul().as_ptr() as *const c_char,
+                    len.try_into().unwrap(),
+                )
+            },
+            _ => unimplemented!("haven't done it yet"),
+        };
+        println!("rv = {}", rv);
+        handle_tsk_return_value!(rv)
+    }
 }
 
 impl TableAccess for TableCollection {
@@ -2291,5 +2357,27 @@ mod test_adding_migrations {
                 metadata[i]
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod test_metadata_schema {
+    use super::*;
+
+    #[test]
+    fn population_metadata_schema() {
+        let json_schema = r#"[\"codec\":\"json\",\"name\":\"Populationmetadata\",\"properties\",{\"name\":{\"type\":\"string\"}}]
+"#;
+        let mut tables = TableCollection::new(10.).unwrap();
+        assert!(tables
+            .set_metadata_schema(TableLevel::Populations, json_schema)
+            .is_ok());
+        assert!(!unsafe { (*tables.as_ptr()).populations.metadata_schema.is_null() });
+        let len = unsafe { (*tables.as_ptr()).populations.metadata_schema_length };
+        assert!(len > 0, "{}", len);
+        let schema =
+            unsafe { std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema) };
+        assert_eq!(schema.to_str().unwrap(), json_schema);
+        tables.dump("foo.trees", 0).unwrap();
     }
 }
