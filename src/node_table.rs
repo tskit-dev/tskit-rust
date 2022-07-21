@@ -41,7 +41,7 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
             flags: table.flags(pos).unwrap(),
             population: table.population(pos).unwrap(),
             individual: table.individual(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table_ref, pos),
+            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
         })
     } else {
         None
@@ -189,7 +189,7 @@ impl<'a> NodeTable<'a> {
         row: NodeId,
     ) -> Result<Option<T>, TskitError> {
         let table_ref = self.table_;
-        let buffer = metadata_to_vector!(table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

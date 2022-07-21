@@ -250,13 +250,14 @@ pub enum MetadataError {
     },
 }
 
-pub(crate) fn char_column_to_vector(
+pub(crate) fn char_column_to_slice<T: Sized>(
+    _lifetime: &T,
     column: *const libc::c_char,
     column_offset: *const tsk_size_t,
     row: tsk_id_t,
     num_rows: tsk_size_t,
     column_length: tsk_size_t,
-) -> Result<Option<Vec<u8>>, crate::TskitError> {
+) -> Result<Option<&[u8]>, crate::TskitError> {
     let row = match tsk_size_t::try_from(row) {
         Ok(r) => r,
         Err(_) => return Err(TskitError::IndexError),
@@ -288,23 +289,27 @@ pub(crate) fn char_column_to_vector(
     if column_length == 0 {
         return Ok(None);
     }
-    let mut buffer = vec![];
-    for i in start..stop {
-        match isize::try_from(i) {
-            // NOTE: cast_sign_loss pedantic lint is a false +ve here.
-            // The metadata live as C strings on the tskit-C side, so
-            // the integer cast exists as part of the round trip.
-            #[allow(clippy::cast_sign_loss)]
-            Ok(o) => buffer.push(unsafe { *column.offset(o) } as u8),
-            Err(_) => {
-                return Err(TskitError::RangeError(format!(
-                    "cauld not convert value {} to isize",
-                    stringify!(i)
-                )))
-            }
-        };
-    }
-    Ok(Some(buffer))
+    let istart = match isize::try_from(start) {
+        Ok(v) => v,
+        Err(_) => {
+            return Err(TskitError::RangeError(format!(
+                "cauld not convert value {} to isize",
+                stringify!(i)
+            )));
+        }
+    };
+    let ustop = match usize::try_from(stop) {
+        Ok(v) => v,
+        Err(_) => {
+            return Err(TskitError::RangeError(format!(
+                "cauld not convert value {} to usize",
+                stringify!(i)
+            )));
+        }
+    };
+    Ok(Some(unsafe {
+        std::slice::from_raw_parts(column.offset(istart) as *const u8, ustop - istart as usize)
+    }))
 }
 
 #[cfg(test)]
