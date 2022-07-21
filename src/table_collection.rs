@@ -1567,15 +1567,40 @@ mod test_adding_individual {
         );
 
         // Empty slices are a thing, causing None to be in the rows.
-
-        let mut tables = crate::test_fixtures::make_empty_table_collection(10.);
         let row_id = tables
             .add_individual(0, &[] as &[f64], &[] as &[IndividualId])
             .unwrap();
         let row = tables.individuals().row(row_id).unwrap();
-        assert_eq!(row.id, IndividualId::from(0));
+        assert_eq!(row.id, IndividualId::from(1));
         assert!(row.location.is_none());
         assert!(row.parents.is_none());
+        let row_id = tables
+            .add_individual(0, &[0.2, 0.4, 0.6], &[1, 2, 3, 4])
+            .unwrap();
+        assert_eq!(row_id, 2);
+        assert_eq!(
+            tables.individuals().location(row_id).unwrap(),
+            Some(
+                [
+                    crate::Location::from(0.2),
+                    crate::Location::from(0.4),
+                    crate::Location::from(0.6)
+                ]
+                .as_slice()
+            )
+        );
+        assert_eq!(
+            tables.individuals().parents(row_id).unwrap(),
+            Some(
+                [
+                    crate::IndividualId::from(1),
+                    crate::IndividualId::from(2),
+                    crate::IndividualId::from(3),
+                    crate::IndividualId::from(4)
+                ]
+                .as_slice()
+            )
+        );
     }
 
     #[test]
