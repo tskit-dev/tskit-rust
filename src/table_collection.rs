@@ -1233,7 +1233,7 @@ impl TableCollection {
     /// }
     /// ";
     /// let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// assert!(tables.set_metadata_schema(
+    /// assert!(tables.set_json_metadata_schema_from_str(
     ///         tskit::TableLevel::Populations,
     ///         json_schema).is_ok());
     /// assert!(unsafe{
@@ -1244,7 +1244,7 @@ impl TableCollection {
     ///     };
     /// assert_eq!(schema.to_str().unwrap(), json_schema);
     /// ```
-    pub fn set_metadata_schema(
+    pub fn set_json_metadata_schema_from_str(
         &mut self,
         level: TableLevel,
         schema: impl AsRef<str>,
@@ -2386,7 +2386,7 @@ mod test_metadata_schema {
         assert_eq!(json_schema, json_schema2);
         let mut tables = TableCollection::new(10.).unwrap();
         assert!(tables
-            .set_metadata_schema(TableLevel::Populations, from_fp11)
+            .set_json_metadata_schema_from_str(TableLevel::Populations, from_fp11)
             .is_ok());
         assert!(!unsafe { (*tables.as_ptr()).populations.metadata_schema.is_null() });
         let len = unsafe { (*tables.as_ptr()).populations.metadata_schema_length };
