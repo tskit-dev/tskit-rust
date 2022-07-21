@@ -2369,18 +2369,36 @@ mod test_metadata_schema {
 
     #[test]
     fn population_metadata_schema() {
-        let json_schema = r#"[\"codec\":\"json\",\"name\":\"Populationmetadata\",\"properties\",{\"name\":{\"type\":\"string\"}}]
-"#;
+        let json_schema3 = r#"{"codec":"json","type":"object","name":"Population metadata","properties:"{"name":{"type":"string"}}}"#;
+        let json_schema3 = r#"{"codec":"json","type":"object","name":"Population metadata","properties":{"name":{"type":"string"}}}"#;
+        let json_schema2 = r#"{"codec":"json","name":"Population metadata","properties":{"name":{"type":"string"}},"type":"object"}"#;
+        let json_schema = r#"{"codec":"json","name":"Population metadata","properties":{"name":{"type":"string"}},"type":"object"}"#;
+
+        // YOU CANNOT HAVE A TRAILING COMMA AT THE END!!!!!!
+        let from_fp11 = r#"
+    {
+        "codec": "json",
+        "type": "object",
+        "name": "Population metadata",
+        "properties": {"name": {"type": "string"}}
+    }"#;
+
+        assert_eq!(json_schema, json_schema2);
         let mut tables = TableCollection::new(10.).unwrap();
         assert!(tables
-            .set_metadata_schema(TableLevel::Populations, json_schema)
+            .set_metadata_schema(TableLevel::Populations, from_fp11)
             .is_ok());
         assert!(!unsafe { (*tables.as_ptr()).populations.metadata_schema.is_null() });
         let len = unsafe { (*tables.as_ptr()).populations.metadata_schema_length };
         assert!(len > 0, "{}", len);
         let schema =
             unsafe { std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema) };
-        assert_eq!(schema.to_str().unwrap(), json_schema);
+        assert_eq!(schema.to_str().unwrap(), from_fp11);
         tables.dump("foo.trees", 0).unwrap();
+
+        let tables = TableCollection::new_from_file("bananas.tables").unwrap();
+        let schema =
+            unsafe { std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema) };
+        println!("from tskit = {}", schema.to_str().unwrap());
     }
 }
