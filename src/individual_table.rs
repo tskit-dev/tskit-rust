@@ -63,7 +63,7 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
             flags: table.flags(pos).unwrap(),
             location: table.location(pos).unwrap().map(|s| s.to_vec()),
             parents: table.parents(pos).unwrap().map(|s| s.to_vec()),
-            metadata: table_row_decode_metadata!(table_ref, pos),
+            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
         };
         Some(rv)
     } else {
@@ -248,7 +248,7 @@ impl<'a> IndividualTable<'a> {
         row: IndividualId,
     ) -> Result<Option<T>, TskitError> {
         let table_ref = self.table_;
-        let buffer = metadata_to_vector!(table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

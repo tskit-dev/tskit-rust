@@ -47,7 +47,7 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
             source: table.source(pos).unwrap(),
             dest: table.dest(pos).unwrap(),
             time: table.time(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table_ref, pos),
+            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
         })
     } else {
         None
@@ -186,7 +186,7 @@ impl<'a> MigrationTable<'a> {
         row: MigrationId,
     ) -> Result<Option<T>, TskitError> {
         let table_ref = self.table_;
-        let buffer = metadata_to_vector!(table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

@@ -173,8 +173,9 @@ macro_rules! build_tskit_type {
 }
 
 macro_rules! metadata_to_vector {
-    ($table: expr, $row: expr) => {
-        $crate::metadata::char_column_to_vector(
+    ($outer: ident, $table: expr, $row: expr) => {
+        $crate::metadata::char_column_to_slice(
+            $outer,
             $table.metadata,
             $table.metadata_offset,
             $row,
@@ -196,8 +197,10 @@ macro_rules! decode_metadata_row {
 }
 
 macro_rules! table_row_decode_metadata {
-    ($table: ident, $pos: ident) => {
-        metadata_to_vector!($table, $pos).unwrap().map(|x| x)
+    ($owner: ident, $table: ident, $pos: ident) => {
+        metadata_to_vector!($owner, $table, $pos)
+            .unwrap()
+            .map(|x| x)
     };
 }
 

@@ -28,7 +28,7 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
         let table_ref = table.table_;
         let rv = PopulationTableRow {
             id: pos.into(),
-            metadata: table_row_decode_metadata!(table_ref, pos),
+            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
         };
         Some(rv)
     } else {
@@ -86,7 +86,7 @@ impl<'a> PopulationTable<'a> {
         row: PopulationId,
     ) -> Result<Option<T>, TskitError> {
         let table_ref = self.table_;
-        let buffer = metadata_to_vector!(table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

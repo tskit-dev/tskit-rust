@@ -42,8 +42,8 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
             node: table.node(pos).unwrap(),
             parent: table.parent(pos).unwrap(),
             time: table.time(pos).unwrap(),
-            derived_state: table.derived_state(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table_ref, pos),
+            derived_state: table.derived_state(pos).unwrap().map(|s| s.to_vec()),
+            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
         };
         Some(rv)
     } else {
@@ -155,8 +155,9 @@ impl<'a> MutationTable<'a> {
     pub fn derived_state<M: Into<MutationId>>(
         &'a self,
         row: M,
-    ) -> Result<Option<Vec<u8>>, TskitError> {
-        metadata::char_column_to_vector(
+    ) -> Result<Option<&[u8]>, TskitError> {
+        metadata::char_column_to_slice(
+            self,
             self.table_.derived_state,
             self.table_.derived_state_offset,
             row.into().0,
@@ -170,7 +171,7 @@ impl<'a> MutationTable<'a> {
         row: MutationId,
     ) -> Result<Option<T>, TskitError> {
         let table_ref = self.table_;
-        let buffer = metadata_to_vector!(table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 

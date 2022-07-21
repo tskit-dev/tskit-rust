@@ -34,8 +34,8 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
         let rv = SiteTableRow {
             id: pos.into(),
             position: table.position(pos).unwrap(),
-            ancestral_state: table.ancestral_state(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table_ref, pos),
+            ancestral_state: table.ancestral_state(pos).unwrap().map(|s| s.to_vec()),
+            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
         };
         Some(rv)
     } else {
@@ -108,11 +108,9 @@ impl<'a> SiteTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn ancestral_state<S: Into<SiteId>>(
-        &'a self,
-        row: S,
-    ) -> Result<Option<Vec<u8>>, TskitError> {
-        crate::metadata::char_column_to_vector(
+    pub fn ancestral_state<S: Into<SiteId>>(&'a self, row: S) -> Result<Option<&[u8]>, TskitError> {
+        crate::metadata::char_column_to_slice(
+            self,
             self.table_.ancestral_state,
             self.table_.ancestral_state_offset,
             row.into().0,
@@ -126,7 +124,7 @@ impl<'a> SiteTable<'a> {
         row: SiteId,
     ) -> Result<Option<T>, TskitError> {
         let table_ref = self.table_;
-        let buffer = metadata_to_vector!(table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         decode_metadata_row!(T, buffer)
     }
 
