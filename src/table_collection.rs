@@ -858,6 +858,306 @@ impl TableCollection {
     /// # }
     /// ```
     => add_provenance, self, (*self.inner).provenances);
+
+    /// Set the edge table from an [`OwnedEdgeTable`](`crate::OwnedEdgeTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut edges = tskit::OwnedEdgeTable::default();
+    /// edges.add_row(0., 1., 0, 12).unwrap();
+    /// tables.set_edges(&edges).unwrap();
+    /// assert_eq!(tables.edges().num_rows(), 1);
+    /// assert_eq!(tables.edges().child(0).unwrap(), 12);
+    /// # edges.clear().unwrap();
+    /// # assert_eq!(edges.num_rows(), 0);
+    /// ```
+    pub fn set_edges(&mut self, edges: &crate::OwnedEdgeTable) -> TskReturnValue {
+        // SAFETY: neither self nor edges are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_edge_table_set_columns(
+                &mut (*self.inner).edges,
+                (*edges.as_ptr()).num_rows,
+                (*edges.as_ptr()).left,
+                (*edges.as_ptr()).right,
+                (*edges.as_ptr()).parent,
+                (*edges.as_ptr()).child,
+                (*edges.as_ptr()).metadata,
+                (*edges.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Set the node table from an [`OwnedNodeTable`](`crate::OwnedNodeTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut nodes = tskit::OwnedNodeTable::default();
+    /// nodes.add_row(0, 10.0, -1, -1).unwrap();
+    /// tables.set_nodes(&nodes).unwrap();
+    /// assert_eq!(tables.nodes().num_rows(), 1);
+    /// assert_eq!(tables.nodes().time(0).unwrap(), 10.0);
+    /// # nodes.clear().unwrap();
+    /// # assert_eq!(nodes.num_rows(), 0);
+    /// ```
+    pub fn set_nodes(&mut self, nodes: &crate::OwnedNodeTable) -> TskReturnValue {
+        // SAFETY: neither self nor nodes are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_node_table_set_columns(
+                &mut (*self.inner).nodes,
+                (*nodes.as_ptr()).num_rows,
+                (*nodes.as_ptr()).flags,
+                (*nodes.as_ptr()).time,
+                (*nodes.as_ptr()).population,
+                (*nodes.as_ptr()).individual,
+                (*nodes.as_ptr()).metadata,
+                (*nodes.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Set the site table from an [`OwnedSiteTable`](`crate::OwnedSiteTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut sites = tskit::OwnedSiteTable::default();
+    /// sites.add_row(11.0, None).unwrap();
+    /// tables.set_sites(&sites).unwrap();
+    /// assert_eq!(tables.sites().num_rows(), 1);
+    /// assert_eq!(tables.sites().position(0).unwrap(), 11.0);
+    /// # sites.clear().unwrap();
+    /// # assert_eq!(sites.num_rows(), 0);
+    /// ```
+    pub fn set_sites(&mut self, sites: &crate::OwnedSiteTable) -> TskReturnValue {
+        // SAFETY: neither self nor nodes are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_site_table_set_columns(
+                &mut (*self.inner).sites,
+                (*sites.as_ptr()).num_rows,
+                (*sites.as_ptr()).position,
+                (*sites.as_ptr()).ancestral_state,
+                (*sites.as_ptr()).ancestral_state_offset,
+                (*sites.as_ptr()).metadata,
+                (*sites.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Set the mutation table from an [`OwnedMutationTable`](`crate::OwnedSiteTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut mutations = tskit::OwnedMutationTable::default();
+    /// mutations.add_row(14, 12, -1, 11.3, None).unwrap();
+    /// tables.set_mutations(&mutations).unwrap();
+    /// assert_eq!(tables.mutations().num_rows(), 1);
+    /// assert_eq!(tables.mutations().site(0).unwrap(), 14);
+    /// # mutations.clear().unwrap();
+    /// # assert_eq!(mutations.num_rows(), 0);
+    /// ```
+    pub fn set_mutations(&mut self, mutations: &crate::OwnedMutationTable) -> TskReturnValue {
+        // SAFETY: neither self nor nodes are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_mutation_table_set_columns(
+                &mut (*self.inner).mutations,
+                (*mutations.as_ptr()).num_rows,
+                (*mutations.as_ptr()).site,
+                (*mutations.as_ptr()).node,
+                (*mutations.as_ptr()).parent,
+                (*mutations.as_ptr()).time,
+                (*mutations.as_ptr()).derived_state,
+                (*mutations.as_ptr()).derived_state_offset,
+                (*mutations.as_ptr()).metadata,
+                (*mutations.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Set the individual table from an [`OwnedIndividualTable`](`crate::OwnedSiteTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut individuals = tskit::OwnedIndividualTable::default();
+    /// individuals.add_row(0, [0.1, 10.0], None).unwrap();
+    /// tables.set_individuals(&individuals).unwrap();
+    /// assert_eq!(tables.individuals().num_rows(), 1);
+    /// let expected = vec![tskit::Location::from(0.1), tskit::Location::from(10.0)];
+    /// assert_eq!(tables.individuals().location(0).unwrap(), Some(expected.as_slice()));
+    /// # individuals.clear().unwrap();
+    /// # assert_eq!(individuals.num_rows(), 0);
+    /// ```
+    pub fn set_individuals(&mut self, individuals: &crate::OwnedIndividualTable) -> TskReturnValue {
+        // SAFETY: neither self nor nodes are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_individual_table_set_columns(
+                &mut (*self.inner).individuals,
+                (*individuals.as_ptr()).num_rows,
+                (*individuals.as_ptr()).flags,
+                (*individuals.as_ptr()).location,
+                (*individuals.as_ptr()).location_offset,
+                (*individuals.as_ptr()).parents,
+                (*individuals.as_ptr()).parents_offset,
+                (*individuals.as_ptr()).metadata,
+                (*individuals.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Set the migration table from an [`OwnedMigrationTable`](`crate::OwnedSiteTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut migrations = tskit::OwnedMigrationTable::default();
+    /// migrations.add_row((0.25, 0.37), 1, (0, 1), 111.0).unwrap();
+    /// tables.set_migrations(&migrations).unwrap();
+    /// assert_eq!(tables.migrations().num_rows(), 1);
+    /// assert_eq!(tables.migrations().time(0).unwrap(), 111.0);
+    /// # migrations.clear().unwrap();
+    /// # assert_eq!(migrations.num_rows(), 0);
+    /// ```
+    pub fn set_migrations(&mut self, migrations: &crate::OwnedMigrationTable) -> TskReturnValue {
+        // SAFETY: neither self nor edges are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_migration_table_set_columns(
+                &mut (*self.inner).migrations,
+                (*migrations.as_ptr()).num_rows,
+                (*migrations.as_ptr()).left,
+                (*migrations.as_ptr()).right,
+                (*migrations.as_ptr()).node,
+                (*migrations.as_ptr()).source,
+                (*migrations.as_ptr()).dest,
+                (*migrations.as_ptr()).time,
+                (*migrations.as_ptr()).metadata,
+                (*migrations.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    /// Set the population table from an [`OwnedPopulationTable`](`crate::OwnedSiteTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut populations = tskit::OwnedPopulationTable::default();
+    /// populations.add_row().unwrap();
+    /// tables.set_populations(&populations).unwrap();
+    /// assert_eq!(tables.populations().num_rows(), 1);
+    /// # populations.clear().unwrap();
+    /// # assert_eq!(populations.num_rows(), 0);
+    /// ```
+    pub fn set_populations(&mut self, populations: &crate::OwnedPopulationTable) -> TskReturnValue {
+        // SAFETY: neither self nor edges are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_population_table_set_columns(
+                &mut (*self.inner).populations,
+                (*populations.as_ptr()).num_rows,
+                (*populations.as_ptr()).metadata,
+                (*populations.as_ptr()).metadata_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
+
+    #[cfg(any(doc, feature = "provenance"))]
+    /// Set the provenance table from an [`OwnedProvenanceTable`](`crate::provenance::OwnedSiteTable`)
+    ///
+    /// # Errors
+    ///
+    /// Any errors from the C API propagate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[cfg(feature="provenance")] {
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// let mut provenances = tskit::provenance::OwnedProvenanceTable::default();
+    /// provenances.add_row("I like pancakes").unwrap();
+    /// tables.set_provenances(&provenances).unwrap();
+    /// assert_eq!(tables.provenances().num_rows(), 1);
+    /// assert_eq!(tables.provenances().record(0).unwrap(), "I like pancakes");
+    /// # provenances.clear().unwrap();
+    /// # assert_eq!(provenances.num_rows(), 0);
+    /// # }
+    /// ```
+    pub fn set_provenances(
+        &mut self,
+        provenances: &crate::provenance::OwnedProvenanceTable,
+    ) -> TskReturnValue {
+        // SAFETY: neither self nor edges are possible
+        // to create with null pointers.
+        let rv = unsafe {
+            ll_bindings::tsk_provenance_table_set_columns(
+                &mut (*self.inner).provenances,
+                (*provenances.as_ptr()).num_rows,
+                (*provenances.as_ptr()).timestamp,
+                (*provenances.as_ptr()).timestamp_offset,
+                (*provenances.as_ptr()).record,
+                (*provenances.as_ptr()).record_offset,
+            )
+        };
+        handle_tsk_return_value!(rv)
+    }
 }
 
 impl TableAccess for TableCollection {
