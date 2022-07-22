@@ -1,6 +1,4 @@
-use std::mem::MaybeUninit;
-use std::ops::Deref;
-use std::ops::DerefMut;
+use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
@@ -35,11 +33,87 @@ pub struct Tree {
     advanced: bool,
 }
 
-impl Drop for Tree {
-    fn drop(&mut self) {
-        let rv = unsafe { tsk_tree_free(&mut self.inner) };
-        assert_eq!(rv, 0);
+pub struct TreeIterator {
+    tree: ll_bindings::tsk_tree_t,
+    current_tree: i32,
+    advanced: bool,
+    num_nodes: tsk_size_t,
+    array_len: tsk_size_t,
+    flags: TreeFlags,
+}
+
+impl TreeIterator {
+    fn item(&mut self) -> NonOwningTree {
+        NonOwningTree::new(
+            NonNull::from(&mut self.tree),
+            self.current_tree,
+            self.advanced,
+            self.num_nodes,
+            self.array_len,
+            self.flags,
+        )
     }
+}
+
+pub struct NonOwningTree {
+    tree: NonNull<ll_bindings::tsk_tree_t>,
+    current_tree: i32,
+    advanced: bool,
+    num_nodes: tsk_size_t,
+    array_len: tsk_size_t,
+    flags: TreeFlags,
+}
+
+impl NonOwningTree {
+    fn new(
+        tree: NonNull<ll_bindings::tsk_tree_t>,
+        current_tree: i32,
+        advanced: bool,
+        num_nodes: tsk_size_t,
+        array_len: tsk_size_t,
+        flags: TreeFlags,
+    ) -> Self {
+        Self {
+            tree,
+            current_tree,
+            advanced,
+            num_nodes,
+            array_len,
+            flags,
+        }
+    }
+}
+
+impl Iterator for TreeIterator {
+    type Item = NonOwningTree;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rv = if self.current_tree == 0 {
+            unsafe { ll_bindings::tsk_tree_first(&mut self.tree) }
+        } else {
+            unsafe { ll_bindings::tsk_tree_next(&mut self.tree) }
+        };
+        if rv == 0 {
+            self.advanced = false;
+            self.current_tree += 1;
+        } else if rv == 1 {
+            self.advanced = true;
+            self.current_tree += 1;
+        } else if rv < 0 {
+            panic_on_tskit_error!(rv);
+        }
+        if self.advanced {
+            Some(self.item())
+        } else {
+            None
+        }
+    }
+}
+
+// Trait defining iteration over nodes.
+trait NodeIterator {
+    fn next_node(&mut self);
+    fn current_node(&mut self) -> Option<NodeId>;
 }
 
 impl Deref for Tree {
