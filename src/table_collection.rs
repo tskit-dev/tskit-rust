@@ -28,7 +28,7 @@ use libc::{c_char, strlen};
 use ll_bindings::tsk_table_collection_free;
 use mbox::MBox;
 
-pub enum Schema {
+pub enum MetadataSchema {
     Toplevel,
     Edges,
     Nodes,
@@ -1223,7 +1223,7 @@ impl TableCollection {
     ///
     pub fn set_json_metadata_schema_from_str(
         &mut self,
-        level: Schema,
+        level: MetadataSchema,
         schema: impl AsRef<str>,
     ) -> TskReturnValue {
         println!("{} {}", schema.as_ref(), schema.as_ref().len());
@@ -1233,7 +1233,7 @@ impl TableCollection {
         println!("{:?}", cstr);
         println!("{}", len);
         let rv = match level {
-            Schema::Populations => unsafe {
+            MetadataSchema::Populations => unsafe {
                 ll_bindings::tsk_population_table_set_metadata_schema(
                     &mut (*self.inner).populations,
                     cstr.as_bytes_with_nul().as_ptr() as *const c_char,
@@ -2363,7 +2363,7 @@ mod test_metadata_schema {
         assert_eq!(json_schema, json_schema2);
         let mut tables = TableCollection::new(10.).unwrap();
         assert!(tables
-            .set_json_metadata_schema_from_str(Schema::Populations, from_fp11)
+            .set_json_metadata_schema_from_str(MetadataSchema::Populations, from_fp11)
             .is_ok());
         assert!(!unsafe { (*tables.as_ptr()).populations.metadata_schema.is_null() });
         let len = unsafe { (*tables.as_ptr()).populations.metadata_schema_length };
