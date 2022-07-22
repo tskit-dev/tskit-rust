@@ -110,6 +110,12 @@ impl Iterator for TreeIterator {
     }
 }
 
+impl Drop for TreeIterator {
+    fn drop(&mut self) {
+        unsafe { ll_bindings::tsk_tree_free(&mut self.tree) };
+    }
+}
+
 // Trait defining iteration over nodes.
 trait NodeIterator {
     fn next_node(&mut self);
