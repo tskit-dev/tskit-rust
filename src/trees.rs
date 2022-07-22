@@ -1,3 +1,4 @@
+use std::mem::MaybeUninit;
 use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
@@ -43,6 +44,23 @@ pub struct TreeIterator {
 }
 
 impl TreeIterator {
+    // FIXME: init if fallible!
+    fn new(treeseq: &TreeSequence) -> Self {
+        let mut tree = MaybeUninit::<ll_bindings::tsk_tree_t>::uninit();
+        let _rv = unsafe {
+            ll_bindings::tsk_tree_init(tree.as_mut_ptr(), treeseq.inner.as_ref(), 0);
+        };
+        let tree = unsafe { tree.assume_init() };
+
+        Self {
+            tree,
+            current_tree: -1,
+            advanced: false,
+            num_nodes: 0,
+            array_len: 0,
+            flags: 0.into(),
+        }
+    }
     fn item(&mut self) -> NonOwningTree {
         NonOwningTree::new(
             NonNull::from(&mut self.tree),
