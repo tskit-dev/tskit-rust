@@ -58,3 +58,7 @@ name = "tree_traversals"
 
 [[example]]
 name = "forward_simulation"
+
+[[example]]
+name = "metadata_schema"
+required-features = ["derive"]
