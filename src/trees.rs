@@ -760,10 +760,13 @@ pub(crate) mod test_trees {
     }
 
     #[test]
-    fn test_trees() {
+    fn test_new_trees_iterator() {
         let treeseq = treeseq_from_small_table_collection();
         for tree in treeseq.trees() {
-            println!("{:?}", tree);
+            let parents = unsafe {
+                std::slice::from_raw_parts((*tree.tree.as_ptr()).parent as *const NodeId, 4_usize)
+            };
+            println!("{:?}", parents);
         }
 
         // This is a safety sticking point:
