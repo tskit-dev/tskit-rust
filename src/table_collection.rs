@@ -2373,9 +2373,9 @@ mod test_metadata_schema {
         assert_eq!(schema.to_str().unwrap(), from_fp11);
         tables.dump("foo.trees", 0).unwrap();
 
-        let tables = TableCollection::new_from_file("bananas.tables").unwrap();
-        let schema =
-            unsafe { std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema) };
-        println!("from tskit = {}", schema.to_str().unwrap());
+        //let tables = TableCollection::new_from_file("bananas.tables").unwrap();
+        //let schema =
+        //    unsafe { std::ffi::CStr::from_ptr((*tables.as_ptr()).populations.metadata_schema) };
+        //println!("from tskit = {}", schema.to_str().unwrap());
     }
 }
