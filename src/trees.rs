@@ -73,6 +73,7 @@ impl TreeIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct NonOwningTree {
     tree: NonNull<ll_bindings::tsk_tree_t>,
     current_tree: i32,
@@ -439,6 +440,11 @@ impl TreeSequence {
         Ok(tree)
     }
 
+    /// Return an iterator over the trees.
+    pub fn trees(&self) -> impl Iterator<Item = NonOwningTree> + '_ {
+        TreeIterator::new(self)
+    }
+
     /// Get the list of samples as a vector.
     /// # Panics
     ///
@@ -746,6 +752,9 @@ pub(crate) mod test_trees {
             assert_eq!(tree.num_tracked_samples(2.into()).unwrap(), 1);
             assert_eq!(tree.num_tracked_samples(1.into()).unwrap(), 1);
             assert_eq!(tree.num_tracked_samples(0.into()).unwrap(), 2);
+        }
+        for tree in treeseq.trees() {
+            println!("{:?}", tree);
         }
     }
 
