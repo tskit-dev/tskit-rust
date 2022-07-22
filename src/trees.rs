@@ -101,6 +101,10 @@ impl NonOwningTree {
             flags,
         }
     }
+
+    fn as_owned(&self) -> &Self {
+        self
+    }
 }
 
 impl Iterator for TreeIterator {
@@ -753,9 +757,23 @@ pub(crate) mod test_trees {
             assert_eq!(tree.num_tracked_samples(1.into()).unwrap(), 1);
             assert_eq!(tree.num_tracked_samples(0.into()).unwrap(), 2);
         }
+    }
+
+    #[test]
+    fn test_trees() {
+        let treeseq = treeseq_from_small_table_collection();
         for tree in treeseq.trees() {
             println!("{:?}", tree);
         }
+
+        // This is a safety sticking point:
+        // we cannot collect the iterable itself b/c
+        // the underlying tree memory is re-used.
+        let v = treeseq
+            .trees()
+            .map(|t| t.as_owned()) // this is what we mean, but this is broken
+            .collect::<Vec<NonOwningTree>>();
+        assert_eq!(v.len(), 2);
     }
 
     #[should_panic]
