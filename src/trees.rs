@@ -43,6 +43,16 @@ pub struct TreeIterator {
     flags: TreeFlags,
 }
 
+impl FromIterator<NonOwningTree> for Vec<Tree> {
+    fn from_iter<T: IntoIterator<Item = NonOwningTree>>(iter: T) -> Self {
+        let mut out = vec![];
+        for i in iter {
+            unimplemented!("not yet!");
+        }
+        out
+    }
+}
+
 impl TreeIterator {
     // FIXME: init if fallible!
     fn new(treeseq: &TreeSequence) -> Self {
@@ -772,10 +782,9 @@ pub(crate) mod test_trees {
         // This is a safety sticking point:
         // we cannot collect the iterable itself b/c
         // the underlying tree memory is re-used.
-        let v = treeseq
-            .trees()
-            .map(|t| t.as_owned()) // this is what we mean, but this is broken
-            .collect::<Vec<NonOwningTree>>();
+        let i = treeseq
+            .trees();
+        let v = Vec::<Tree>::from_iter(i);
         assert_eq!(v.len(), 2);
     }
 
