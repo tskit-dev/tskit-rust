@@ -93,6 +93,7 @@ mod site_table;
 mod table_collection;
 mod table_iterator;
 mod traits;
+mod tree_interface;
 mod trees;
 pub mod types;
 mod util;
@@ -437,7 +438,8 @@ pub use traits::IndividualParents;
 pub use traits::NodeListGenerator;
 pub use traits::TableAccess;
 pub use traits::TskitTypeAccess;
-pub use trees::{NodeTraversalOrder, Tree, TreeSequence};
+pub use tree_interface::{NodeTraversalOrder, TreeInterface};
+pub use trees::{Tree, TreeSequence};
 
 // Optional features
 #[cfg(any(feature = "provenance", doc))]

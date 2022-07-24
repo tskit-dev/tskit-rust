@@ -1119,7 +1119,8 @@ impl TableCollection {
     }
 
     #[cfg(any(doc, feature = "provenance"))]
-    /// Set the provenance table from an [`OwnedProvenanceTable`](`crate::provenance::OwnedSiteTable`)
+    /// Set the provenance table from an
+    /// [`OwnedProvenanceTable`](`crate::provenance::OwnedProvenanceTable`)
     ///
     /// # Errors
     ///
