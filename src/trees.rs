@@ -1,4 +1,5 @@
 use std::mem::MaybeUninit;
+use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
@@ -782,8 +783,7 @@ pub(crate) mod test_trees {
         // This is a safety sticking point:
         // we cannot collect the iterable itself b/c
         // the underlying tree memory is re-used.
-        let i = treeseq
-            .trees();
+        let i = treeseq.trees();
         let v = Vec::<Tree>::from_iter(i);
         assert_eq!(v.len(), 2);
     }
