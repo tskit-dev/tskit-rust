@@ -158,9 +158,12 @@ use bindings::tsk_size_t;
 /// use tskit::NodeId;
 ///
 /// let n = NodeId::from(11);
-/// assert_eq!(format!("{}", n), "NodeId(11)".to_string());
+/// assert_eq!(format!("{}", n), "11".to_string());
+/// // Debug output contains type info
+/// assert_eq!(format!("{:?}", n), "NodeId(11)".to_string());
 /// let n = NodeId::from(NodeId::NULL);
-/// assert_eq!(format!("{}", n), "NodeId(NULL)".to_string());
+/// assert_eq!(format!("{}", n), "NULL");
+/// assert_eq!(format!("{:?}", n), "NodeId(-1)");
 /// ```
 ///
 #[repr(transparent)]

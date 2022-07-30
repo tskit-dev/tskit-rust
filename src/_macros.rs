@@ -281,8 +281,8 @@ macro_rules! impl_id_traits {
         impl std::fmt::Display for $idtype {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 match *self == Self::NULL {
-                    false => write!(f, "{}({})", stringify!($idtype), self.0),
-                    true => write!(f, "{}(NULL)", stringify!($idtype)),
+                    false => write!(f, "{}", self.0),
+                    true => write!(f, "NULL"),
                 }
             }
         }
