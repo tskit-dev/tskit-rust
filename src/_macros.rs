@@ -622,13 +622,19 @@ macro_rules! node_table_add_row_details {
 macro_rules! node_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
         $(#[$attr])*
-        pub fn $name(
+        pub fn $name<F,T,P,I>(
             &mut $self,
-            flags: impl Into<$crate::NodeFlags>,
-            time: impl Into<$crate::Time>,
-            population: impl Into<$crate::PopulationId>,
-            individual: impl Into<$crate::IndividualId>,
-        ) -> Result<$crate::NodeId, $crate::TskitError> {
+            flags: F ,
+            time: T ,
+            population: P ,
+            individual: I ,
+        ) -> Result<$crate::NodeId, $crate::TskitError>
+        where
+            F: Into<$crate::NodeFlags>,
+            T:Into<$crate::Time>,
+            P:Into<$crate::PopulationId>,
+            I:Into<$crate::IndividualId>
+        {
             node_table_add_row_details!(flags,
                                         time,
                                         population,
@@ -643,15 +649,19 @@ macro_rules! node_table_add_row {
 macro_rules! node_table_add_row_with_metadata {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
         $(#[$attr])*
-        pub fn $name<M>(
+        pub fn $name<F,T,P,I,M>(
             &mut $self,
-            flags: impl Into<$crate::NodeFlags>,
-            time: impl Into<$crate::Time>,
-            population: impl Into<$crate::PopulationId>,
-            individual: impl Into<$crate::IndividualId>,
+            flags: F,
+            time: T,
+            population: P,
+            individual: I,
             metadata: &M,
         ) -> Result<$crate::NodeId, $crate::TskitError>
         where
+            F: Into<$crate::NodeFlags>,
+            T:Into<$crate::Time>,
+            P:Into<$crate::PopulationId>,
+            I:Into<$crate::IndividualId>,
             M: $crate::metadata::NodeMetadata,
         {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
@@ -692,13 +702,19 @@ macro_rules! edge_table_add_row_details {
 macro_rules! edge_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name(
+        pub fn $name<L,R,P,C>(
             &mut $self,
-            left: impl Into<$crate::Position>,
-            right: impl Into<$crate::Position>,
-            parent: impl Into<$crate::NodeId>,
-            child: impl Into<$crate::NodeId>,
-        ) -> Result<$crate::EdgeId, $crate::TskitError> {
+            left: L,
+            right: R,
+            parent: P,
+            child: C,
+        ) -> Result<$crate::EdgeId, $crate::TskitError>
+        where
+            L: Into<$crate::Position>,
+            R: Into<$crate::Position>,
+            P: Into<$crate::NodeId>,
+            C: Into<$crate::NodeId>,
+        {
             edge_table_add_row_details!(left,
                                         right,
                                         parent,
@@ -713,16 +729,21 @@ macro_rules! edge_table_add_row {
 macro_rules! edge_table_add_row_with_metadata {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name<M>(
+        pub fn $name<L,R,P,C,M>(
             &mut $self,
-            left: impl Into<$crate::Position>,
-            right: impl Into<$crate::Position>,
-            parent: impl Into<$crate::NodeId>,
-            child: impl Into<$crate::NodeId>,
+            left: L,
+            right: R,
+            parent: P,
+            child: C,
             metadata: &M,
         ) -> Result<$crate::EdgeId, $crate::TskitError>
         where
-            M: $crate::metadata::EdgeMetadata {
+            L: Into<$crate::Position>,
+            R: Into<$crate::Position>,
+            P: Into<$crate::NodeId>,
+            C: Into<$crate::NodeId>,
+            M: $crate::metadata::EdgeMetadata
+        {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
             edge_table_add_row_details!(left,
                                         right,
@@ -793,11 +814,16 @@ macro_rules! individual_table_add_row_details {
 macro_rules! individual_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name(&mut $self,
-        flags: impl Into<$crate::IndividualFlags>,
-        location: impl $crate::IndividualLocation,
-        parents: impl $crate::IndividualParents,
-        ) -> Result<$crate::IndividualId, $crate::TskitError> {
+        pub fn $name<F,L,P>(&mut $self,
+        flags: F,
+        location: L,
+        parents: P,
+        ) -> Result<$crate::IndividualId, $crate::TskitError>
+        where
+            F: Into<$crate::IndividualFlags>,
+            L: $crate::IndividualLocation,
+            P: $crate::IndividualParents,
+        {
             individual_table_add_row_details!(flags,
                                               location,
                                               parents,
@@ -811,21 +837,26 @@ macro_rules! individual_table_add_row {
 macro_rules! individual_table_add_row_with_metadata {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name<M>(&mut $self,
-                        flags: impl Into<$crate::IndividualFlags>,
-                        location: impl $crate::IndividualLocation,
-                        parents: impl $crate::IndividualParents,
+        pub fn $name<F,L,P,M>(&mut $self,
+                        flags: F,
+                        location: L,
+                        parents: P,
                         metadata: &M,
         ) -> Result<$crate::IndividualId, $crate::TskitError>
-            where M: $crate::metadata::IndividualMetadata {
-            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
-            individual_table_add_row_details!(flags,
-                                              location,
-                                              parents,
-                                              md.as_ptr(),
-                                              md.len().into(),
-                                              $table)
-        }
+            where
+                F: Into<$crate::IndividualFlags>,
+                L: $crate::IndividualLocation,
+                P: $crate::IndividualParents,
+                M: $crate::metadata::IndividualMetadata
+            {
+                let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+                individual_table_add_row_details!(flags,
+                                                  location,
+                                                  parents,
+                                                  md.as_ptr(),
+                                                  md.len().into(),
+                                                  $table)
+            }
     };
 }
 
@@ -856,12 +887,17 @@ macro_rules! mutation_table_add_row_details {
 macro_rules! mutation_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name(&mut $self,
-                     site: impl Into<$crate::SiteId>,
-                     node: impl Into<$crate::NodeId>,
-                     parent: impl Into<$crate::MutationId>,
-                     time: impl Into<$crate::Time>,
+        pub fn $name<S,N,P,T>(&mut $self,
+                     site: S,
+                     node: N,
+                     parent: P,
+                     time: T,
                      derived_state: Option<&[u8]>) -> Result<$crate::MutationId, $crate::TskitError>
+        where
+             S: Into<$crate::SiteId>,
+             N: Into<$crate::NodeId>,
+             P: Into<$crate::MutationId>,
+             T: Into<$crate::Time>,
         {
             mutation_table_add_row_details!(site,
                                             node,
@@ -878,14 +914,18 @@ macro_rules! mutation_table_add_row {
 macro_rules! mutation_table_add_row_with_metadata {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name<M>(&mut $self,
-                        site: impl Into<$crate::SiteId>,
-                        node: impl Into<$crate::NodeId>,
-                        parent: impl Into<$crate::MutationId>,
-                        time: impl Into<$crate::Time>,
-                        derived_state: Option<&[u8]>,
-                        metadata: &M) -> Result<$crate::MutationId, $crate::TskitError>
+        pub fn $name<S,N,P,T,M>(&mut $self,
+                                site: S,
+                                node: N,
+                                parent: P,
+                                time: T,
+                                derived_state: Option<&[u8]>,
+                                metadata: &M) -> Result<$crate::MutationId, $crate::TskitError>
             where
+                S: Into<$crate::SiteId>,
+                N: Into<$crate::NodeId>,
+                P: Into<$crate::MutationId>,
+                T: Into<$crate::Time>,
                 M: $crate::metadata::MutationMetadata
         {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
@@ -925,9 +965,12 @@ macro_rules! site_table_add_row_details {
 macro_rules! site_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name(&mut $self,
-                     position: impl Into<$crate::Position>,
-                     ancestral_state: Option<&[u8]>) -> Result<$crate::SiteId, $crate::TskitError> {
+        pub fn $name<P>(&mut $self,
+                     position: P,
+                     ancestral_state: Option<&[u8]>) -> Result<$crate::SiteId, $crate::TskitError>
+        where
+            P: Into<$crate::Position>,
+        {
             site_table_add_row_details!(position, ancestral_state,
                                         std::ptr::null(), 0, $table)
         }
@@ -937,11 +980,14 @@ macro_rules! site_table_add_row {
 macro_rules! site_table_add_row_with_metadata {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name<M>(&mut $self,
-                        position: impl Into<$crate::Position>,
+        pub fn $name<P, M>(&mut $self,
+                        position: P,
                         ancestral_state: Option<&[u8]>,
                         metadata: &M) -> Result<$crate::SiteId, $crate::TskitError>
-        where M: $crate::metadata::SiteMetadata {
+        where
+            P: Into<$crate::Position>,
+            M: $crate::metadata::SiteMetadata
+        {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
             site_table_add_row_details!(position, ancestral_state,
                                         md.as_ptr(),
@@ -979,12 +1025,20 @@ macro_rules! migration_table_add_row_details {
 macro_rules! migration_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name(&mut $self,
-                     span: (impl Into<$crate::Position>, impl Into<$crate::Position>),
-                     node: impl Into<$crate::NodeId>,
-                     source_dest: (impl Into<$crate::PopulationId>, impl Into<$crate::PopulationId>),
-                     time: impl Into<$crate::Time>)
-        -> Result<$crate::MigrationId, $crate::TskitError> {
+        pub fn $name<LEFT,RIGHT,N,SOURCE,DEST,T>(&mut $self,
+                     span: (LEFT, RIGHT),
+                     node: N,
+                     source_dest: (SOURCE, DEST),
+                     time: T)
+        -> Result<$crate::MigrationId, $crate::TskitError>
+        where
+            LEFT: Into<$crate::Position>,
+            RIGHT: Into<$crate::Position>,
+            N: Into<$crate::NodeId>,
+            SOURCE: Into<$crate::PopulationId>,
+            DEST: Into<$crate::PopulationId>,
+            T: Into<$crate::Time>,
+        {
             migration_table_add_row_details!(span, node, source_dest, time, std::ptr::null(), 0, $table)
         }
     };
@@ -993,14 +1047,22 @@ macro_rules! migration_table_add_row {
 macro_rules! migration_table_add_row_with_metadata {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
-        pub fn $name<M>(&mut $self,
-                        span: (impl Into<$crate::Position>, impl Into<$crate::Position>),
-                        node: impl Into<$crate::NodeId>,
-                        source_dest: (impl Into<$crate::PopulationId>, impl Into<$crate::PopulationId>),
-                        time: impl Into<$crate::Time>,
+        pub fn $name<LEFT, RIGHT,N,SOURCE,DEST,T,M>(&mut $self,
+                        span: (LEFT, RIGHT),
+                        node: N,
+                        source_dest: (SOURCE, DEST),
+                        time: T,
                         metadata: &M)
         -> Result<$crate::MigrationId, $crate::TskitError>
-        where M: $crate::metadata::MigrationMetadata {
+        where
+            LEFT: Into<$crate::Position>,
+            RIGHT: Into<$crate::Position>,
+            N: Into<$crate::NodeId>,
+            SOURCE: Into<$crate::PopulationId>,
+            DEST: Into<$crate::PopulationId>,
+            T: Into<$crate::Time>,
+            M: $crate::metadata::MigrationMetadata
+        {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
             migration_table_add_row_details!(span, node, source_dest, time,
                                              md.as_ptr(), md.len().into(), $table)
