@@ -90,6 +90,7 @@ mod population_table;
 pub mod prelude;
 mod site_table;
 mod table_collection;
+mod table_collection_interface;
 mod table_iterator;
 mod traits;
 mod tree_interface;
