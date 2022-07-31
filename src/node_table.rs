@@ -298,8 +298,8 @@ build_owned_table_type!(
 );
 
 impl OwnedNodeTable {
-    node_table_add_row!(=> add_row, self, table);
-    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, table);
+    node_table_add_row!(=> add_row, self, (*self.table));
+    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, (*self.table));
 }
 
 #[cfg(test)]

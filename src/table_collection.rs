@@ -364,7 +364,7 @@ impl TableCollection {
 
     node_table_add_row!(
     /// Add a row to the node table
-    => add_node, self, inner, nodes
+    => add_node, self, (*self.inner).nodes
     );
 
     node_table_add_row_with_metadata!(
@@ -389,7 +389,7 @@ impl TableCollection {
     /// assert!(tables.add_node_with_metadata(0, 0.0, -1, -1, &metadata).is_ok());
     /// # }
     /// ```
-    => add_node_with_metadata, self, inner, nodes);
+    => add_node_with_metadata, self, (*self.inner).nodes);
 
     site_table_add_row!(
     /// Add a row to the site table
