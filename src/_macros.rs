@@ -620,7 +620,7 @@ macro_rules! node_table_add_row_details {
 }
 
 macro_rules! node_table_add_row {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
         pub fn $name<F,T,P,I>(
             &mut $self,
@@ -641,13 +641,13 @@ macro_rules! node_table_add_row {
                                         individual,
                                         std::ptr::null(),
                                         0,
-                                        (*$self.$table)$(.$table2)?)
+                                        $table)
         }
     };
 }
 
 macro_rules! node_table_add_row_with_metadata {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: ident $(, $table2: ident )?) => {
+    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
         pub fn $name<F,T,P,I,M>(
             &mut $self,
@@ -671,7 +671,7 @@ macro_rules! node_table_add_row_with_metadata {
                                         individual,
                                         md.as_ptr(),
                                         md.len().into(),
-                                        (*$self.$table)$(.$table2)?)
+                                        $table)
         }
     };
 }
