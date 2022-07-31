@@ -1,6 +1,20 @@
 use crate::bindings as ll_bindings;
+use crate::tsk_id_t;
+use crate::tsk_size_t;
+use crate::types::Bookmark;
+use crate::EdgeId;
+use crate::IndividualTableSortOptions;
+use crate::NodeId;
 use crate::Position;
+use crate::SimplificationOptions;
+use crate::TableClearOptions;
 use crate::TableCollection;
+use crate::TableEqualityOptions;
+use crate::TableIntegrityCheckFlags;
+use crate::TableOutputOptions;
+use crate::TableSortOptions;
+use crate::TreeSequenceFlags;
+use crate::TskReturnValue;
 use crate::TskitError;
 use crate::TskitTypeAccess;
 use std::ptr::NonNull;
@@ -216,7 +230,7 @@ impl TableCollectionInterface {
 
     node_table_add_row!(
     /// Add a row to the node table
-    => add_node, self, inner, nodes
+    => add_node, self, (*self.as_mut_ptr()).nodes
     );
 
     node_table_add_row_with_metadata!(
@@ -270,11 +284,11 @@ impl TableCollectionInterface {
     ///                                       &metadata).is_ok());
     /// # }
     /// ```
-    => add_site_with_metadata, self, (*self.inner).sites);
+    => add_site_with_metadata, self, (*self.as_mut_ptr()).sites);
 
     mutation_table_add_row!(
     /// Add a row to the mutation table.
-    => add_mutation, self, (*self.inner).mutations);
+    => add_mutation, self, (*self.as_mut_ptr()).mutations);
 
     mutation_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the mutation table.
@@ -298,7 +312,7 @@ impl TableCollectionInterface {
     ///                                           &metadata).is_ok());
     /// # }
     /// ```
-    => add_mutation_with_metadata, self, (*self.inner).mutations);
+    => add_mutation_with_metadata, self, (*self.as_mut_ptr()).mutations);
 
     population_table_add_row!(
     /// Add a row to the population_table
@@ -309,7 +323,7 @@ impl TableCollectionInterface {
     /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
     /// tables.add_population().unwrap();
     /// ```
-    => add_population, self, (*self.inner).populations);
+    => add_population, self, (*self.as_mut_ptr()).populations);
 
     population_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the population_table
@@ -331,7 +345,7 @@ impl TableCollectionInterface {
     /// let metadata = PopulationMetadata{x: 1};
     /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
     /// # }
-    => add_population_with_metadata, self, (*self.inner).populations);
+    => add_population_with_metadata, self, (*self.as_mut_ptr()).populations);
 
     /// Build the "input" and "output"
     /// indexes for the edge table.
@@ -554,16 +568,6 @@ impl TableCollectionInterface {
         handle_tsk_return_value!(rv, copy)
     }
 
-    /// Return a [`crate::TreeSequence`] based on the tables.
-    /// This function will raise errors if tables are not sorted,
-    /// not indexed, or invalid in any way.
-    pub fn tree_sequence(
-        self,
-        flags: TreeSequenceFlags,
-    ) -> Result<crate::TreeSequence, TskitError> {
-        crate::TreeSequence::new(self, flags)
-    }
-
     /// Simplify tables in place.
     ///
     /// # Parameters
@@ -585,7 +589,10 @@ impl TableCollectionInterface {
     ) -> Result<Option<Vec<NodeId>>, TskitError> {
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
-            output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
+            let num_nodes: usize = unsafe { (*self.as_ptr()).nodes.num_rows }
+                .try_into()
+                .unwrap();
+            output_node_map.resize(num_nodes, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -735,7 +742,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_edge_table_set_columns(
-                &mut (*self.inner).edges,
+                &mut (*self.as_mut_ptr()).edges,
                 (*edges.as_ptr()).num_rows,
                 (*edges.as_ptr()).left,
                 (*edges.as_ptr()).right,
@@ -772,7 +779,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_node_table_set_columns(
-                &mut (*self.inner).nodes,
+                &mut (*self.as_mut_ptr()).nodes,
                 (*nodes.as_ptr()).num_rows,
                 (*nodes.as_ptr()).flags,
                 (*nodes.as_ptr()).time,
@@ -809,7 +816,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_site_table_set_columns(
-                &mut (*self.inner).sites,
+                &mut (*self.as_mut_ptr()).sites,
                 (*sites.as_ptr()).num_rows,
                 (*sites.as_ptr()).position,
                 (*sites.as_ptr()).ancestral_state,
@@ -845,7 +852,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_set_columns(
-                &mut (*self.inner).mutations,
+                &mut (*self.as_mut_ptr()).mutations,
                 (*mutations.as_ptr()).num_rows,
                 (*mutations.as_ptr()).site,
                 (*mutations.as_ptr()).node,
@@ -885,7 +892,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_individual_table_set_columns(
-                &mut (*self.inner).individuals,
+                &mut (*self.as_mut_ptr()).individuals,
                 (*individuals.as_ptr()).num_rows,
                 (*individuals.as_ptr()).flags,
                 (*individuals.as_ptr()).location,
@@ -923,7 +930,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_migration_table_set_columns(
-                &mut (*self.inner).migrations,
+                &mut (*self.as_mut_ptr()).migrations,
                 (*migrations.as_ptr()).num_rows,
                 (*migrations.as_ptr()).left,
                 (*migrations.as_ptr()).right,
@@ -961,7 +968,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_population_table_set_columns(
-                &mut (*self.inner).populations,
+                &mut (*self.as_mut_ptr()).populations,
                 (*populations.as_ptr()).num_rows,
                 (*populations.as_ptr()).metadata,
                 (*populations.as_ptr()).metadata_offset,
