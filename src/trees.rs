@@ -23,8 +23,7 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t, TableCollection};
-use ll_bindings::{tsk_tree_free, tsk_treeseq_free};
-use mbox::MBox;
+use ll_bindings::tsk_tree_free;
 use std::ptr::NonNull;
 
 /// A Tree.
@@ -165,13 +164,36 @@ impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
 /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
 /// ```
 pub struct TreeSequence {
-    pub(crate) inner: MBox<ll_bindings::tsk_treeseq_t>,
+    pub(crate) inner: ll_bindings::tsk_treeseq_t,
+}
+
+impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
+    fn wrap() -> Self {
+        let inner = std::mem::MaybeUninit::<ll_bindings::tsk_treeseq_t>::uninit();
+        let inner = unsafe { inner.assume_init() };
+        Self { inner }
+    }
 }
 
 unsafe impl Send for TreeSequence {}
 unsafe impl Sync for TreeSequence {}
 
-build_tskit_type!(TreeSequence, ll_bindings::tsk_treeseq_t, tsk_treeseq_free);
+impl TskitTypeAccess<ll_bindings::tsk_treeseq_t> for TreeSequence {
+    fn as_ptr(&self) -> *const ll_bindings::tsk_treeseq_t {
+        &self.inner
+    }
+
+    fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_treeseq_t {
+        &mut self.inner
+    }
+}
+
+impl Drop for TreeSequence {
+    fn drop(&mut self) {
+        let rv = unsafe { ll_bindings::tsk_treeseq_free(&mut self.inner) };
+        assert_eq!(rv, 0);
+    }
+}
 
 impl TreeSequence {
     /// Create a tree sequence from a [`TableCollection`].
@@ -475,7 +497,7 @@ impl TreeSequence {
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
-                &mut (*(*self.inner).tables).provenances,
+                &mut (*self.inner.tables).provenances,
                 timestamp.as_ptr() as *mut i8,
                 timestamp.len() as tsk_size_t,
                 record.as_ptr() as *mut i8,
@@ -496,37 +518,37 @@ impl TryFrom<TableCollection> for TreeSequence {
 
 impl TableAccess for TreeSequence {
     fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(unsafe { &(*(*self.inner).tables).edges })
+        EdgeTable::new_from_table(unsafe { &(*self.inner.tables).edges })
     }
 
     fn individuals(&self) -> IndividualTable {
-        IndividualTable::new_from_table(unsafe { &(*(*self.inner).tables).individuals })
+        IndividualTable::new_from_table(unsafe { &(*self.inner.tables).individuals })
     }
 
     fn migrations(&self) -> MigrationTable {
-        MigrationTable::new_from_table(unsafe { &(*(*self.inner).tables).migrations })
+        MigrationTable::new_from_table(unsafe { &(*self.inner.tables).migrations })
     }
 
     fn nodes(&self) -> NodeTable {
-        NodeTable::new_from_table(unsafe { &(*(*self.inner).tables).nodes })
+        NodeTable::new_from_table(unsafe { &(*self.inner.tables).nodes })
     }
 
     fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(unsafe { &(*(*self.inner).tables).sites })
+        SiteTable::new_from_table(unsafe { &(*self.inner.tables).sites })
     }
 
     fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(unsafe { &(*(*self.inner).tables).mutations })
+        MutationTable::new_from_table(unsafe { &(*self.inner.tables).mutations })
     }
 
     fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(unsafe { &(*(*self.inner).tables).populations })
+        PopulationTable::new_from_table(unsafe { &(*self.inner.tables).populations })
     }
 
     #[cfg(any(feature = "provenance", doc))]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
         crate::provenance::ProvenanceTable::new_from_table(unsafe {
-            &(*(*self.inner).tables).provenances
+            &(*self.inner.tables).provenances
         })
     }
 }
