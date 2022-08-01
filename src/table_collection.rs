@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::table_collection_interface::TableCollectionInterface;
