@@ -4,7 +4,6 @@ use std::ops::DerefMut;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::WrapTskitType;
 use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;
@@ -167,14 +166,6 @@ pub struct TreeSequence {
     pub(crate) inner: ll_bindings::tsk_treeseq_t,
 }
 
-impl crate::ffi::WrapTskitType<ll_bindings::tsk_treeseq_t> for TreeSequence {
-    fn wrap() -> Self {
-        let inner = std::mem::MaybeUninit::<ll_bindings::tsk_treeseq_t>::uninit();
-        let inner = unsafe { inner.assume_init() };
-        Self { inner }
-    }
-}
-
 unsafe impl Send for TreeSequence {}
 unsafe impl Sync for TreeSequence {}
 
@@ -243,17 +234,16 @@ impl TreeSequence {
         tables: TableCollection,
         flags: F,
     ) -> Result<Self, TskitError> {
-        let mut treeseq = Self::wrap();
+        let mut inner = std::mem::MaybeUninit::<ll_bindings::tsk_treeseq_t>::uninit();
         let mut flags: u32 = flags.into().bits();
         flags |= ll_bindings::TSK_TAKE_OWNERSHIP;
         let raw_tables_ptr = tables.into_raw()?;
         let rv =
-            unsafe { ll_bindings::tsk_treeseq_init(treeseq.as_mut_ptr(), raw_tables_ptr, flags) };
-        handle_tsk_return_value!(rv, treeseq)
-    }
-
-    fn new_uninit() -> Self {
-        Self::wrap()
+            unsafe { ll_bindings::tsk_treeseq_init(inner.as_mut_ptr(), raw_tables_ptr, flags) };
+        handle_tsk_return_value!(rv, {
+            let inner = unsafe { inner.assume_init() };
+            Self { inner }
+        })
     }
 
     /// Dump the tree sequence to file.
@@ -294,13 +284,15 @@ impl TreeSequence {
     ///
     /// [`TskitError`] will be raised if the underlying C library returns an error code.
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
-        let mut copy = TableCollection::new_uninit();
+        let mut inner = crate::table_collection::uninit_table_collection();
 
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, copy.as_mut_ptr(), 0)
+            ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, &mut *inner, 0)
         };
 
-        handle_tsk_return_value!(rv, copy)
+        // SAFETY: we just initialized it.
+        // The C API doesn't free NULL pointers.
+        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_mbox(inner) })
     }
 
     /// Create an iterator over trees.
@@ -428,7 +420,7 @@ impl TreeSequence {
     ) -> Result<(Self, Option<Vec<NodeId>>), TskitError> {
         // The output is an UNINITIALIZED treeseq,
         // else we leak memory.
-        let mut ts = Self::new_uninit();
+        let mut ts = MaybeUninit::<ll_bindings::tsk_treeseq_t>::uninit();
         let mut output_node_map: Vec<NodeId> = vec![];
         if idmap {
             output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
@@ -450,7 +442,10 @@ impl TreeSequence {
         handle_tsk_return_value!(
             rv,
             (
-                ts,
+                {
+                    let inner = unsafe { ts.assume_init() };
+                    Self { inner }
+                },
                 match idmap {
                     true => Some(output_node_map),
                     false => None,
