@@ -34,6 +34,13 @@ impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollectionInt
 }
 
 impl TableCollectionInterface {
+    pub(crate) fn new(ptr: *mut ll_bindings::tsk_table_collection_t) -> Option<Self> {
+        match NonNull::new(ptr) {
+            Some(inner) => Some(Self { inner }),
+            None => None,
+        }
+    }
+
     /// Length of the sequence/"genome".
     /// # Examples
     ///

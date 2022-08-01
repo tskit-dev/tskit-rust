@@ -1,5 +1,8 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
+use crate::table_collection_interface::TableCollectionInterface;
 use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::IndividualTable;
@@ -60,6 +63,7 @@ use mbox::MBox;
 ///
 pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
+    api: TableCollectionInterface,
 }
 
 impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
@@ -119,7 +123,8 @@ impl TableCollection {
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
-        let mut tables = Self { inner: mbox };
+        let api = TableCollectionInterface::new(&mut *mbox).unwrap();
+        let mut tables = Self { inner: mbox, api };
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
@@ -134,7 +139,9 @@ impl TableCollection {
     /// requiring an uninitialized table collection.
     /// Consult the C API docs before using!
     pub(crate) unsafe fn new_from_mbox(mbox: MBox<ll_bindings::tsk_table_collection_t>) -> Self {
-        Self { inner: mbox }
+        let mut mbox = mbox;
+        let api = TableCollectionInterface::new(&mut *mbox).unwrap();
+        Self { inner: mbox, api }
     }
 
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
