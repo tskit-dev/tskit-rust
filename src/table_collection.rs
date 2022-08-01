@@ -1,3 +1,6 @@
+use std::ops::Deref;
+use std::ops::DerefMut;
+
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::table_collection_interface::TableCollectionInterface;
@@ -62,6 +65,20 @@ use mbox::MBox;
 pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
     api: TableCollectionInterface,
+}
+
+impl Deref for TableCollection {
+    type Target = TableCollectionInterface;
+
+    fn deref(&self) -> &Self::Target {
+        &self.api
+    }
+}
+
+impl DerefMut for TableCollection {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.api
+    }
 }
 
 impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
