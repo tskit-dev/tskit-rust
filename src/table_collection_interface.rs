@@ -560,12 +560,13 @@ impl TableCollectionInterface {
     pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
         // The output is UNINITIALIZED tables,
         // else we leak memory
-        let mut copy = TableCollection::new_uninit();
+        let mut copy = crate::table_collection::uninit_table_collection();
 
-        let rv =
-            unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), copy.as_mut_ptr(), 0) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), &mut *copy, 0) };
 
-        handle_tsk_return_value!(rv, copy)
+        // SAFETY: we just initialized it.
+        // The C API won't free NULL pointers.
+        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_mbox(copy) })
     }
 
     /// Simplify tables in place.
