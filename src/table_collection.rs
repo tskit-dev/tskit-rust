@@ -1,6 +1,5 @@
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::ffi::WrapTskitType;
 use crate::types::Bookmark;
 use crate::EdgeTable;
 use crate::IndividualTable;
@@ -60,14 +59,38 @@ use mbox::MBox;
 /// ```
 ///
 pub struct TableCollection {
-    pub(crate) inner: MBox<ll_bindings::tsk_table_collection_t>,
+    inner: MBox<ll_bindings::tsk_table_collection_t>,
 }
 
-build_tskit_type!(
-    TableCollection,
-    ll_bindings::tsk_table_collection_t,
-    tsk_table_collection_free
-);
+impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
+    fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
+        &*self.inner
+    }
+
+    fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
+        &mut *self.inner
+    }
+}
+
+impl Drop for TableCollection {
+    fn drop(&mut self) {
+        let rv = unsafe { tsk_table_collection_free(self.as_mut_ptr()) };
+        assert_eq!(rv, 0);
+    }
+}
+
+/// Returns a pointer to an uninitialized tsk_table_collection_t
+pub(crate) fn uninit_table_collection() -> MBox<ll_bindings::tsk_table_collection_t> {
+    let temp = unsafe {
+        libc::malloc(std::mem::size_of::<ll_bindings::tsk_table_collection_t>())
+            as *mut ll_bindings::tsk_table_collection_t
+    };
+    let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_table_collection_t>::new(temp) {
+        Some(x) => x,
+        None => panic!("out of memory"),
+    };
+    unsafe { MBox::from_non_null_raw(nonnull) }
+}
 
 impl TableCollection {
     /// Create a new table collection with a sequence length.
@@ -91,19 +114,27 @@ impl TableCollection {
                 expected: "sequence_length >= 0.0".to_string(),
             });
         }
-        let mut tables = Self::wrap();
-        let rv = unsafe { ll_bindings::tsk_table_collection_init(tables.as_mut_ptr(), 0) };
+        let mut mbox = uninit_table_collection();
+        let rv = unsafe { ll_bindings::tsk_table_collection_init(&mut *mbox, 0) };
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
+        let mut tables = Self { inner: mbox };
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
         Ok(tables)
     }
 
-    pub(crate) fn new_uninit() -> Self {
-        Self::wrap()
+    /// # Safety
+    ///
+    /// It is possible that the mbox's inner pointer has not be run through
+    /// tsk_table_collection_init, meaning that it is in an uninitialized state.
+    /// Or, it may be initialized and about to be used in a part of the C API
+    /// requiring an uninitialized table collection.
+    /// Consult the C API docs before using!
+    pub(crate) unsafe fn new_from_mbox(mbox: MBox<ll_bindings::tsk_table_collection_t>) -> Self {
+        Self { inner: mbox }
     }
 
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
@@ -694,12 +725,13 @@ impl TableCollection {
     pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
         // The output is UNINITIALIZED tables,
         // else we leak memory
-        let mut copy = Self::new_uninit();
+        let mut inner = uninit_table_collection();
 
-        let rv =
-            unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), copy.as_mut_ptr(), 0) };
+        let rv = unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), &mut *inner, 0) };
 
-        handle_tsk_return_value!(rv, copy)
+        // SAFETY: we just initialized it.
+        // The C API doesn't free NULL pointers.
+        handle_tsk_return_value!(rv, unsafe { Self::new_from_mbox(inner) })
     }
 
     /// Return a [`crate::TreeSequence`] based on the tables.
