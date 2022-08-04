@@ -356,7 +356,7 @@ impl TreeSequence {
         for i in 0..num_samples {
             let u = match isize::try_from(i) {
                 Ok(o) => NodeId::from(unsafe { *(*self.as_ptr()).samples.offset(o) }),
-                Err(e) => panic!("{e}"),
+                Err(e) => panic!("{}", e),
             };
             rv.push(u);
         }
