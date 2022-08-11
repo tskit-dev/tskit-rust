@@ -1,4 +1,4 @@
-# rust bindings for tskit
+# rust bindings for tskit <img align="right" width="145" height="90" src="https://raw.githubusercontent.com/tskit-dev/administrative/main/logos/svg/tskit-rust/Tskit_rust_logo.eps.svg">
 
 ![CI tests](https://github.com/molpopgen/tskit_rust/workflows/CI/badge.svg)
 
