@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::types::Bookmark;
@@ -60,6 +62,7 @@ use mbox::MBox;
 ///
 pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
+    idmap: Vec<NodeId>,
 }
 
 impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
@@ -119,7 +122,10 @@ impl TableCollection {
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
-        let mut tables = Self { inner: mbox };
+        let mut tables = Self {
+            inner: mbox,
+            idmap: vec![],
+        };
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
         }
@@ -134,7 +140,10 @@ impl TableCollection {
     /// requiring an uninitialized table collection.
     /// Consult the C API docs before using!
     pub(crate) unsafe fn new_from_mbox(mbox: MBox<ll_bindings::tsk_table_collection_t>) -> Self {
-        Self { inner: mbox }
+        Self {
+            inner: mbox,
+            idmap: vec![],
+        }
     }
 
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
@@ -762,10 +771,10 @@ impl TableCollection {
         samples: &[N],
         options: O,
         idmap: bool,
-    ) -> Result<Option<Vec<NodeId>>, TskitError> {
-        let mut output_node_map: Vec<NodeId> = vec![];
+    ) -> Result<Option<&[NodeId]>, TskitError> {
         if idmap {
-            output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
+            self.idmap
+                .resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -774,7 +783,7 @@ impl TableCollection {
                 samples.len() as tsk_size_t,
                 options.into().bits(),
                 match idmap {
-                    true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
+                    true => self.idmap.as_mut_ptr().cast::<tsk_id_t>(),
                     false => std::ptr::null_mut(),
                 },
             )
@@ -782,7 +791,7 @@ impl TableCollection {
         handle_tsk_return_value!(
             rv,
             match idmap {
-                true => Some(output_node_map),
+                true => Some(&self.idmap),
                 false => None,
             }
         )
