@@ -262,7 +262,7 @@ pub struct SizeType(tsk_size_t);
 
 impl std::fmt::Display for SizeType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SizeType({})", self.0)
+        write!(f, "{}", self.0)
     }
 }
 
