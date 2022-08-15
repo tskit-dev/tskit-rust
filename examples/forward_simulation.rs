@@ -1,3 +1,4 @@
+use clap::Parser;
 /*
  * Forward simulation without selection:
  *
@@ -18,7 +19,6 @@
  *   and numbers of crossovers, etc.., from being entered
  *   on the command line.
  */
-use clap::{Arg, Command};
 use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
@@ -26,14 +26,71 @@ use rand_distr::{Exp, Uniform};
 use tskit::TableAccess;
 use tskit::TskitTypeAccess;
 
+#[derive(clap::Parser)]
 struct SimParams {
+    #[clap(
+        short = 'N',
+        long = "popsize",
+        value_parser,
+        default_value_t = 1000,
+        help = "Diploid population size. Default = 1,000"
+    )]
     pub popsize: u32,
+    #[clap(
+        short = 'n',
+        long = "nsteps",
+        value_parser,
+        default_value_t = 1000,
+        help = "Number of birth steps to simulate. For non-overlapping generations, this is the number of generations to simulate. Default = 1,000."
+    )]
     pub nsteps: u32,
+    #[clap(
+        short = 'x',
+        long = "xovers",
+        value_parser,
+        default_value_t = 0.0,
+        help = "Mean number of crossovers per meiosis. The number of crossovers is Poisson-distributed with this value. Default = 0.0."
+    )]
     pub xovers: f64,
+    #[clap(
+        short = 'P',
+        long = "psurvival",
+        value_parser,
+        default_value_t = 0.0,
+        help = "Survival probability. A value of 0.0 is the Wright-Fisher model of non-overlapping generations.  Values must b 0.0 <= p < 1.0.  Default = 0.0."
+    )]
     pub psurvival: f64,
+    #[clap(
+        short = 'L',
+        long = "genome_length",
+        value_parser,
+        default_value_t = 1e6,
+        help = "Genome length (continuous units).  Default = 1e6."
+    )]
     pub genome_length: f64,
+    #[clap(
+        short = 's',
+        long = "simplification_interval",
+        value_parser,
+        default_value_t = 100,
+        help = "Number of birth steps between simplifications. Default = 100."
+    )]
     pub simplification_interval: u32,
+    #[clap(
+        short = 't',
+        long = "treefile",
+        value_parser,
+        default_value = "treefile.trees",
+        help = "Name of output file. The format is a tskit \"trees\" file. Default = \"treefile.trees\"."
+    )]
     pub treefile: String,
+    #[clap(
+        short = 'S',
+        long = "seed",
+        value_parser,
+        default_value_t = 0,
+        help = "Random number seed. Default = 0."
+    )]
     pub seed: u64,
 }
 
@@ -64,84 +121,6 @@ impl std::fmt::Display for BadParameter {
 }
 
 impl SimParams {
-    fn new() -> Self {
-        let mut params = SimParams::default();
-
-        let matches = Command::new("forward_simulation")
-            .arg(
-                Arg::new("popsize")
-                    .short('N')
-                    .long("popsize")
-                    .help("Diploid population size. Default = 1,000.")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("nsteps")
-                    .short('n')
-                    .long("nsteps")
-                    .help("Number of birth steps to simulate. For non-overlapping generations, this is the number of generations to simulate. Default = 1,000.")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("xovers")
-                    .short('x')
-                    .long("xovers")
-                    .help("Mean number of crossovers per meiosis. The number of crossovers is Poisson-distributed with this value. Default = 0.0.")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("genome_length")
-                    .short('L')
-                    .long("genome_length")
-                    .help("Genome length (continuous units).  Default = 1e6.")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("simplification_interval")
-                    .short('s')
-                    .long("simplify")
-                    .help("Number of birth steps between simplifications. Default = 100.")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("treefile")
-                    .short('t')
-                    .long("treefile")
-                    .help("Name of output file. The format is a tskit \"trees\" file. Default = \"treefile.trees\".")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("seed")
-                    .short('S')
-                    .long("seed")
-                    .help("Random number seed. Default = 0.")
-                    .takes_value(true),
-            )
-            .arg(
-                Arg::new("psurvival")
-                    .short('P')
-                    .long("psurvival")
-                    .help("Survival probability. A value of 0.0 is the Wright-Fisher model of non-overlapping generations.  Values must b 0.0 <= p < 1.0.  Default = 0.0.")
-                    .takes_value(true),
-            )
-            .get_matches();
-
-        params.popsize = matches.value_of_t("popsize").unwrap_or(params.popsize);
-        params.nsteps = matches.value_of_t("nsteps").unwrap_or(params.nsteps);
-        params.xovers = matches.value_of_t("xovers").unwrap_or(params.xovers);
-        params.genome_length = matches
-            .value_of_t("genome_length")
-            .unwrap_or(params.genome_length);
-        params.simplification_interval = matches
-            .value_of_t("simplification_interval")
-            .unwrap_or(params.simplification_interval);
-        params.seed = matches.value_of_t("seed").unwrap_or(params.seed);
-        params.psurvival = matches.value_of_t("psurvival").unwrap_or(params.psurvival);
-        params.treefile = matches.value_of_t("treefile").unwrap_or(params.treefile);
-
-        params
-    }
-
     // NOTE: This function is incomplete.
     fn validate(&self) -> Result<(), BadParameter> {
         match self.psurvival.partial_cmp(&0.0) {
@@ -501,7 +480,7 @@ fn runsim(params: &SimParams) -> tskit::TableCollection {
 }
 
 fn main() {
-    let params = SimParams::new();
+    let params = SimParams::parse();
     params.validate().unwrap();
 
     let tables = runsim(&params);
@@ -516,14 +495,14 @@ fn main() {
 #[test]
 #[should_panic]
 fn test_bad_genome_length() {
-    let mut params = SimParams::new();
+    let mut params = SimParams::default();
     params.genome_length = -1.0;
     let _tables = runsim(&params);
 }
 
 #[test]
 fn test_nonoverlapping_generations() {
-    let mut params = SimParams::new();
+    let mut params = SimParams::default();
     params.nsteps = 500;
     params.xovers = 1e-3;
     params.validate().unwrap();
@@ -532,7 +511,7 @@ fn test_nonoverlapping_generations() {
 
 #[test]
 fn test_overlapping_generations() {
-    let mut params = SimParams::new();
+    let mut params = SimParams::default();
     params.nsteps = 100;
     params.xovers = 1e-3;
     params.psurvival = 0.25;
