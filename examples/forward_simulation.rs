@@ -368,9 +368,9 @@ fn simplify(
         Ok(x) => match x {
             Some(idmap) => {
                 for a in alive.iter_mut() {
-                    a.node0 = idmap[usize::from(a.node0)];
+                    a.node0 = idmap[usize::try_from(a.node0).unwrap()];
                     assert!(a.node0 != tskit::NodeId::NULL);
-                    a.node1 = idmap[usize::from(a.node1)];
+                    a.node1 = idmap[usize::try_from(a.node1).unwrap()];
                     assert!(a.node1 != tskit::NodeId::NULL);
                 }
             }

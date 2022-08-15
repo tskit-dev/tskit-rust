@@ -37,7 +37,7 @@ mod tests {
         assert!(idmap_option.is_some());
         let idmap = idmap_option.unwrap();
         for &i in samples {
-            assert_ne!(idmap[usize::from(i)], NodeId::NULL);
+            assert_ne!(idmap[usize::try_from(i).unwrap()], NodeId::NULL);
         }
     }
 }
