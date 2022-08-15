@@ -248,9 +248,16 @@ macro_rules! impl_id_traits {
             }
         }
 
-        impl From<$idtype> for usize {
-            fn from(value: $idtype) -> Self {
-                value.0 as usize
+        impl TryFrom<$idtype> for usize {
+            type Error = crate::TskitError;
+            fn try_from(value: $idtype) -> Result<Self, Self::Error> {
+                match value.0.try_into() {
+                    Ok(value) => Ok(value),
+                    Err(_) => Err(crate::TskitError::RangeError(format!(
+                        "could not convert {:?} to usize",
+                        value
+                    ))),
+                }
             }
         }
 
