@@ -192,7 +192,7 @@ impl TableCollection {
     pub fn new_from_file(filename: impl AsRef<str>) -> Result<Self, TskitError> {
         // Arbitrary sequence_length.
         let mut tables = match TableCollection::new(1.0) {
-            Ok(t) => (t),
+            Ok(t) => t,
             Err(e) => return Err(e),
         };
 
