@@ -46,6 +46,10 @@ impl FromIterator<NonOwningTree> for Vec<Tree> {
     fn from_iter<T: IntoIterator<Item = NonOwningTree>>(iter: T) -> Self {
         let mut out = vec![];
         for i in iter {
+            let mut lltree = MaybeUninit::<ll_bindings::tsk_tree_t>::uninit();
+            // NOTE: the following is fallible, but this function is not meant to be
+            let rv = unsafe { ll_bindings::tsk_tree_copy(i.tree.as_ptr(), lltree.as_mut_ptr(), 0) };
+            assert_eq!(rv, 0);
             unimplemented!("not yet!");
         }
         out
