@@ -1,6 +1,5 @@
 use std::mem::MaybeUninit;
 use std::ops::{Deref, DerefMut};
-use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
@@ -22,7 +21,6 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t, TableCollection};
-use ll_bindings::tsk_tree_free;
 use std::ptr::NonNull;
 
 /// A Tree.
@@ -59,7 +57,7 @@ impl TreeIterator {
     fn new(treeseq: &TreeSequence) -> Self {
         let mut tree = MaybeUninit::<ll_bindings::tsk_tree_t>::uninit();
         let _rv = unsafe {
-            ll_bindings::tsk_tree_init(tree.as_mut_ptr(), treeseq.inner.as_ref(), 0);
+            ll_bindings::tsk_tree_init(tree.as_mut_ptr(), treeseq.as_ptr(), 0);
         };
         let tree = unsafe { tree.assume_init() };
 
