@@ -89,11 +89,20 @@ impl TreeIterator {
 #[derive(Debug)]
 pub struct NonOwningTree {
     tree: NonNull<ll_bindings::tsk_tree_t>,
+    api: TreeInterface,
     current_tree: i32,
     advanced: bool,
     num_nodes: tsk_size_t,
     array_len: tsk_size_t,
     flags: TreeFlags,
+}
+
+impl Deref for NonOwningTree {
+    type Target = TreeInterface;
+
+    fn deref(&self) -> &Self::Target {
+        &self.api
+    }
 }
 
 impl NonOwningTree {
@@ -105,8 +114,10 @@ impl NonOwningTree {
         array_len: tsk_size_t,
         flags: TreeFlags,
     ) -> Self {
+        let api = TreeInterface::new(tree, num_nodes, array_len, flags);
         Self {
             tree,
+            api,
             current_tree,
             advanced,
             num_nodes,
@@ -458,7 +469,7 @@ impl TreeSequence {
     }
 
     /// Return an iterator over the trees.
-    pub fn trees(&self) -> impl Iterator<Item = NonOwningTree> + '_ {
+    pub fn trees(&self) -> impl Iterator<Item = impl Deref<Target = TreeInterface>> + '_ {
         TreeIterator::new(self)
     }
 
