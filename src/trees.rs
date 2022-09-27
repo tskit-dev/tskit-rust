@@ -44,19 +44,18 @@ pub struct TreeIterator {
 
 impl TreeIterator {
     // FIXME: init if fallible!
-    fn new(treeseq: &TreeSequence) -> Self {
+    fn new(treeseq: &TreeSequence, num_nodes: u64) -> Self {
         let mut tree = MaybeUninit::<ll_bindings::tsk_tree_t>::uninit();
         let rv = unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), treeseq.as_ptr(), 0) };
         assert_eq!(rv, 0);
         let tree = unsafe { tree.assume_init() };
 
-        unimplemented!("need to handle num_nodes, etc...");
         Self {
             tree,
             current_tree: -1,
             advanced: false,
-            num_nodes: 0,
-            array_len: 0,
+            num_nodes,
+            array_len: num_nodes + 1,
             flags: 0.into(),
         }
     }
@@ -456,7 +455,9 @@ impl TreeSequence {
 
     /// Return an iterator over the trees.
     pub fn trees(&self) -> impl Iterator<Item = impl Deref<Target = TreeInterface>> + '_ {
-        TreeIterator::new(self)
+        // TODO: should have a safe wrapper for this
+        let num_nodes = unsafe { (*(*self.as_ptr()).tables).nodes.num_rows };
+        TreeIterator::new(self, num_nodes)
     }
 
     /// Get the list of samples as a vector.
