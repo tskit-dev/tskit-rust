@@ -50,6 +50,7 @@ impl TreeIterator {
         assert_eq!(rv, 0);
         let tree = unsafe { tree.assume_init() };
 
+        unimplemented!("need to handle num_nodes, etc...");
         Self {
             tree,
             current_tree: -1,
