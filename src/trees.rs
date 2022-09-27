@@ -770,9 +770,17 @@ pub(crate) mod test_trees {
         // This is a safety sticking point:
         // we cannot collect the iterable itself b/c
         // the underlying tree memory is re-used.
-        // let i = treeseq.trees();
-        // let v = Vec::<Tree>::from_iter(i);
-        // assert_eq!(v.len(), 2);
+        let i = treeseq.trees();
+        let v = Vec::<_>::from_iter(i);
+        assert_eq!(v.len(), 2);
+        for i in v {
+            println!("{:?}", i.parent_array());
+        }
+
+        let v = treeseq.trees().collect::<Vec<_>>();
+        for i in v {
+            println!("{:?}", i.parent_array());
+        }
     }
 
     #[should_panic]
