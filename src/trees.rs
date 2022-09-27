@@ -70,6 +70,7 @@ impl TreeIterator {
 }
 
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct NonOwningTree {
     api: TreeInterface,
 }
@@ -90,9 +91,7 @@ impl NonOwningTree {
         flags: TreeFlags,
     ) -> Self {
         let api = TreeInterface::new(tree, num_nodes, array_len, flags);
-        Self {
-            api,
-        }
+        Self { api }
     }
 }
 
