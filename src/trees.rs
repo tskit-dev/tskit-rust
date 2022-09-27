@@ -767,6 +767,10 @@ pub(crate) mod test_trees {
             }
         }
 
+        // NOTE: the following blocks make cargo valgrind crash,
+        // which is a sign of badness.
+        panic!("cargo valgrind will fail here");
+
         // This is a safety sticking point:
         // we cannot collect the iterable itself b/c
         // the underlying tree memory is re-used.
