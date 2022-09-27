@@ -10,6 +10,7 @@ use crate::TskitError;
 use crate::TskitTypeAccess;
 use std::ptr::NonNull;
 
+#[derive(Debug)]
 pub struct TreeInterface {
     non_owned_pointer: NonNull<ll_bindings::tsk_tree_t>,
     num_nodes: tsk_size_t,

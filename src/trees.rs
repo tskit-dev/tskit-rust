@@ -787,18 +787,19 @@ pub(crate) mod test_trees {
     fn test_new_trees_iterator() {
         let treeseq = treeseq_from_small_table_collection();
         for tree in treeseq.trees() {
-            let parents = unsafe {
-                std::slice::from_raw_parts((*tree.tree.as_ptr()).parent as *const NodeId, 4_usize)
-            };
-            println!("{:?}", parents);
+            for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
+                for p in tree.parents(n).unwrap() {
+                    println!("{:?}", p);
+                }
+            }
         }
 
         // This is a safety sticking point:
         // we cannot collect the iterable itself b/c
         // the underlying tree memory is re-used.
-        let i = treeseq.trees();
-        let v = Vec::<Tree>::from_iter(i);
-        assert_eq!(v.len(), 2);
+        // let i = treeseq.trees();
+        // let v = Vec::<Tree>::from_iter(i);
+        // assert_eq!(v.len(), 2);
     }
 
     #[should_panic]
