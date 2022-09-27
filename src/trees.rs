@@ -46,9 +46,8 @@ impl TreeIterator {
     // FIXME: init if fallible!
     fn new(treeseq: &TreeSequence) -> Self {
         let mut tree = MaybeUninit::<ll_bindings::tsk_tree_t>::uninit();
-        let _rv = unsafe {
-            ll_bindings::tsk_tree_init(tree.as_mut_ptr(), treeseq.as_ptr(), 0);
-        };
+        let rv = unsafe { ll_bindings::tsk_tree_init(tree.as_mut_ptr(), treeseq.as_ptr(), 0) };
+        assert_eq!(rv, 0);
         let tree = unsafe { tree.assume_init() };
 
         Self {
