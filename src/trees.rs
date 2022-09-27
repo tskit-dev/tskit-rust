@@ -161,6 +161,12 @@ impl Deref for Tree {
     }
 }
 
+impl Drop for Tree {
+    fn drop(&mut self) {
+        let rv = unsafe { ll_bindings::tsk_tree_free(&mut self.inner) };
+    }
+}
+
 impl DerefMut for Tree {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.api
