@@ -62,8 +62,6 @@ impl TreeIterator {
     fn item(&mut self) -> NonOwningTree {
         NonOwningTree::new(
             NonNull::from(&mut self.tree),
-            self.current_tree,
-            self.advanced,
             self.num_nodes,
             self.array_len,
             self.flags,
@@ -73,13 +71,7 @@ impl TreeIterator {
 
 #[derive(Debug)]
 pub struct NonOwningTree {
-    tree: NonNull<ll_bindings::tsk_tree_t>,
     api: TreeInterface,
-    current_tree: i32,
-    advanced: bool,
-    num_nodes: tsk_size_t,
-    array_len: tsk_size_t,
-    flags: TreeFlags,
 }
 
 impl Deref for NonOwningTree {
@@ -93,26 +85,14 @@ impl Deref for NonOwningTree {
 impl NonOwningTree {
     fn new(
         tree: NonNull<ll_bindings::tsk_tree_t>,
-        current_tree: i32,
-        advanced: bool,
         num_nodes: tsk_size_t,
         array_len: tsk_size_t,
         flags: TreeFlags,
     ) -> Self {
         let api = TreeInterface::new(tree, num_nodes, array_len, flags);
         Self {
-            tree,
             api,
-            current_tree,
-            advanced,
-            num_nodes,
-            array_len,
-            flags,
         }
-    }
-
-    fn as_owned(&self) -> &Self {
-        self
     }
 }
 
