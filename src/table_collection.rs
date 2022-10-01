@@ -1397,8 +1397,8 @@ mod test {
         // should probably test against what C thinks is going on :)
         let input = unsafe {
             std::slice::from_raw_parts(
-                (*tables.inner).indexes.edge_insertion_order,
-                (*tables.inner).indexes.num_edges as usize,
+                tables.inner.indexes.edge_insertion_order,
+                tables.inner.indexes.num_edges as usize,
             )
         };
 
@@ -1414,8 +1414,8 @@ mod test {
 
         let output = unsafe {
             std::slice::from_raw_parts(
-                (*tables.inner).indexes.edge_removal_order,
-                (*tables.inner).indexes.num_edges as usize,
+                tables.inner.indexes.edge_removal_order,
+                tables.inner.indexes.num_edges as usize,
             )
         };
         assert!(!output.is_empty());
@@ -1692,7 +1692,7 @@ mod test {
         let tables2 = TableCollection::new_from_file(treefile).unwrap();
         assert!(tables.equals(&tables2, TableEqualityOptions::default()));
 
-        std::fs::remove_file(&treefile).unwrap();
+        std::fs::remove_file(treefile).unwrap();
     }
 
     #[test]
@@ -1893,7 +1893,7 @@ mod test_adding_individual {
     #[test]
     fn test_adding_individual_without_metadata() {
         let mut tables = make_empty_table_collection(10.);
-        match tables.add_individual(0, &[0., 0., 0.], &[IndividualId::NULL, IndividualId::NULL]) {
+        match tables.add_individual(0, [0., 0., 0.], [IndividualId::NULL, IndividualId::NULL]) {
             Ok(IndividualId(0)) => (),
             _ => panic!("Expected NodeId(0)"),
         };
@@ -1917,7 +1917,7 @@ mod test_adding_individual {
         assert!(row.location.is_none());
         assert!(row.parents.is_none());
         let row_id = tables
-            .add_individual(0, &[0.2, 0.4, 0.6], &[1, 2, 3, 4])
+            .add_individual(0, [0.2, 0.4, 0.6], [1, 2, 3, 4])
             .unwrap();
         assert_eq!(row_id, 2);
         assert_eq!(
