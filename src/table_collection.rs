@@ -262,7 +262,7 @@ impl TableCollection {
     ///
     /// See [`TableCollection::check_integrity`] for how to catch these data model
     /// violations.
-    => add_edge, self, (*self.inner).edges);
+    => add_edge, self, self.inner.edges);
 
     edge_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the edge table
@@ -285,7 +285,7 @@ impl TableCollection {
     /// assert!(tables.add_edge_with_metadata(0., 53., 1, 11, &metadata).is_ok());
     /// # }
     /// ```
-    => add_edge_with_metadata, self, (*self.inner).edges);
+    => add_edge_with_metadata, self, self.inner.edges);
 
     individual_table_add_row!(
     /// Add a row to the individual table
@@ -324,7 +324,7 @@ impl TableCollection {
     /// #     None => panic!("expected parents"),
     /// # }
     /// ```
-    => add_individual, self, (*self.inner).individuals);
+    => add_individual, self, self.inner.individuals);
 
     individual_table_add_row_with_metadata!(
     /// Add a row with metadata to the individual table
@@ -350,7 +350,7 @@ impl TableCollection {
     /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
     /// # assert_eq!(decoded.x, 1);
     /// # }
-    => add_individual_with_metadata, self, (*self.inner).individuals);
+    => add_individual_with_metadata, self, self.inner.individuals);
 
     migration_table_add_row!(
     /// Add a row to the migration table
@@ -368,7 +368,7 @@ impl TableCollection {
     ///                              (0, 1),
     ///                              53.5).is_ok());
     /// ```
-    => add_migration, self, (*self.inner).migrations);
+    => add_migration, self, self.inner.migrations);
 
     migration_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the migration table
@@ -400,11 +400,11 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    => add_migration_with_metadata, self, (*self.inner).migrations);
+    => add_migration_with_metadata, self, self.inner.migrations);
 
     node_table_add_row!(
     /// Add a row to the node table
-    => add_node, self, (*self.inner).nodes
+    => add_node, self, self.inner.nodes
     );
 
     node_table_add_row_with_metadata!(
@@ -429,11 +429,11 @@ impl TableCollection {
     /// assert!(tables.add_node_with_metadata(0, 0.0, -1, -1, &metadata).is_ok());
     /// # }
     /// ```
-    => add_node_with_metadata, self, (*self.inner).nodes);
+    => add_node_with_metadata, self, self.inner.nodes);
 
     site_table_add_row!(
     /// Add a row to the site table
-    => add_site, self, (*self.inner).sites);
+    => add_site, self, self.inner.sites);
 
     site_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the site table
@@ -458,11 +458,11 @@ impl TableCollection {
     ///                                       &metadata).is_ok());
     /// # }
     /// ```
-    => add_site_with_metadata, self, (*self.inner).sites);
+    => add_site_with_metadata, self, self.inner.sites);
 
     mutation_table_add_row!(
     /// Add a row to the mutation table.
-    => add_mutation, self, (*self.inner).mutations);
+    => add_mutation, self, self.inner.mutations);
 
     mutation_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the mutation table.
@@ -486,7 +486,7 @@ impl TableCollection {
     ///                                           &metadata).is_ok());
     /// # }
     /// ```
-    => add_mutation_with_metadata, self, (*self.inner).mutations);
+    => add_mutation_with_metadata, self, self.inner.mutations);
 
     population_table_add_row!(
     /// Add a row to the population_table
@@ -497,7 +497,7 @@ impl TableCollection {
     /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
     /// tables.add_population().unwrap();
     /// ```
-    => add_population, self, (*self.inner).populations);
+    => add_population, self, self.inner.populations);
 
     population_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the population_table
@@ -519,7 +519,7 @@ impl TableCollection {
     /// let metadata = PopulationMetadata{x: 1};
     /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
     /// # }
-    => add_population_with_metadata, self, (*self.inner).populations);
+    => add_population_with_metadata, self, self.inner.populations);
 
     /// Build the "input" and "output"
     /// indexes for the edge table.
@@ -898,7 +898,7 @@ impl TableCollection {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
     /// # }
     /// ```
-    => add_provenance, self, (*self.inner).provenances);
+    => add_provenance, self, self.inner.provenances);
 
     /// Set the edge table from an [`OwnedEdgeTable`](`crate::OwnedEdgeTable`)
     ///
@@ -924,7 +924,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_edge_table_set_columns(
-                &mut (*self.inner).edges,
+                &mut self.inner.edges,
                 (*edges.as_ptr()).num_rows,
                 (*edges.as_ptr()).left,
                 (*edges.as_ptr()).right,
@@ -961,7 +961,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_node_table_set_columns(
-                &mut (*self.inner).nodes,
+                &mut self.inner.nodes,
                 (*nodes.as_ptr()).num_rows,
                 (*nodes.as_ptr()).flags,
                 (*nodes.as_ptr()).time,
@@ -998,7 +998,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_site_table_set_columns(
-                &mut (*self.inner).sites,
+                &mut self.inner.sites,
                 (*sites.as_ptr()).num_rows,
                 (*sites.as_ptr()).position,
                 (*sites.as_ptr()).ancestral_state,
@@ -1034,7 +1034,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_set_columns(
-                &mut (*self.inner).mutations,
+                &mut self.inner.mutations,
                 (*mutations.as_ptr()).num_rows,
                 (*mutations.as_ptr()).site,
                 (*mutations.as_ptr()).node,
@@ -1074,7 +1074,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_individual_table_set_columns(
-                &mut (*self.inner).individuals,
+                &mut self.inner.individuals,
                 (*individuals.as_ptr()).num_rows,
                 (*individuals.as_ptr()).flags,
                 (*individuals.as_ptr()).location,
@@ -1112,7 +1112,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_migration_table_set_columns(
-                &mut (*self.inner).migrations,
+                &mut self.inner.migrations,
                 (*migrations.as_ptr()).num_rows,
                 (*migrations.as_ptr()).left,
                 (*migrations.as_ptr()).right,
@@ -1150,7 +1150,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_population_table_set_columns(
-                &mut (*self.inner).populations,
+                &mut self.inner.populations,
                 (*populations.as_ptr()).num_rows,
                 (*populations.as_ptr()).metadata,
                 (*populations.as_ptr()).metadata_offset,
@@ -1190,7 +1190,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_set_columns(
-                &mut (*self.inner).provenances,
+                &mut self.inner.provenances,
                 (*provenances.as_ptr()).num_rows,
                 (*provenances.as_ptr()).timestamp,
                 (*provenances.as_ptr()).timestamp_offset,
@@ -1204,36 +1204,36 @@ impl TableCollection {
 
 impl TableAccess for TableCollection {
     fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(&(*self.inner).edges)
+        EdgeTable::new_from_table(&self.inner.edges)
     }
 
     fn individuals(&self) -> IndividualTable {
-        IndividualTable::new_from_table(&(*self.inner).individuals)
+        IndividualTable::new_from_table(&self.inner.individuals)
     }
 
     fn migrations(&self) -> MigrationTable {
-        MigrationTable::new_from_table(&(*self.inner).migrations)
+        MigrationTable::new_from_table(&self.inner.migrations)
     }
 
     fn nodes(&self) -> NodeTable {
-        NodeTable::new_from_table(&(*self.inner).nodes)
+        NodeTable::new_from_table(&self.inner.nodes)
     }
 
     fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(&(*self.inner).sites)
+        SiteTable::new_from_table(&self.inner.sites)
     }
 
     fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(&(*self.inner).mutations)
+        MutationTable::new_from_table(&self.inner.mutations)
     }
 
     fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(&(*self.inner).populations)
+        PopulationTable::new_from_table(&self.inner.populations)
     }
 
     #[cfg(any(feature = "provenance", doc))]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
-        crate::provenance::ProvenanceTable::new_from_table(&(*self.inner).provenances)
+        crate::provenance::ProvenanceTable::new_from_table(&self.inner.provenances)
     }
 }
 
