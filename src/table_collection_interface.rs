@@ -724,7 +724,7 @@ impl TableCollectionInterface {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
     /// # }
     /// ```
-    => add_provenance, self, (*self.inner).provenances);
+    => add_provenance, self, (self.inner.as_mut()).provenances);
 
     /// Set the edge table from an [`OwnedEdgeTable`](`crate::OwnedEdgeTable`)
     ///
@@ -1016,7 +1016,7 @@ impl TableCollectionInterface {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_set_columns(
-                &mut (*self.inner).provenances,
+                &mut (self.inner.as_mut()).provenances,
                 (*provenances.as_ptr()).num_rows,
                 (*provenances.as_ptr()).timestamp,
                 (*provenances.as_ptr()).timestamp_offset,
