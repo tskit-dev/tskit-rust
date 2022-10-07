@@ -33,22 +33,22 @@ impl PartialEq for MigrationTableRow {
 }
 
 fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
-    // panic is okay here, as we are handling a bad
-    // input value before we first call this to
-    // set up the iterator
-    let p = crate::SizeType::try_from(pos).unwrap();
-    if p < table.num_rows() {
-        let table_ref = table.table_;
-        Some(MigrationTableRow {
-            id: pos.into(),
-            left: table.left(pos).unwrap(),
-            right: table.right(pos).unwrap(),
-            node: table.node(pos).unwrap(),
-            source: table.source(pos).unwrap(),
-            dest: table.dest(pos).unwrap(),
-            time: table.time(pos).unwrap(),
-            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-        })
+    if let Ok(p) = crate::SizeType::try_from(pos) {
+        if p < table.num_rows() {
+            let table_ref = table.table_;
+            Some(MigrationTableRow {
+                id: pos.into(),
+                left: table.left(pos).unwrap(),
+                right: table.right(pos).unwrap(),
+                node: table.node(pos).unwrap(),
+                source: table.source(pos).unwrap(),
+                dest: table.dest(pos).unwrap(),
+                time: table.time(pos).unwrap(),
+                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+            })
+        } else {
+            None
+        }
     } else {
         None
     }

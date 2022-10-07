@@ -30,22 +30,22 @@ impl PartialEq for MutationTableRow {
 }
 
 fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<MutationTableRow> {
-    // panic is okay here, as we are handling a bad
-    // input value before we first call this to
-    // set up the iterator
-    let p = crate::SizeType::try_from(pos).unwrap();
-    if p < table.num_rows() {
-        let table_ref = table.table_;
-        let rv = MutationTableRow {
-            id: pos.into(),
-            site: table.site(pos).unwrap(),
-            node: table.node(pos).unwrap(),
-            parent: table.parent(pos).unwrap(),
-            time: table.time(pos).unwrap(),
-            derived_state: table.derived_state(pos).unwrap().map(|s| s.to_vec()),
-            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-        };
-        Some(rv)
+    if let Ok(p) = crate::SizeType::try_from(pos) {
+        if p < table.num_rows() {
+            let table_ref = table.table_;
+            let rv = MutationTableRow {
+                id: pos.into(),
+                site: table.site(pos).unwrap(),
+                node: table.node(pos).unwrap(),
+                parent: table.parent(pos).unwrap(),
+                time: table.time(pos).unwrap(),
+                derived_state: table.derived_state(pos).unwrap().map(|s| s.to_vec()),
+                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+            };
+            Some(rv)
+        } else {
+            None
+        }
     } else {
         None
     }
