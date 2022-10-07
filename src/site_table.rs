@@ -25,19 +25,19 @@ impl PartialEq for SiteTableRow {
 }
 
 fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
-    // panic is okay here, as we are handling a bad
-    // input value before we first call this to
-    // set up the iterator
-    let p = crate::SizeType::try_from(pos).unwrap();
-    if p < table.num_rows() {
-        let table_ref = table.table_;
-        let rv = SiteTableRow {
-            id: pos.into(),
-            position: table.position(pos).unwrap(),
-            ancestral_state: table.ancestral_state(pos).unwrap().map(|s| s.to_vec()),
-            metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-        };
-        Some(rv)
+    if let Ok(p) = crate::SizeType::try_from(pos) {
+        if p < table.num_rows() {
+            let table_ref = table.table_;
+            let rv = SiteTableRow {
+                id: pos.into(),
+                position: table.position(pos).unwrap(),
+                ancestral_state: table.ancestral_state(pos).unwrap().map(|s| s.to_vec()),
+                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+            };
+            Some(rv)
+        } else {
+            None
+        }
     } else {
         None
     }

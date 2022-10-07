@@ -45,16 +45,16 @@ impl std::fmt::Display for ProvenanceTableRow {
 }
 
 fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
-    // panic is okay here, as we are handling a bad
-    // input value before we first call this to
-    // set up the iterator
-    let p = crate::SizeType::try_from(pos).unwrap();
-    if p < table.num_rows() {
-        Some(ProvenanceTableRow {
-            id: pos.into(),
-            timestamp: table.timestamp(pos).unwrap(),
-            record: table.record(pos).unwrap(),
-        })
+    if let Ok(p) = crate::SizeType::try_from(pos) {
+        if p < table.num_rows() {
+            Some(ProvenanceTableRow {
+                id: pos.into(),
+                timestamp: table.timestamp(pos).unwrap(),
+                record: table.record(pos).unwrap(),
+            })
+        } else {
+            None
+        }
     } else {
         None
     }
