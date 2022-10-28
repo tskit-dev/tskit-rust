@@ -153,9 +153,7 @@ macro_rules! decode_metadata_row {
 
 macro_rules! table_row_decode_metadata {
     ($owner: ident, $table: ident, $pos: ident) => {
-        metadata_to_vector!($owner, $table, $pos)
-            .unwrap()
-            .map(|x| x)
+        metadata_to_vector!($owner, $table, $pos).ok()?.map(|x| x)
     };
 }
 
@@ -184,17 +182,10 @@ macro_rules! err_if_not_tracking_samples {
 // This macro assumes that table row access helper
 // functions have a standard interface.
 // Here, we convert the None type to an Error,
-// as it applies $row is out of range.
+// as it implies $row is out of range.
 macro_rules! table_row_access {
     ($row: expr, $table: expr, $row_fn: ident) => {
-        if $row < 0 {
-            Err(TskitError::IndexError)
-        } else {
-            match $row_fn($table, $row) {
-                Some(x) => Ok(x),
-                None => Err(TskitError::IndexError),
-            }
-        }
+        $row_fn($table, $row).ok_or_else(|| TskitError::IndexError {})
     };
 }
 
