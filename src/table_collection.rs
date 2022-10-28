@@ -196,7 +196,9 @@ impl TableCollection {
             Err(e) => return Err(e),
         };
 
-        let c_str = std::ffi::CString::new(filename.as_ref()).unwrap();
+        let c_str = std::ffi::CString::new(filename.as_ref()).map_err(|_| {
+            TskitError::LibraryError("call to ffi::CString::new failed".to_string())
+        })?;
         let rv = unsafe {
             ll_bindings::tsk_table_collection_load(
                 tables.as_mut_ptr(),
@@ -547,7 +549,7 @@ impl TableCollection {
             Some(unsafe {
                 std::slice::from_raw_parts(
                     (*self.as_ptr()).indexes.edge_insertion_order as *const EdgeId,
-                    usize::try_from((*self.as_ptr()).indexes.num_edges).unwrap(),
+                    usize::try_from((*self.as_ptr()).indexes.num_edges).ok()?,
                 )
             })
         } else {
@@ -563,7 +565,7 @@ impl TableCollection {
             Some(unsafe {
                 std::slice::from_raw_parts(
                     (*self.as_ptr()).indexes.edge_removal_order as *const EdgeId,
-                    usize::try_from((*self.as_ptr()).indexes.num_edges).unwrap(),
+                    usize::try_from((*self.as_ptr()).indexes.num_edges).ok()?,
                 )
             })
         } else {
@@ -681,7 +683,9 @@ impl TableCollection {
     /// This function allocates a `CString` to pass the file name to the C API.
     /// A panic will occur if the system runs out of memory.
     pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
-        let c_str = std::ffi::CString::new(filename).unwrap();
+        let c_str = std::ffi::CString::new(filename).map_err(|_| {
+            TskitError::LibraryError("call to ffi::CString::new failed".to_string())
+        })?;
         let rv = unsafe {
             ll_bindings::tsk_table_collection_dump(
                 self.as_ptr(),
