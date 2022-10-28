@@ -113,11 +113,13 @@ pub trait TableAccess {
         Box::new(make_table_iterator::<IndividualTable>(self.individuals()))
     }
 
-    #[cfg(any(feature = "provenance", doc))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
     fn provenances(&self) -> crate::provenance::ProvenanceTable;
 
-    #[cfg(any(feature = "provenance", doc))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Return an iterator over provenances
     fn provenances_iter(
         &self,

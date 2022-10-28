@@ -1032,7 +1032,8 @@ macro_rules! migration_table_add_row_with_metadata {
     };
 }
 
-#[cfg(any(doc, feature = "provenance"))]
+#[cfg(feature = "provenance")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
 macro_rules! provenance_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*

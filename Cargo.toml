@@ -50,6 +50,7 @@ derive = ["tskit-derive", "serde", "serde_json", "bincode"]
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--cfg", "doc_cfg"]
 
 # Not run during tests
 [[example]]

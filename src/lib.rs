@@ -44,7 +44,7 @@
 //! Some features are optional, and are activated by requesting them in your `Cargo.toml` file.
 //!
 //! * `provenance`
-//!     * Enables [`provenance`]
+//!     * Enables `provenance`
 //! * `derive` enables the following derive macros:
 //!     * [`crate::metadata::MutationMetadata`]
 //!     * [`crate::metadata::IndividualMetadata`]
@@ -72,6 +72,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
 
 #[allow(deref_nullptr)]
 #[allow(rustdoc::broken_intra_doc_links)]
@@ -444,10 +445,12 @@ pub use tree_interface::{NodeTraversalOrder, TreeInterface};
 pub use trees::{Tree, TreeSequence};
 
 // Optional features
-#[cfg(any(feature = "provenance", doc))]
+#[cfg(feature = "provenance")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
 pub mod provenance;
 
-#[cfg(any(feature = "provenance", doc))]
+#[cfg(feature = "provenance")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
 /// A provenance ID
 ///
 /// This is an integer referring to a row of a [``provenance::ProvenanceTable``].
