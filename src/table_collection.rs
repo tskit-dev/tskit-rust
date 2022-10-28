@@ -1784,25 +1784,6 @@ mod test {
     }
 }
 
-#[cfg(test)]
-mod test_bad_metadata {
-    use super::*;
-    use crate::test_fixtures::bad_metadata::*;
-    use crate::MutationId;
-
-    #[test]
-    fn test_bad_mutation_metadata_roundtrip() {
-        let mut tables = TableCollection::new(1.).unwrap();
-        let md = F { x: 1, y: 11 };
-        tables
-            .add_mutation_with_metadata(0, 0, MutationId::NULL, 0.0, None, &md)
-            .unwrap();
-        if tables.mutations().metadata::<Ff>(0.into()).is_ok() {
-            panic!("expected an error!!");
-        }
-    }
-}
-
 // The tests that follow involve more detailed analysis
 // of the strong ID types.
 

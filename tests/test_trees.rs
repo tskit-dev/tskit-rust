@@ -1,7 +1,7 @@
 #[path = "./test_fixtures.rs"]
 mod test_fixtures;
 
-use crate::NodeTraversalOrder;
+use tskit::NodeTraversalOrder;
 use streaming_iterator::DoubleEndedStreamingIterator;
 use streaming_iterator::StreamingIterator;
 use test_fixtures::{
