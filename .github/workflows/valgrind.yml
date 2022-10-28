@@ -35,4 +35,7 @@ jobs:
       - run: cargo install cargo-valgrind
       - name: run cargo valgrind
         run: |
-            cargo valgrind test --all-features
+            cargo valgrind test --all-targets --all-features
+      - name: run cargo valgrind on doc tests
+        run: |
+            cargo valgrind test --doc --all-features
