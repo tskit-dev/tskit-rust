@@ -259,7 +259,9 @@ impl TreeSequence {
     /// This function allocates a `CString` to pass the file name to the C API.
     /// A panic will occur if the system runs out of memory.
     pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
-        let c_str = std::ffi::CString::new(filename).unwrap();
+        let c_str = std::ffi::CString::new(filename).map_err(|_| {
+            TskitError::LibraryError("call to ffi::Cstring::new failed".to_string())
+        })?;
         let rv = unsafe {
             ll_bindings::tsk_treeseq_dump(self.as_ptr(), c_str.as_ptr(), options.into().bits())
         };
