@@ -848,7 +848,8 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    #[cfg(any(feature = "provenance", doc))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     provenance_table_add_row!(
     /// Add provenance record with a time stamp.
     ///
@@ -1159,7 +1160,8 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    #[cfg(any(doc, feature = "provenance"))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Set the provenance table from an
     /// [`OwnedProvenanceTable`](`crate::provenance::OwnedProvenanceTable`)
     ///
@@ -1231,7 +1233,8 @@ impl TableAccess for TableCollection {
         PopulationTable::new_from_table(&self.inner.populations)
     }
 
-    #[cfg(any(feature = "provenance", doc))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
         crate::provenance::ProvenanceTable::new_from_table(&self.inner.provenances)
     }

@@ -454,7 +454,8 @@ impl TreeSequence {
         )
     }
 
-    #[cfg(any(feature = "provenance", doc))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Add provenance record with a time stamp.
     ///
     /// All implementation of this trait provided by `tskit` use
@@ -540,7 +541,8 @@ impl TableAccess for TreeSequence {
         PopulationTable::new_from_table(unsafe { &(*self.inner.tables).populations })
     }
 
-    #[cfg(any(feature = "provenance", doc))]
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     fn provenances(&self) -> crate::provenance::ProvenanceTable {
         crate::provenance::ProvenanceTable::new_from_table(unsafe {
             &(*self.inner.tables).provenances

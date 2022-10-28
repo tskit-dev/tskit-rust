@@ -184,7 +184,9 @@ build_owned_table_type!(
     /// # Examples
     ///
     /// ```rust
-    /// # #[cfg(any(doc, feature = "provenance"))] {
+    /// # #[cfg(feature = "provenance")]
+    /// # #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// {
     /// use tskit::provenance::OwnedProvenanceTable;
     /// let mut provenances = OwnedProvenanceTable::default();
     /// let id = provenances.add_row("message").unwrap();
