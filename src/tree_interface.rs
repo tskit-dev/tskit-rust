@@ -296,8 +296,13 @@ impl TreeInterface {
     fn left_sample(&self, u: NodeId) -> Result<NodeId, TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            unsafe_tsk_column_access!(u.0, 0, self.num_nodes, (*self.as_ptr()).left_sample, NodeId)
-                .unwrap()
+            unsafe_tsk_column_access!(
+                u.0,
+                0,
+                self.num_nodes,
+                (*self.as_ptr()).left_sample,
+                NodeId
+            )?
         )
     }
 
@@ -310,8 +315,7 @@ impl TreeInterface {
                 self.num_nodes,
                 (*self.as_ptr()).right_sample,
                 NodeId
-            )
-            .unwrap()
+            )?
         )
     }
 
@@ -588,8 +592,11 @@ struct PreorderNodeIterator<'a> {
 
 impl<'a> PreorderNodeIterator<'a> {
     fn new(tree: &'a TreeInterface) -> Self {
+        debug_assert!(tree.right_child(tree.virtual_root()).is_ok());
         let mut rv = PreorderNodeIterator {
-            current_root: tree.right_child(tree.virtual_root()).unwrap(),
+            current_root: tree
+                .right_child(tree.virtual_root())
+                .unwrap_or(NodeId::NULL),
             node_stack: vec![],
             tree,
             current_node_: None,
@@ -597,7 +604,8 @@ impl<'a> PreorderNodeIterator<'a> {
         let mut c = rv.current_root;
         while !c.is_null() {
             rv.node_stack.push(c);
-            c = rv.tree.left_sib(c).unwrap();
+            debug_assert!(rv.tree.left_sib(c).is_ok());
+            c = rv.tree.left_sib(c).unwrap_or(NodeId::NULL);
         }
         rv
     }
@@ -610,10 +618,12 @@ impl NodeIterator for PreorderNodeIterator<'_> {
             // NOTE: process children right-to-left
             // because we later pop them from a steck
             // to generate the expected left-to-right ordering.
-            let mut c = self.tree.right_child(u).unwrap();
+            debug_assert!(self.tree.right_child(u).is_ok());
+            let mut c = self.tree.right_child(u).unwrap_or(NodeId::NULL);
             while c != NodeId::NULL {
                 self.node_stack.push(c);
-                c = self.tree.left_sib(c).unwrap();
+                debug_assert!(self.tree.right_child(c).is_ok());
+                c = self.tree.left_sib(c).unwrap_or(NodeId::NULL);
             }
         };
     }
@@ -642,7 +652,7 @@ impl<'a> PostorderNodeIterator<'a> {
             // NOTE: this fn does not return error codes
             usize::try_from(unsafe {
                 ll_bindings::tsk_tree_get_size_bound(tree.as_ptr())
-            }).unwrap()
+            }).unwrap_or(usize::MAX)
         ];
 
         let rv = unsafe {
@@ -664,7 +674,7 @@ impl<'a> PostorderNodeIterator<'a> {
         Self {
             nodes,
             current_node_index: 0,
-            num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap(),
+            num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap_or(0),
             tree: std::marker::PhantomData,
         }
     }
@@ -692,9 +702,10 @@ struct RootIterator<'a> {
 
 impl<'a> RootIterator<'a> {
     fn new(tree: &'a TreeInterface) -> Self {
+        debug_assert!(tree.left_child(tree.virtual_root()).is_ok());
         RootIterator {
             current_root: None,
-            next_root: tree.left_child(tree.virtual_root()).unwrap(),
+            next_root: tree.left_child(tree.virtual_root()).unwrap_or(NodeId::NULL),
             tree,
         }
     }
@@ -707,7 +718,8 @@ impl NodeIterator for RootIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                self.next_root = self.tree.right_sib(r).unwrap();
+                debug_assert!(self.tree.right_sib(r).is_ok());
+                self.next_root = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
                 cr
             }
         };
@@ -745,7 +757,8 @@ impl NodeIterator for ChildIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                self.next_child = self.tree.right_sib(r).unwrap();
+                debug_assert!(self.tree.right_sib(r).is_ok());
+                self.next_child = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
                 cr
             }
         };
@@ -793,7 +806,8 @@ impl NodeIterator for ParentsIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                self.next_node = self.tree.parent(r).unwrap();
+                debug_assert!(self.tree.parent(r).is_ok());
+                self.next_node = self.tree.parent(r).unwrap_or(NodeId::NULL);
                 cr
             }
         };
@@ -834,14 +848,12 @@ impl NodeIterator for SamplesIterator<'_> {
             NodeId::NULL => None,
             r => {
                 if r == self.last_sample_index {
-                    //let cr = Some(self.tree.samples(r).unwrap());
                     let cr =
                         Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
                     self.next_sample_index = NodeId::NULL;
                     cr
                 } else {
                     assert!(r >= 0);
-                    //let cr = Some(self.tree.samples(r).unwrap());
                     let cr =
                         Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
                     //self.next_sample_index = self.next_sample[r];
