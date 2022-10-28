@@ -31,6 +31,9 @@ pub enum TskitError {
         #[from]
         value: crate::metadata::MetadataError,
     },
+    /// General error variant
+    #[error("{}", *.0)]
+    LibraryError(String),
 }
 
 /// Takes the return code from a tskit
