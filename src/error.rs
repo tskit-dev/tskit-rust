@@ -91,7 +91,10 @@ pub fn panic_on_tskit_error(code: i32) {
 /// if the system runs out of memory.
 pub fn get_tskit_error_message(code: i32) -> String {
     let c_str = unsafe { std::ffi::CStr::from_ptr(crate::bindings::tsk_strerror(code)) };
-    c_str.to_str().unwrap().to_owned()
+    c_str
+        .to_str()
+        .expect("failed to convert c_str to &str")
+        .to_owned()
 }
 
 /// Given an instance of [``TskReturnValue``](crate::TskReturnValue),
