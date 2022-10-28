@@ -35,13 +35,15 @@ jobs:
       - run: sudo apt-get update -y
         if: matrix.os == 'ubuntu-latest'
       - name: cargo check (powerset)
-        run: cargo hack check --feature-powerset --no-dev-deps --exclude-no-default-features
-      - name: cargo check examples
-        run: cargo hack check --examples --feature-powerset --exclude-no-default-features
-      - name: run tests
+        run: cargo hack check --feature-powerset --no-dev-deps
+      - name: cargo check examples (powerset)
+        run: cargo hack check --examples --feature-powerset
+      - name: run tests (powerset)
         run: |
-            cargo hack test --feature-powerset --exclude-no-default-features
-            cargo hack test --examples --feature-powerset --exclude-no-default-features
+            cargo hack test --all-targets --feature-powerset
+      - name: run doc tests (powerset)
+        run: |
+            cargo hack test --doc --feature-powerset
 
   fmt:
     name: rust fmt
@@ -76,8 +78,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: Swatinem/rust-cache@v1
+      - uses: taiki-e/install-action@cargo-hack
       - run: rustup component add clippy
-      - name: clippy (all targets)
-        run: cargo clippy --all-targets --all-features -- -D warnings
-      - name: clippy (all targets, all features)
-        run: cargo clippy --all-targets -- -D warnings
+      - name: clippy (all targets, feature powerset)
+        run: cargo hack clippy --all-targets --feature-powerset -- -D warnings

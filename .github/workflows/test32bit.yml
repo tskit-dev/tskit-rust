@@ -38,6 +38,12 @@ jobs:
       - name: Install rust tooling for 32 bit builds
         run: |
           rustup target install i686-unknown-linux-gnu
+      - name: cargo check
+        run: |
+            cargo hack check --all-targets --target=i686-unknown-linux-gnu --feature-powerset
       - name: cargo tests
         run: |
             cargo hack test --target=i686-unknown-linux-gnu --feature-powerset
+      - name: cargo doc tests
+        run: |
+            cargo hack test --doc --target=i686-unknown-linux-gnu --feature-powerset
