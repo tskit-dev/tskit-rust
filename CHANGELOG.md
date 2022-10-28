@@ -1,4 +1,120 @@
-# Change log
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [0.10.0] - 2022-10-28
+
+### Documentation
+
+- Display feature flags in docs.rs ([#338](https://github.com/tskit-dev/tskit-rust/pull/338))
+
+### Miscellaneous Tasks
+
+- Set msrv to 1.57.0 (result of cargo msrv) ([#322](https://github.com/tskit-dev/tskit-rust/pull/322))
+- Fix tag_pattern in cliff.toml ([#330](https://github.com/tskit-dev/tskit-rust/pull/330))
+- Update github actions ([#332](https://github.com/tskit-dev/tskit-rust/pull/332))
+- Add github actions to monthly dependabot ([#333](https://github.com/tskit-dev/tskit-rust/pull/333))
+- Update bindgen requirement from 0.60.1 to 0.61.0 ([#336](https://github.com/tskit-dev/tskit-rust/pull/336))
+- Bump styfle/cancel-workflow-action from 0.6.0 to 0.11.0 ([#334](https://github.com/tskit-dev/tskit-rust/pull/334))
+
+### Performance
+
+- Use Bookmark in forward simulation example ([#318](https://github.com/tskit-dev/tskit-rust/pull/318))
+
+### Refactor
+
+- Streamline internal macros for adding nodes ([#309](https://github.com/tskit-dev/tskit-rust/pull/309))
+- Remove internal ffi module ([#310](https://github.com/tskit-dev/tskit-rust/pull/310))
+- Panics compatible with earlier rustc ([#311](https://github.com/tskit-dev/tskit-rust/pull/311))
+- Remove type name from SizeType Display output. ([#315](https://github.com/tskit-dev/tskit-rust/pull/315))
+- [**breaking**] TableCollection::simplify returns Option<&[NodeId]> ([#316](https://github.com/tskit-dev/tskit-rust/pull/316))
+- [**breaking**] Conversion from row id to usize is now fallible. ([#319](https://github.com/tskit-dev/tskit-rust/pull/319))
+- Use clap::Parser in example program. ([#320](https://github.com/tskit-dev/tskit-rust/pull/320))
+- Remove pontential panic! when instantiating table rows. ([#329](https://github.com/tskit-dev/tskit-rust/pull/329))
+- Examples/tree_traversals.rs now uses clap derive ([#337](https://github.com/tskit-dev/tskit-rust/pull/337))
+
+### Styling
+
+- Remove unneeded ( ) from match. ([#323](https://github.com/tskit-dev/tskit-rust/pull/323))
+- Use auto-deref for pointer deref. ([#325](https://github.com/tskit-dev/tskit-rust/pull/325))
+- Fix +nightly clippy lints for all targets/features. ([#326](https://github.com/tskit-dev/tskit-rust/pull/326))
+
+### Testing
+
+- Improve test work flow ([#331](https://github.com/tskit-dev/tskit-rust/pull/331))
+
+## [0.10.0-alpha.1] - 2022-07-31
+
+### Bug Fixes
+
+- Replace crate with $crate in macros ([#287](https://github.com/tskit-dev/tskit-rust/pull/287))
+
+### Features
+
+- Add tskit::OwnedMutationTable ([#281](https://github.com/tskit-dev/tskit-rust/pull/281))
+- Add tskit::OwnedSiteTable ([#283](https://github.com/tskit-dev/tskit-rust/pull/283))
+- Add tskit::OwnedIndividualTable ([#284](https://github.com/tskit-dev/tskit-rust/pull/284))
+- Add tskit::OwnedMigrationTable ([#285](https://github.com/tskit-dev/tskit-rust/pull/285))
+- Add tskit::provenance::OwnedProvenanceTable ([#286](https://github.com/tskit-dev/tskit-rust/pull/286))
+- Set tables in collection from owned tables. ([#288](https://github.com/tskit-dev/tskit-rust/pull/288))
+- [**breaking**] Impl Send/Sync for TreeSequence ([#297](https://github.com/tskit-dev/tskit-rust/pull/297))
+
+### Miscellaneous Tasks
+
+- Update to C API 1.1.1 ([#304](https://github.com/tskit-dev/tskit-rust/pull/304))
+
+### Performance
+
+- [**breaking**] Implement slice access to individual data ([#292](https://github.com/tskit-dev/tskit-rust/pull/292))
+- [**breaking**] Eliminate several copies from C to rust ([#293](https://github.com/tskit-dev/tskit-rust/pull/293))
+
+### Refactor
+
+- Deduplicate code for adding node table rows. ([#278](https://github.com/tskit-dev/tskit-rust/pull/278))
+- Use macros to implement adding table rows. ([#279](https://github.com/tskit-dev/tskit-rust/pull/279))
+- Add new macro to build owned tables ([#282](https://github.com/tskit-dev/tskit-rust/pull/282))
+- Separate tree ownership from API. ([#300](https://github.com/tskit-dev/tskit-rust/pull/300))
+- Bring back generic syntax for adding node table rows. ([#302](https://github.com/tskit-dev/tskit-rust/pull/302))
+- [**breaking**] Display for new types now omits type name. ([#305](https://github.com/tskit-dev/tskit-rust/pull/305))
+- Remove MBox for tsk_treeseq_t storage ([#306](https://github.com/tskit-dev/tskit-rust/pull/306))
+
+## [0.10.0-alpha.0] - 2022-07-19
+
+### Bug Fixes
+
+- Fix memory leak in TreeSequence::simplify ([#274](https://github.com/tskit-dev/tskit-rust/pull/274))
+- Fix leak in TableCollection::deepcopy ([#275](https://github.com/tskit-dev/tskit-rust/pull/275))
+- Fix leak in TreeSequence::dump_tables ([#276](https://github.com/tskit-dev/tskit-rust/pull/276))
+
+### Documentation
+
+- Fix warnings from "cargo doc" ([#255](https://github.com/tskit-dev/tskit-rust/pull/255))
+
+### Features
+
+- Make load from file generic over AsRef<str> ([#254](https://github.com/tskit-dev/tskit-rust/pull/254))
+- Add tskit::OwnedPopulationTable ([#267](https://github.com/tskit-dev/tskit-rust/pull/267))
+- Add tskit::OwnedEdgeTable ([#268](https://github.com/tskit-dev/tskit-rust/pull/268))
+- Add tskit::OwnedNodeTable ([#273](https://github.com/tskit-dev/tskit-rust/pull/273))
+
+### Miscellaneous Tasks
+
+- Add cliff.toml (config file for git-cliff) ([#257](https://github.com/tskit-dev/tskit-rust/pull/257))
+- Prefix "chore: " to dependabot.yml ([#258](https://github.com/tskit-dev/tskit-rust/pull/258))
+- Use cargo-hack to streamline CI. ([#259](https://github.com/tskit-dev/tskit-rust/pull/259))
+- Add cargo-valgrind CI workflow ([#277](https://github.com/tskit-dev/tskit-rust/pull/277))
+
+### Refactor
+
+- Macro metadata_to_vector intputs changed. ([#263](https://github.com/tskit-dev/tskit-rust/pull/263))
+- Add macros to implement owned tables. ([#269](https://github.com/tskit-dev/tskit-rust/pull/269))
+
+### Testing
+
+- Add another experimental trait idea for metadata. ([#261](https://github.com/tskit-dev/tskit-rust/pull/261))
+- Redo doctest: TableCollection::new_from_file ([#272](https://github.com/tskit-dev/tskit-rust/pull/272))
+
+<!-- generated by git-cliff -->
 
 ## 2022-06-20, Version 0.9.0
 
