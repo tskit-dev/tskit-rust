@@ -109,21 +109,33 @@ impl<'a> NodeTable<'a> {
     }
 
     /// Mutable access to node flags.
+    ///
+    /// # Note
+    ///
+    /// Internally, we rely on a conversion of u64 to usize.
+    /// This conversion is fallible on some platforms.
+    /// If the conversion fails, an empty slice is returned.
     pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
         unsafe {
             std::slice::from_raw_parts_mut(
                 self.table_.flags.cast::<NodeFlags>(),
-                usize::try_from(self.table_.num_rows).unwrap(),
+                usize::try_from(self.table_.num_rows).unwrap_or(0),
             )
         }
     }
 
     /// Mutable access to node times.
+    ///
+    /// # Note
+    ///
+    /// Internally, we rely on a conversion of u64 to usize.
+    /// This conversion is fallible on some platforms.
+    /// If the conversion fails, an empty slice is returned.
     pub fn time_array_mut(&mut self) -> &mut [Time] {
         unsafe {
             std::slice::from_raw_parts_mut(
                 self.table_.time.cast::<Time>(),
-                usize::try_from(self.table_.num_rows).unwrap(),
+                usize::try_from(self.table_.num_rows).unwrap_or(0),
             )
         }
     }
