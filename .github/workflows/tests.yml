@@ -22,15 +22,14 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
       - run: sudo apt-get update -y
         if: matrix.os == 'ubuntu-latest'
@@ -49,16 +48,14 @@ jobs:
     name: rust fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
-          override: true
-      - run: rustup component add rustfmt
+          components: rustfmt
       - run: |
           /bin/bash -c "find src -type f | grep -v auto_bindings | grep -v lib | xargs rustfmt --check"
 
@@ -71,14 +68,12 @@ jobs:
           - stable
           - 1.57.0
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
-      - uses: Swatinem/rust-cache@v1
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@cargo-hack
-      - run: rustup component add clippy
       - name: clippy (all targets, feature powerset)
         run: cargo hack clippy --all-targets --feature-powerset -- -D warnings
