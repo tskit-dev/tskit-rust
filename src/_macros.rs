@@ -20,7 +20,7 @@ macro_rules! panic_on_tskit_error {
     ($code: expr) => {
         if $code < 0 {
             let c_str = unsafe { std::ffi::CStr::from_ptr($crate::bindings::tsk_strerror($code)) };
-            let str_slice: &str = c_str.to_str().unwrap();
+            let str_slice: &str = c_str.to_str().expect("failed to obtain &str from c_str");
             let message: String = str_slice.to_owned();
             panic!("{}", message);
         }
