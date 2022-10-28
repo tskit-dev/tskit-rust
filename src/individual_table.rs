@@ -52,23 +52,14 @@ pub struct IndividualTable<'a> {
 }
 
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
-    if let Ok(p) = crate::SizeType::try_from(pos) {
-        if p < table.num_rows() {
-            let table_ref = table.table_;
-            let rv = IndividualTableRow {
-                id: pos.into(),
-                flags: table.flags(pos).unwrap(),
-                location: table.location(pos).unwrap().map(|s| s.to_vec()),
-                parents: table.parents(pos).unwrap().map(|s| s.to_vec()),
-                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-            };
-            Some(rv)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    let table_ref = table.table_;
+    Some(IndividualTableRow {
+        id: pos.into(),
+        flags: table.flags(pos).ok()?,
+        location: table.location(pos).ok()?.map(|s| s.to_vec()),
+        parents: table.parents(pos).ok()?.map(|s| s.to_vec()),
+        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+    })
 }
 
 pub(crate) type IndividualTableRefIterator<'a> =
