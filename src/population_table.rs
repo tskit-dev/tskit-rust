@@ -20,20 +20,11 @@ impl PartialEq for PopulationTableRow {
 }
 
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
-    if let Ok(p) = crate::SizeType::try_from(pos) {
-        if p < table.num_rows() {
-            let table_ref = table.table_;
-            let rv = PopulationTableRow {
-                id: pos.into(),
-                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-            };
-            Some(rv)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    let table_ref = table.table_;
+    Some(PopulationTableRow {
+        id: pos.into(),
+        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+    })
 }
 
 pub(crate) type PopulationTableRefIterator<'a> =

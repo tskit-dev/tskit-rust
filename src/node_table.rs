@@ -29,23 +29,15 @@ impl PartialEq for NodeTableRow {
 }
 
 fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow> {
-    if let Ok(p) = crate::SizeType::try_from(pos) {
-        if p < table.num_rows() {
-            let table_ref = table.table_;
-            Some(NodeTableRow {
-                id: pos.into(),
-                time: table.time(pos).unwrap(),
-                flags: table.flags(pos).unwrap(),
-                population: table.population(pos).unwrap(),
-                individual: table.individual(pos).unwrap(),
-                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-            })
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    let table_ref = table.table_;
+    Some(NodeTableRow {
+        id: pos.into(),
+        time: table.time(pos).ok()?,
+        flags: table.flags(pos).ok()?,
+        population: table.population(pos).ok()?,
+        individual: table.individual(pos).ok()?,
+        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+    })
 }
 
 pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable<'a>>;

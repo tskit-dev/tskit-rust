@@ -27,24 +27,15 @@ impl PartialEq for EdgeTableRow {
 }
 
 fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
-    if let Ok(p) = crate::SizeType::try_from(pos) {
-        if p < table.num_rows() {
-            let table_ref = table.table_;
-            let rv = EdgeTableRow {
-                id: pos.into(),
-                left: table.left(pos).unwrap(),
-                right: table.right(pos).unwrap(),
-                parent: table.parent(pos).unwrap(),
-                child: table.child(pos).unwrap(),
-                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-            };
-            Some(rv)
-        } else {
-            None
-        }
-    } else {
-        None
-    }
+    let table_ref = table.table_;
+    Some(EdgeTableRow {
+        id: pos.into(),
+        left: table.left(pos).ok()?,
+        right: table.right(pos).ok()?,
+        parent: table.parent(pos).ok()?,
+        child: table.child(pos).ok()?,
+        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+    })
 }
 
 pub(crate) type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable<'a>>;
