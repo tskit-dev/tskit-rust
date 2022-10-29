@@ -525,17 +525,17 @@ mod tests {
         let mut output = String::new();
         std::fmt::write(&mut output, format_args!("{}", x))
             .expect("Error occurred while trying to write in String");
-        assert_eq!(output, "Position(1)".to_string());
+        assert_eq!(output, "1".to_string());
         let x = Time::from(1.0);
         let mut output = String::new();
         std::fmt::write(&mut output, format_args!("{}", x))
             .expect("Error occurred while trying to write in String");
-        assert_eq!(output, "Time(1)".to_string());
+        assert_eq!(output, "1".to_string());
         let x = Location::from(1.0);
         let mut output = String::new();
         std::fmt::write(&mut output, format_args!("{}", x))
             .expect("Error occurred while trying to write in String");
-        assert_eq!(output, "Location(1)".to_string());
+        assert_eq!(output, "1".to_string());
     }
 }
 
