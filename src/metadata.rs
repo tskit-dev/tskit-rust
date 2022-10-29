@@ -164,7 +164,7 @@
 //!   into `Python` via the `tskit` `Python API`.
 
 use crate::bindings::{tsk_id_t, tsk_size_t};
-use crate::{SizeType, TskitError};
+use crate::SizeType;
 use thiserror::Error;
 
 #[cfg(feature = "derive")]
@@ -257,25 +257,17 @@ pub(crate) fn char_column_to_slice<T: Sized>(
     row: tsk_id_t,
     num_rows: tsk_size_t,
     column_length: tsk_size_t,
-) -> Result<Option<&[u8]>, crate::TskitError> {
-    let row = match tsk_size_t::try_from(row) {
-        Ok(r) => r,
-        Err(_) => return Err(TskitError::IndexError),
+) -> Option<&[u8]> {
+    let row = match tsk_size_t::try_from(row).ok() {
+        Some(r) if r < num_rows => r,
+        _ => return None,
     };
-    if row >= num_rows {
-        return Err(crate::TskitError::IndexError {});
-    }
     if column_length == 0 {
-        return Ok(None);
+        return None;
     }
-    let row_isize = match isize::try_from(row) {
-        Ok(r) => r,
-        Err(_) => {
-            return Err(TskitError::RangeError(format!(
-                "could not convert u64 value {} to isize",
-                stringify!(row)
-            )))
-        }
+    let row_isize = match isize::try_from(row).ok() {
+        Some(x) => x,
+        None => return None,
     };
     let start = unsafe { *column_offset.offset(row_isize) };
     let stop = if (row as tsk_size_t) < num_rows {
@@ -284,32 +276,22 @@ pub(crate) fn char_column_to_slice<T: Sized>(
         column_length
     };
     if start >= stop {
-        return Ok(None);
+        return None;
     }
     if column_length == 0 {
-        return Ok(None);
+        return None;
     }
-    let istart = match isize::try_from(start) {
-        Ok(v) => v,
-        Err(_) => {
-            return Err(TskitError::RangeError(format!(
-                "cauld not convert value {} to isize",
-                stringify!(i)
-            )));
-        }
+    let istart = match isize::try_from(start).ok() {
+        Some(v) => v,
+        None => return None,
     };
-    let ustop = match usize::try_from(stop) {
-        Ok(v) => v,
-        Err(_) => {
-            return Err(TskitError::RangeError(format!(
-                "cauld not convert value {} to usize",
-                stringify!(i)
-            )));
-        }
+    let ustop = match usize::try_from(stop).ok() {
+        Some(v) => v,
+        None => return None,
     };
-    Ok(Some(unsafe {
+    Some(unsafe {
         std::slice::from_raw_parts(column.offset(istart) as *const u8, ustop - istart as usize)
-    }))
+    })
 }
 
 #[cfg(test)]

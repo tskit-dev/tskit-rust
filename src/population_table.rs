@@ -21,10 +21,18 @@ impl PartialEq for PopulationTableRow {
 
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
     let table_ref = table.table_;
-    Some(PopulationTableRow {
-        id: pos.into(),
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-    })
+    let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
+
+    match index {
+        i if i < table.num_rows() => {
+            let metadata = table_row_decode_metadata!(table, table_ref, pos).map(|s| s.to_vec());
+            Some(PopulationTableRow {
+                id: pos.into(),
+                metadata,
+            })
+        }
+        _ => None,
+    }
 }
 
 pub(crate) type PopulationTableRefIterator<'a> =
@@ -75,10 +83,10 @@ impl<'a> PopulationTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: PopulationId,
-    ) -> Result<Option<T>, TskitError> {
+    ) -> Option<Result<T, TskitError>> {
         let table_ref = self.table_;
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
-        decode_metadata_row!(T, buffer)
+        Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 
     /// Return an iterator over rows of the table.
@@ -144,12 +152,13 @@ build_owned_table_type!(
 /// let rowid = populations.add_row_with_metadata(&metadata).unwrap();
 /// assert_eq!(rowid, 0);
 ///
-/// if let Some(decoded) = populations.metadata::<PopulationMetadata>(rowid).unwrap() {
-///     assert_eq!(&decoded.name, "YRB");
-/// } else {
-///     panic!("hmm...we expected some metadata!");
+/// match populations.metadata::<PopulationMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(&decoded.name, "YRB"),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
 /// }
-///
 /// # }
 /// ```
     => OwnedPopulationTable,
