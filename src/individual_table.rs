@@ -55,9 +55,9 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
     let table_ref = table.table_;
     Some(IndividualTableRow {
         id: pos.into(),
-        flags: table.flags(pos).ok()?,
-        location: table.location(pos).ok()?.map(|s| s.to_vec()),
-        parents: table.parents(pos).ok()?.map(|s| s.to_vec()),
+        flags: table.flags(pos)?,
+        location: table.location(pos).map(|s| s.to_vec()),
+        parents: table.parents(pos).map(|s| s.to_vec()),
         metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
     })
 }
@@ -101,28 +101,21 @@ impl<'a> IndividualTable<'a> {
 
     /// Return the flags for a given row.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn flags<I: Into<IndividualId> + Copy>(
-        &self,
-        row: I,
-    ) -> Result<IndividualFlags, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags) {
-            Ok(f) => Ok(IndividualFlags::from(f)),
-            Err(e) => Err(e),
-        }
+    /// * `Some(flags)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<IndividualFlags> {
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.flags)
     }
 
     /// Return the locations for a given row.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn location<I: Into<IndividualId> + Copy>(
-        &self,
-        row: I,
-    ) -> Result<Option<&[Location]>, TskitError> {
+    /// * `Some(location)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn location<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[Location]> {
         unsafe_tsk_ragged_column_access!(
             row.into().0,
             0,
@@ -136,13 +129,11 @@ impl<'a> IndividualTable<'a> {
 
     /// Return the parents for a given row.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// * [`TskitError::IndexError`] if `row` is out of range.
-    pub fn parents<I: Into<IndividualId> + Copy>(
-        &self,
-        row: I,
-    ) -> Result<Option<&[IndividualId]>, TskitError> {
+    /// * `Some(parents)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn parents<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[IndividualId]> {
         unsafe_tsk_ragged_column_access!(
             row.into().0,
             0,

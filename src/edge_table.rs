@@ -30,10 +30,10 @@ fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow>
     let table_ref = table.table_;
     Some(EdgeTableRow {
         id: pos.into(),
-        left: table.left(pos).ok()?,
-        right: table.right(pos).ok()?,
-        parent: table.parent(pos).ok()?,
-        child: table.child(pos).ok()?,
+        left: table.left(pos)?,
+        right: table.right(pos)?,
+        parent: table.parent(pos)?,
+        child: table.child(pos)?,
         metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
     })
 }
@@ -83,48 +83,42 @@ impl<'a> EdgeTable<'a> {
 
     /// Return the ``parent`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn parent<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<NodeId, TskitError> {
+    /// * `Some(parent)` if `u` is valid.
+    /// * `None` otherwise.
+    pub fn parent<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<NodeId> {
         unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.parent, NodeId)
     }
 
     /// Return the ``child`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn child<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<NodeId, TskitError> {
+    /// * `Some(child)` if `u` is valid.
+    /// * `None` otherwise.
+    pub fn child<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<NodeId> {
         unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.child, NodeId)
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<Position, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left) {
-            Ok(p) => Ok(p.into()),
-            Err(e) => Err(e),
-        }
+    /// * `Some(position)` if `u` is valid.
+    /// * `None` otherwise.
+    pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<Position> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left, Position)
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Result<Position, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.right) {
-            Ok(p) => Ok(p.into()),
-            Err(e) => Err(e),
-        }
+    /// * `Some(position)` if `u` is valid.
+    /// * `None` otherwise.
+    pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<Position> {
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.right)
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(

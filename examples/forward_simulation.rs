@@ -373,7 +373,7 @@ fn update_bookmark(
         for a in alive {
             for node in [a.node0, a.node1] {
                 match nodes.time(node) {
-                    Ok(time) => {
+                    Some(time) => {
                         most_recent_birth_time = if time < most_recent_birth_time {
                             time.into()
                         } else {
@@ -385,7 +385,7 @@ fn update_bookmark(
                             most_ancient_birth_time
                         };
                     }
-                    Err(e) => return Err(e),
+                    None => return Err(tskit::TskitError::IndexError {}),
                 }
             }
         }

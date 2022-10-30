@@ -629,7 +629,6 @@ pub(crate) mod test_trees {
         }
     }
 
-    #[should_panic]
     #[test]
     fn test_samples_iterator_error_when_not_tracking_samples() {
         let tables = make_small_table_collection();
@@ -638,7 +637,10 @@ pub(crate) mod test_trees {
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         if let Some(tree) = tree_iter.next() {
             for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
-                for _ in tree.samples(n).unwrap() {}
+                match tree.samples(n) {
+                    Some(Err(_)) => (),
+                    _ => panic!("should not be Ok(_) or None"),
+                }
             }
         }
     }
@@ -657,7 +659,7 @@ pub(crate) mod test_trees {
 
     #[should_panic]
     #[test]
-    fn test_num_tracked_samples_not_tracking_samples() {
+    fn test_num_tracked_samples_not_tracking_sample_counts() {
         let treeseq = treeseq_from_small_table_collection();
         assert_eq!(treeseq.num_samples(), 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::NO_SAMPLE_COUNTS).unwrap();
@@ -678,8 +680,11 @@ pub(crate) mod test_trees {
             assert!(!tree.flags().contains(TreeFlags::NO_SAMPLE_COUNTS));
             assert!(tree.flags().contains(TreeFlags::SAMPLE_LISTS));
             let mut s = vec![];
-            for i in tree.samples(0.into()).unwrap() {
-                s.push(i);
+
+            if let Some(Ok(iter)) = tree.samples(0.into()) {
+                for i in iter {
+                    s.push(i);
+                }
             }
             assert_eq!(s.len(), 2);
             assert_eq!(
@@ -691,8 +696,10 @@ pub(crate) mod test_trees {
 
             for u in 1..3 {
                 let mut s = vec![];
-                for i in tree.samples(u.into()).unwrap() {
-                    s.push(i);
+                if let Some(Ok(iter)) = tree.samples(u.into()) {
+                    for i in iter {
+                        s.push(i);
+                    }
                 }
                 assert_eq!(s.len(), 1);
                 assert_eq!(s[0], u);
@@ -733,8 +740,10 @@ pub(crate) mod test_trees {
             for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
                 let mut nsamples = 0;
                 preoder_nodes.push(n);
-                for _ in tree.samples(n).unwrap() {
-                    nsamples += 1;
+                if let Some(Ok(iter)) = tree.samples(n) {
+                    for _ in iter {
+                        nsamples += 1;
+                    }
                 }
                 assert!(nsamples > 0);
                 assert_eq!(nsamples, tree.num_tracked_samples(n).unwrap());
@@ -742,8 +751,10 @@ pub(crate) mod test_trees {
             for n in tree.traverse_nodes(NodeTraversalOrder::Postorder) {
                 let mut nsamples = 0;
                 postoder_nodes.push(n);
-                for _ in tree.samples(n).unwrap() {
-                    nsamples += 1;
+                if let Some(Ok(iter)) = tree.samples(n) {
+                    for _ in iter {
+                        nsamples += 1;
+                    }
                 }
                 assert!(nsamples > 0);
                 assert_eq!(nsamples, tree.num_tracked_samples(n).unwrap());

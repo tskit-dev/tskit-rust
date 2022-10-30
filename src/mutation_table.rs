@@ -37,10 +37,10 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
             let derived_state = table.derived_state(pos).map(|s| s.to_vec());
             Some(MutationTableRow {
                 id: pos.into(),
-                site: table.site(pos).ok()?,
-                node: table.node(pos).ok()?,
-                parent: table.parent(pos).ok()?,
-                time: table.time(pos).ok()?,
+                site: table.site(pos)?,
+                node: table.node(pos)?,
+                parent: table.parent(pos)?,
+                time: table.time(pos)?,
                 derived_state,
                 metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
             })
@@ -98,7 +98,7 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn site<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<SiteId, TskitError> {
+    pub fn site<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<SiteId> {
         unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.site, SiteId)
     }
 
@@ -108,7 +108,7 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn node<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<NodeId, TskitError> {
+    pub fn node<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<NodeId> {
         unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.node, NodeId)
     }
 
@@ -118,7 +118,7 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn parent<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<MutationId, TskitError> {
+    pub fn parent<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<MutationId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
@@ -134,11 +134,8 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time<M: Into<MutationId> + Copy>(&'a self, row: M) -> Result<Time, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time) {
-            Ok(t) => Ok(t.into()),
-            Err(e) => Err(e),
-        }
+    pub fn time<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<Time> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time, Time)
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.

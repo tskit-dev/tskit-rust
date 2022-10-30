@@ -29,7 +29,7 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
     let ancestral_state = table.ancestral_state(pos).map(|s| s.to_vec());
     Some(SiteTableRow {
         id: pos.into(),
-        position: table.position(pos).ok()?,
+        position: table.position(pos)?,
         ancestral_state,
         metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
     })
@@ -79,27 +79,26 @@ impl<'a> SiteTable<'a> {
 
     /// Return the ``position`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn position<S: Into<SiteId> + Copy>(&'a self, row: S) -> Result<Position, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.position) {
-            Ok(p) => Ok(p.into()),
-            Err(e) => Err(e),
-        }
+    /// * `Some(position)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn position<S: Into<SiteId> + Copy>(&'a self, row: S) -> Option<Position> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_.position,
+            Position
+        )
     }
 
     /// Get the ``ancestral_state`` value from row ``row`` of the table.
     ///
-    /// # Return
+    /// # Returns
     ///
-    /// Will return `None` if there is no ancestral state.
-    ///
-    /// # Errors
-    ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
+    /// * `Some(ancestral state)` if `row` is valid.
+    /// * `None` otherwise.
     pub fn ancestral_state<S: Into<SiteId>>(&'a self, row: S) -> Option<&[u8]> {
         crate::metadata::char_column_to_slice(
             self,

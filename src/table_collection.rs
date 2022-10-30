@@ -300,8 +300,8 @@ impl TableCollection {
     /// # use tskit::TableAccess;
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, None, None).unwrap();
-    /// # assert!(tables.individuals().location(0).unwrap().is_none());
-    /// # assert!(tables.individuals().parents(0).unwrap().is_none());
+    /// # assert!(tables.individuals().location(0).is_none());
+    /// # assert!(tables.individuals().parents(0).is_none());
     /// ```
     ///
     /// ## No flags, a 3d location, no parents
@@ -310,7 +310,7 @@ impl TableCollection {
     /// # use tskit::TableAccess;
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, &[-0.5, 0.3, 10.0], None).unwrap();
-    /// # match tables.individuals().location(0).unwrap() {
+    /// # match tables.individuals().location(0) {
     /// #     Some(loc) => loc.iter().zip([-0.5, 0.3, 10.0].iter()).for_each(|(a,b)| assert_eq!(a, b)),
     /// #     None => panic!("expected a location"),
     /// # }
@@ -320,8 +320,8 @@ impl TableCollection {
     /// ```
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// # use tskit::TableAccess;
-    /// tables.add_individual(0, None, &[1, 11]).unwrap();
-    /// # match tables.individuals().parents(0).unwrap() {
+    /// tables.add_individual(0, None, &[1, 11]);
+    /// # match tables.individuals().parents(0) {
     /// #     Some(parents) => parents.iter().zip([1, 11].iter()).for_each(|(a,b)| assert_eq!(a, b)),
     /// #     None => panic!("expected parents"),
     /// # }
@@ -1070,7 +1070,7 @@ impl TableCollection {
     /// tables.set_individuals(&individuals).unwrap();
     /// assert_eq!(tables.individuals().num_rows(), 1);
     /// let expected = vec![tskit::Location::from(0.1), tskit::Location::from(10.0)];
-    /// assert_eq!(tables.individuals().location(0).unwrap(), Some(expected.as_slice()));
+    /// assert_eq!(tables.individuals().location(0), Some(expected.as_slice()));
     /// # individuals.clear().unwrap();
     /// # assert_eq!(individuals.num_rows(), 0);
     /// ```
@@ -1930,7 +1930,7 @@ mod test_adding_individual {
             .unwrap();
         assert_eq!(row_id, 2);
         assert_eq!(
-            tables.individuals().location(row_id).unwrap(),
+            tables.individuals().location(row_id),
             Some(
                 [
                     crate::Location::from(0.2),
@@ -1941,7 +1941,7 @@ mod test_adding_individual {
             )
         );
         assert_eq!(
-            tables.individuals().parents(row_id).unwrap(),
+            tables.individuals().parents(row_id),
             Some(
                 [
                     crate::IndividualId::from(1),

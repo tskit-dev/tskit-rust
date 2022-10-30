@@ -293,29 +293,21 @@ impl TreeInterface {
         tree_array_slice!(self, right_child, self.array_len)
     }
 
-    fn left_sample(&self, u: NodeId) -> Result<NodeId, TskitError> {
-        err_if_not_tracking_samples!(
-            self.flags,
-            unsafe_tsk_column_access!(
-                u.0,
-                0,
-                self.num_nodes,
-                (*self.as_ptr()).left_sample,
-                NodeId
-            )?
-        )
+    // error if we are not tracking samples,
+    // Ok(None) if u is out of range
+    fn left_sample(&self, u: NodeId) -> Option<NodeId> {
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, (*self.as_ptr()).left_sample, NodeId)
     }
 
-    fn right_sample(&self, u: NodeId) -> Result<NodeId, TskitError> {
-        err_if_not_tracking_samples!(
-            self.flags,
-            unsafe_tsk_column_access!(
-                u.0,
-                0,
-                self.num_nodes,
-                (*self.as_ptr()).right_sample,
-                NodeId
-            )?
+    // error if we are not tracking samples,
+    // Ok(None) if u is out of range
+    fn right_sample(&self, u: NodeId) -> Option<NodeId> {
+        unsafe_tsk_column_access!(
+            u.0,
+            0,
+            self.num_nodes,
+            (*self.as_ptr()).right_sample,
+            NodeId
         )
     }
 
@@ -336,46 +328,36 @@ impl TreeInterface {
 
     /// Get the parent of node `u`.
     ///
-    /// # Errors
-    ///
-    /// [`TskitError`] if `u` is out of range.
-    pub fn parent(&self, u: NodeId) -> Result<NodeId, TskitError> {
+    /// Returns `None` if `u` is out of range.
+    pub fn parent(&self, u: NodeId) -> Option<NodeId> {
         unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).parent, NodeId)
     }
 
     /// Get the left child of node `u`.
     ///
-    /// # Errors
-    ///
-    /// [`TskitError`] if `u` is out of range.
-    pub fn left_child(&self, u: NodeId) -> Result<NodeId, TskitError> {
+    /// Returns `None` if `u` is out of range.
+    pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
         unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).left_child, NodeId)
     }
 
     /// Get the right child of node `u`.
     ///
-    /// # Errors
-    ///
-    /// [`TskitError`] if `u` is out of range.
-    pub fn right_child(&self, u: NodeId) -> Result<NodeId, TskitError> {
+    /// Returns `None` if `u` is out of range.
+    pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
         unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).right_child, NodeId)
     }
 
     /// Get the left sib of node `u`.
     ///
-    /// # Errors
-    ///
-    /// [`TskitError`] if `u` is out of range.
-    pub fn left_sib(&self, u: NodeId) -> Result<NodeId, TskitError> {
+    /// Returns `None` if `u` is out of range.
+    pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
         unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).left_sib, NodeId)
     }
 
     /// Get the right sib of node `u`.
     ///
-    /// # Errors
-    ///
-    /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn right_sib(&self, u: NodeId) -> Result<NodeId, TskitError> {
+    /// Returns `None` if `u` is out of range.
+    pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
         unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).right_sib, NodeId)
     }
 
@@ -410,45 +392,50 @@ impl TreeInterface {
 
     /// Return an [`Iterator`] from the node `u` to the root of the tree.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `u` is out of range.
+    /// * `Some(iterator)` if `u` us valid
+    /// * `None` otherwise
     #[deprecated(since = "0.2.3", note = "Please use Tree::parents instead")]
-    pub fn path_to_root(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+    pub fn path_to_root(&self, u: NodeId) -> Option<impl Iterator<Item = NodeId> + '_> {
         self.parents(u)
     }
 
     /// Return an [`Iterator`] from the node `u` to the root of the tree,
     /// travering all parent nodes.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn parents(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+    /// * `Some(iterator)` if `u` is valid
+    /// * `None` otherwise
+    pub fn parents(&self, u: NodeId) -> Option<impl Iterator<Item = NodeId> + '_> {
         ParentsIterator::new(self, u)
     }
 
     /// Return an [`Iterator`] over the children of node `u`.
+    /// # Returns
     ///
-    /// # Errors
-    ///
-    /// [`TskitError::IndexError`] if `u` is out of range.
-    pub fn children(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+    /// * `Some(iterator)` if `u` is valid
+    /// * `None` otherwise
+    pub fn children(&self, u: NodeId) -> Option<impl Iterator<Item = NodeId> + '_> {
         ChildIterator::new(self, u)
     }
+
     /// Return an [`Iterator`] over the sample nodes descending from node `u`.
     ///
     /// # Note
     ///
     /// If `u` is itself a sample, then it is included in the values returned.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `u` is out of range.
-    ///
-    /// [`TskitError::NotTrackingSamples`] if [`TreeFlags::SAMPLE_LISTS`] was not used
-    /// to initialize `self`.
-    pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+    /// * Some(Ok(iterator)) if [`TreeFlags::SAMPLE_LISTS`] is in [`TreeInterface::flags`]
+    /// * Some(Err(_)) if [`TreeFlags::SAMPLE_LISTS`] is not in [`TreeInterface::flags`]
+    /// * None if `u` is not valid.
+    pub fn samples(
+        &self,
+        u: NodeId,
+    ) -> Option<Result<impl Iterator<Item = NodeId> + '_, TskitError>> {
         SamplesIterator::new(self, u)
     }
 
@@ -513,9 +500,10 @@ impl TreeInterface {
         let nt = self.node_table();
         let mut b = Time::from(0.);
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
-            let p = self.parent(n)?;
+            let p = self.parent(n).ok_or(TskitError::IndexError {})?;
             if p != NodeId::NULL {
-                b += nt.time(p)? - nt.time(n)?;
+                b += nt.time(p).ok_or(TskitError::IndexError {})?
+                    - nt.time(n).ok_or(TskitError::IndexError {})?;
             }
         }
 
@@ -592,7 +580,7 @@ struct PreorderNodeIterator<'a> {
 
 impl<'a> PreorderNodeIterator<'a> {
     fn new(tree: &'a TreeInterface) -> Self {
-        debug_assert!(tree.right_child(tree.virtual_root()).is_ok());
+        debug_assert!(tree.right_child(tree.virtual_root()).is_some());
         let mut rv = PreorderNodeIterator {
             current_root: tree
                 .right_child(tree.virtual_root())
@@ -604,7 +592,7 @@ impl<'a> PreorderNodeIterator<'a> {
         let mut c = rv.current_root;
         while !c.is_null() {
             rv.node_stack.push(c);
-            debug_assert!(rv.tree.left_sib(c).is_ok());
+            debug_assert!(rv.tree.left_sib(c).is_some());
             c = rv.tree.left_sib(c).unwrap_or(NodeId::NULL);
         }
         rv
@@ -618,11 +606,11 @@ impl NodeIterator for PreorderNodeIterator<'_> {
             // NOTE: process children right-to-left
             // because we later pop them from a steck
             // to generate the expected left-to-right ordering.
-            debug_assert!(self.tree.right_child(u).is_ok());
+            debug_assert!(self.tree.right_child(u).is_some());
             let mut c = self.tree.right_child(u).unwrap_or(NodeId::NULL);
             while c != NodeId::NULL {
                 self.node_stack.push(c);
-                debug_assert!(self.tree.right_child(c).is_ok());
+                debug_assert!(self.tree.right_child(c).is_some());
                 c = self.tree.left_sib(c).unwrap_or(NodeId::NULL);
             }
         };
@@ -702,7 +690,7 @@ struct RootIterator<'a> {
 
 impl<'a> RootIterator<'a> {
     fn new(tree: &'a TreeInterface) -> Self {
-        debug_assert!(tree.left_child(tree.virtual_root()).is_ok());
+        debug_assert!(tree.left_child(tree.virtual_root()).is_some());
         RootIterator {
             current_root: None,
             next_root: tree.left_child(tree.virtual_root()).unwrap_or(NodeId::NULL),
@@ -718,7 +706,7 @@ impl NodeIterator for RootIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                debug_assert!(self.tree.right_sib(r).is_ok());
+                debug_assert!(self.tree.right_sib(r).is_some());
                 self.next_root = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
                 cr
             }
@@ -739,10 +727,10 @@ struct ChildIterator<'a> {
 }
 
 impl<'a> ChildIterator<'a> {
-    fn new(tree: &'a TreeInterface, u: NodeId) -> Result<Self, TskitError> {
+    fn new(tree: &'a TreeInterface, u: NodeId) -> Option<Self> {
         let c = tree.left_child(u)?;
 
-        Ok(ChildIterator {
+        Some(ChildIterator {
             current_child: None,
             next_child: c,
             tree,
@@ -757,7 +745,7 @@ impl NodeIterator for ChildIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                debug_assert!(self.tree.right_sib(r).is_ok());
+                debug_assert!(self.tree.right_sib(r).is_some());
                 self.next_child = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
                 cr
             }
@@ -778,23 +766,16 @@ struct ParentsIterator<'a> {
 }
 
 impl<'a> ParentsIterator<'a> {
-    fn new(tree: &'a TreeInterface, u: NodeId) -> Result<Self, TskitError> {
-        let num_nodes = match tsk_id_t::try_from(tree.num_nodes) {
-            Ok(n) => n,
-            Err(_) => {
-                return Err(TskitError::RangeError(format!(
-                    "could not convert {} into tsk_id_t",
-                    stringify!(num_nodes)
-                )))
-            }
-        };
-        match u.0 >= num_nodes {
-            true => Err(TskitError::IndexError),
-            false => Ok(ParentsIterator {
+    fn new(tree: &'a TreeInterface, u: NodeId) -> Option<Self> {
+        let num_nodes = tsk_id_t::try_from(tree.num_nodes).ok()?;
+
+        match u {
+            x if x < num_nodes => Some(ParentsIterator {
                 current_node: None,
                 next_node: u,
                 tree,
             }),
+            _ => None,
         }
     }
 }
@@ -806,7 +787,7 @@ impl NodeIterator for ParentsIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                debug_assert!(self.tree.parent(r).is_ok());
+                debug_assert!(self.tree.parent(r).is_some());
                 self.next_node = self.tree.parent(r).unwrap_or(NodeId::NULL);
                 cr
             }
@@ -830,15 +811,20 @@ struct SamplesIterator<'a> {
 }
 
 impl<'a> SamplesIterator<'a> {
-    fn new(tree: &'a TreeInterface, u: NodeId) -> Result<Self, TskitError> {
-        let rv = SamplesIterator {
-            current_node: None,
-            next_sample_index: tree.left_sample(u)?,
-            last_sample_index: tree.right_sample(u)?,
-            tree,
-        };
-
-        Ok(rv)
+    fn new(tree: &'a TreeInterface, u: NodeId) -> Option<Result<Self, TskitError>> {
+        match tree.flags.contains(TreeFlags::SAMPLE_LISTS) {
+            false => Some(Err(TskitError::NotTrackingSamples {})),
+            true => {
+                let next_sample_index = tree.left_sample(u)?;
+                let last_sample_index = tree.right_sample(u)?;
+                Some(Ok(SamplesIterator {
+                    current_node: None,
+                    next_sample_index,
+                    last_sample_index,
+                    tree,
+                }))
+            }
+        }
     }
 }
 

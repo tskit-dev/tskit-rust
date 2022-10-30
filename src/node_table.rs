@@ -32,10 +32,10 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
     let table_ref = table.table_;
     Some(NodeTableRow {
         id: pos.into(),
-        time: table.time(pos).ok()?,
-        flags: table.flags(pos).ok()?,
-        population: table.population(pos).ok()?,
-        individual: table.individual(pos).ok()?,
+        time: table.time(pos)?,
+        flags: table.flags(pos)?,
+        population: table.population(pos)?,
+        individual: table.individual(pos)?,
         metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
     })
 }
@@ -84,28 +84,22 @@ impl<'a> NodeTable<'a> {
 
     /// Return the ``time`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<Time, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time) {
-            Ok(t) => Ok(t.into()),
-            Err(e) => Err(e),
-        }
+    /// * `Some(time)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<Time> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time, Time)
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<NodeFlags, TskitError> {
-        match unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.flags) {
-            Ok(f) => Ok(NodeFlags::from(f)),
-            Err(e) => Err(e),
-        }
+    /// * `Some(flags)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<NodeFlags> {
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.flags)
     }
 
     /// Mutable access to node flags.
@@ -142,14 +136,11 @@ impl<'a> NodeTable<'a> {
 
     /// Return the ``population`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn population<N: Into<NodeId> + Copy>(
-        &'a self,
-        row: N,
-    ) -> Result<PopulationId, TskitError> {
+    /// * `Some(population)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn population<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<PopulationId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
@@ -161,24 +152,21 @@ impl<'a> NodeTable<'a> {
 
     /// Return the ``population`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Result<PopulationId, TskitError> {
+    /// * `Some(population)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<PopulationId> {
         self.population(row)
     }
 
     /// Return the ``individual`` value from row ``row`` of the table.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// Will return [``IndexError``](crate::TskitError::IndexError)
-    /// if ``row`` is out of range.
-    pub fn individual<N: Into<NodeId> + Copy>(
-        &'a self,
-        row: N,
-    ) -> Result<IndividualId, TskitError> {
+    /// * `Some(individual)` if `row` is valid.
+    /// * `None` otherwise.
+    pub fn individual<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<IndividualId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
