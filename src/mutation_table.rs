@@ -30,17 +30,25 @@ impl PartialEq for MutationTableRow {
 }
 
 fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<MutationTableRow> {
-    let table_ref = table.table_;
-    Some(MutationTableRow {
-        id: pos.into(),
-        site: table.site(pos).ok()?,
-        node: table.node(pos).ok()?,
-        parent: table.parent(pos).ok()?,
-        time: table.time(pos).ok()?,
-        derived_state: table.derived_state(pos).ok()?.map(|s| s.to_vec()),
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
-    })
+    let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
+    match index {
+        i if i < table.num_rows() => {
+            let table_ref = table.table_;
+            let derived_state = table.derived_state(pos).map(|s| s.to_vec());
+            Some(MutationTableRow {
+                id: pos.into(),
+                site: table.site(pos).ok()?,
+                node: table.node(pos).ok()?,
+                parent: table.parent(pos).ok()?,
+                time: table.time(pos).ok()?,
+                derived_state,
+                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+            })
+        }
+        _ => None,
+    }
 }
+
 pub(crate) type MutationTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a MutationTable<'a>>;
 pub(crate) type MutationTableIterator<'a> = crate::table_iterator::TableIterator<MutationTable<'a>>;
@@ -143,10 +151,7 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn derived_state<M: Into<MutationId>>(
-        &'a self,
-        row: M,
-    ) -> Result<Option<&[u8]>, TskitError> {
+    pub fn derived_state<M: Into<MutationId>>(&'a self, row: M) -> Option<&[u8]> {
         metadata::char_column_to_slice(
             self,
             self.table_.derived_state,
@@ -160,10 +165,10 @@ impl<'a> MutationTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: MutationId,
-    ) -> Result<Option<T>, TskitError> {
+    ) -> Option<Result<T, TskitError>> {
         let table_ref = self.table_;
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
-        decode_metadata_row!(T, buffer)
+        Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
     /// Return an iterator over rows of the table.
@@ -226,12 +231,13 @@ build_owned_table_type!(
 /// let rowid = mutations.add_row_with_metadata(0, 1, 5, 10.0, None, &metadata).unwrap();
 /// assert_eq!(rowid, 0);
 ///
-/// if let Some(decoded) = mutations.metadata::<MutationMetadata>(rowid).unwrap() {
-///     assert_eq!(decoded.value, 42);
-/// } else {
-///     panic!("hmm...we expected some metadata!");
+/// match mutations.metadata::<MutationMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
 /// }
-///
 /// # }
 /// ```
     => OwnedMutationTable,

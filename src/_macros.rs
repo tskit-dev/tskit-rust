@@ -142,18 +142,13 @@ macro_rules! metadata_to_vector {
 
 macro_rules! decode_metadata_row {
     ($T: ty, $buffer: expr) => {
-        match $buffer {
-            None => Ok(None),
-            Some(v) => Ok(Some(<$T as $crate::metadata::MetadataRoundtrip>::decode(
-                &v,
-            )?)),
-        }
+        <$T as $crate::metadata::MetadataRoundtrip>::decode($buffer)
     };
 }
 
 macro_rules! table_row_decode_metadata {
     ($owner: ident, $table: ident, $pos: ident) => {
-        metadata_to_vector!($owner, $table, $pos).ok()?.map(|x| x)
+        metadata_to_vector!($owner, $table, $pos)
     };
 }
 

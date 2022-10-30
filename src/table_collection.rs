@@ -1451,16 +1451,16 @@ mod test {
         assert!(close_enough(sites.position(1).unwrap(), 0.5));
         assert!(close_enough(sites.position(2).unwrap(), 0.9));
 
-        match sites.ancestral_state(0).unwrap() {
+        match sites.ancestral_state(0) {
             Some(astate) => assert_eq!(astate, b"Eggnog"),
             None => panic!(),
         };
 
-        if sites.ancestral_state(1).unwrap().is_some() {
+        if sites.ancestral_state(1).is_some() {
             panic!()
         }
 
-        match sites.ancestral_state(2).unwrap() {
+        match sites.ancestral_state(2) {
             Some(astate) => assert_eq!(astate, longer_metadata.as_bytes()),
             None => panic!(),
         };
@@ -1526,16 +1526,13 @@ mod test {
         assert_eq!(mutations.parent(0).unwrap(), MutationId::NULL);
         assert_eq!(mutations.parent(1).unwrap(), MutationId::NULL);
         assert_eq!(mutations.parent(2).unwrap(), MutationId::NULL);
-        assert_eq!(mutations.derived_state(0).unwrap().unwrap(), b"pajamas");
+        assert_eq!(mutations.derived_state(0).unwrap(), b"pajamas");
 
-        if mutations.derived_state(1).unwrap().is_some() {
+        if mutations.derived_state(1).is_some() {
             panic!()
         }
 
-        assert_eq!(
-            mutations.derived_state(2).unwrap().unwrap(),
-            b"more pajamas"
-        );
+        assert_eq!(mutations.derived_state(2).unwrap(), b"more pajamas");
 
         let mut nmuts = 0;
         for (i, row) in tables.mutations().iter().enumerate() {
@@ -1644,6 +1641,7 @@ mod test {
             match tables
                 .mutations()
                 .metadata::<F>((i as tsk_id_t).into())
+                .transpose()
                 .unwrap()
             {
                 Some(x) => {
@@ -1797,9 +1795,11 @@ mod test_bad_metadata {
         tables
             .add_mutation_with_metadata(0, 0, MutationId::NULL, 0.0, None, &md)
             .unwrap();
-        if tables.mutations().metadata::<Ff>(0.into()).is_ok() {
-            panic!("expected an error!!");
-        }
+        assert!(tables
+            .mutations()
+            .metadata::<Ff>(0.into())
+            .transpose()
+            .is_err());
     }
 }
 
@@ -1837,15 +1837,13 @@ mod test_adding_node {
             tables.nodes().individual(row_id).unwrap(),
             IndividualId::NULL,
         );
-        assert!(tables
-            .nodes()
-            .metadata::<GenericMetadata>(row_id)
-            .unwrap()
-            .is_none());
+        assert!(tables.nodes().metadata::<GenericMetadata>(row_id).is_none());
 
         // We are playing a dangerous game here,
         // in that we do not have any populations.
         // Fortunately, we are range-checked everywhere.
+        println!("{}", tables.nodes().population(row_id).unwrap());
+        println!("{}", tables.populations().num_rows());
         assert!(tables
             .populations()
             .row(tables.nodes().population(row_id).unwrap())
@@ -1884,7 +1882,11 @@ mod test_adding_node {
                 Err(_) => panic!("unexpected Err"),
             };
             assert_eq!(
-                tables.nodes().metadata::<GenericMetadata>(row_id).unwrap(),
+                tables
+                    .nodes()
+                    .metadata::<GenericMetadata>(row_id)
+                    .transpose()
+                    .unwrap(),
                 Some(metadata[mi])
             );
         }
@@ -1971,6 +1973,7 @@ mod test_adding_individual {
                 tables
                     .individuals()
                     .metadata::<GenericMetadata>(row_id)
+                    .transpose()
                     .unwrap(),
                 Some(metadata[mi])
             );
@@ -2029,7 +2032,11 @@ mod test_adding_edge {
                     Err(_) => panic!("unexpected Err"),
                 };
             assert_eq!(
-                tables.edges().metadata::<GenericMetadata>(edge_id).unwrap(),
+                tables
+                    .edges()
+                    .metadata::<GenericMetadata>(edge_id)
+                    .transpose()
+                    .unwrap(),
                 Some(metadata[mi])
             );
         }
@@ -2069,7 +2076,6 @@ mod test_adding_mutation {
             if tables
                 .mutations()
                 .metadata::<GenericMetadata>(row)
-                .unwrap()
                 .is_some()
             {
                 panic!("expected None");
@@ -2091,6 +2097,7 @@ mod test_adding_mutation {
                 tables
                     .mutations()
                     .metadata::<GenericMetadata>(mut_id)
+                    .transpose()
                     .unwrap(),
                 Some(metadata[mi])
             );
@@ -2124,7 +2131,6 @@ mod test_adding_site {
         assert!(tables
             .sites()
             .metadata::<GenericMetadata>(site_id)
-            .unwrap()
             .is_none());
 
         let row = tables.sites().row(site_id).unwrap();
@@ -2144,7 +2150,11 @@ mod test_adding_site {
                 Err(_) => panic!("unexpected Err"),
             };
             assert_eq!(
-                tables.sites().metadata::<GenericMetadata>(site_id).unwrap(),
+                tables
+                    .sites()
+                    .metadata::<GenericMetadata>(site_id)
+                    .transpose()
+                    .unwrap(),
                 Some(metadata[mi])
             );
         }
@@ -2182,7 +2192,6 @@ mod test_adding_population {
         assert!(tables
             .populations()
             .metadata::<GenericMetadata>(pop_id)
-            .unwrap()
             .is_none());
 
         for row in tables.populations_iter() {
@@ -2192,6 +2201,8 @@ mod test_adding_population {
         for row in tables.populations().iter() {
             assert!(row.metadata.is_none());
         }
+
+        println!("{} {}", pop_id, tables.populations().num_rows());
 
         assert!(
             tables.populations().row(pop_id).unwrap() == tables.populations().row(pop_id).unwrap()
@@ -2208,6 +2219,7 @@ mod test_adding_population {
             tables
                 .populations()
                 .metadata::<GenericMetadata>(pop_id)
+                .transpose()
                 .unwrap()
                 == Some(GenericMetadata::default())
         );
@@ -2237,7 +2249,6 @@ mod test_adding_migrations {
         assert!(tables
             .migrations()
             .metadata::<GenericMetadata>(mig_id)
-            .unwrap()
             .is_none());
     }
 

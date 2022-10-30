@@ -26,10 +26,11 @@ impl PartialEq for SiteTableRow {
 
 fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
     let table_ref = table.table_;
+    let ancestral_state = table.ancestral_state(pos).map(|s| s.to_vec());
     Some(SiteTableRow {
         id: pos.into(),
         position: table.position(pos).ok()?,
-        ancestral_state: table.ancestral_state(pos).ok()?.map(|s| s.to_vec()),
+        ancestral_state,
         metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
     })
 }
@@ -99,7 +100,7 @@ impl<'a> SiteTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn ancestral_state<S: Into<SiteId>>(&'a self, row: S) -> Result<Option<&[u8]>, TskitError> {
+    pub fn ancestral_state<S: Into<SiteId>>(&'a self, row: S) -> Option<&[u8]> {
         crate::metadata::char_column_to_slice(
             self,
             self.table_.ancestral_state,
@@ -113,10 +114,10 @@ impl<'a> SiteTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: SiteId,
-    ) -> Result<Option<T>, TskitError> {
+    ) -> Option<Result<T, TskitError>> {
         let table_ref = self.table_;
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
-        decode_metadata_row!(T, buffer)
+        Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 
     /// Return an iterator over rows of the table.
@@ -179,12 +180,13 @@ build_owned_table_type!(
     /// let rowid = sites.add_row_with_metadata(0., None, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
     ///
-    /// if let Some(decoded) = sites.metadata::<SiteMetadata>(rowid).unwrap() {
-    ///     assert_eq!(decoded.value, 42);
-    /// } else {
-    ///     panic!("hmm...we expected some metadata!");
+    /// match sites.metadata::<SiteMetadata>(rowid) {
+    ///     // rowid is in range, decoding succeeded
+    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+    ///     // rowid is in range, decoding failed
+    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+    ///     None => panic!("row id out of range")
     /// }
-    ///
     /// # }
     /// ```
     => OwnedSiteTable,

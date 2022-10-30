@@ -224,23 +224,23 @@ impl<'a> IndividualTable<'a> {
     ///     .individuals()
     ///     .metadata::<IndividualMetadata>(0.into())
     /// {
-    ///     Ok(metadata_option) => metadata_option,
-    ///     Err(e) => panic!("error: {:?}", e),
+    ///     Some(metadata_option) => metadata_option,
+    ///     None => panic!("expected metadata"),
     /// };
     /// // Now, check the contents of the Option
     /// match decoded_option {
-    ///     Some(metadata) => assert_eq!(metadata.x, 1),
-    ///     None => panic!("we expected Some(metadata)?"),
+    ///     Ok(metadata) => assert_eq!(metadata.x, 1),
+    ///     Err(e) => panic!("error decoding metadata: {:?}", e),
     /// }
     /// # }
     /// ```
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: IndividualId,
-    ) -> Result<Option<T>, TskitError> {
+    ) -> Option<Result<T, TskitError>> {
         let table_ref = self.table_;
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
-        decode_metadata_row!(T, buffer)
+        Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
     /// Return an iterator over rows of the table.
@@ -288,6 +288,7 @@ build_owned_table_type!(
     /// An example with metadata.
     /// This requires the cargo feature `"derive"` for `tskit`.
     ///
+    ///
     /// ```
     /// # #[cfg(any(feature="doc", feature="derive"))] {
     /// use tskit::OwnedIndividualTable;
@@ -307,10 +308,12 @@ build_owned_table_type!(
     /// let rowid = individuals.add_row_with_metadata(0, None, None, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
     ///
-    /// if let Some(decoded) = individuals.metadata::<IndividualMetadata>(rowid).unwrap() {
-    ///     assert_eq!(decoded.value, 42);
-    /// } else {
-    ///     panic!("hmm...we expected some metadata!");
+    /// match individuals.metadata::<IndividualMetadata>(rowid) {
+    ///     // rowid is in range, decoding succeeded
+    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+    ///     // rowid is in range, decoding failed
+    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+    ///     None => panic!("row id out of range")
     /// }
     ///
     /// # }

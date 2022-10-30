@@ -191,10 +191,10 @@ impl<'a> NodeTable<'a> {
     pub fn metadata<T: metadata::MetadataRoundtrip>(
         &'a self,
         row: NodeId,
-    ) -> Result<Option<T>, TskitError> {
+    ) -> Option<Result<T, TskitError>> {
         let table_ref = self.table_;
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
-        decode_metadata_row!(T, buffer)
+        Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
     /// Return an iterator over rows of the table.
@@ -285,10 +285,12 @@ build_owned_table_type!(
     /// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
     ///
-    /// if let Some(decoded) = nodes.metadata::<NodeMetadata>(rowid).unwrap() {
-    ///     assert_eq!(decoded.value, 42);
-    /// } else {
-    ///     panic!("hmm...we expected some metadata!");
+    /// match nodes.metadata::<NodeMetadata>(rowid) {
+    ///     // rowid is in range, decoding succeeded
+    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+    ///     // rowid is in range, decoding failed
+    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+    ///     None => panic!("row id out of range")
     /// }
     ///
     /// # }

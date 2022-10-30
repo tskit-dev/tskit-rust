@@ -12,7 +12,7 @@ mod experimental_features {
     // * So hopefully we can start there.
     trait MetadataRetrieval<R> {
         type Metadata: tskit::metadata::MetadataRoundtrip;
-        fn metadata(&self, r: impl Into<R>) -> Result<Option<Self::Metadata>, tskit::TskitError>;
+        fn metadata(&self, r: impl Into<R>) -> Option<Result<Self::Metadata, tskit::TskitError>>;
     }
 
     // Specific traits cover the various row id types
@@ -20,9 +20,8 @@ mod experimental_features {
         fn mutation_metadata(
             &self,
             row: impl Into<tskit::MutationId>,
-        ) -> Result<
-            Option<<Self as MetadataRetrieval<tskit::MutationId>>::Metadata>,
-            tskit::TskitError,
+        ) -> Option<
+            Result<<Self as MetadataRetrieval<tskit::MutationId>>::Metadata, tskit::TskitError>,
         >
         where
             <Self as MetadataRetrieval<tskit::MutationId>>::Metadata:
@@ -39,9 +38,8 @@ mod experimental_features {
         fn mutation_metadata(
             &self,
             row: impl Into<tskit::MutationId>,
-        ) -> Result<
-            Option<<Self as MetadataRetrieval<tskit::MutationId>>::Metadata>,
-            tskit::TskitError,
+        ) -> Option<
+            Result<<Self as MetadataRetrieval<tskit::MutationId>>::Metadata, tskit::TskitError>,
         > {
             self.metadata(row)
         }
@@ -51,9 +49,8 @@ mod experimental_features {
         fn individual_metadata(
             &self,
             row: impl Into<tskit::IndividualId>,
-        ) -> Result<
-            Option<<Self as MetadataRetrieval<tskit::IndividualId>>::Metadata>,
-            tskit::TskitError,
+        ) -> Option<
+            Result<<Self as MetadataRetrieval<tskit::IndividualId>>::Metadata, tskit::TskitError>,
         >
         where
             <Self as MetadataRetrieval<tskit::IndividualId>>::Metadata:
@@ -69,9 +66,8 @@ mod experimental_features {
         fn individual_metadata(
             &self,
             row: impl Into<tskit::IndividualId>,
-        ) -> Result<
-            Option<<Self as MetadataRetrieval<tskit::IndividualId>>::Metadata>,
-            tskit::TskitError,
+        ) -> Option<
+            Result<<Self as MetadataRetrieval<tskit::IndividualId>>::Metadata, tskit::TskitError>,
         > {
             self.metadata(row)
         }
@@ -86,7 +82,7 @@ mod experimental_features {
         fn get_mutation_metadata<M: Into<tskit::MutationId>>(
             &self,
             row: M,
-        ) -> Result<Option<Self::Item>, tskit::TskitError>;
+        ) -> Option<Result<Self::Item, tskit::TskitError>>;
     }
 
     #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
@@ -132,7 +128,7 @@ mod experimental_features {
         fn get_mutation_metadata<M: Into<tskit::MutationId>>(
             &self,
             row: M,
-        ) -> Result<Option<Self::Item>, tskit::TskitError> {
+        ) -> Option<Result<Self::Item, tskit::TskitError>> {
             self.mutations().metadata::<Self::Item>(row.into())
         }
     }
@@ -142,7 +138,7 @@ mod experimental_features {
         fn metadata(
             &self,
             row: impl Into<tskit::MutationId>,
-        ) -> Result<Option<MutationMetadataType>, tskit::TskitError> {
+        ) -> Option<Result<MutationMetadataType, tskit::TskitError>> {
             self.mutations()
                 .metadata::<MutationMetadataType>(row.into())
         }
@@ -153,7 +149,7 @@ mod experimental_features {
         fn metadata(
             &self,
             row: impl Into<tskit::IndividualId>,
-        ) -> Result<Option<IndividualMetadataType>, tskit::TskitError> {
+        ) -> Option<Result<IndividualMetadataType, tskit::TskitError>> {
             self.individuals()
                 .metadata::<IndividualMetadataType>(row.into())
         }
@@ -241,7 +237,7 @@ mod experimental_features_refined {
         fn get_mutation_metadata<M: Into<tskit::MutationId>>(
             &self,
             row: M,
-        ) -> Result<Option<Self::Item>, tskit::TskitError> {
+        ) -> Option<Result<Self::Item, tskit::TskitError>> {
             self.as_tables()
                 .mutations()
                 .metadata::<Self::Item>(row.into())
