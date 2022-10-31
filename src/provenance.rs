@@ -192,13 +192,12 @@ impl OwnedProvenanceTable {
 #[cfg(test)]
 mod test_provenances {
     use super::*;
-    use crate::test_fixtures::make_empty_table_collection;
     use crate::TableAccess;
 
     #[test]
     fn test_empty_record_string() {
         // check for tables...
-        let mut tables = make_empty_table_collection(1.0);
+        let mut tables = crate::TableCollection::new(10.).unwrap();
         let s = String::from("");
         let row_id = tables.add_provenance(&s).unwrap();
         let _ = tables.provenances().row(row_id).unwrap();
@@ -215,7 +214,7 @@ mod test_provenances {
     #[test]
     fn test_add_rows() {
         let records = vec!["banana".to_string(), "split".to_string()];
-        let mut tables = make_empty_table_collection(1.);
+        let mut tables = crate::TableCollection::new(10.).unwrap();
         for (i, r) in records.iter().enumerate() {
             let row_id = tables.add_provenance(r).unwrap();
             assert!(row_id == ProvenanceId(i as crate::tsk_id_t));

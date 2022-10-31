@@ -2,11 +2,6 @@
 use crate::*;
 
 #[cfg(test)]
-pub fn make_empty_table_collection(L: f64) -> TableCollection {
-    TableCollection::new(L).unwrap()
-}
-
-#[cfg(test)]
 #[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq, Copy, Clone)]
 pub struct GenericMetadata {
     pub data: i64,
