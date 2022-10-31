@@ -101,18 +101,13 @@ impl<'a> PopulationTable<'a> {
     ///
     /// * `r`: the row id.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row<P: Into<PopulationId> + Copy>(
-        &self,
-        r: P,
-    ) -> Result<PopulationTableRow, TskitError> {
-        let ri = r.into();
-        if ri < 0 {
-            return Err(crate::TskitError::IndexError);
-        }
-        table_row_access!(ri.0, self, make_population_table_row)
+    /// * `Some(row)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<PopulationTableRow> {
+        let ri = r.into().0;
+        table_row_access!(ri, self, make_population_table_row)
     }
 }
 

@@ -143,15 +143,12 @@ impl<'a> EdgeTable<'a> {
     ///
     /// * `r`: the row id.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Result<EdgeTableRow, TskitError> {
-        let ri = r.into();
-        if ri < 0 {
-            return Err(crate::TskitError::IndexError);
-        }
-        table_row_access!(ri.0, self, make_edge_table_row)
+    /// * `Some(row)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<EdgeTableRow> {
+        table_row_access!(r.into().0, self, make_edge_table_row)
     }
 }
 

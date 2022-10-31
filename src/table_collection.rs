@@ -1670,11 +1670,11 @@ mod test {
             .unwrap();
 
         match tables.nodes().row(NodeId::from(0)) {
-            Ok(x) => match x.population {
+            Some(x) => match x.population {
                 PopulationId(0) => (),
                 _ => panic!("expected PopulationId(0)"),
             },
-            Err(_) => panic!("expected Ok(_)"),
+            None => panic!("expected Some(_)"),
         };
     }
 
@@ -1847,7 +1847,7 @@ mod test_adding_node {
         assert!(tables
             .populations()
             .row(tables.nodes().population(row_id).unwrap())
-            .is_err());
+            .is_none());
 
         let row_id = tables
             .add_node(0, 0.0, PopulationId::NULL, IndividualId::from(17))
@@ -1862,7 +1862,7 @@ mod test_adding_node {
         assert!(tables
             .individuals()
             .row(tables.nodes().individual(row_id).unwrap())
-            .is_err());
+            .is_none());
     }
 
     #[test]

@@ -146,21 +146,12 @@ impl<'a> ProvenanceTable<'a> {
 
     /// Obtain a [`ProvenanceTableRow`] for row `row`.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row<P: Into<ProvenanceId> + Copy>(
-        &'a self,
-        row: P,
-    ) -> Result<ProvenanceTableRow, TskitError> {
-        if row.into() < 0 {
-            Err(TskitError::IndexError)
-        } else {
-            match make_provenance_row(self, row.into().0) {
-                Some(x) => Ok(x),
-                None => Err(TskitError::IndexError),
-            }
-        }
+    /// * `Some(row)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Option<ProvenanceTableRow> {
+        make_provenance_row(self, row.into().0)
     }
 
     /// Return an iterator over rows of the table.
