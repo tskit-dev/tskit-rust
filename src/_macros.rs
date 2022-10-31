@@ -30,27 +30,33 @@ macro_rules! panic_on_tskit_error {
 macro_rules! unsafe_tsk_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
         if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
-            Err($crate::error::TskitError::IndexError {})
+            None
         } else {
-            Ok(unsafe { *$array.offset($i as isize) })
+            Some(unsafe { *$array.offset($i as isize) })
         }
     }};
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $output_id_type: expr) => {{
         if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
-            Err($crate::error::TskitError::IndexError {})
+            None
         } else {
-            Ok($output_id_type(unsafe { *$array.offset($i as isize) }))
+            Some($output_id_type(unsafe { *$array.offset($i as isize) }))
         }
+    }};
+}
+
+macro_rules! unsafe_tsk_column_access_and_map_into {
+    ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
+        unsafe_tsk_column_access!($i, $lo, $hi, $array).map(|v| v.into())
     }};
 }
 
 macro_rules! unsafe_tsk_ragged_column_access {
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
-        let i = $crate::SizeType::try_from($i)?;
+        let i = $crate::SizeType::try_from($i).ok()?;
         if $i < $lo || i >= $hi {
-            Err(TskitError::IndexError {})
+            None
         } else if $offset_array_len == 0 {
-            Ok(None)
+            None
         } else {
             let start = unsafe { *$offset_array.offset($i as isize) };
             let stop = if i < $hi {
@@ -59,23 +65,23 @@ macro_rules! unsafe_tsk_ragged_column_access {
                 $offset_array_len as tsk_size_t
             };
             if start == stop {
-                Ok(None)
+                None
             } else {
                 let mut buffer = vec![];
                 for i in start..stop {
                     buffer.push(unsafe { *$array.offset(i as isize) });
                 }
-                Ok(Some(buffer))
+                Some(buffer)
             }
         }
     }};
 
     ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr, $output_id_type: ty) => {{
-        let i = $crate::SizeType::try_from($i)?;
+        let i = $crate::SizeType::try_from($i).ok()?;
         if $i < $lo || i >= $hi {
-            Err(TskitError::IndexError {})
+            None
         } else if $offset_array_len == 0 {
-            Ok(None)
+            None
         } else {
             let start = unsafe { *$offset_array.offset($i as isize) };
             let stop = if i < $hi {
@@ -84,14 +90,14 @@ macro_rules! unsafe_tsk_ragged_column_access {
                 $offset_array_len as tsk_size_t
             };
             if start == stop {
-                Ok(None)
+                None
             } else {
-                Ok(Some(unsafe {
+                Some(unsafe {
                     std::slice::from_raw_parts(
                         $array.offset(start as isize) as *const $output_id_type,
                         stop as usize - start as usize,
                     )
-                }))
+                })
             }
         }
     }};
