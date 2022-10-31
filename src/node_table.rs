@@ -197,15 +197,13 @@ impl<'a> NodeTable<'a> {
     ///
     /// * `r`: the row id.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn row<N: Into<NodeId> + Copy>(&self, r: N) -> Result<NodeTableRow, TskitError> {
-        let ri = r.into();
-        if ri < 0 {
-            return Err(crate::TskitError::IndexError);
-        }
-        table_row_access!(ri.0, self, make_node_table_row)
+    /// * `Some(row)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row<N: Into<NodeId> + Copy>(&self, r: N) -> Option<NodeTableRow> {
+        let ri = r.into().0;
+        table_row_access!(ri, self, make_node_table_row)
     }
 
     /// Obtain a vector containing the indexes ("ids")

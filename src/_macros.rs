@@ -186,7 +186,7 @@ macro_rules! err_if_not_tracking_samples {
 // as it implies $row is out of range.
 macro_rules! table_row_access {
     ($row: expr, $table: expr, $row_fn: ident) => {
-        $row_fn($table, $row).ok_or_else(|| TskitError::IndexError {})
+        $row_fn($table, $row)
     };
 }
 
