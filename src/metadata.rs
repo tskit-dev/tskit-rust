@@ -269,6 +269,15 @@ pub(crate) fn char_column_to_slice<T: Sized>(
         Some(x) => x,
         None => return None,
     };
+    debug_assert!(!column.is_null());
+    debug_assert!(!column_offset.is_null());
+    if column.is_null() {
+        return None;
+    }
+    if column_offset.is_null() {
+        return None;
+    }
+    // SAFETY: not null and best effort bounds check
     let start = unsafe { *column_offset.offset(row_isize) };
     let stop = if (row as tsk_size_t) < num_rows {
         unsafe { *column_offset.offset(row_isize + 1) }

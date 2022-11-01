@@ -107,7 +107,7 @@ impl<'a> IndividualTable<'a> {
     /// * `Some(flags)` if `row` is valid.
     /// * `None` otherwise.
     pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<IndividualFlags> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.flags)
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, flags)
     }
 
     /// Return the locations for a given row.
@@ -121,9 +121,10 @@ impl<'a> IndividualTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.location,
-            self.table_.location_offset,
-            self.table_.location_length,
+            self.table_,
+            location,
+            location_offset,
+            location_length,
             Location
         )
     }
@@ -139,9 +140,10 @@ impl<'a> IndividualTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.parents,
-            self.table_.parents_offset,
-            self.table_.parents_length,
+            self.table_,
+            parents,
+            parents_offset,
+            parents_length,
             IndividualId
         )
     }

@@ -28,73 +28,69 @@ macro_rules! panic_on_tskit_error {
 }
 
 macro_rules! unsafe_tsk_column_access {
-    ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident) => {{
         if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
             None
         } else {
-            Some(unsafe { *$array.offset($i as isize) })
+            debug_assert!(!($owner).$array.is_null());
+            if !$owner.$array.is_null() {
+                // SAFETY: array is not null
+                // and we did our best effort
+                // on bounds checking
+                Some(unsafe { *$owner.$array.offset($i as isize) })
+            } else {
+                None
+            }
         }
     }};
-    ($i: expr, $lo: expr, $hi: expr, $array: expr, $output_id_type: expr) => {{
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $output_id_type: expr) => {{
         if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
             None
         } else {
-            Some($output_id_type(unsafe { *$array.offset($i as isize) }))
+            debug_assert!(!($owner).$array.is_null());
+            if !$owner.$array.is_null() {
+                // SAFETY: array is not null
+                // and we did our best effort
+                // on bounds checking
+                unsafe { Some($output_id_type(*($owner.$array.offset($i as isize)))) }
+            } else {
+                None
+            }
         }
     }};
 }
 
 macro_rules! unsafe_tsk_column_access_and_map_into {
-    ($i: expr, $lo: expr, $hi: expr, $array: expr) => {{
-        unsafe_tsk_column_access!($i, $lo, $hi, $array).map(|v| v.into())
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident) => {{
+        unsafe_tsk_column_access!($i, $lo, $hi, $owner, $array).map(|v| v.into())
     }};
 }
 
 macro_rules! unsafe_tsk_ragged_column_access {
-    ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident, $output_id_type: ty) => {{
         let i = $crate::SizeType::try_from($i).ok()?;
         if $i < $lo || i >= $hi {
             None
-        } else if $offset_array_len == 0 {
+        } else if $owner.$offset_array_len == 0 {
             None
         } else {
-            let start = unsafe { *$offset_array.offset($i as isize) };
-            let stop = if i < $hi {
-                unsafe { *$offset_array.offset(($i + 1) as isize) }
-            } else {
-                $offset_array_len as tsk_size_t
-            };
-            if start == stop {
-                None
-            } else {
-                let mut buffer = vec![];
-                for i in start..stop {
-                    buffer.push(unsafe { *$array.offset(i as isize) });
-                }
-                Some(buffer)
+            debug_assert!(!$owner.$array.is_null());
+            if $owner.$array.is_null() {
+                return None;
             }
-        }
-    }};
-
-    ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr, $output_id_type: ty) => {{
-        let i = $crate::SizeType::try_from($i).ok()?;
-        if $i < $lo || i >= $hi {
-            None
-        } else if $offset_array_len == 0 {
-            None
-        } else {
-            let start = unsafe { *$offset_array.offset($i as isize) };
+            // SAFETY: we have checked bounds and ensured not null
+            let start = unsafe { *$owner.$offset_array.offset($i as isize) };
             let stop = if i < $hi {
-                unsafe { *$offset_array.offset(($i + 1) as isize) }
+                unsafe { *$owner.$offset_array.offset(($i + 1) as isize) }
             } else {
-                $offset_array_len as tsk_size_t
+                $owner.$offset_array_len as tsk_size_t
             };
             if start == stop {
                 None
             } else {
                 Some(unsafe {
                     std::slice::from_raw_parts(
-                        $array.offset(start as isize) as *const $output_id_type,
+                        $owner.$array.offset(start as isize) as *const $output_id_type,
                         stop as usize - start as usize,
                     )
                 })
@@ -107,25 +103,27 @@ macro_rules! unsafe_tsk_ragged_column_access {
 // to pass clippy checks
 #[allow(unused_macros)]
 macro_rules! unsafe_tsk_ragged_char_column_access {
-    ($i: expr, $lo: expr, $hi: expr, $array: expr, $offset_array: expr, $offset_array_len: expr) => {{
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident) => {{
         let i = $crate::SizeType::try_from($i)?;
         if $i < $lo || i >= $hi {
             Err(TskitError::IndexError {})
-        } else if $offset_array_len == 0 {
+        } else if $owner.$offset_array_len == 0 {
             Ok(None)
         } else {
-            let start = unsafe { *$offset_array.offset($i as isize) };
+            assert!(!$owner.$array.is_null());
+            assert!(!$owner.$offset_array.is_null());
+            let start = unsafe { *$owner.$offset_array.offset($i as isize) };
             let stop = if i < $hi {
-                unsafe { *$offset_array.offset(($i + 1) as isize) }
+                unsafe { *$owner.$offset_array.offset(($i + 1) as isize) }
             } else {
-                $offset_array_len as tsk_size_t
+                $owner.$offset_array_len as tsk_size_t
             };
             if start == stop {
                 Ok(None)
             } else {
                 let mut buffer = String::new();
                 for i in start..stop {
-                    buffer.push(unsafe { *$array.offset(i as isize) as u8 as char });
+                    buffer.push(unsafe { *$owner.$array.offset(i as isize) as u8 as char });
                 }
                 Ok(Some(buffer))
             }

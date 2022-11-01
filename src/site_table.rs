@@ -89,7 +89,8 @@ impl<'a> SiteTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.position,
+            self.table_,
+            position,
             Position
         )
     }

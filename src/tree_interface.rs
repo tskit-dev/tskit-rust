@@ -296,24 +296,23 @@ impl TreeInterface {
     // error if we are not tracking samples,
     // Ok(None) if u is out of range
     fn left_sample(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, (*self.as_ptr()).left_sample, NodeId)
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, ptr, left_sample, NodeId)
     }
 
     // error if we are not tracking samples,
     // Ok(None) if u is out of range
     fn right_sample(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(
-            u.0,
-            0,
-            self.num_nodes,
-            (*self.as_ptr()).right_sample,
-            NodeId
-        )
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, ptr, right_sample, NodeId)
     }
 
     /// Return the `[left, right)` coordinates of the tree.
     pub fn interval(&self) -> (Position, Position) {
         (
+            // SAFETY: internal pointer cannot be NULL
             unsafe { (*self.as_ptr()).interval }.left.into(),
             unsafe { (*self.as_ptr()).interval }.right.into(),
         )
@@ -330,35 +329,45 @@ impl TreeInterface {
     ///
     /// Returns `None` if `u` is out of range.
     pub fn parent(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).parent, NodeId)
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, parent, NodeId)
     }
 
     /// Get the left child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).left_child, NodeId)
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, left_child, NodeId)
     }
 
     /// Get the right child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).right_child, NodeId)
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, right_child, NodeId)
     }
 
     /// Get the left sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).left_sib, NodeId)
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, left_sib, NodeId)
     }
 
     /// Get the right sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, (*self.as_ptr()).right_sib, NodeId)
+        // SAFETY: internal pointer cannot be NULL
+        let ptr = unsafe { *self.as_ptr() };
+        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, right_sib, NodeId)
     }
 
     /// Obtain the list of samples for the current tree/tree sequence

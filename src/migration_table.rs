@@ -98,7 +98,7 @@ impl<'a> MigrationTable<'a> {
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
     pub fn left<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.left)
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, left)
     }
 
     /// Return the right coordinate for a given row.
@@ -108,7 +108,7 @@ impl<'a> MigrationTable<'a> {
     /// * `Some(positions)` if `row` is valid.
     /// * `None` otherwise.
     pub fn right<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.right)
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, right)
     }
 
     /// Return the node for a given row.
@@ -118,7 +118,7 @@ impl<'a> MigrationTable<'a> {
     /// * `Some(node)` if `row` is valid.
     /// * `None` otherwise.
     pub fn node<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.node, NodeId)
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, node, NodeId)
     }
 
     /// Return the source population for a given row.
@@ -132,7 +132,8 @@ impl<'a> MigrationTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.source,
+            self.table_,
+            source,
             PopulationId
         )
     }
@@ -148,7 +149,8 @@ impl<'a> MigrationTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.dest,
+            self.table_,
+            dest,
             PopulationId
         )
     }
@@ -160,7 +162,7 @@ impl<'a> MigrationTable<'a> {
     /// * `Some(time)` if `row` is valid.
     /// * `None` otherwise.
     pub fn time<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<Time> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.time)
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, time)
     }
 
     /// Return the metadata for a given row.

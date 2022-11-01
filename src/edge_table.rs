@@ -89,7 +89,14 @@ impl<'a> EdgeTable<'a> {
     /// * `Some(parent)` if `u` is valid.
     /// * `None` otherwise.
     pub fn parent<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.parent, NodeId)
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_,
+            parent,
+            NodeId
+        )
     }
 
     /// Return the ``child`` value from row ``row`` of the table.
@@ -99,7 +106,7 @@ impl<'a> EdgeTable<'a> {
     /// * `Some(child)` if `u` is valid.
     /// * `None` otherwise.
     pub fn child<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.child, NodeId)
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, child, NodeId)
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -109,7 +116,14 @@ impl<'a> EdgeTable<'a> {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<Position> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.left, Position)
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.table_,
+            left,
+            Position
+        )
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
@@ -119,7 +133,7 @@ impl<'a> EdgeTable<'a> {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.right)
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, right)
     }
 
     pub fn metadata<T: metadata::MetadataRoundtrip>(
