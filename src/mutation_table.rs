@@ -7,6 +7,7 @@ use crate::{MutationId, NodeId, SiteId};
 use ll_bindings::{tsk_mutation_table_free, tsk_mutation_table_init};
 
 /// Row of a [`MutationTable`]
+#[derive(Debug)]
 pub struct MutationTableRow {
     pub id: MutationId,
     pub site: SiteId,

@@ -7,7 +7,7 @@ use crate::TskitError;
 use ll_bindings::{tsk_population_table_free, tsk_population_table_init};
 
 /// Row of a [`PopulationTable`]
-#[derive(Eq)]
+#[derive(Eq, Debug)]
 pub struct PopulationTableRow {
     pub id: PopulationId,
     pub metadata: Option<Vec<u8>>,

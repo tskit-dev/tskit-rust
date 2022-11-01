@@ -7,6 +7,7 @@ use crate::{tsk_id_t, tsk_size_t, TskitError};
 use ll_bindings::{tsk_individual_table_free, tsk_individual_table_init};
 
 /// Row of a [`IndividualTable`]
+#[derive(Debug)]
 pub struct IndividualTableRow {
     pub id: IndividualId,
     pub flags: IndividualFlags,

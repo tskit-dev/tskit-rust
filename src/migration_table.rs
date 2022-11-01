@@ -8,6 +8,7 @@ use crate::{MigrationId, NodeId, PopulationId};
 use ll_bindings::{tsk_migration_table_free, tsk_migration_table_init};
 
 /// Row of a [`MigrationTable`]
+#[derive(Debug)]
 pub struct MigrationTableRow {
     pub id: MigrationId,
     pub left: Position,
