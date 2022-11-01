@@ -45,8 +45,22 @@ mod test_adding_rows_without_metadata {
                         // are held in an Option.
                         match tables.$table().row(id) {
                             Some(row) => {
-                                // assert_eq!(row, row);
-                                assert!(row.metadata.is_none())
+                                assert!(row.metadata.is_none());
+
+                                // A row equals itself
+                                let row2 = tables.$table().row(id).unwrap();
+                                assert_eq!(row, row2);
+
+                                // create a second row w/identical payload
+                                if let Ok(id2) = tables.$adder($($payload),*) {
+                                    if let Some(row2) = tables.$table().row(id2) {
+                                        // The rows have different id
+                                        assert_ne!(row, row2);
+                                    } else {
+                                         panic!("Expected Some(row2) from {} table", stringify!(table))
+                                    }
+                                }
+
                             },
                             None => panic!("Expected Some(row) from {} table", stringify!(table))
                         }

@@ -6,6 +6,7 @@ use crate::{EdgeId, NodeId};
 use ll_bindings::{tsk_edge_table_free, tsk_edge_table_init};
 
 /// Row of an [`EdgeTable`]
+#[derive(Debug)]
 pub struct EdgeTableRow {
     pub id: EdgeId,
     pub left: Position,

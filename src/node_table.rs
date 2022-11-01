@@ -8,6 +8,7 @@ use crate::{IndividualId, NodeId, PopulationId};
 use ll_bindings::{tsk_node_table_free, tsk_node_table_init};
 
 /// Row of a [`NodeTable`]
+#[derive(Debug)]
 pub struct NodeTableRow {
     pub id: NodeId,
     pub time: Time,

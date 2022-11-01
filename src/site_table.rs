@@ -8,6 +8,7 @@ use crate::TskitError;
 use ll_bindings::{tsk_site_table_free, tsk_site_table_init};
 
 /// Row of a [`SiteTable`]
+#[derive(Debug)]
 pub struct SiteTableRow {
     pub id: SiteId,
     pub position: Position,
