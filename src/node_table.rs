@@ -88,6 +88,21 @@ impl<'a> NodeTable<'a> {
     ///
     /// * `Some(time)` if `row` is valid.
     /// * `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(0, 10.0, -1, -1).unwrap();
+    /// if let Some(time) = tables.nodes().time(0) {
+    /// // then node id 0 is a valid row id
+    /// # assert_eq!(time, 10.0);
+    /// }
+    /// # else {
+    /// #   panic!("expected 0 to be a valid row id")
+    /// # }
+    /// ```
     pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<Time> {
         unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time, Time)
     }
@@ -98,11 +113,85 @@ impl<'a> NodeTable<'a> {
     ///
     /// * `Some(flags)` if `row` is valid.
     /// * `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// if let Some(flags) = tables.nodes().flags(0) {
+    /// // then node id 0 is a valid row id
+    /// # assert!(flags.is_sample());
+    /// }
+    /// # else {
+    /// #   panic!("expected 0 to be a valid row id")
+    /// # }
+    /// ```
     pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<NodeFlags> {
         unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.flags)
     }
 
     /// Mutable access to node flags.
+    ///
+    /// # Examples
+    ///
+    /// For a [`crate::TableCollection`], accessing the table creates a temporary
+    /// that will be dropped, causing this code to not compile:
+    ///
+    /// ```compile_fail
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// let flags = tables.nodes().flags_array_mut();
+    /// println!("{}", flags.len()); // ERROR: the temporary node table is dropped by now
+    /// ```
+    ///
+    /// Treating the returned slice as an iterable succeeds:
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for flag in  tables.nodes().flags_array_mut() {
+    /// # assert!(flag.is_sample());
+    /// }
+    /// ```
+    ///
+    /// The returned slice is *mutable*, allowing one to do things like
+    /// clear the sample status of all nodes:
+    ///
+    /// A copy of the flags can be obtained by collecting results into `Vec`:
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for flag in tables.nodes().flags_array_mut() {
+    ///     flag.remove(tskit::NodeFlags::IS_SAMPLE);
+    /// }
+    /// assert!(!tables.nodes().flags_array_mut().iter().any(|f| f.is_sample()));
+    /// ```
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// let flags = tables.nodes().flags_array_mut().to_vec();
+    /// # assert!(flags.iter().all(|f| f.is_sample()));
+    /// ```
+    ///
+    /// ## Standalone tables
+    ///
+    /// The ownership semantics differ when tables are not part of a
+    /// table collection:
+    ///
+    /// ```
+    /// // let mut nodes = tskit::OwnedNodeTable::default();
+    /// // assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
+    /// // let flags = nodes.flags_array_mut();
+    /// // assert!(flags.iter().all(|f| f.is_sample()));
+    /// ```
     ///
     /// # Note
     ///
@@ -120,6 +209,31 @@ impl<'a> NodeTable<'a> {
 
     /// Mutable access to node times.
     ///
+    /// # Examples
+    ///
+    /// For a [`crate::TableCollection`], accessing the table creates a temporary
+    /// that will be dropped, causing this code to not compile:
+    ///
+    /// ```compile_fail
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// let time = tables.nodes().time_array_mut();
+    /// println!("{}", time.len()); // ERROR: the temporary node table is dropped by now
+    /// ```
+    ///
+    /// Treating the returned slice as an iterable succeeds:
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for time in tables.nodes().time_array_mut() {
+    ///     *time = 55.0.into(); // change each node's time value
+    /// }
+    /// assert!(tables.nodes().time_array_mut().iter().all(|t| t == &55.0));
+    /// ```
+    ///
     /// # Note
     ///
     /// Internally, we rely on a conversion of u64 to usize.
@@ -135,6 +249,21 @@ impl<'a> NodeTable<'a> {
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(0, 10.0, -1, -1).unwrap();
+    /// if let Some(pop) = tables.nodes().population(0) {
+    /// // then node id 0 is a valid row id
+    /// # assert!(pop.is_null());
+    /// }
+    /// # else {
+    /// #   panic!("expected 0 to be a valid row id")
+    /// # }
+    /// ```
     ///
     /// # Returns
     ///
@@ -152,6 +281,10 @@ impl<'a> NodeTable<'a> {
 
     /// Return the ``population`` value from row ``row`` of the table.
     ///
+    /// # Examples
+    ///
+    /// See [`NodeTable::population`] for examples.
+    ///
     /// # Returns
     ///
     /// * `Some(population)` if `row` is valid.
@@ -161,6 +294,21 @@ impl<'a> NodeTable<'a> {
     }
 
     /// Return the ``individual`` value from row ``row`` of the table.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(0, 10.0, -1, -1).unwrap();
+    /// if let Some(individual) = tables.nodes().individual(0) {
+    /// // then node id 0 is a valid row id
+    /// # assert!(individual.is_null());
+    /// }
+    /// # else {
+    /// #   panic!("expected 0 to be a valid row id")
+    /// # }
+    /// ```
     ///
     /// # Returns
     ///
