@@ -885,7 +885,10 @@ mod deep_tree_tests {
     fn stress_test_array_getters() {
         let ts = treeseq_from_small_table_collection_two_trees();
         let mut tree = Tree::new(&ts, TreeFlags::default()).unwrap();
-        unsafe { ll_bindings::tsk_tree_first(tree.as_mut_ptr()) };
+        assert!(!tree.as_mut_ptr().is_null());
+        let rv = unsafe { ll_bindings::tsk_tree_first(tree.as_mut_ptr()) };
+        assert!(rv >= 0);
+        assert_eq!(rv, crate::bindings::TSK_TREE_OK as i32);
 
         //for node in ts.sample_nodes() {
         //    let u = node;
