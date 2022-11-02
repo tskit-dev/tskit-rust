@@ -527,6 +527,14 @@ macro_rules! build_owned_tables {
             }
         }
 
+        impl std::ops::DerefMut for $name {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                // SAFETY: that T* and &T have same layout,
+                // and Target is repr(transparent).
+                unsafe { std::mem::transmute(&mut self.table) }
+            }
+        }
+
         impl Drop for $name {
             fn drop(&mut self) {
                 let rv = unsafe { $free(&mut (*self.table)) };
