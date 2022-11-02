@@ -871,3 +871,31 @@ mod test_treeeseq_send_sync {
         assert_eq!(ntrees, 2);
     }
 }
+
+// WARNING: this module tests internal details
+// and was written to track down github issue
+// 363.
+#[cfg(test)]
+mod deep_tree_tests {
+    use super::*;
+    use crate::prelude::*;
+    use crate::test_fixtures::treeseq_from_small_table_collection_two_trees;
+
+    #[test]
+    fn stress_test_array_getters() {
+        let ts = treeseq_from_small_table_collection_two_trees();
+        let mut tree = Tree::new(&ts, TreeFlags::default()).unwrap();
+        unsafe { ll_bindings::tsk_tree_first(tree.as_mut_ptr()) };
+
+        //for node in ts.sample_nodes() {
+        //    let u = node;
+        //    println!("{}", u);
+        //    while let Some(u) = tree.parent(*u) {
+        //        if u.is_null() {
+        //            break;
+        //        }
+        //        println!("{}", u);
+        //    }
+        //}
+    }
+}
