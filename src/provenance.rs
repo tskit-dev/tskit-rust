@@ -111,9 +111,10 @@ impl<'a> ProvenanceTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.timestamp,
-            self.table_.timestamp_offset,
-            self.table_.timestamp_length
+            self.table_,
+            timestamp,
+            timestamp_offset,
+            timestamp_length
         ) {
             Ok(Some(string)) => Ok(string),
             Ok(None) => Err(crate::TskitError::ValueError {
@@ -134,9 +135,10 @@ impl<'a> ProvenanceTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.record,
-            self.table_.record_offset,
-            self.table_.record_length
+            self.table_,
+            record,
+            record_offset,
+            record_length
         ) {
             Ok(Some(string)) => Ok(string),
             Ok(None) => Ok(String::from("")),

@@ -105,7 +105,7 @@ impl<'a> NodeTable<'a> {
     /// # }
     /// ```
     pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<Time> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_.time, Time)
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, time, Time)
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -130,7 +130,7 @@ impl<'a> NodeTable<'a> {
     /// # }
     /// ```
     pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<NodeFlags> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_.flags)
+        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, flags)
     }
 
     /// Mutable access to node flags.
@@ -275,7 +275,8 @@ impl<'a> NodeTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.population,
+            self.table_,
+            population,
             PopulationId
         )
     }
@@ -320,7 +321,8 @@ impl<'a> NodeTable<'a> {
             row.into().0,
             0,
             self.num_rows(),
-            self.table_.individual,
+            self.table_,
+            individual,
             IndividualId
         )
     }
