@@ -112,7 +112,23 @@ impl<'a> SiteTable<'a> {
         )
     }
 
-    pub fn metadata<T: metadata::MetadataRoundtrip>(
+    /// Retrieve decoded metadata for a `row`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Ok(T))` if `row` is valid and decoding succeeded.
+    /// * `Some(Err(_))` if `row` is not valid and decoding failed.
+    /// * `None` if `row` is not valid.
+    ///
+    /// # Errors
+    ///
+    /// * [`TskitError::MetadataError`] if decoding fails.
+    ///
+    /// # Examples.
+    ///
+    /// The big-picture semantics are the same for all table types.
+    /// See [`crate::IndividualTable::metadata`] for examples.
+    pub fn metadata<T: metadata::SiteMetadata>(
         &'a self,
         row: SiteId,
     ) -> Option<Result<T, TskitError>> {
