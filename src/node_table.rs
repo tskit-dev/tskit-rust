@@ -188,10 +188,20 @@ impl<'a> NodeTable<'a> {
     /// table collection:
     ///
     /// ```
-    /// // let mut nodes = tskit::OwnedNodeTable::default();
-    /// // assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
-    /// // let flags = nodes.flags_array_mut();
-    /// // assert!(flags.iter().all(|f| f.is_sample()));
+    /// let mut nodes = tskit::OwnedNodeTable::default();
+    /// assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
+    /// # assert_eq!(nodes.num_rows(), 1);
+    /// let flags = nodes.flags_array_mut();
+    /// # assert_eq!(flags.len(), 1);
+    /// assert!(flags.iter().all(|f| f.is_sample()));
+    ///
+    /// // while we are at it, let's use our node
+    /// // table to populate a table collection.
+    /// # use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// tables.set_nodes(&nodes);
+    /// assert_eq!(tables.nodes().num_rows(), 1);
+    /// assert_eq!(tables.nodes().flags_array_mut().iter().filter(|f| f.is_sample()).count(), 1);
     /// ```
     ///
     /// # Note
