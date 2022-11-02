@@ -104,11 +104,11 @@ macro_rules! unsafe_tsk_ragged_column_access {
 #[allow(unused_macros)]
 macro_rules! unsafe_tsk_ragged_char_column_access {
     ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident) => {{
-        let i = $crate::SizeType::try_from($i)?;
+        let i = $crate::SizeType::try_from($i).ok()?;
         if $i < $lo || i >= $hi {
-            Err(TskitError::IndexError {})
+            None
         } else if $owner.$offset_array_len == 0 {
-            Ok(None)
+            None
         } else {
             assert!(!$owner.$array.is_null());
             assert!(!$owner.$offset_array.is_null());
@@ -119,13 +119,13 @@ macro_rules! unsafe_tsk_ragged_char_column_access {
                 $owner.$offset_array_len as tsk_size_t
             };
             if start == stop {
-                Ok(None)
+                None
             } else {
                 let mut buffer = String::new();
                 for i in start..stop {
                     buffer.push(unsafe { *$owner.$array.offset(i as isize) as u8 as char });
                 }
-                Ok(Some(buffer))
+                Some(buffer)
             }
         }
     }};
@@ -1028,6 +1028,9 @@ macro_rules! provenance_table_add_row {
     ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
         $(#[$attr])*
         pub fn $name(&mut $self, record: &str) -> Result<$crate::ProvenanceId, $crate::TskitError> {
+            if record.is_empty() {
+                return Err($crate::TskitError::ValueError{got: "empty string".to_string(), expected: "provenance record".to_string()})
+            }
             let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
             let rv = unsafe {
                 $crate::bindings::tsk_provenance_table_add_row(

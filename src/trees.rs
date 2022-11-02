@@ -502,6 +502,12 @@ impl TreeSequence {
     /// # }
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
+        if record.is_empty() {
+            return Err(TskitError::ValueError {
+                got: "empty string".to_string(),
+                expected: "provenance record".to_string(),
+            });
+        }
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(

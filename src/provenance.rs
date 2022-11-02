@@ -14,7 +14,7 @@
 
 use crate::bindings as ll_bindings;
 use crate::SizeType;
-use crate::{tsk_id_t, tsk_size_t, ProvenanceId, TskitError};
+use crate::{tsk_id_t, tsk_size_t, ProvenanceId};
 use ll_bindings::{tsk_provenance_table_free, tsk_provenance_table_init};
 
 #[derive(Eq)]
@@ -47,8 +47,8 @@ impl std::fmt::Display for ProvenanceTableRow {
 fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
     Some(ProvenanceTableRow {
         id: pos.into(),
-        timestamp: table.timestamp(pos).ok()?,
-        record: table.record(pos).ok()?,
+        timestamp: table.timestamp(pos)?,
+        record: table.record(pos)?,
     })
 }
 
@@ -103,11 +103,26 @@ impl<'a> ProvenanceTable<'a> {
 
     /// Get the ISO-formatted time stamp for row `row`.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Result<String, TskitError> {
-        match unsafe_tsk_ragged_char_column_access!(
+    /// * `Some(String)` if `row` is valid.
+    /// * `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// assert!(tables.add_provenance("foo").is_ok());
+    /// if let Some(timestamp) = tables.provenances().timestamp(0) {
+    ///  // then 0 is a valid row in the provenance table
+    /// }
+    /// # else {
+    /// # panic!("Expected Some(timestamp)");
+    /// # }
+    /// ```
+    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Option<String> {
+        unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
@@ -115,23 +130,31 @@ impl<'a> ProvenanceTable<'a> {
             timestamp,
             timestamp_offset,
             timestamp_length
-        ) {
-            Ok(Some(string)) => Ok(string),
-            Ok(None) => Err(crate::TskitError::ValueError {
-                got: String::from("None"),
-                expected: String::from("String"),
-            }),
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Get the provenance record for row `row`.
     ///
-    /// # Errors
+    /// # Returns
     ///
-    /// [`TskitError::IndexError`] if `r` is out of range.
-    pub fn record<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Result<String, TskitError> {
-        match unsafe_tsk_ragged_char_column_access!(
+    /// * `Some(String)` if `row` is valid.
+    /// * `None` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tskit::TableAccess;
+    /// let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// assert!(tables.add_provenance("foo").is_ok());
+    /// if let Some(record) = tables.provenances().record(0) {
+    ///  // then 0 is a valid row in the provenance table
+    ///  # assert_eq!(record, "foo");
+    /// }
+    /// # else {
+    /// # panic!("Expected Some(timestamp)");
+    /// # }
+    pub fn record<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Option<String> {
+        unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
@@ -139,11 +162,7 @@ impl<'a> ProvenanceTable<'a> {
             record,
             record_offset,
             record_length
-        ) {
-            Ok(Some(string)) => Ok(string),
-            Ok(None) => Ok(String::from("")),
-            Err(e) => Err(e),
-        }
+        )
     }
 
     /// Obtain a [`ProvenanceTableRow`] for row `row`.
@@ -201,16 +220,14 @@ mod test_provenances {
         // check for tables...
         let mut tables = crate::TableCollection::new(10.).unwrap();
         let s = String::from("");
-        let row_id = tables.add_provenance(&s).unwrap();
-        let _ = tables.provenances().row(row_id).unwrap();
+        assert!(tables.add_provenance(&s).is_err());
 
         // and for tree sequences...
         tables.build_index().unwrap();
         let mut ts = tables
             .tree_sequence(crate::TreeSequenceFlags::default())
             .unwrap();
-        let row_id = ts.add_provenance(&s).unwrap();
-        let _ = ts.provenances().row(row_id).unwrap();
+        assert!(ts.add_provenance(&s).is_err())
     }
 
     #[test]
