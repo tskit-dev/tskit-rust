@@ -896,6 +896,12 @@ mod deep_tree_tests {
         let rv = unsafe { ll_bindings::tsk_tree_first(tree.as_mut_ptr()) };
         assert!(rv >= 0);
         assert_eq!(rv, crate::bindings::TSK_TREE_OK as i32);
+        let rv = unsafe { ll_bindings::tsk_tree_next(tree.as_mut_ptr()) };
+        assert!(rv >= 0);
+        assert_eq!(rv, crate::bindings::TSK_TREE_OK as i32);
+        let rv = unsafe { ll_bindings::tsk_tree_next(tree.as_mut_ptr()) };
+        assert!(rv >= 0);
+        assert_ne!(rv, crate::bindings::TSK_TREE_OK as i32); // past the final tree
 
         //for node in ts.sample_nodes() {
         //    let u = node;
