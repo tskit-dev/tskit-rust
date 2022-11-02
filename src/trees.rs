@@ -77,10 +77,13 @@ impl Tree {
 
         let mut tree = unsafe { tree.assume_init() };
         let ptr = &mut tree as *mut ll_bindings::tsk_tree_t;
+        assert_eq!(unsafe{ (*ptr).index }, -1);
 
         let num_nodes = unsafe { (*(*ts.as_ptr()).tables).nodes.num_rows };
         let non_owned_pointer = unsafe { NonNull::new_unchecked(ptr) };
+
         let api = TreeInterface::new(non_owned_pointer, num_nodes, num_nodes + 1, flags);
+        //assert_eq!(unsafe{ (*api.as_ptr()).index }, -1);
         handle_tsk_return_value!(
             rv,
             Tree {
