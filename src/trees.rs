@@ -886,6 +886,10 @@ mod deep_tree_tests {
         let ts = treeseq_from_small_table_collection_two_trees();
         let mut tree = Tree::new(&ts, TreeFlags::default()).unwrap();
         assert!(!tree.as_mut_ptr().is_null());
+        {
+            let ptr = tree.as_mut_ptr();
+            assert_eq!(unsafe { (*ptr).index }, -1);
+        }
         let rv = unsafe { ll_bindings::tsk_tree_first(tree.as_mut_ptr()) };
         assert!(rv >= 0);
         assert_eq!(rv, crate::bindings::TSK_TREE_OK as i32);
