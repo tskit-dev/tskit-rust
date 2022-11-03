@@ -85,6 +85,12 @@ impl EdgeTable2 {
             .ok_or_else(|| TskitError::LibraryError("edge table pointer was null".to_string()))?;
         Ok(Self { table_ })
     }
+
+    /// Return the number of rows
+    pub fn num_rows(&self) -> crate::SizeType {
+        // SAFETY: we made it this far...
+        unsafe { self.table_.as_ref() }.num_rows.into()
+    }
 }
 
 impl<'a> EdgeTable<'a> {
