@@ -79,6 +79,25 @@ pub struct EdgeTable2 {
     table_: NonNull<ll_bindings::tsk_edge_table_t>,
 }
 
+struct EdgeTable2Iterator<'t> {
+    edges: &'t EdgeTable2,
+    index: u64,
+}
+
+impl<'t> Iterator for EdgeTable2Iterator<'t> {
+    type Item = crate::Position; // fake...
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.index < self.edges.num_rows() {
+            true => {
+                self.index += 1;
+                Some(1.0.into())
+            }
+            false => None,
+        }
+    }
+}
+
 impl EdgeTable2 {
     pub(crate) fn new(ptr: *mut ll_bindings::tsk_edge_table_t) -> Result<Self, TskitError> {
         let table_ = NonNull::new(ptr)
@@ -90,6 +109,13 @@ impl EdgeTable2 {
     pub fn num_rows(&self) -> crate::SizeType {
         // SAFETY: we made it this far...
         unsafe { self.table_.as_ref() }.num_rows.into()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = crate::Position> + '_ {
+        EdgeTable2Iterator {
+            edges: self,
+            index: 0,
+        }
     }
 }
 
