@@ -63,7 +63,7 @@ use mbox::MBox;
 pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
     idmap: Vec<NodeId>,
-    views: crate::TableViews
+    views: crate::TableViews,
 }
 
 impl std::ops::Deref for TableCollection {
@@ -131,9 +131,13 @@ impl TableCollection {
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
+        let views = crate::table_views::TableViews {
+            edges: crate::edge_table::EdgeTable2::new(&mut mbox.as_mut().edges)?,
+        };
         let mut tables = Self {
             inner: mbox,
             idmap: vec![],
+            views,
         };
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
@@ -149,9 +153,14 @@ impl TableCollection {
     /// requiring an uninitialized table collection.
     /// Consult the C API docs before using!
     pub(crate) unsafe fn new_from_mbox(mbox: MBox<ll_bindings::tsk_table_collection_t>) -> Self {
+        let mut mbox = mbox;
+        let views = crate::table_views::TableViews {
+            edges: crate::edge_table::EdgeTable2::new(&mut mbox.as_mut().edges).unwrap(), // FIXME,
+        };
         Self {
             inner: mbox,
             idmap: vec![],
+            views,
         }
     }
 

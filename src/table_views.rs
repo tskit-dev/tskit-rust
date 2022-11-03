@@ -1,11 +1,11 @@
-use crate::EdgeTable;
+use crate::edge_table::EdgeTable2;
 
-pub struct TableViews<'a> {
-    pub(crate) edges: EdgeTable<'a>,
+pub struct TableViews {
+    pub(crate) edges: EdgeTable2,
 }
 
-impl<'a> TableViews<'a> {
-    fn edges(&self) -> &EdgeTable<'a> {
+impl TableViews {
+    fn edges(&self) -> &EdgeTable2 {
         &self.edges
     }
 }

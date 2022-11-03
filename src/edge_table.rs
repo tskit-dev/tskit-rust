@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::Position;
@@ -70,6 +72,19 @@ impl<'a> Iterator for EdgeTableIterator<'a> {
 #[repr(transparent)]
 pub struct EdgeTable<'a> {
     table_: &'a ll_bindings::tsk_edge_table_t,
+}
+
+#[repr(transparent)]
+pub struct EdgeTable2 {
+    table_: NonNull<ll_bindings::tsk_edge_table_t>,
+}
+
+impl EdgeTable2 {
+    pub(crate) fn new(ptr: *mut ll_bindings::tsk_edge_table_t) -> Result<Self, TskitError> {
+        let table_ = NonNull::new(ptr)
+            .ok_or_else(|| TskitError::LibraryError("edge table pointer was null".to_string()))?;
+        Ok(Self { table_ })
+    }
 }
 
 impl<'a> EdgeTable<'a> {
