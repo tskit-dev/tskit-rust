@@ -63,6 +63,15 @@ use mbox::MBox;
 pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
     idmap: Vec<NodeId>,
+    views: crate::TableViews
+}
+
+impl std::ops::Deref for TableCollection {
+    type Target = crate::TableViews;
+
+    fn deref(&self) -> &Self::Target {
+        &self.views
+    }
 }
 
 impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
