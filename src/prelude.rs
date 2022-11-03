@@ -1,8 +1,6 @@
 //! Export commonly-use types and traits
 
 pub use crate::tsk_flags_t;
-pub use crate::NodeListGenerator;
-pub use crate::TableAccess;
 pub use crate::TskitTypeAccess;
 pub use crate::TSK_NODE_IS_SAMPLE;
 pub use streaming_iterator::DoubleEndedStreamingIterator;

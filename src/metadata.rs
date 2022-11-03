@@ -30,7 +30,7 @@
 //! ```
 //! # #[cfg(feature = "derive")] {
 //! use tskit::handle_metadata_return;
-//! use tskit::TableAccess;
+//!
 //!
 //! #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
 //! #[serializer("serde_json")]
@@ -75,7 +75,7 @@
 //!
 //! ```
 //! # #[cfg(feature = "derive")] {
-//! use tskit::TableAccess;
+//!
 //! #[derive(serde::Serialize, serde::Deserialize, PartialEq, PartialOrd)]
 //! struct GeneticValue(f64);
 //!
@@ -101,7 +101,7 @@
 //! For fun, we'll use the Python [`pickle`](https://docs.rs/crate/serde-pickle/) format.
 //!
 //! ```
-//! use tskit::TableAccess;
+//!
 //!
 //! #[derive(serde::Serialize, serde::Deserialize)]
 //! struct Metadata {

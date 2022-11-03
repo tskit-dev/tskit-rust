@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::Position;
@@ -28,7 +30,7 @@ impl PartialEq for EdgeTableRow {
 }
 
 fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
-    let table_ref = table.table_;
+    let table_ref = table.as_ref();
     Some(EdgeTableRow {
         id: pos.into(),
         left: table.left(pos)?,
@@ -39,8 +41,8 @@ fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow>
     })
 }
 
-pub(crate) type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable<'a>>;
-pub(crate) type EdgeTableIterator<'a> = crate::table_iterator::TableIterator<EdgeTable<'a>>;
+pub(crate) type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable>;
+pub(crate) type EdgeTableIterator = crate::table_iterator::TableIterator<EdgeTable>;
 
 impl<'a> Iterator for EdgeTableRefIterator<'a> {
     type Item = EdgeTableRow;
@@ -52,7 +54,7 @@ impl<'a> Iterator for EdgeTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for EdgeTableIterator<'a> {
+impl Iterator for EdgeTableIterator {
     type Item = EdgeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -64,22 +66,32 @@ impl<'a> Iterator for EdgeTableIterator<'a> {
 
 /// An immutable view of an edge table.
 ///
-/// These are not created directly.
-/// Instead, use [`TableAccess::edges`](crate::TableAccess::edges)
-/// to get a reference to an existing edge table;
+/// These are not created directly but are accessed
+/// by types implementing [`std::ops::Deref`] to
+/// [`crate::table_views::TableViews`]
 #[repr(transparent)]
-pub struct EdgeTable<'a> {
-    table_: &'a ll_bindings::tsk_edge_table_t,
+pub struct EdgeTable {
+    pub(crate) table_: NonNull<ll_bindings::tsk_edge_table_t>,
 }
 
-impl<'a> EdgeTable<'a> {
-    pub(crate) fn new_from_table(edges: &'a ll_bindings::tsk_edge_table_t) -> Self {
-        EdgeTable { table_: edges }
+impl EdgeTable {
+    pub(crate) fn new_from_table(
+        edges: *mut ll_bindings::tsk_edge_table_t,
+    ) -> Result<Self, TskitError> {
+        let n = NonNull::new(edges).ok_or_else(|| {
+            TskitError::LibraryError("null pointer to tsk_edge_table_t".to_string())
+        })?;
+        Ok(EdgeTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_edge_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> crate::SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> crate::SizeType {
+        self.as_ref().num_rows.into()
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -88,12 +100,12 @@ impl<'a> EdgeTable<'a> {
     ///
     /// * `Some(parent)` if `u` is valid.
     /// * `None` otherwise.
-    pub fn parent<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<NodeId> {
+    pub fn parent<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             parent,
             NodeId
         )
@@ -105,8 +117,15 @@ impl<'a> EdgeTable<'a> {
     ///
     /// * `Some(child)` if `u` is valid.
     /// * `None` otherwise.
-    pub fn child<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, child, NodeId)
+    pub fn child<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            child,
+            NodeId
+        )
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -115,12 +134,12 @@ impl<'a> EdgeTable<'a> {
     ///
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
-    pub fn left<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<Position> {
+    pub fn left<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             left,
             Position
         )
@@ -132,8 +151,14 @@ impl<'a> EdgeTable<'a> {
     ///
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
-    pub fn right<E: Into<EdgeId> + Copy>(&'a self, row: E) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, right)
+    pub fn right<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
+        unsafe_tsk_column_access_and_map_into!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            right
+        )
     }
 
     /// Retrieve decoded metadata for a `row`.
@@ -153,10 +178,10 @@ impl<'a> EdgeTable<'a> {
     /// The big-picture semantics are the same for all table types.
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::EdgeMetadata>(
-        &'a self,
+        &self,
         row: EdgeId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.table_;
+        let table_ref = self.as_ref();
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
@@ -165,7 +190,7 @@ impl<'a> EdgeTable<'a> {
     /// The value of the iterator is [`EdgeTableRow`].
     ///
     pub fn iter(&self) -> impl Iterator<Item = EdgeTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&EdgeTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&EdgeTable>(self)
     }
 
     /// Return row `r` of the table.

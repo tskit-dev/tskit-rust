@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::tsk_id_t;
@@ -20,7 +22,7 @@ impl PartialEq for PopulationTableRow {
 }
 
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
-    let table_ref = table.table_;
+    let table_ref = table.as_ref();
     let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
 
     match index {
@@ -36,9 +38,8 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
 }
 
 pub(crate) type PopulationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a PopulationTable<'a>>;
-pub(crate) type PopulationTableIterator<'a> =
-    crate::table_iterator::TableIterator<PopulationTable<'a>>;
+    crate::table_iterator::TableIterator<&'a PopulationTable>;
+pub(crate) type PopulationTableIterator = crate::table_iterator::TableIterator<PopulationTable>;
 
 impl<'a> Iterator for PopulationTableRefIterator<'a> {
     type Item = PopulationTableRow;
@@ -50,7 +51,7 @@ impl<'a> Iterator for PopulationTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for PopulationTableIterator<'a> {
+impl Iterator for PopulationTableIterator {
     type Item = PopulationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -62,22 +63,32 @@ impl<'a> Iterator for PopulationTableIterator<'a> {
 
 /// An immutable view of site table.
 ///
-/// These are not created directly.
-/// Instead, use [`TableAccess::populations`](crate::TableAccess::populations)
-/// to get a reference to an existing population table;
+/// These are not created directly but are accessed
+/// by types implementing [`std::ops::Deref`] to
+/// [`crate::table_views::TableViews`]
 #[repr(transparent)]
-pub struct PopulationTable<'a> {
-    table_: &'a ll_bindings::tsk_population_table_t,
+pub struct PopulationTable {
+    table_: NonNull<ll_bindings::tsk_population_table_t>,
 }
 
-impl<'a> PopulationTable<'a> {
-    pub(crate) fn new_from_table(mutations: &'a ll_bindings::tsk_population_table_t) -> Self {
-        PopulationTable { table_: mutations }
+impl PopulationTable {
+    pub(crate) fn new_from_table(
+        populations: *mut ll_bindings::tsk_population_table_t,
+    ) -> Result<Self, TskitError> {
+        let n = NonNull::new(populations).ok_or_else(|| {
+            TskitError::LibraryError("null pointer to tsk_population_table_t".to_string())
+        })?;
+        Ok(PopulationTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_population_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows.
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ref().num_rows.into()
     }
 
     /// Retrieve decoded metadata for a `row`.
@@ -97,10 +108,10 @@ impl<'a> PopulationTable<'a> {
     /// The big-picture semantics are the same for all table types.
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::PopulationMetadata>(
-        &'a self,
+        &self,
         row: PopulationId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.table_;
+        let table_ref = self.as_ref();
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
@@ -108,7 +119,7 @@ impl<'a> PopulationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`PopulationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = PopulationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&PopulationTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&PopulationTable>(self)
     }
 
     /// Return row `r` of the table.

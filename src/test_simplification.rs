@@ -5,7 +5,6 @@ mod tests {
     use crate::NodeFlags;
     use crate::NodeId;
     use crate::SimplificationOptions;
-    use crate::TableAccess;
 
     #[test]
     fn test_simplify_tables() {
