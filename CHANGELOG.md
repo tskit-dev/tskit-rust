@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.1] - 2022-11-04
+
+### Documentation
+
+- Add mdbook ([#378](https://github.com/tskit-dev/tskit-rust/pull/378))
+
+### Refactor
+
+- Apply functional style for NodeTable fns ([#377](https://github.com/tskit-dev/tskit-rust/pull/377))
+
 ## [0.11.0] - 2022-11-04
 
 ### Bug Fixes
