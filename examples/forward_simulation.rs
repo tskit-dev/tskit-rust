@@ -23,7 +23,6 @@ use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_distr::{Exp, Uniform};
-use tskit::TableAccess;
 use tskit::TskitTypeAccess;
 
 #[derive(clap::Parser)]

@@ -490,10 +490,11 @@ impl TreeInterface {
     /// (and the tree sequence from which it came).
     ///
     /// This is a convenience function for accessing node times, etc..
-    pub fn node_table<'a>(&'a self) -> crate::NodeTable<'a> {
-        crate::NodeTable::<'a>::new_from_table(unsafe {
-            &(*(*(*self.as_ptr()).tree_sequence).tables).nodes
-        })
+    pub fn node_table(&self) -> crate::NodeTable {
+        unimplemented!("this needs to return &NodeTable");
+        // crate::NodeTable::new_from_table(unsafe {
+        //     &(*(*(*self.as_ptr()).tree_sequence).tables).nodes
+        // })
     }
 
     /// Calculate the total length of the tree via a preorder traversal.

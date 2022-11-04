@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::NodeFlags;
@@ -30,7 +32,7 @@ impl PartialEq for NodeTableRow {
 }
 
 fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow> {
-    let table_ref = table.table_;
+    let table_ref = table.as_ref();
     Some(NodeTableRow {
         id: pos.into(),
         time: table.time(pos)?,
@@ -41,8 +43,8 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
     })
 }
 
-pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable<'a>>;
-pub(crate) type NodeTableIterator<'a> = crate::table_iterator::TableIterator<NodeTable<'a>>;
+pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable>;
+pub(crate) type NodeTableIterator = crate::table_iterator::TableIterator<NodeTable>;
 
 impl<'a> Iterator for NodeTableRefIterator<'a> {
     type Item = NodeTableRow;
@@ -54,7 +56,7 @@ impl<'a> Iterator for NodeTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for NodeTableIterator<'a> {
+impl Iterator for NodeTableIterator {
     type Item = crate::node_table::NodeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -66,21 +68,31 @@ impl<'a> Iterator for NodeTableIterator<'a> {
 
 /// An immtable view of a node table.
 ///
-/// These are not created directly.
-/// Instead, use [`TableAccess::nodes`](crate::TableAccess::nodes)
-/// to get a reference to an existing node table;
-pub struct NodeTable<'a> {
-    table_: &'a ll_bindings::tsk_node_table_t,
+/// These are not created directly but are accessed
+/// by types implementing [`std::ops::Deref`] to
+/// [`crate::table_views::TableViews`]
+pub struct NodeTable {
+    table_: NonNull<ll_bindings::tsk_node_table_t>,
 }
 
-impl<'a> NodeTable<'a> {
-    pub(crate) fn new_from_table(nodes: &'a ll_bindings::tsk_node_table_t) -> Self {
-        NodeTable { table_: nodes }
+impl NodeTable {
+    pub(crate) fn new_from_table(
+        nodes: *mut ll_bindings::tsk_node_table_t,
+    ) -> Result<Self, TskitError> {
+        let n = NonNull::new(nodes).ok_or_else(|| {
+            TskitError::LibraryError("null pointer to tsk_node_table_t".to_string())
+        })?;
+        Ok(NodeTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_node_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ref().num_rows.into()
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -104,8 +116,8 @@ impl<'a> NodeTable<'a> {
     /// #   panic!("expected 0 to be a valid row id")
     /// # }
     /// ```
-    pub fn time<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<Time> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, time, Time)
+    pub fn time<N: Into<NodeId> + Copy>(&self, row: N) -> Option<Time> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.as_ref(), time, Time)
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -129,32 +141,37 @@ impl<'a> NodeTable<'a> {
     /// #   panic!("expected 0 to be a valid row id")
     /// # }
     /// ```
-    pub fn flags<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<NodeFlags> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, flags)
+    pub fn flags<N: Into<NodeId> + Copy>(&self, row: N) -> Option<NodeFlags> {
+        unsafe_tsk_column_access_and_map_into!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            flags
+        )
     }
 
     /// Mutable access to node flags.
     ///
     /// # Examples
     ///
-    /// For a [`crate::TableCollection`], accessing the table creates a temporary
-    /// that will be dropped, causing this code to not compile:
-    ///
-    /// ```compile_fail
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// let flags = tables.nodes().flags_array_mut();
-    /// println!("{}", flags.len()); // ERROR: the temporary node table is dropped by now
-    /// ```
-    ///
-    /// Treating the returned slice as an iterable succeeds:
     ///
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
     /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// for flag in  tables.nodes().flags_array_mut() {
+    /// let flags = tables.nodes_mut().flags_array_mut();
+    /// for flag in flags {
+    /// // Can do something...
+    /// # assert!(flag.is_sample());
+    /// }
+    /// ```
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for flag in  tables.nodes_mut().flags_array_mut() {
     /// # assert!(flag.is_sample());
     /// }
     /// ```
@@ -168,17 +185,17 @@ impl<'a> NodeTable<'a> {
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
     /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// for flag in tables.nodes().flags_array_mut() {
+    /// for flag in tables.nodes_mut().flags_array_mut() {
     ///     flag.remove(tskit::NodeFlags::IS_SAMPLE);
     /// }
-    /// assert!(!tables.nodes().flags_array_mut().iter().any(|f| f.is_sample()));
+    /// assert!(!tables.nodes_mut().flags_array_mut().iter().any(|f| f.is_sample()));
     /// ```
     ///
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
     /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// let flags = tables.nodes().flags_array_mut().to_vec();
+    /// let flags = tables.nodes_mut().flags_array_mut().to_vec();
     /// # assert!(flags.iter().all(|f| f.is_sample()));
     /// ```
     ///
@@ -197,11 +214,11 @@ impl<'a> NodeTable<'a> {
     ///
     /// // while we are at it, let's use our node
     /// // table to populate a table collection.
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
     /// tables.set_nodes(&nodes);
     /// assert_eq!(tables.nodes().num_rows(), 1);
-    /// assert_eq!(tables.nodes().flags_array_mut().iter().filter(|f| f.is_sample()).count(), 1);
+    /// assert_eq!(tables.nodes_mut().flags_array_mut().iter().filter(|f| f.is_sample()).count(), 1);
     /// ```
     ///
     /// # Note
@@ -212,8 +229,8 @@ impl<'a> NodeTable<'a> {
     pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.table_.flags.cast::<NodeFlags>(),
-                usize::try_from(self.table_.num_rows).unwrap_or(0),
+                self.as_ref().flags.cast::<NodeFlags>(),
+                usize::try_from(self.as_ref().num_rows).unwrap_or(0),
             )
         }
     }
@@ -239,10 +256,10 @@ impl<'a> NodeTable<'a> {
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
     /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// for time in tables.nodes().time_array_mut() {
+    /// for time in tables.nodes_mut().time_array_mut() {
     ///     *time = 55.0.into(); // change each node's time value
     /// }
-    /// assert!(tables.nodes().time_array_mut().iter().all(|t| t == &55.0));
+    /// assert!(tables.nodes_mut().time_array_mut().iter().all(|t| t == &55.0));
     /// ```
     ///
     /// # Note
@@ -253,8 +270,8 @@ impl<'a> NodeTable<'a> {
     pub fn time_array_mut(&mut self) -> &mut [Time] {
         unsafe {
             std::slice::from_raw_parts_mut(
-                self.table_.time.cast::<Time>(),
-                usize::try_from(self.table_.num_rows).unwrap_or(0),
+                self.as_ref().time.cast::<Time>(),
+                usize::try_from(self.as_ref().num_rows).unwrap_or(0),
             )
         }
     }
@@ -280,12 +297,12 @@ impl<'a> NodeTable<'a> {
     ///
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn population<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<PopulationId> {
+    pub fn population<N: Into<NodeId> + Copy>(&self, row: N) -> Option<PopulationId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             population,
             PopulationId
         )
@@ -301,7 +318,7 @@ impl<'a> NodeTable<'a> {
     ///
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn deme<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<PopulationId> {
+    pub fn deme<N: Into<NodeId> + Copy>(&self, row: N) -> Option<PopulationId> {
         self.population(row)
     }
 
@@ -326,12 +343,12 @@ impl<'a> NodeTable<'a> {
     ///
     /// * `Some(individual)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn individual<N: Into<NodeId> + Copy>(&'a self, row: N) -> Option<IndividualId> {
+    pub fn individual<N: Into<NodeId> + Copy>(&self, row: N) -> Option<IndividualId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             individual,
             IndividualId
         )
@@ -354,10 +371,10 @@ impl<'a> NodeTable<'a> {
     /// The big-picture semantics are the same for all table types.
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::NodeMetadata>(
-        &'a self,
+        &self,
         row: NodeId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.table_;
+        let table_ref = self.as_ref();
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
@@ -365,7 +382,7 @@ impl<'a> NodeTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`NodeTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = NodeTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&NodeTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&NodeTable>(self)
     }
 
     /// Return row `r` of the table.

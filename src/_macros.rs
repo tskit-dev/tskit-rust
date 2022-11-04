@@ -518,7 +518,7 @@ macro_rules! build_owned_tables {
         }
 
         impl std::ops::Deref for $name {
-            type Target = $deref<'static>;
+            type Target = $deref;
 
             fn deref(&self) -> &Self::Target {
                 // SAFETY: that T* and &T have same layout,

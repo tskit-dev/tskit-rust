@@ -2,8 +2,6 @@
 
 mod experimental_features {
 
-    use tskit::TableAccess;
-
     // Goal: proc macro this up
     // Design notes for future:
     // * We can probably drop this trait.
@@ -73,9 +71,6 @@ mod experimental_features {
         }
     }
 
-    // Name is not great.
-    // We'd like to have this be : tskit::TableAccess,
-    // but that's a big ask at this stage.
     trait MutationMetadataExtraction {
         type Item: tskit::metadata::MutationMetadata;
 
@@ -221,15 +216,11 @@ mod experimental_features_refined {
     // * What kind of proc-macro can we use to implement that,
     //   again "easily"?
 
-    use tskit::TableAccess;
-
     trait AsTableCollection {
         fn as_tables(&self) -> &tskit::TableCollection;
     }
 
     // Name is not great.
-    // We'd like to have this be : tskit::TableAccess,
-    // but that's a big ask at this stage.
     // See notes above.
     trait MutationMetadataExtraction: AsTableCollection {
         type Item: tskit::metadata::MutationMetadata;

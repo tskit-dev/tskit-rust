@@ -8,7 +8,6 @@ fn test_empty_table_collection() {
             assert_eq!($tables.$table_iter().count(), 0);
         };
     }
-    use tskit::TableAccess;
     let tables = tskit::TableCollection::new(10.).unwrap();
 
     for row in [0, -1, 303] {
@@ -33,7 +32,6 @@ mod test_adding_rows_without_metadata {
     macro_rules! add_row_without_metadata {
         ($table: ident, $adder: ident, $($payload: expr),* ) => {{
             {
-                use tskit::TableAccess;
                 let mut tables = tskit::TableCollection::new(10.).unwrap();
                 match tables.$adder($($payload ), *) {
                     Ok(id) => {
@@ -317,7 +315,6 @@ mod test_metadata_round_trips {
         ($table: ident, $adder: ident, $md: ident) => {{
             {
                 build_metadata_types!($md);
-                use tskit::TableAccess;
                 let mut tables = tskit::TableCollection::new(10.).unwrap();
                 let md = MyMetadata::new();
                 let row = tables.$adder(&md);
@@ -327,7 +324,6 @@ mod test_metadata_round_trips {
         ($table: ident, $adder: ident, $md: ident $(,$payload: expr) + ) => {{
             {
                 build_metadata_types!($md);
-                use tskit::TableAccess;
                 let mut tables = tskit::TableCollection::new(10.).unwrap();
                 let md = MyMetadata::new();
                 let row =  tables.$adder($($payload ), *, &md);

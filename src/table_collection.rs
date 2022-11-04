@@ -1,19 +1,12 @@
+use std::ops::{Deref, DerefMut};
 use std::vec;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::types::Bookmark;
-use crate::EdgeTable;
-use crate::IndividualTable;
 use crate::IndividualTableSortOptions;
-use crate::MigrationTable;
-use crate::MutationTable;
-use crate::NodeTable;
-use crate::PopulationTable;
 use crate::Position;
 use crate::SimplificationOptions;
-use crate::SiteTable;
-use crate::TableAccess;
 use crate::TableClearOptions;
 use crate::TableEqualityOptions;
 use crate::TableIntegrityCheckFlags;
@@ -39,7 +32,7 @@ use mbox::MBox;
 /// # Examples
 ///
 /// ```
-/// use tskit::TableAccess;
+///
 /// let mut tables = tskit::TableCollection::new(100.).unwrap();
 /// assert_eq!(tables.sequence_length(), 100.);
 ///
@@ -63,6 +56,7 @@ use mbox::MBox;
 pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
     idmap: Vec<NodeId>,
+    views: crate::table_views::TableViews,
 }
 
 impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
@@ -79,6 +73,20 @@ impl Drop for TableCollection {
     fn drop(&mut self) {
         let rv = unsafe { tsk_table_collection_free(self.as_mut_ptr()) };
         assert_eq!(rv, 0);
+    }
+}
+
+impl Deref for TableCollection {
+    type Target = crate::table_views::TableViews;
+
+    fn deref(&self) -> &Self::Target {
+        &self.views
+    }
+}
+
+impl DerefMut for TableCollection {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.views
     }
 }
 
@@ -122,9 +130,16 @@ impl TableCollection {
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
+        let views = crate::table_views::TableViews::new_from_mbox_table_collection(&mut mbox)?;
+        // AHA?
+        assert!(std::ptr::eq(
+            &mbox.as_ref().edges as *const ll_bindings::tsk_edge_table_t,
+            views.edges().table_.as_ptr() as *const ll_bindings::tsk_edge_table_t
+        ));
         let mut tables = Self {
             inner: mbox,
             idmap: vec![],
+            views,
         };
         unsafe {
             (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
@@ -139,11 +154,16 @@ impl TableCollection {
     /// Or, it may be initialized and about to be used in a part of the C API
     /// requiring an uninitialized table collection.
     /// Consult the C API docs before using!
-    pub(crate) unsafe fn new_from_mbox(mbox: MBox<ll_bindings::tsk_table_collection_t>) -> Self {
-        Self {
+    pub(crate) unsafe fn new_from_mbox(
+        mbox: MBox<ll_bindings::tsk_table_collection_t>,
+    ) -> Result<Self, TskitError> {
+        let mut mbox = mbox;
+        let views = crate::table_views::TableViews::new_from_mbox_table_collection(&mut mbox)?;
+        Ok(Self {
             inner: mbox,
             idmap: vec![],
-        }
+            views,
+        })
     }
 
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
@@ -297,7 +317,7 @@ impl TableCollection {
     /// ## No flags, location, nor parents
     ///
     /// ```
-    /// # use tskit::TableAccess;
+    /// # 
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, None, None).unwrap();
     /// # assert!(tables.individuals().location(0).is_none());
@@ -307,7 +327,7 @@ impl TableCollection {
     /// ## No flags, a 3d location, no parents
     ///
     /// ```
-    /// # use tskit::TableAccess;
+    /// # 
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, &[-0.5, 0.3, 10.0], None).unwrap();
     /// # match tables.individuals().location(0) {
@@ -319,7 +339,7 @@ impl TableCollection {
     /// ## No flags, no location, two parents
     /// ```
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// # use tskit::TableAccess;
+    /// # 
     /// tables.add_individual(0, None, &[1, 11]);
     /// # match tables.individuals().parents(0) {
     /// #     Some(parents) => parents.iter().zip([1, 11].iter()).for_each(|(a,b)| assert_eq!(a, b)),
@@ -339,7 +359,7 @@ impl TableCollection {
     ///
     /// ```
     /// # #[cfg(feature = "derive")] {
-    /// use tskit::TableAccess;
+    /// 
     /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
     /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
     /// # #[serializer("serde_json")]
@@ -744,7 +764,7 @@ impl TableCollection {
 
         // SAFETY: we just initialized it.
         // The C API doesn't free NULL pointers.
-        handle_tsk_return_value!(rv, unsafe { Self::new_from_mbox(inner) })
+        handle_tsk_return_value!(rv, unsafe { Self::new_from_mbox(inner)? })
     }
 
     /// Return a [`crate::TreeSequence`] based on the tables.
@@ -871,7 +891,7 @@ impl TableCollection {
     ///
     /// # Examples
     /// ```
-    /// use tskit::TableAccess;
+    /// 
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// # #[cfg(feature = "provenance")] {
     /// tables.add_provenance(&String::from("Some provenance")).unwrap();
@@ -914,7 +934,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut edges = tskit::OwnedEdgeTable::default();
     /// edges.add_row(0., 1., 0, 12).unwrap();
@@ -951,7 +971,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut nodes = tskit::OwnedNodeTable::default();
     /// nodes.add_row(0, 10.0, -1, -1).unwrap();
@@ -988,7 +1008,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut sites = tskit::OwnedSiteTable::default();
     /// sites.add_row(11.0, None).unwrap();
@@ -1024,7 +1044,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut mutations = tskit::OwnedMutationTable::default();
     /// mutations.add_row(14, 12, -1, 11.3, None).unwrap();
@@ -1063,7 +1083,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut individuals = tskit::OwnedIndividualTable::default();
     /// individuals.add_row(0, [0.1, 10.0], None).unwrap();
@@ -1102,7 +1122,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut migrations = tskit::OwnedMigrationTable::default();
     /// migrations.add_row((0.25, 0.37), 1, (0, 1), 111.0).unwrap();
@@ -1141,7 +1161,7 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut populations = tskit::OwnedPopulationTable::default();
     /// populations.add_row().unwrap();
@@ -1177,7 +1197,7 @@ impl TableCollection {
     ///
     /// ```rust
     /// # #[cfg(feature="provenance")] {
-    /// # use tskit::TableAccess;
+    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// let mut provenances = tskit::provenance::OwnedProvenanceTable::default();
     /// provenances.add_row("I like pancakes").unwrap();
@@ -1207,41 +1227,3 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 }
-
-impl TableAccess for TableCollection {
-    fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(&self.inner.edges)
-    }
-
-    fn individuals(&self) -> IndividualTable {
-        IndividualTable::new_from_table(&self.inner.individuals)
-    }
-
-    fn migrations(&self) -> MigrationTable {
-        MigrationTable::new_from_table(&self.inner.migrations)
-    }
-
-    fn nodes(&self) -> NodeTable {
-        NodeTable::new_from_table(&self.inner.nodes)
-    }
-
-    fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(&self.inner.sites)
-    }
-
-    fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(&self.inner.mutations)
-    }
-
-    fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(&self.inner.populations)
-    }
-
-    #[cfg(feature = "provenance")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-    fn provenances(&self) -> crate::provenance::ProvenanceTable {
-        crate::provenance::ProvenanceTable::new_from_table(&self.inner.provenances)
-    }
-}
-
-impl crate::traits::NodeListGenerator for TableCollection {}

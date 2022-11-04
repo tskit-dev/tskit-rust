@@ -4,17 +4,9 @@ use std::ops::DerefMut;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::EdgeTable;
-use crate::IndividualTable;
-use crate::MigrationTable;
-use crate::MutationTable;
 use crate::NodeId;
-use crate::NodeTable;
-use crate::PopulationTable;
 use crate::SimplificationOptions;
-use crate::SiteTable;
 use crate::SizeType;
-use crate::TableAccess;
 use crate::TableOutputOptions;
 use crate::TreeFlags;
 use crate::TreeInterface;
@@ -171,9 +163,30 @@ impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
 ///
 /// // tables gets moved into our treeseq variable:
 /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
+/// assert_eq!(treeseq.nodes().num_rows(), 3);
+/// assert_eq!(treeseq.edges().num_rows(), 2);
+/// ```
+///
+/// This type does not [`std::ops::DerefMut`] to [`crate::table_views::TableViews`]:
+///
+/// ```compile_fail
+/// # let mut tables = tskit::TableCollection::new(1000.).unwrap();
+/// # tables.add_node(0, 1.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
+/// # tables.add_node(0, 0.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
+/// # tables.add_node(0, 0.0, tskit::PopulationId::NULL, tskit::IndividualId::NULL).unwrap();
+/// # tables.add_edge(0., 1000., 0, 1).unwrap();
+/// # tables.add_edge(0., 1000., 0, 2).unwrap();
+///
+/// # // index
+/// # tables.build_index();
+///
+/// # // tables gets moved into our treeseq variable:
+/// # let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
+/// assert_eq!(treeseq.nodes_mut().num_rows(), 3);
 /// ```
 pub struct TreeSequence {
     pub(crate) inner: ll_bindings::tsk_treeseq_t,
+    views: crate::table_views::TableViews,
 }
 
 unsafe impl Send for TreeSequence {}
@@ -193,6 +206,14 @@ impl Drop for TreeSequence {
     fn drop(&mut self) {
         let rv = unsafe { ll_bindings::tsk_treeseq_free(&mut self.inner) };
         assert_eq!(rv, 0);
+    }
+}
+
+impl std::ops::Deref for TreeSequence {
+    type Target = crate::table_views::TableViews;
+
+    fn deref(&self) -> &Self::Target {
+        &self.views
     }
 }
 
@@ -250,9 +271,10 @@ impl TreeSequence {
         let raw_tables_ptr = tables.into_raw()?;
         let rv =
             unsafe { ll_bindings::tsk_treeseq_init(inner.as_mut_ptr(), raw_tables_ptr, flags) };
+        let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut_ptr())?;
         handle_tsk_return_value!(rv, {
             let inner = unsafe { inner.assume_init() };
-            Self { inner }
+            Self { inner, views }
         })
     }
 
@@ -304,7 +326,7 @@ impl TreeSequence {
 
         // SAFETY: we just initialized it.
         // The C API doesn't free NULL pointers.
-        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_mbox(inner) })
+        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_mbox(inner)? })
     }
 
     /// Create an iterator over trees.
@@ -451,12 +473,14 @@ impl TreeSequence {
                 },
             )
         };
+        // TODO: is it possible that this can leak somehow?
         handle_tsk_return_value!(
             rv,
             (
                 {
-                    let inner = unsafe { ts.assume_init() };
-                    Self { inner }
+                    let mut inner = unsafe { ts.assume_init() };
+                    let views = crate::table_views::TableViews::new_from_tree_sequence(&mut inner)?;
+                    Self { inner, views }
                 },
                 match idmap {
                     true => Some(output_node_map),
@@ -481,9 +505,10 @@ impl TreeSequence {
     /// # Parameters
     ///
     /// * `record`: the provenance record
-    /// ```
-    /// use tskit::TableAccess;
     ///
+    /// # Examples
+    ///
+    /// ```
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// let mut treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
     /// # #[cfg(feature = "provenance")] {
@@ -529,46 +554,6 @@ impl TryFrom<TableCollection> for TreeSequence {
         Self::new(value, TreeSequenceFlags::default())
     }
 }
-
-impl TableAccess for TreeSequence {
-    fn edges(&self) -> EdgeTable {
-        EdgeTable::new_from_table(unsafe { &(*self.inner.tables).edges })
-    }
-
-    fn individuals(&self) -> IndividualTable {
-        IndividualTable::new_from_table(unsafe { &(*self.inner.tables).individuals })
-    }
-
-    fn migrations(&self) -> MigrationTable {
-        MigrationTable::new_from_table(unsafe { &(*self.inner.tables).migrations })
-    }
-
-    fn nodes(&self) -> NodeTable {
-        NodeTable::new_from_table(unsafe { &(*self.inner.tables).nodes })
-    }
-
-    fn sites(&self) -> SiteTable {
-        SiteTable::new_from_table(unsafe { &(*self.inner.tables).sites })
-    }
-
-    fn mutations(&self) -> MutationTable {
-        MutationTable::new_from_table(unsafe { &(*self.inner.tables).mutations })
-    }
-
-    fn populations(&self) -> PopulationTable {
-        PopulationTable::new_from_table(unsafe { &(*self.inner.tables).populations })
-    }
-
-    #[cfg(feature = "provenance")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-    fn provenances(&self) -> crate::provenance::ProvenanceTable {
-        crate::provenance::ProvenanceTable::new_from_table(unsafe {
-            &(*self.inner.tables).provenances
-        })
-    }
-}
-
-impl crate::traits::NodeListGenerator for TreeSequence {}
 
 #[cfg(test)]
 pub(crate) mod test_trees {

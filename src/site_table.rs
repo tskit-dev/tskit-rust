@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::tsk_id_t;
@@ -26,7 +28,7 @@ impl PartialEq for SiteTableRow {
 }
 
 fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
-    let table_ref = table.table_;
+    let table_ref = table.as_ref();
     let ancestral_state = table.ancestral_state(pos).map(|s| s.to_vec());
     Some(SiteTableRow {
         id: pos.into(),
@@ -36,8 +38,8 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
     })
 }
 
-pub(crate) type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable<'a>>;
-pub(crate) type SiteTableIterator<'a> = crate::table_iterator::TableIterator<SiteTable<'a>>;
+pub(crate) type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable>;
+pub(crate) type SiteTableIterator = crate::table_iterator::TableIterator<SiteTable>;
 
 impl<'a> Iterator for SiteTableRefIterator<'a> {
     type Item = SiteTableRow;
@@ -49,7 +51,7 @@ impl<'a> Iterator for SiteTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for SiteTableIterator<'a> {
+impl Iterator for SiteTableIterator {
     type Item = SiteTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -61,21 +63,31 @@ impl<'a> Iterator for SiteTableIterator<'a> {
 
 /// An immutable view of site table.
 ///
-/// These are not created directly.
-/// Instead, use [`TableAccess::sites`](crate::TableAccess::sites)
-/// to get a reference to an existing site table;
-pub struct SiteTable<'a> {
-    table_: &'a ll_bindings::tsk_site_table_t,
+/// These are not created directly but are accessed
+/// by types implementing [`std::ops::Deref`] to
+/// [`crate::table_views::TableViews`]
+pub struct SiteTable {
+    table_: NonNull<ll_bindings::tsk_site_table_t>,
 }
 
-impl<'a> SiteTable<'a> {
-    pub(crate) fn new_from_table(sites: &'a ll_bindings::tsk_site_table_t) -> Self {
-        SiteTable { table_: sites }
+impl SiteTable {
+    pub(crate) fn new_from_table(
+        sites: *mut ll_bindings::tsk_site_table_t,
+    ) -> Result<Self, TskitError> {
+        let n = NonNull::new(sites).ok_or_else(|| {
+            TskitError::LibraryError("null pointer to tsk_site_table_t".to_string())
+        })?;
+        Ok(SiteTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_site_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ref().num_rows.into()
     }
 
     /// Return the ``position`` value from row ``row`` of the table.
@@ -84,12 +96,12 @@ impl<'a> SiteTable<'a> {
     ///
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn position<S: Into<SiteId> + Copy>(&'a self, row: S) -> Option<Position> {
+    pub fn position<S: Into<SiteId> + Copy>(&self, row: S) -> Option<Position> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             position,
             Position
         )
@@ -101,14 +113,14 @@ impl<'a> SiteTable<'a> {
     ///
     /// * `Some(ancestral state)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn ancestral_state<S: Into<SiteId>>(&'a self, row: S) -> Option<&[u8]> {
+    pub fn ancestral_state<S: Into<SiteId>>(&self, row: S) -> Option<&[u8]> {
         crate::metadata::char_column_to_slice(
             self,
-            self.table_.ancestral_state,
-            self.table_.ancestral_state_offset,
+            self.as_ref().ancestral_state,
+            self.as_ref().ancestral_state_offset,
             row.into().0,
-            self.table_.num_rows,
-            self.table_.ancestral_state_length,
+            self.as_ref().num_rows,
+            self.as_ref().ancestral_state_length,
         )
     }
 
@@ -129,10 +141,10 @@ impl<'a> SiteTable<'a> {
     /// The big-picture semantics are the same for all table types.
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::SiteMetadata>(
-        &'a self,
+        &self,
         row: SiteId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.table_;
+        let table_ref = self.as_ref();
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
@@ -140,7 +152,7 @@ impl<'a> SiteTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`SiteTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = SiteTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&SiteTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&SiteTable>(self)
     }
 
     /// Return row `r` of the table.

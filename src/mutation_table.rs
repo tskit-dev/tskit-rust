@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::SizeType;
@@ -34,7 +36,7 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
     let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
     match index {
         i if i < table.num_rows() => {
-            let table_ref = table.table_;
+            let table_ref = table.as_ref();
             let derived_state = table.derived_state(pos).map(|s| s.to_vec());
             Some(MutationTableRow {
                 id: pos.into(),
@@ -51,8 +53,8 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
 }
 
 pub(crate) type MutationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a MutationTable<'a>>;
-pub(crate) type MutationTableIterator<'a> = crate::table_iterator::TableIterator<MutationTable<'a>>;
+    crate::table_iterator::TableIterator<&'a MutationTable>;
+pub(crate) type MutationTableIterator = crate::table_iterator::TableIterator<MutationTable>;
 
 impl<'a> Iterator for MutationTableRefIterator<'a> {
     type Item = MutationTableRow;
@@ -64,7 +66,7 @@ impl<'a> Iterator for MutationTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for MutationTableIterator<'a> {
+impl Iterator for MutationTableIterator {
     type Item = MutationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -76,21 +78,31 @@ impl<'a> Iterator for MutationTableIterator<'a> {
 
 /// An immutable view of site table.
 ///
-/// These are not created directly.
-/// Instead, use [`TableAccess::mutations`](crate::TableAccess::mutations)
-/// to get a reference to an existing mutation table;
-pub struct MutationTable<'a> {
-    table_: &'a ll_bindings::tsk_mutation_table_t,
+/// These are not created directly but are accessed
+/// by types implementing [`std::ops::Deref`] to
+/// [`crate::table_views::TableViews`]
+pub struct MutationTable {
+    table_: NonNull<ll_bindings::tsk_mutation_table_t>,
 }
 
-impl<'a> MutationTable<'a> {
-    pub(crate) fn new_from_table(mutations: &'a ll_bindings::tsk_mutation_table_t) -> Self {
-        MutationTable { table_: mutations }
+impl MutationTable {
+    pub(crate) fn new_from_table(
+        mutations: *mut ll_bindings::tsk_mutation_table_t,
+    ) -> Result<Self, TskitError> {
+        let n = NonNull::new(mutations).ok_or_else(|| {
+            TskitError::LibraryError("null pointer to tsk_mutation_table_t".to_string())
+        })?;
+        Ok(MutationTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_mutation_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows.
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ref().num_rows.into()
     }
 
     /// Return the ``site`` value from row ``row`` of the table.
@@ -99,8 +111,15 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn site<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<SiteId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, site, SiteId)
+    pub fn site<M: Into<MutationId> + Copy>(&self, row: M) -> Option<SiteId> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            site,
+            SiteId
+        )
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -109,8 +128,15 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn node<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, node, NodeId)
+    pub fn node<M: Into<MutationId> + Copy>(&self, row: M) -> Option<NodeId> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            node,
+            NodeId
+        )
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -119,12 +145,12 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn parent<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<MutationId> {
+    pub fn parent<M: Into<MutationId> + Copy>(&self, row: M) -> Option<MutationId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             parent,
             MutationId
         )
@@ -136,8 +162,8 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn time<M: Into<MutationId> + Copy>(&'a self, row: M) -> Option<Time> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, time, Time)
+    pub fn time<M: Into<MutationId> + Copy>(&self, row: M) -> Option<Time> {
+        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.as_ref(), time, Time)
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.
@@ -150,14 +176,14 @@ impl<'a> MutationTable<'a> {
     ///
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
-    pub fn derived_state<M: Into<MutationId>>(&'a self, row: M) -> Option<&[u8]> {
+    pub fn derived_state<M: Into<MutationId>>(&self, row: M) -> Option<&[u8]> {
         metadata::char_column_to_slice(
             self,
-            self.table_.derived_state,
-            self.table_.derived_state_offset,
+            self.as_ref().derived_state,
+            self.as_ref().derived_state_offset,
             row.into().0,
-            self.table_.num_rows,
-            self.table_.derived_state_length,
+            self.as_ref().num_rows,
+            self.as_ref().derived_state_length,
         )
     }
 
@@ -178,10 +204,10 @@ impl<'a> MutationTable<'a> {
     /// The big-picture semantics are the same for all table types.
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::MutationMetadata>(
-        &'a self,
+        &self,
         row: MutationId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.table_;
+        let table_ref = self.as_ref();
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
@@ -189,7 +215,7 @@ impl<'a> MutationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MutationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = MutationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&MutationTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&MutationTable>(self)
     }
 
     /// Return row `r` of the table.

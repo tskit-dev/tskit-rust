@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::Position;
@@ -34,7 +36,7 @@ impl PartialEq for MigrationTableRow {
 }
 
 fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
-    let table_ref = table.table_;
+    let table_ref = table.as_ref();
     Some(MigrationTableRow {
         id: pos.into(),
         left: table.left(pos)?,
@@ -48,9 +50,8 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
 }
 
 pub(crate) type MigrationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a MigrationTable<'a>>;
-pub(crate) type MigrationTableIterator<'a> =
-    crate::table_iterator::TableIterator<MigrationTable<'a>>;
+    crate::table_iterator::TableIterator<&'a MigrationTable>;
+pub(crate) type MigrationTableIterator = crate::table_iterator::TableIterator<MigrationTable>;
 
 impl<'a> Iterator for MigrationTableRefIterator<'a> {
     type Item = MigrationTableRow;
@@ -62,7 +63,7 @@ impl<'a> Iterator for MigrationTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for MigrationTableIterator<'a> {
+impl Iterator for MigrationTableIterator {
     type Item = crate::migration_table::MigrationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -74,21 +75,31 @@ impl<'a> Iterator for MigrationTableIterator<'a> {
 
 /// An immutable view of a migration table.
 ///
-/// These are not created directly.
-/// Instead, use [`TableAccess::migrations`](crate::TableAccess::migrations)
-/// to get a reference to an existing node table;
-pub struct MigrationTable<'a> {
-    table_: &'a ll_bindings::tsk_migration_table_t,
+/// These are not created directly but are accessed
+/// by types implementing [`std::ops::Deref`] to
+/// [`crate::table_views::TableViews`]
+pub struct MigrationTable {
+    table_: NonNull<ll_bindings::tsk_migration_table_t>,
 }
 
-impl<'a> MigrationTable<'a> {
-    pub(crate) fn new_from_table(migrations: &'a ll_bindings::tsk_migration_table_t) -> Self {
-        MigrationTable { table_: migrations }
+impl MigrationTable {
+    pub(crate) fn new_from_table(
+        migrations: *mut ll_bindings::tsk_migration_table_t,
+    ) -> Result<Self, TskitError> {
+        let n = NonNull::new(migrations).ok_or_else(|| {
+            TskitError::LibraryError("null pointer to tsk_migration_table_t".to_string())
+        })?;
+        Ok(MigrationTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_migration_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        self.as_ref().num_rows.into()
     }
 
     /// Return the left coordinate for a given row.
@@ -97,8 +108,14 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn left<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, left)
+    pub fn left<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Position> {
+        unsafe_tsk_column_access_and_map_into!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            left
+        )
     }
 
     /// Return the right coordinate for a given row.
@@ -107,8 +124,14 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * `Some(positions)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn right<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, right)
+    pub fn right<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Position> {
+        unsafe_tsk_column_access_and_map_into!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            right
+        )
     }
 
     /// Return the node for a given row.
@@ -117,8 +140,15 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * `Some(node)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn node<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.table_, node, NodeId)
+    pub fn node<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<NodeId> {
+        unsafe_tsk_column_access!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            node,
+            NodeId
+        )
     }
 
     /// Return the source population for a given row.
@@ -127,12 +157,12 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn source<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<PopulationId> {
+    pub fn source<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<PopulationId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             source,
             PopulationId
         )
@@ -144,12 +174,12 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn dest<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<PopulationId> {
+    pub fn dest<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<PopulationId> {
         unsafe_tsk_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             dest,
             PopulationId
         )
@@ -161,8 +191,14 @@ impl<'a> MigrationTable<'a> {
     ///
     /// * `Some(time)` if `row` is valid.
     /// * `None` otherwise.
-    pub fn time<M: Into<MigrationId> + Copy>(&'a self, row: M) -> Option<Time> {
-        unsafe_tsk_column_access_and_map_into!(row.into().0, 0, self.num_rows(), self.table_, time)
+    pub fn time<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Time> {
+        unsafe_tsk_column_access_and_map_into!(
+            row.into().0,
+            0,
+            self.num_rows(),
+            self.as_ref(),
+            time
+        )
     }
 
     /// Retrieve decoded metadata for a `row`.
@@ -182,10 +218,10 @@ impl<'a> MigrationTable<'a> {
     /// The big-picture semantics are the same for all table types.
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::MigrationMetadata>(
-        &'a self,
+        &self,
         row: MigrationId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.table_;
+        let table_ref = self.as_ref();
         let buffer = metadata_to_vector!(self, table_ref, row.0)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
@@ -193,7 +229,7 @@ impl<'a> MigrationTable<'a> {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`MigrationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = MigrationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&MigrationTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&MigrationTable>(self)
     }
 
     /// Return row `r` of the table.

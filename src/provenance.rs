@@ -4,13 +4,13 @@
 //! the following:
 //!
 //! * [`crate::TableCollection::add_provenance`]
-//! * [`crate::TableAccess::provenances`]
-//! * [`crate::TableAccess::provenances_iter`]
 //! * [`crate::TreeSequence::add_provenance`]
 //! * [`ProvenanceTable`].
 //! * [`ProvenanceTableRow`], which is the value type returned by
 //!   [`ProvenanceTable::iter`].
 //!
+
+use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::SizeType;
@@ -52,8 +52,8 @@ fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<Provena
     })
 }
 
-type ProvenanceTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a ProvenanceTable<'a>>;
-type ProvenanceTableIterator<'a> = crate::table_iterator::TableIterator<ProvenanceTable<'a>>;
+type ProvenanceTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a ProvenanceTable>;
+type ProvenanceTableIterator = crate::table_iterator::TableIterator<ProvenanceTable>;
 
 impl<'a> Iterator for ProvenanceTableRefIterator<'a> {
     type Item = ProvenanceTableRow;
@@ -65,7 +65,7 @@ impl<'a> Iterator for ProvenanceTableRefIterator<'a> {
     }
 }
 
-impl<'a> Iterator for ProvenanceTableIterator<'a> {
+impl Iterator for ProvenanceTableIterator {
     type Item = ProvenanceTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -78,27 +78,36 @@ impl<'a> Iterator for ProvenanceTableIterator<'a> {
 /// An immutable view of a provenance table.
 ///
 /// These are not created directly.
-/// Instead, use [`crate::TableAccess::provenances`]
 /// to get a reference to an existing provenance table;
 ///
 /// # Notes
 ///
 /// * The type is enabled by the `"provenance"` feature.
 ///
-pub struct ProvenanceTable<'a> {
-    table_: &'a ll_bindings::tsk_provenance_table_t,
+pub struct ProvenanceTable {
+    table_: NonNull<ll_bindings::tsk_provenance_table_t>,
 }
 
-impl<'a> ProvenanceTable<'a> {
-    pub(crate) fn new_from_table(provenances: &'a ll_bindings::tsk_provenance_table_t) -> Self {
-        ProvenanceTable {
-            table_: provenances,
-        }
+impl ProvenanceTable {
+    pub(crate) fn new_from_table(
+        provenances: *mut ll_bindings::tsk_provenance_table_t,
+    ) -> Result<Self, crate::TskitError> {
+        // FIXME: unwrap
+        let n = NonNull::new(provenances).ok_or_else(|| {
+            crate::TskitError::LibraryError("null pointer to tsk_provenance_table_t".to_string())
+        })?;
+        Ok(ProvenanceTable { table_: n })
+    }
+
+    pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_provenance_table_t {
+        // SAFETY: NonNull
+        unsafe { self.table_.as_ref() }
     }
 
     /// Return the number of rows
-    pub fn num_rows(&'a self) -> SizeType {
-        self.table_.num_rows.into()
+    pub fn num_rows(&self) -> SizeType {
+        println!("internal: {}", unsafe { self.table_.as_ref() }.num_rows);
+        self.as_ref().num_rows.into()
     }
 
     /// Get the ISO-formatted time stamp for row `row`.
@@ -111,7 +120,7 @@ impl<'a> ProvenanceTable<'a> {
     /// # Examples
     ///
     /// ```
-    /// use tskit::TableAccess;
+    ///
     /// let mut tables = tskit::TableCollection::new(10.).unwrap();
     /// assert!(tables.add_provenance("foo").is_ok());
     /// if let Some(timestamp) = tables.provenances().timestamp(0) {
@@ -121,12 +130,12 @@ impl<'a> ProvenanceTable<'a> {
     /// # panic!("Expected Some(timestamp)");
     /// # }
     /// ```
-    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Option<String> {
+    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<String> {
         unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             timestamp,
             timestamp_offset,
             timestamp_length
@@ -143,7 +152,7 @@ impl<'a> ProvenanceTable<'a> {
     /// # Examples
     ///
     /// ```
-    /// use tskit::TableAccess;
+    ///
     /// let mut tables = tskit::TableCollection::new(10.).unwrap();
     /// assert!(tables.add_provenance("foo").is_ok());
     /// if let Some(record) = tables.provenances().record(0) {
@@ -153,12 +162,12 @@ impl<'a> ProvenanceTable<'a> {
     /// # else {
     /// # panic!("Expected Some(timestamp)");
     /// # }
-    pub fn record<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Option<String> {
+    pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<String> {
         unsafe_tsk_ragged_char_column_access!(
             row.into().0,
             0,
             self.num_rows(),
-            self.table_,
+            self.as_ref(),
             record,
             record_offset,
             record_length
@@ -171,14 +180,14 @@ impl<'a> ProvenanceTable<'a> {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<P: Into<ProvenanceId> + Copy>(&'a self, row: P) -> Option<ProvenanceTableRow> {
+    pub fn row<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRow> {
         make_provenance_row(self, row.into().0)
     }
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`ProvenanceTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = ProvenanceTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&ProvenanceTable<'a>>(self)
+        crate::table_iterator::make_table_iterator::<&ProvenanceTable>(self)
     }
 }
 
@@ -213,7 +222,6 @@ impl OwnedProvenanceTable {
 #[cfg(test)]
 mod test_provenances {
     use super::*;
-    use crate::TableAccess;
 
     #[test]
     fn test_empty_record_string() {
