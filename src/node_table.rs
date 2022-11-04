@@ -189,6 +189,7 @@ impl NodeTable {
     ///     flag.remove(tskit::NodeFlags::IS_SAMPLE);
     /// }
     /// assert!(!tables.nodes_mut().flags_array_mut().iter().any(|f| f.is_sample()));
+    /// assert!(tables.nodes().samples_as_vector().is_empty());
     /// ```
     ///
     /// ```
@@ -404,28 +405,16 @@ impl NodeTable {
     /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
     /// is `true`.
     pub fn samples_as_vector(&self) -> Vec<NodeId> {
-        let mut samples: Vec<NodeId> = vec![];
-        for row in self.iter() {
-            if row.flags.contains(NodeFlags::IS_SAMPLE) {
-                samples.push(row.id);
-            }
-        }
-        samples
+        self.create_node_id_vector(|row| row.flags.contains(NodeFlags::IS_SAMPLE))
     }
 
     /// Obtain a vector containing the indexes ("ids") of all nodes
     /// satisfying a certain criterion.
-    pub fn create_node_id_vector(
-        &self,
-        mut f: impl FnMut(&crate::NodeTableRow) -> bool,
-    ) -> Vec<NodeId> {
-        let mut samples: Vec<NodeId> = vec![];
-        for row in self.iter() {
-            if f(&row) {
-                samples.push(row.id);
-            }
-        }
-        samples
+    pub fn create_node_id_vector(&self, mut f: impl FnMut(&NodeTableRow) -> bool) -> Vec<NodeId> {
+        self.iter()
+            .filter(|row| f(row))
+            .map(|row| row.id)
+            .collect::<Vec<_>>()
     }
 }
 
