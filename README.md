@@ -65,3 +65,12 @@ The goal here is not to have high *test* coverage of the C API, as it is up to t
 
 See [here](https://github.com/tskit-dev/tskit-rust/blob/main/CHANGELOG.md).
 
+### Updating the change log.
+
+**under scrutinty**
+
+Example: 
+
+```sh
+git cliff -u --tag v0.11.0 --date-order -p CHANGELOG.md
+```

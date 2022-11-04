@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - 2022-11-04
+
+### Bug Fixes
+
+- Derive Debug for all table row types ([#361](https://github.com/tskit-dev/tskit-rust/pull/361))
+- [**breaking**] Update generic bounds on metadata getters ([#370](https://github.com/tskit-dev/tskit-rust/pull/370))
+- Impl DerefMut for "owned" tables. ([#371](https://github.com/tskit-dev/tskit-rust/pull/371))
+
+### Documentation
+
+- Add migration guide ([#376](https://github.com/tskit-dev/tskit-rust/pull/376))
+
+### Features
+
+- [**breaking**] Add TskitError::LibraryError ([#342](https://github.com/tskit-dev/tskit-rust/pull/342))
+
+### Refactor
+
+- Streamline code for generating table rows. ([#340](https://github.com/tskit-dev/tskit-rust/pull/340))
+- Replace unwrap with expect in _macros.rs ([#341](https://github.com/tskit-dev/tskit-rust/pull/341))
+- Replace unwrap with errors in table_collection.rs ([#343](https://github.com/tskit-dev/tskit-rust/pull/343))
+- Remove unwraps in trees source files. ([#344](https://github.com/tskit-dev/tskit-rust/pull/344))
+- Streamline building individual table rows ([#345](https://github.com/tskit-dev/tskit-rust/pull/345))
+- Remove unwraps from node_table.rs ([#346](https://github.com/tskit-dev/tskit-rust/pull/346))
+- Unwrap to expect in error.rs ([#347](https://github.com/tskit-dev/tskit-rust/pull/347))
+- Remove type info from Display for newtypes. ([#349](https://github.com/tskit-dev/tskit-rust/pull/349))
+- [**breaking**] Return None for out-of-range row indexes. ([#350](https://github.com/tskit-dev/tskit-rust/pull/350))
+- [**breaking**] Return None for out-of-range row indexes, part II. ([#351](https://github.com/tskit-dev/tskit-rust/pull/351))
+- [**breaking**] Return None for out-of-range row indexes, part III. ([#355](https://github.com/tskit-dev/tskit-rust/pull/355))
+- Improve safety of tsk array access ([#362](https://github.com/tskit-dev/tskit-rust/pull/362))
+- Tree now stores `tsk_tree_t` in `MBox`. ([#367](https://github.com/tskit-dev/tskit-rust/pull/367))
+- [**breaking**] Provenance table getters now return Option ([#369](https://github.com/tskit-dev/tskit-rust/pull/369))
+- [**breaking**] Remove lifetime annotation from table types ([#373](https://github.com/tskit-dev/tskit-rust/pull/373))
+
+### Styling
+
+- Fix lints from rust 1.65.0 ([#374](https://github.com/tskit-dev/tskit-rust/pull/374))
+- Fix lints from nightly ([#375](https://github.com/tskit-dev/tskit-rust/pull/375))
+
+### Testing
+
+- Rewrite table API tests ([#356](https://github.com/tskit-dev/tskit-rust/pull/356))
+- Add doc tests for node table ([#359](https://github.com/tskit-dev/tskit-rust/pull/359))
+
 ## [0.10.0] - 2022-10-28
 
 ### Documentation
