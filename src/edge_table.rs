@@ -76,7 +76,7 @@ pub struct EdgeTable<'a> {
 
 #[repr(transparent)]
 pub struct EdgeTable2 {
-    table_: NonNull<ll_bindings::tsk_edge_table_t>,
+    pub(crate) table_: NonNull<ll_bindings::tsk_edge_table_t>,
 }
 
 struct EdgeTable2Iterator<'t> {
