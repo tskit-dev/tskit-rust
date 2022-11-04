@@ -131,10 +131,11 @@ impl TableCollection {
         if rv < 0 {
             return Err(crate::error::TskitError::ErrorCode { code: rv });
         }
-        let views = crate::table_views::TableViews {
-            edges: crate::edge_table::EdgeTable2::new(&mut mbox.as_mut().edges)?,
-        };
-        assert!(std::ptr::eq(&mbox.as_ref().edges, views.edges().table_.as_ptr()));
+        let views = crate::table_views::TableViews::new_from_tables(mbox.as_mut());
+        assert!(std::ptr::eq(
+            &mbox.as_ref().edges,
+            views.edges().table_.as_ptr()
+        ));
         let mut tables = Self {
             inner: mbox,
             idmap: vec![],

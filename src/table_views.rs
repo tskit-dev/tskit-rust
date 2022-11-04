@@ -1,3 +1,5 @@
+use std::ptr::NonNull;
+
 use crate::edge_table::EdgeTable2;
 
 ///```compile_fail
@@ -23,6 +25,13 @@ pub struct TableViews {
 }
 
 impl TableViews {
+    pub(crate) fn new_from_tables(tables: *mut crate::bindings::tsk_table_collection_t) -> Self {
+        let edges = crate::edge_table::EdgeTable2 {
+            table_: NonNull::new(&mut unsafe { (*tables).edges }).unwrap(),
+        };
+        Self { edges }
+    }
+
     pub fn edges(&self) -> &EdgeTable2 {
         &self.edges
     }
