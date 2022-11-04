@@ -33,7 +33,7 @@ struct Params {
 fn main() {
     let params = Params::parse();
 
-    let treeseq = tskit::TreeSequence::load(&params.treefile).unwrap();
+    let treeseq = tskit::TreeSequence::load(params.treefile).unwrap();
 
     let mut tree_iterator = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
 

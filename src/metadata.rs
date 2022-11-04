@@ -352,7 +352,7 @@ mod tests {
         let c = v.as_ptr() as *const libc::c_char;
         let mut d = vec![];
         for i in 0..v.len() {
-            d.push(unsafe { *c.add(i as usize) as u8 });
+            d.push(unsafe { *c.add(i) as u8 });
         }
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
@@ -386,7 +386,7 @@ mod test_serde {
         let c = v.as_ptr() as *const libc::c_char;
         let mut d = vec![];
         for i in 0..v.len() {
-            d.push(unsafe { *c.add(i as usize) as u8 });
+            d.push(unsafe { *c.add(i) as u8 });
         }
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
@@ -414,7 +414,7 @@ mod test_serde {
         let c = v.as_ptr() as *const libc::c_char;
         let mut d = vec![];
         for i in 0..v.len() {
-            d.push(unsafe { *c.add(i as usize) as u8 });
+            d.push(unsafe { *c.add(i) as u8 });
         }
         if crate::test_fixtures::bad_metadata::Ff::decode(&d).is_ok() {
             panic!("expected an error!!");
