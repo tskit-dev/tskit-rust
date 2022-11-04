@@ -84,7 +84,7 @@ impl Tree {
                 ll_bindings::tsk_tree_set_tracked_samples(
                     tree.as_mut(),
                     ts.num_samples().into(),
-                    (*tree.as_mut()).samples,
+                    (tree.as_mut()).samples,
                 )
             };
         }
