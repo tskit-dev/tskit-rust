@@ -84,14 +84,10 @@ fn initialize_from_table_collection() {
             if let Some(parent) = tree.parent(node) {
                 // Collect the siblings of node into a Vec
                 // The children function returns another iterator
-                let _siblings = if let Some(child_iterator) = tree.children(parent) {
-                    child_iterator
-                        .filter(|child| child != &node)
-                        .collect::<Vec<_>>()
-                } else {
-                    // assign empty vector
-                    vec![]
-                };
+                let _siblings = tree
+                    .children(parent)
+                    .filter(|child| child != &node)
+                    .collect::<Vec<_>>();
             }
         }
     }
