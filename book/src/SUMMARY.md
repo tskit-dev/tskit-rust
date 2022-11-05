@@ -8,3 +8,7 @@
   - [Accessing table columns](./table_collection_column_access.md)
   - [Accessing table rows](./table_collection_row_access.md)
   - [Validating table collection contents](./table_collection_validation.md)
+
+- [Working with tree sequences](./working_with_tree_sequences.md)
+  - [Initialization from a table collection](./tree_sequence_from_table_collection.md)
+  - [Iterating over trees](./tree_sequence_iterate_trees.md)
