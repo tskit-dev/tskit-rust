@@ -598,15 +598,28 @@ pub(crate) mod test_trees {
                 assert_eq!(samples[i - 1], NodeId::from(i as tsk_id_t));
 
                 let mut nsteps = 0;
-                for _ in tree.parents(samples[i - 1]).unwrap() {
+                for _ in tree.parents(samples[i - 1]) {
                     nsteps += 1;
                 }
                 assert_eq!(nsteps, 2);
             }
+
+            // These nodes are all out of range
+            for i in 100..110 {
+                let mut nsteps = 0;
+                for _ in tree.parents(i.into()) {
+                    nsteps += 1;
+                }
+                assert_eq!(nsteps, 0);
+            }
+
+            assert_eq!(tree.parents((-1_i32).into()).count(), 0);
+            assert_eq!(tree.children((-1_i32).into()).count(), 0);
+
             let roots = tree.roots_to_vec();
             for r in roots.iter() {
                 let mut num_children = 0;
-                for _ in tree.children(*r).unwrap() {
+                for _ in tree.children(*r) {
                     num_children += 1;
                 }
                 assert_eq!(num_children, 2);
@@ -639,7 +652,7 @@ pub(crate) mod test_trees {
         if let Some(tree) = tree_iter.next() {
             for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
                 match tree.samples(n) {
-                    Some(Err(_)) => (),
+                    Err(_) => (),
                     _ => panic!("should not be Ok(_) or None"),
                 }
             }
@@ -682,7 +695,7 @@ pub(crate) mod test_trees {
             assert!(tree.flags().contains(TreeFlags::SAMPLE_LISTS));
             let mut s = vec![];
 
-            if let Some(Ok(iter)) = tree.samples(0.into()) {
+            if let Ok(iter) = tree.samples(0.into()) {
                 for i in iter {
                     s.push(i);
                 }
@@ -697,7 +710,7 @@ pub(crate) mod test_trees {
 
             for u in 1..3 {
                 let mut s = vec![];
-                if let Some(Ok(iter)) = tree.samples(u.into()) {
+                if let Ok(iter) = tree.samples(u.into()) {
                     for i in iter {
                         s.push(i);
                     }
@@ -741,7 +754,7 @@ pub(crate) mod test_trees {
             for n in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
                 let mut nsamples = 0;
                 preoder_nodes.push(n);
-                if let Some(Ok(iter)) = tree.samples(n) {
+                if let Ok(iter) = tree.samples(n) {
                     for _ in iter {
                         nsamples += 1;
                     }
@@ -752,7 +765,7 @@ pub(crate) mod test_trees {
             for n in tree.traverse_nodes(NodeTraversalOrder::Postorder) {
                 let mut nsamples = 0;
                 postoder_nodes.push(n);
-                if let Some(Ok(iter)) = tree.samples(n) {
+                if let Ok(iter) = tree.samples(n) {
                     for _ in iter {
                         nsamples += 1;
                     }

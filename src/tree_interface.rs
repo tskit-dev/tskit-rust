@@ -399,17 +399,6 @@ impl TreeInterface {
         tree_array_slice!(self, samples, num_samples)
     }
 
-    /// Return an [`Iterator`] from the node `u` to the root of the tree.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(iterator)` if `u` us valid
-    /// * `None` otherwise
-    #[deprecated(since = "0.2.3", note = "Please use Tree::parents instead")]
-    pub fn path_to_root(&self, u: NodeId) -> Option<impl Iterator<Item = NodeId> + '_> {
-        self.parents(u)
-    }
-
     /// Return an [`Iterator`] from the node `u` to the root of the tree,
     /// travering all parent nodes.
     ///
@@ -417,7 +406,7 @@ impl TreeInterface {
     ///
     /// * `Some(iterator)` if `u` is valid
     /// * `None` otherwise
-    pub fn parents(&self, u: NodeId) -> Option<impl Iterator<Item = NodeId> + '_> {
+    pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         ParentsIterator::new(self, u)
     }
 
@@ -426,7 +415,7 @@ impl TreeInterface {
     ///
     /// * `Some(iterator)` if `u` is valid
     /// * `None` otherwise
-    pub fn children(&self, u: NodeId) -> Option<impl Iterator<Item = NodeId> + '_> {
+    pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         ChildIterator::new(self, u)
     }
 
@@ -441,10 +430,7 @@ impl TreeInterface {
     /// * Some(Ok(iterator)) if [`TreeFlags::SAMPLE_LISTS`] is in [`TreeInterface::flags`]
     /// * Some(Err(_)) if [`TreeFlags::SAMPLE_LISTS`] is not in [`TreeInterface::flags`]
     /// * None if `u` is not valid.
-    pub fn samples(
-        &self,
-        u: NodeId,
-    ) -> Option<Result<impl Iterator<Item = NodeId> + '_, TskitError>> {
+    pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         SamplesIterator::new(self, u)
     }
 
@@ -737,14 +723,17 @@ struct ChildIterator<'a> {
 }
 
 impl<'a> ChildIterator<'a> {
-    fn new(tree: &'a TreeInterface, u: NodeId) -> Option<Self> {
-        let c = tree.left_child(u)?;
+    fn new(tree: &'a TreeInterface, u: NodeId) -> Self {
+        let c = match tree.left_child(u) {
+            Some(x) => x,
+            None => NodeId::NULL,
+        };
 
-        Some(ChildIterator {
+        ChildIterator {
             current_child: None,
             next_child: c,
             tree,
-        })
+        }
     }
 }
 
@@ -776,16 +765,15 @@ struct ParentsIterator<'a> {
 }
 
 impl<'a> ParentsIterator<'a> {
-    fn new(tree: &'a TreeInterface, u: NodeId) -> Option<Self> {
-        let num_nodes = tsk_id_t::try_from(tree.num_nodes).ok()?;
-
-        match u {
-            x if x < num_nodes => Some(ParentsIterator {
-                current_node: None,
-                next_node: u,
-                tree,
-            }),
-            _ => None,
+    fn new(tree: &'a TreeInterface, u: NodeId) -> Self {
+        let u = match tsk_id_t::try_from(tree.num_nodes) {
+            Ok(num_nodes) if u < num_nodes => u,
+            _ => NodeId::NULL,
+        };
+        ParentsIterator {
+            current_node: None,
+            next_node: u,
+            tree,
         }
     }
 }
@@ -797,7 +785,6 @@ impl NodeIterator for ParentsIterator<'_> {
             r => {
                 assert!(r >= 0);
                 let cr = Some(r);
-                debug_assert!(self.tree.parent(r).is_some());
                 self.next_node = self.tree.parent(r).unwrap_or(NodeId::NULL);
                 cr
             }
@@ -821,18 +808,24 @@ struct SamplesIterator<'a> {
 }
 
 impl<'a> SamplesIterator<'a> {
-    fn new(tree: &'a TreeInterface, u: NodeId) -> Option<Result<Self, TskitError>> {
+    fn new(tree: &'a TreeInterface, u: NodeId) -> Result<Self, TskitError> {
         match tree.flags.contains(TreeFlags::SAMPLE_LISTS) {
-            false => Some(Err(TskitError::NotTrackingSamples {})),
+            false => Err(TskitError::NotTrackingSamples {}),
             true => {
-                let next_sample_index = tree.left_sample(u)?;
-                let last_sample_index = tree.right_sample(u)?;
-                Some(Ok(SamplesIterator {
+                let next_sample_index = match tree.left_sample(u) {
+                    Some(x) => x,
+                    None => NodeId::NULL,
+                };
+                let last_sample_index = match tree.right_sample(u) {
+                    Some(x) => x,
+                    None => NodeId::NULL,
+                };
+                Ok(SamplesIterator {
                     current_node: None,
                     next_sample_index,
                     last_sample_index,
                     tree,
-                }))
+                })
             }
         }
     }
