@@ -14,3 +14,6 @@
   - [Iterating over trees](./tree_sequence_iterate_trees.md)
   - [Working with trees](./tree_sequence_tree.md)
   - [Miscellaneous operations](./tree_sequence_miscellaneous.md)
+
+[Changelog](./changelog.md)
+[Migration Guide](./migration_guide.md)
