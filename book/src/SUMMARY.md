@@ -13,3 +13,4 @@
   - [Initialization from a table collection](./tree_sequence_from_table_collection.md)
   - [Iterating over trees](./tree_sequence_iterate_trees.md)
   - [Working with trees](./tree_sequence_tree.md)
+  - [Miscellaneous operations](./tree_sequence_miscellaneous.md)
