@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - The tskit (rust) book</title>
-        <base href="/">
+        <title>Metadata and tables - The tskit (rust) book</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -76,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.4.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded affix "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.4.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html" class="active"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded affix "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,19 +134,111 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h1 id="metadata-and-tables"><a class="header" href="#metadata-and-tables">Metadata and tables</a></h1>
+<p>Let us create a table and add a row with our mutation metadata:</p>
+<pre><code class="language-rust  noplayground  ignore">    let mut tables = tskit::TableCollection::new(50.0).unwrap();
+
+    let md = MutationMetadata {
+        effect_size: 1e-3,
+        dominance: 1.0,
+    };
+
+    let mut_id_0 = tables
+        .add_mutation_with_metadata(
+            0,    // site id
+            0,    // node id
+            -1,   // mutation parent id
+            0.0,  // time
+            None, // derived state is Option&lt;&amp;[u8]&gt;
+            &amp;md,  // metadata for this row
+        )
+        .unwrap();
+</code></pre>
+<p>Meta data is optional on a per-row basis:</p>
+<pre><code class="language-rust  noplayground  ignore">    let mut_id_1 = tables
+        .add_mutation(
+            0,    // site id
+            0,    // node id
+            -1,   // mutation parent id
+            0.0,  // time
+            None, // derived state is Option&lt;&amp;[u8]&gt;
+        )
+        .unwrap();
+</code></pre>
+<p>We can confirm that we have one row with, and one without, metadata:</p>
+<pre><code class="language-rust  noplayground  ignore">    assert_eq!(
+        tables
+            .mutations_iter()
+            .filter(|m| m.metadata.is_some())
+            .count(),
+        1
+    );
+    assert_eq!(
+        tables
+            .mutations_iter()
+            .filter(|m| m.metadata.is_none())
+            .count(),
+        1
+    );
+</code></pre>
+<p>Fetching our metadata from the table requires specifying the metadata type.
+The result of a metadata retrieval is <code>Option&lt;Result, TskitError&gt;</code>.
+The <code>None</code> variant occurs if a row does not have metadata or if a row id does not exist.
+The error state occurs if decoding raw bytes into the metadata type fails.
+The details of the error variant are <a href="https://docs.rs/tskit/latest/tskit/error/enum.TskitError.html#variant.MetadataError">here</a>.
+The reason why the error type holds <code>Box&lt;dyn Error&gt;</code> is that the API is very general.
+We assume nothing about the API used to encode/decode metadata.
+Therefore, the error could be anything.</p>
+<pre><code class="language-rust  noplayground  ignore">    let fetched_md = match tables.mutations().metadata::&lt;MutationMetadata&gt;(mut_id_0) {
+        Some(Ok(m)) =&gt; m,
+        Some(Err(e)) =&gt; panic!(&quot;metadata decoding failed: {:?}&quot;, e),
+        None =&gt; panic!(
+            &quot;hmmm...row {} should have been a valid row with metadata...&quot;,
+            mut_id_0
+        ),
+    };
+
+    assert_eq!(md.effect_size, fetched_md.effect_size);
+    assert_eq!(md.dominance, fetched_md.dominance);
+</code></pre>
+<pre><code class="language-rust  noplayground  ignore">    // There is no metadata at row 1, so
+    // you get None back
+    assert!(tables
+        .mutations()
+        .metadata::&lt;MutationMetadata&gt;(mut_id_1)
+        .is_none());
+
+    // There is also no metadata at row 2,
+    // because that row does not exist, so
+    // you get None back
+    assert!(tables
+        .mutations()
+        .metadata::&lt;MutationMetadata&gt;(2.into())
+        .is_none());
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="metadata_derive.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="metadata_schema.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="metadata_derive.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="metadata_schema.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

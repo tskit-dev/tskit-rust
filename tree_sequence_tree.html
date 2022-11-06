@@ -3,8 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - The tskit (rust) book</title>
-        <base href="/">
+        <title>Working with trees - The tskit (rust) book</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -76,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.4.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded affix "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html" class="active"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.4.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded affix "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -135,19 +134,109 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
-<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
+                        <h2 id="working-with-trees"><a class="header" href="#working-with-trees">Working with trees</a></h2>
+<p>Iterating over a tree sequence returns instances of <code>tskit::Tree</code>.
+This type is immutable.
+No access is provided to the underlying pointers.</p>
+<p>The API provides a set of iterators over the data in a tree.</p>
+<p>For example, to collect the siblings of each node into a vector:</p>
+<pre><code class="language-rust  noplaygound  ignore">    // This is an enum defining supported
+    // traversal orders through a Tree.
+    use tskit::NodeTraversalOrder;
+    while let Some(tree) = tree_iterator.next() {
+        for node in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
+            if let Some(parent) = tree.parent(node) {
+                // Collect the siblings of node into a Vec
+                // The children function returns another iterator
+                let _siblings = tree
+                    .children(parent)
+                    .filter(|child| child != &amp;node)
+                    .collect::&lt;Vec&lt;_&gt;&gt;();
+            }
+        }
+    }
+</code></pre>
+<p>We may do the same calculation using API elements giving <code>&amp;[NodeId]</code>
+(slices of node ids).
+This method more closely matches the <code>tskit-c</code> API.</p>
+<pre><code class="language-rust  noplaygound  ignore">    while let Some(tree) = tree_iterator.next() {
+        let parents = tree.parent_array();
+        let rsibs = tree.right_sib_array();
+        let lchildren = tree.left_child_array();
+        for node in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
+            let mut siblings = vec![];
+            assert!(!node.is_null());
+            if let Some(parent) = parents.get(usize::try_from(node).unwrap()) {
+                if !parent.is_null() {
+                    if let Some(child) = lchildren.get(usize::try_from(*parent).unwrap()) {
+                        let mut u = *child;
+                        while !u.is_null() {
+                            if u != node {
+                                siblings.push(u);
+                            }
+                            if let Some(sib) = rsibs.get(usize::try_from(u).unwrap()) {
+                                u = *sib;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+</code></pre>
+<p>This approach is more complex:</p>
+<ul>
+<li>Slice element access is via <code>usize</code> (<code>size_t</code> in C/C++).</li>
+<li>Row ids are <code>i32</code> (<code>tsk_id_t</code> in <code>tskit-c</code>) behind the newtypes.</li>
+<li><code>tskit</code> implements <code>TryFrom</code> to help you out, forcing
+you to reckon with the fact that conversion from <code>i32</code>
+to <code>usize</code> is fallible.</li>
+</ul>
+<p>These conversion semantics require us to manually handle all possible error
+paths at each step.</p>
+<p>We can have an intermediate level of complexity using getters from the tree arrays:</p>
+<pre><code class="language-rust  noplaygound  ignore">    while let Some(tree) = tree_iterator.next() {
+        for node in tree.traverse_nodes(NodeTraversalOrder::Preorder) {
+            let mut siblings = vec![];
+            if let Some(parent) = tree.parent(node) {
+                if let Some(child) = tree.left_child(parent) {
+                    let mut u = child;
+                    while !u.is_null() {
+                        if u != node {
+                            siblings.push(u);
+                        }
+                        if let Some(sib) = tree.right_sib(u) {
+                            u = sib;
+                        }
+                    }
+                }
+            }
+        }
+    }
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="tree_sequence_iterate_trees.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="tree_sequence_miscellaneous.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         <div style="clear: both"></div>
                     </nav>
                 </div>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="tree_sequence_iterate_trees.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="tree_sequence_miscellaneous.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
