@@ -15,6 +15,12 @@
   - [Working with trees](./tree_sequence_tree.md)
   - [Miscellaneous operations](./tree_sequence_miscellaneous.md)
 
+* [Metadata](./metadata.md)
+  - [Defining metadata types in rust](./metadata_derive.md)
+  - [Metadata and tables](./metadata_tables.md)
+  - [Metadata schema](./metadata_schema.md)
+  
+
 [Crate prelude](./prelude.md)
 [Changelog](./changelog.md)
 [Migration Guide](./migration_guide.md)
