@@ -2,6 +2,6 @@
 
 The contents of the crate prelude are:
 
-```rust, noplaygound, ignore
+```rust, noplayground, ignore
 {{#include ../../src/prelude.rs}}
 ```
