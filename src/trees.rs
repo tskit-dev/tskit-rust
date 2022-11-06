@@ -607,14 +607,14 @@ pub(crate) mod test_trees {
             // These nodes are all out of range
             for i in 100..110 {
                 let mut nsteps = 0;
-                for _ in tree.parents(i.into()) {
+                for _ in tree.parents(i) {
                     nsteps += 1;
                 }
                 assert_eq!(nsteps, 0);
             }
 
-            assert_eq!(tree.parents((-1_i32).into()).count(), 0);
-            assert_eq!(tree.children((-1_i32).into()).count(), 0);
+            assert_eq!(tree.parents(-1_i32).count(), 0);
+            assert_eq!(tree.children(-1_i32).count(), 0);
 
             let roots = tree.roots_to_vec();
             for r in roots.iter() {
@@ -665,9 +665,9 @@ pub(crate) mod test_trees {
         assert_eq!(treeseq.num_samples(), 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
         if let Some(tree) = tree_iter.next() {
-            assert_eq!(tree.num_tracked_samples(2.into()).unwrap(), 1);
-            assert_eq!(tree.num_tracked_samples(1.into()).unwrap(), 1);
-            assert_eq!(tree.num_tracked_samples(0.into()).unwrap(), 2);
+            assert_eq!(tree.num_tracked_samples(2).unwrap(), 1);
+            assert_eq!(tree.num_tracked_samples(1).unwrap(), 1);
+            assert_eq!(tree.num_tracked_samples(0).unwrap(), 2);
         }
     }
 
@@ -678,9 +678,9 @@ pub(crate) mod test_trees {
         assert_eq!(treeseq.num_samples(), 2);
         let mut tree_iter = treeseq.tree_iterator(TreeFlags::NO_SAMPLE_COUNTS).unwrap();
         if let Some(tree) = tree_iter.next() {
-            assert_eq!(tree.num_tracked_samples(2.into()).unwrap(), 0);
-            assert_eq!(tree.num_tracked_samples(1.into()).unwrap(), 0);
-            assert_eq!(tree.num_tracked_samples(0.into()).unwrap(), 0);
+            assert_eq!(tree.num_tracked_samples(2).unwrap(), 0);
+            assert_eq!(tree.num_tracked_samples(1).unwrap(), 0);
+            assert_eq!(tree.num_tracked_samples(0).unwrap(), 0);
         }
     }
 
@@ -695,7 +695,7 @@ pub(crate) mod test_trees {
             assert!(tree.flags().contains(TreeFlags::SAMPLE_LISTS));
             let mut s = vec![];
 
-            if let Ok(iter) = tree.samples(0.into()) {
+            if let Ok(iter) = tree.samples(0) {
                 for i in iter {
                     s.push(i);
                 }
@@ -703,14 +703,14 @@ pub(crate) mod test_trees {
             assert_eq!(s.len(), 2);
             assert_eq!(
                 s.len(),
-                usize::try_from(tree.num_tracked_samples(0.into()).unwrap()).unwrap()
+                usize::try_from(tree.num_tracked_samples(0).unwrap()).unwrap()
             );
             assert_eq!(s[0], 1);
             assert_eq!(s[1], 2);
 
             for u in 1..3 {
                 let mut s = vec![];
-                if let Ok(iter) = tree.samples(u.into()) {
+                if let Ok(iter) = tree.samples(u) {
                     for i in iter {
                         s.push(i);
                     }
@@ -719,7 +719,7 @@ pub(crate) mod test_trees {
                 assert_eq!(s[0], u);
                 assert_eq!(
                     s.len(),
-                    usize::try_from(tree.num_tracked_samples(u.into()).unwrap()).unwrap()
+                    usize::try_from(tree.num_tracked_samples(u).unwrap()).unwrap()
                 );
             }
         } else {

@@ -295,18 +295,18 @@ impl TreeInterface {
 
     // error if we are not tracking samples,
     // Ok(None) if u is out of range
-    fn left_sample(&self, u: NodeId) -> Option<NodeId> {
+    fn left_sample<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, ptr, left_sample, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.num_nodes, ptr, left_sample, NodeId)
     }
 
     // error if we are not tracking samples,
     // Ok(None) if u is out of range
-    fn right_sample(&self, u: NodeId) -> Option<NodeId> {
+    fn right_sample<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.num_nodes, ptr, right_sample, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.num_nodes, ptr, right_sample, NodeId)
     }
 
     /// Return the `[left, right)` coordinates of the tree.
@@ -328,46 +328,46 @@ impl TreeInterface {
     /// Get the parent of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
-    pub fn parent(&self, u: NodeId) -> Option<NodeId> {
+    pub fn parent<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, parent, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, parent, NodeId)
     }
 
     /// Get the left child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
-    pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
+    pub fn left_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, left_child, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, left_child, NodeId)
     }
 
     /// Get the right child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
-    pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
+    pub fn right_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, right_child, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, right_child, NodeId)
     }
 
     /// Get the left sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
-    pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
+    pub fn left_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, left_sib, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, left_sib, NodeId)
     }
 
     /// Get the right sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
-    pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
+    pub fn right_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.0, 0, self.array_len, ptr, right_sib, NodeId)
+        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, right_sib, NodeId)
     }
 
     /// Obtain the list of samples for the current tree/tree sequence
@@ -406,8 +406,8 @@ impl TreeInterface {
     ///
     /// * `Some(iterator)` if `u` is valid
     /// * `None` otherwise
-    pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
-        ParentsIterator::new(self, u)
+    pub fn parents<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
+        ParentsIterator::new(self, u.into())
     }
 
     /// Return an [`Iterator`] over the children of node `u`.
@@ -415,8 +415,8 @@ impl TreeInterface {
     ///
     /// * `Some(iterator)` if `u` is valid
     /// * `None` otherwise
-    pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
-        ChildIterator::new(self, u)
+    pub fn children<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
+        ChildIterator::new(self, u.into())
     }
 
     /// Return an [`Iterator`] over the sample nodes descending from node `u`.
@@ -430,8 +430,11 @@ impl TreeInterface {
     /// * Some(Ok(iterator)) if [`TreeFlags::SAMPLE_LISTS`] is in [`TreeInterface::flags`]
     /// * Some(Err(_)) if [`TreeFlags::SAMPLE_LISTS`] is not in [`TreeInterface::flags`]
     /// * None if `u` is not valid.
-    pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
-        SamplesIterator::new(self, u)
+    pub fn samples<N: Into<NodeId> + Copy>(
+        &self,
+        u: N,
+    ) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+        SamplesIterator::new(self, u.into())
     }
 
     /// Return an [`Iterator`] over the roots of the tree.
@@ -514,10 +517,14 @@ impl TreeInterface {
     /// # Errors
     ///
     /// * [`TskitError`] if [`TreeFlags::NO_SAMPLE_COUNTS`].
-    pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
+    pub fn num_tracked_samples<N: Into<NodeId> + Copy>(
+        &self,
+        u: N,
+    ) -> Result<SizeType, TskitError> {
         let mut n = SizeType(tsk_size_t::MAX);
         let np: *mut tsk_size_t = &mut n.0;
-        let code = unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.0, np) };
+        let code =
+            unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into().0, np) };
         handle_tsk_return_value!(code, n)
     }
 
