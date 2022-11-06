@@ -19,6 +19,8 @@
   - [Defining metadata types in rust](./metadata_derive.md)
   - [Metadata and tables](./metadata_tables.md)
   - [Metadata schema](./metadata_schema.md)
+
+* [Error handling](./error_handling.md)
   
 
 [Crate prelude](./prelude.md)
