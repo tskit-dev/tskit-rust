@@ -4,18 +4,22 @@ The next several sections provide examples based on a tree sequence with two tre
 
 The first tree is:
 
+```md
      0
     +++
     | |  1
     | | +++
     2 3 4 5
+```
 
 The second tree is:
 
+```md
          0
        +-+-+
        1   |
      +-+-+ |
      2 4 5 3
+```
 
 
