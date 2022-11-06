@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0-alpha.0] - 2022-11-06
+
+### Documentation
+
+- Add book sections on table data access ([#379](https://github.com/tskit-dev/tskit-rust/pull/379))
+- Remove chapter number from book intro ([#380](https://github.com/tskit-dev/tskit-rust/pull/380))
+- Start book sections on tree sequences ([#381](https://github.com/tskit-dev/tskit-rust/pull/381))
+- Book section on the tree API. ([#382](https://github.com/tskit-dev/tskit-rust/pull/382))
+- Add book section on misc. ops on treeseqs ([#385](https://github.com/tskit-dev/tskit-rust/pull/385))
+- Appendix material for book ([#386](https://github.com/tskit-dev/tskit-rust/pull/386))
+- Rewrite book intro ([#389](https://github.com/tskit-dev/tskit-rust/pull/389))
+- Show prelude contents as book appendix ([#390](https://github.com/tskit-dev/tskit-rust/pull/390))
+- Book sections on metadata ([#391](https://github.com/tskit-dev/tskit-rust/pull/391))
+- Book section on error handling ([#393](https://github.com/tskit-dev/tskit-rust/pull/393))
+
+### Refactor
+
+- [**breaking**] Improve Tree iterator ergonomics ([#384](https://github.com/tskit-dev/tskit-rust/pull/384))
+- [**breaking**] Improve Tree interface ergonomics ([#388](https://github.com/tskit-dev/tskit-rust/pull/388))
+
 ## [0.11.1] - 2022-11-04
 
 ### Documentation

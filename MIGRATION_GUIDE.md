@@ -14,6 +14,18 @@ Acronyms used:
 
 * UB = undefined behavior.
 
+## v0.12.0
+
+### Breaking changes
+
+* Several member functions of Tree previously accepted `NodeId` as arguments.
+  They now take `N: Into<NodeId> + Copy`.
+  Thus, code passing in integers will have to drop the `.into()` calls.
+* Tree functions returning iterators previously returned `Option<Iterator<...>>`.
+  They now return `Iterator<...>`.
+  Data leading to `None` being returned in previous versions now return an iterator
+  that will end immediately.
+
 ## v0.11.0
 
 ### Bug fixes
