@@ -246,7 +246,7 @@ pub enum MetadataError {
     #[error("{}", *value)]
     RoundtripError {
         #[from]
-        value: Box<dyn std::error::Error>,
+        value: Box<dyn std::error::Error + Send + Sync>,
     },
 }
 
