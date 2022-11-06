@@ -15,5 +15,6 @@
   - [Working with trees](./tree_sequence_tree.md)
   - [Miscellaneous operations](./tree_sequence_miscellaneous.md)
 
+[Crate prelude](./prelude.md)
 [Changelog](./changelog.md)
 [Migration Guide](./migration_guide.md)
