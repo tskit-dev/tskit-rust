@@ -8,6 +8,7 @@ use proptest::prelude::*;
 use rand::distributions::Distribution;
 use rand::SeedableRng;
 
+// ANCHOR: haploid_wright_fisher
 fn simulate(
     seed: u64,
     popsize: usize,
@@ -81,6 +82,7 @@ fn simulate(
 
     Ok(treeseq)
 }
+// ANCHOR_END: haploid_wright_fisher
 
 #[derive(Clone, clap::Parser)]
 struct SimParams {

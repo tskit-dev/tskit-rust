@@ -21,6 +21,9 @@
   - [Metadata schema](./metadata_schema.md)
 
 * [Error handling](./error_handling.md)
+
+* [Example programs](./examples.md)
+  - [Haploid Wright-Fisher simulation](./examples_haploid_wright_fisher.md)
   
 
 [Crate prelude](./prelude.md)
