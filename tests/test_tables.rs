@@ -65,6 +65,7 @@ mod test_adding_rows_without_metadata {
                     },
                     Err(e) => panic!("Err from tables.{}: {:?}", stringify!(adder), e)
                 }
+                assert_eq!(tables.$table().iter().count(), 2);
             }
         }};
     }
@@ -314,20 +315,48 @@ mod test_metadata_round_trips {
     macro_rules! add_row_with_metadata {
         ($table: ident, $adder: ident, $md: ident) => {{
             {
+                use tskit::prelude::*;
+                use tskit::metadata::MetadataRoundtrip;
                 build_metadata_types!($md);
                 let mut tables = tskit::TableCollection::new(10.).unwrap();
                 let md = MyMetadata::new();
                 let row = tables.$adder(&md);
-                match_block_impl!(tables, $table, $adder, row, md)
+                match_block_impl!(tables, $table, $adder, row, md);
+                let mut lending_iter = tables.$table().lending_iter();
+                let mut iter = tables.$table().iter();
+                while let Some(row) = lending_iter.next() {
+                    if let Some(row_from_iter) = iter.next() {
+                        assert_eq!(row.id, row_from_iter.id);
+                    }
+                    if let Some(metadata) = row.metadata {
+                        assert_eq!(MyMetadata::decode(metadata).unwrap(), md);
+                    }else {
+                        panic!("expected Some(metadata)");
+                    }
+                }
             }
         }};
         ($table: ident, $adder: ident, $md: ident $(,$payload: expr) + ) => {{
             {
+                use tskit::prelude::*;
+                use tskit::metadata::MetadataRoundtrip;
                 build_metadata_types!($md);
                 let mut tables = tskit::TableCollection::new(10.).unwrap();
                 let md = MyMetadata::new();
                 let row =  tables.$adder($($payload ), *, &md);
                 match_block_impl!(tables, $table, $adder, row, md);
+                let mut lending_iter = tables.$table().lending_iter();
+                let mut iter = tables.$table().iter();
+                while let Some(row) = lending_iter.next() {
+                    if let Some(row_from_iter) = iter.next() {
+                        assert_eq!(row.id, row_from_iter.id);
+                    }
+                    if let Some(metadata) = row.metadata {
+                        assert_eq!(MyMetadata::decode(metadata).unwrap(), md);
+                    }else {
+                        panic!("expected Some(metadata)");
+                    }
+                }
             }
         }};
     }

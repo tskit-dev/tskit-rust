@@ -64,6 +64,46 @@ impl Iterator for EdgeTableIterator {
     }
 }
 
+/// Row of an [`EdgeTable`]
+pub struct EdgeTableRowView<'a> {
+    table: &'a EdgeTable,
+    pub id: EdgeId,
+    pub left: Position,
+    pub right: Position,
+    pub parent: NodeId,
+    pub child: NodeId,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> EdgeTableRowView<'a> {
+    fn new(table: &'a EdgeTable) -> Self {
+        Self {
+            table,
+            id: (-1).into(),
+            left: f64::NAN.into(),
+            right: f64::NAN.into(),
+            parent: NodeId::NULL,
+            child: NodeId::NULL,
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.left = self.table.left(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.right = self.table.right(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.parent = self.table.parent(self.id).unwrap_or(NodeId::NULL);
+        self.child = self.table.child(self.id).unwrap_or(NodeId::NULL);
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immutable view of an edge table.
 ///
 /// These are not created directly but are accessed
@@ -93,6 +133,8 @@ impl EdgeTable {
     pub fn num_rows(&self) -> crate::SizeType {
         self.as_ref().num_rows.into()
     }
+
+    raw_metadata_getter_for_tables!(EdgeId);
 
     /// Return the ``parent`` value from row ``row`` of the table.
     ///
@@ -191,6 +233,10 @@ impl EdgeTable {
     ///
     pub fn iter(&self) -> impl Iterator<Item = EdgeTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&EdgeTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> EdgeTableRowView {
+        EdgeTableRowView::new(self)
     }
 
     /// Return row `r` of the table.
