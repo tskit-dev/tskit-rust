@@ -17,7 +17,7 @@ use crate::SizeType;
 use crate::{tsk_id_t, tsk_size_t, ProvenanceId};
 use ll_bindings::{tsk_provenance_table_free, tsk_provenance_table_init};
 
-#[derive(Eq)]
+#[derive(Eq, Debug)]
 /// Row of a [`ProvenanceTable`].
 pub struct ProvenanceTableRow {
     /// The row id
@@ -75,6 +75,7 @@ impl Iterator for ProvenanceTableIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct ProvenanceTableRowView<'a> {
     table: &'a ProvenanceTable,
     /// The row id
@@ -141,6 +142,7 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
 ///
 /// * The type is enabled by the `"provenance"` feature.
 ///
+#[derive(Debug)]
 pub struct ProvenanceTable {
     table_: NonNull<ll_bindings::tsk_provenance_table_t>,
 }
