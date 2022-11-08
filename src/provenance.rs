@@ -97,6 +97,26 @@ impl<'a> ProvenanceTableRowView<'a> {
     }
 }
 
+impl<'a> PartialEq for ProvenanceTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.timestamp == other.timestamp && self.record == other.record
+    }
+}
+
+impl Eq for ProvenanceTableRowView<'_> {}
+
+impl<'a> PartialEq<ProvenanceTableRow> for ProvenanceTableRowView<'a> {
+    fn eq(&self, other: &ProvenanceTableRow) -> bool {
+        self.id == other.id && self.timestamp == other.timestamp && self.record == other.record
+    }
+}
+
+impl PartialEq<ProvenanceTableRowView<'_>> for ProvenanceTableRow {
+    fn eq(&self, other: &ProvenanceTableRowView) -> bool {
+        self.id == other.id && self.timestamp == other.timestamp && self.record == other.record
+    }
+}
+
 impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
     type Item = Self;
 
@@ -285,8 +305,6 @@ impl OwnedProvenanceTable {
 mod test_provenances {
     use streaming_iterator::StreamingIterator;
 
-    use super::*;
-
     #[test]
     fn test_empty_record_string() {
         // check for tables...
@@ -330,6 +348,9 @@ mod test_provenances {
         for i in [0, 1] {
             if let Some(row) = lending_iter.next() {
                 assert_eq!(row.record, &records[i]);
+                let owned_row = tables.provenances().row(i as i32).unwrap();
+                assert_eq!(row, &owned_row);
+                assert_eq!(&owned_row, row);
             }
         }
     }
