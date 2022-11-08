@@ -65,6 +65,7 @@ impl Iterator for EdgeTableIterator {
 }
 
 /// Row of an [`EdgeTable`]
+#[derive(Debug)]
 pub struct EdgeTableRowView<'a> {
     table: &'a EdgeTable,
     pub id: EdgeId,
@@ -89,6 +90,41 @@ impl<'a> EdgeTableRowView<'a> {
     }
 }
 
+impl<'a> PartialEq for EdgeTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.parent == other.parent
+            && self.child == other.child
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && self.metadata == other.metadata
+    }
+}
+
+impl<'a> Eq for EdgeTableRowView<'a> {}
+
+impl<'a> PartialEq<EdgeTableRow> for EdgeTableRowView<'a> {
+    fn eq(&self, other: &EdgeTableRow) -> bool {
+        self.id == other.id
+            && self.parent == other.parent
+            && self.child == other.child
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
+impl PartialEq<EdgeTableRowView<'_>> for EdgeTableRow {
+    fn eq(&self, other: &EdgeTableRowView) -> bool {
+        self.id == other.id
+            && self.parent == other.parent
+            && self.child == other.child
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
 impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
     type Item = Self;
 
@@ -110,6 +146,7 @@ impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct EdgeTable {
     pub(crate) table_: NonNull<ll_bindings::tsk_edge_table_t>,
 }

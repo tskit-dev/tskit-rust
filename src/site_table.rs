@@ -61,6 +61,7 @@ impl Iterator for SiteTableIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct SiteTableRowView<'a> {
     table: &'a SiteTable,
     pub id: SiteId,
@@ -78,6 +79,35 @@ impl<'a> SiteTableRowView<'a> {
             ancestral_state: None,
             metadata: None,
         }
+    }
+}
+
+impl<'a> PartialEq for SiteTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && crate::util::partial_cmp_equal(&self.position, &other.position)
+            && self.ancestral_state == other.ancestral_state
+            && self.metadata == other.metadata
+    }
+}
+
+impl<'a> Eq for SiteTableRowView<'a> {}
+
+impl<'a> PartialEq<SiteTableRow> for SiteTableRowView<'a> {
+    fn eq(&self, other: &SiteTableRow) -> bool {
+        self.id == other.id
+            && crate::util::partial_cmp_equal(&self.position, &other.position)
+            && optional_container_comparison!(self.ancestral_state, other.ancestral_state)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
+impl PartialEq<SiteTableRowView<'_>> for SiteTableRow {
+    fn eq(&self, other: &SiteTableRowView) -> bool {
+        self.id == other.id
+            && crate::util::partial_cmp_equal(&self.position, &other.position)
+            && optional_container_comparison!(self.ancestral_state, other.ancestral_state)
+            && optional_container_comparison!(self.metadata, other.metadata)
     }
 }
 
@@ -102,6 +132,7 @@ impl<'a> streaming_iterator::StreamingIterator for SiteTableRowView<'a> {
 /// These are not created directly but are accessed
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
+#[derive(Debug)]
 pub struct SiteTable {
     table_: NonNull<ll_bindings::tsk_site_table_t>,
 }

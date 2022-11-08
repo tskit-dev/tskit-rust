@@ -326,7 +326,8 @@ mod test_metadata_round_trips {
                 let mut iter = tables.$table().iter();
                 while let Some(row) = lending_iter.next() {
                     if let Some(row_from_iter) = iter.next() {
-                        assert_eq!(row.id, row_from_iter.id);
+                        assert_eq!(row, &row_from_iter);
+                        assert_eq!(&row_from_iter, row);
                     }
                     if let Some(metadata) = row.metadata {
                         assert_eq!(MyMetadata::decode(metadata).unwrap(), md);
@@ -349,7 +350,8 @@ mod test_metadata_round_trips {
                 let mut iter = tables.$table().iter();
                 while let Some(row) = lending_iter.next() {
                     if let Some(row_from_iter) = iter.next() {
-                        assert_eq!(row.id, row_from_iter.id);
+                        assert_eq!(row, &row_from_iter);
+                        assert_eq!(&row_from_iter, row);
                     }
                     if let Some(metadata) = row.metadata {
                         assert_eq!(MyMetadata::decode(metadata).unwrap(), md);

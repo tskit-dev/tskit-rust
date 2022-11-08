@@ -76,6 +76,7 @@ impl Iterator for MutationTableIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct MutationTableRowView<'a> {
     table: &'a MutationTable,
     pub id: MutationId,
@@ -102,6 +103,44 @@ impl<'a> MutationTableRowView<'a> {
     }
 }
 
+impl<'a> PartialEq for MutationTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.site == other.site
+            && self.node == other.node
+            && self.parent == other.parent
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && self.derived_state == other.derived_state
+            && self.metadata == other.metadata
+    }
+}
+
+impl<'a> Eq for MutationTableRowView<'a> {}
+
+impl<'a> PartialEq<MutationTableRow> for MutationTableRowView<'a> {
+    fn eq(&self, other: &MutationTableRow) -> bool {
+        self.id == other.id
+            && self.site == other.site
+            && self.node == other.node
+            && self.parent == other.parent
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && optional_container_comparison!(self.derived_state, other.derived_state)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
+impl PartialEq<MutationTableRowView<'_>> for MutationTableRow {
+    fn eq(&self, other: &MutationTableRowView) -> bool {
+        self.id == other.id
+            && self.site == other.site
+            && self.node == other.node
+            && self.parent == other.parent
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && optional_container_comparison!(self.derived_state, other.derived_state)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
 impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
     type Item = Self;
 
@@ -123,6 +162,7 @@ impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
 /// These are not created directly but are accessed
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
+#[derive(Debug)]
 pub struct MutationTable {
     table_: NonNull<ll_bindings::tsk_mutation_table_t>,
 }
