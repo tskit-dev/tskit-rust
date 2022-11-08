@@ -131,6 +131,37 @@ macro_rules! unsafe_tsk_ragged_char_column_access {
     }};
 }
 
+macro_rules! unsafe_tsk_ragged_char_column_access_to_slice_u8 {
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident) => {{
+        let i = match $crate::SizeType::try_from($i).ok() {
+            Some(j) => j,
+            None => $crate::SizeType::from(u64::MAX),
+        };
+        if $i < $lo || i >= $hi {
+            None
+        } else if $owner.$offset_array_len == 0 {
+            None
+        } else {
+            assert!(!$owner.$array.is_null());
+            assert!(!$owner.$offset_array.is_null());
+            let start = unsafe { *$owner.$offset_array.offset($i as isize) };
+            let stop = if i < $hi {
+                unsafe { *$owner.$offset_array.offset(($i + 1) as isize) }
+            } else {
+                $owner.$offset_array_len as tsk_size_t
+            };
+            if start == stop {
+                None
+            } else {
+                let ptr = unsafe { $owner.$array.offset(start as isize) as *const u8 };
+                let len = (stop - start) as usize;
+                let slice = unsafe { std::slice::from_raw_parts(ptr, len) };
+                Some(slice)
+            }
+        }
+    }};
+}
+
 macro_rules! metadata_to_vector {
     ($outer: ident, $table: expr, $row: expr) => {
         $crate::metadata::char_column_to_slice(

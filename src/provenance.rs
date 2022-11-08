@@ -75,6 +75,63 @@ impl Iterator for ProvenanceTableIterator {
     }
 }
 
+pub struct ProvenanceTableRowView<'a> {
+    table: &'a ProvenanceTable,
+    /// The row id
+    pub id: ProvenanceId,
+    /// ISO-formatted time stamp
+    pub timestamp: &'a str,
+    /// The provenance record
+    pub record: &'a str,
+}
+
+impl<'a> ProvenanceTableRowView<'a> {
+    fn new(table: &'a ProvenanceTable) -> Self {
+        Self {
+            table,
+            id: ProvenanceId::NULL,
+            timestamp: "",
+            record: "",
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
+            self.id.0,
+            0,
+            self.table.num_rows(),
+            self.table.as_ref(),
+            record,
+            record_offset,
+            record_length
+        );
+        self.record = match record_slice {
+            Some(r) => std::str::from_utf8(r).unwrap(),
+            None => "",
+        };
+        let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
+            self.id.0,
+            0,
+            self.table.num_rows(),
+            self.table.as_ref(),
+            timestamp,
+            timestamp_offset,
+            timestamp_length
+        );
+        self.timestamp = match timestamp_slice {
+            Some(t) => std::str::from_utf8(t).unwrap(),
+            None => "",
+        };
+    }
+}
+
 /// An immutable view of a provenance table.
 ///
 /// These are not created directly.
@@ -188,6 +245,10 @@ impl ProvenanceTable {
     pub fn iter(&self) -> impl Iterator<Item = ProvenanceTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&ProvenanceTable>(self)
     }
+
+    pub fn lending_iter(&self) -> ProvenanceTableRowView {
+        ProvenanceTableRowView::new(self)
+    }
 }
 
 build_owned_table_type!(
@@ -220,6 +281,8 @@ impl OwnedProvenanceTable {
 
 #[cfg(test)]
 mod test_provenances {
+    use streaming_iterator::StreamingIterator;
+
     use super::*;
 
     #[test]
@@ -239,6 +302,7 @@ mod test_provenances {
 
     #[test]
     fn test_add_rows() {
+        use crate::provenance::*;
         let records = vec!["banana".to_string(), "split".to_string()];
         let mut tables = crate::TableCollection::new(10.).unwrap();
         for (i, r) in records.iter().enumerate() {
@@ -259,5 +323,12 @@ mod test_provenances {
 
         assert!(tables.provenances().row(0).unwrap() == tables.provenances().row(0).unwrap());
         assert!(tables.provenances().row(0).unwrap() != tables.provenances().row(1).unwrap());
+
+        let mut lending_iter = tables.provenances().lending_iter();
+        for i in [0, 1] {
+            if let Some(row) = lending_iter.next() {
+                assert_eq!(row.record, &records[i]);
+            }
+        }
     }
 }
