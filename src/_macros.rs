@@ -131,6 +131,7 @@ macro_rules! unsafe_tsk_ragged_char_column_access {
     }};
 }
 
+#[cfg(feature = "provenance")]
 macro_rules! unsafe_tsk_ragged_char_column_access_to_slice_u8 {
     ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident) => {{
         let i = match $crate::SizeType::try_from($i).ok() {
