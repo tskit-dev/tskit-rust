@@ -61,6 +61,42 @@ impl Iterator for SiteTableIterator {
     }
 }
 
+pub struct SiteTableRowView<'a> {
+    table: &'a SiteTable,
+    pub id: SiteId,
+    pub position: Position,
+    pub ancestral_state: Option<&'a [u8]>,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> SiteTableRowView<'a> {
+    fn new(table: &'a SiteTable) -> Self {
+        Self {
+            table,
+            id: SiteId::NULL,
+            position: f64::NAN.into(),
+            ancestral_state: None,
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for SiteTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.position = self
+            .table
+            .position(self.id)
+            .unwrap_or_else(|| f64::NAN.into());
+        self.ancestral_state = self.table.ancestral_state(self.id);
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immutable view of site table.
 ///
 /// These are not created directly but are accessed
@@ -84,6 +120,8 @@ impl SiteTable {
         // SAFETY: NonNull
         unsafe { self.table_.as_ref() }
     }
+
+    raw_metadata_getter_for_tables!(SiteId);
 
     /// Return the number of rows
     pub fn num_rows(&self) -> SizeType {
@@ -153,6 +191,10 @@ impl SiteTable {
     /// The value of the iterator is [`SiteTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = SiteTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&SiteTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> SiteTableRowView {
+        SiteTableRowView::new(self)
     }
 
     /// Return row `r` of the table.

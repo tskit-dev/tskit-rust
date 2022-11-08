@@ -66,6 +66,45 @@ impl Iterator for NodeTableIterator {
     }
 }
 
+pub struct NodeTableRowView<'a> {
+    table: &'a NodeTable,
+    pub id: NodeId,
+    pub time: Time,
+    pub flags: NodeFlags,
+    pub population: PopulationId,
+    pub individual: IndividualId,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> NodeTableRowView<'a> {
+    fn new(table: &'a NodeTable) -> Self {
+        Self {
+            table,
+            id: NodeId::NULL,
+            time: f64::NAN.into(),
+            flags: 0.into(),
+            population: PopulationId::NULL,
+            individual: IndividualId::NULL,
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.flags = self.table.flags(self.id).unwrap_or_else(|| 0.into());
+        self.population = self.table.population(self.id).unwrap_or(PopulationId::NULL);
+        self.individual = self.table.individual(self.id).unwrap_or(IndividualId::NULL);
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immtable view of a node table.
 ///
 /// These are not created directly but are accessed
@@ -94,6 +133,8 @@ impl NodeTable {
     pub fn num_rows(&self) -> SizeType {
         self.as_ref().num_rows.into()
     }
+
+    raw_metadata_getter_for_tables!(NodeId);
 
     /// Return the ``time`` value from row ``row`` of the table.
     ///
@@ -384,6 +425,10 @@ impl NodeTable {
     /// The value of the iterator is [`NodeTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = NodeTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&NodeTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> NodeTableRowView {
+        NodeTableRowView::new(self)
     }
 
     /// Return row `r` of the table.

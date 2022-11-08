@@ -1077,6 +1077,33 @@ macro_rules! build_owned_table_type {
     };
 }
 
+macro_rules! raw_metadata_getter_for_tables {
+    ($idtype: ident) => {
+        fn raw_metadata(&self, row: $idtype) -> Option<&[u8]> {
+            $crate::metadata::char_column_to_slice(
+                self,
+                self.as_ref().metadata,
+                self.as_ref().metadata_offset,
+                row.0,
+                self.num_rows().into(),
+                self.as_ref().metadata_length,
+            )
+        }
+    };
+}
+
+macro_rules! row_lending_iterator_get {
+    () => {
+        fn get(&self) -> Option<&Self::Item> {
+            if crate::SizeType::try_from(self.id).ok()? < self.table.num_rows() {
+                Some(self)
+            } else {
+                None
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;

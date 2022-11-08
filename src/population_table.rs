@@ -61,6 +61,33 @@ impl Iterator for PopulationTableIterator {
     }
 }
 
+pub struct PopulationTableRowView<'a> {
+    table: &'a PopulationTable,
+    pub id: PopulationId,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> PopulationTableRowView<'a> {
+    fn new(table: &'a PopulationTable) -> Self {
+        Self {
+            table,
+            id: PopulationId::NULL,
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for PopulationTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immutable view of site table.
 ///
 /// These are not created directly but are accessed
@@ -85,6 +112,8 @@ impl PopulationTable {
         // SAFETY: NonNull
         unsafe { self.table_.as_ref() }
     }
+
+    raw_metadata_getter_for_tables!(PopulationId);
 
     /// Return the number of rows.
     pub fn num_rows(&self) -> SizeType {
@@ -120,6 +149,10 @@ impl PopulationTable {
     /// The value of the iterator is [`PopulationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = PopulationTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&PopulationTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> PopulationTableRowView {
+        PopulationTableRowView::new(self)
     }
 
     /// Return row `r` of the table.

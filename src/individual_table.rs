@@ -45,6 +45,42 @@ impl PartialEq for IndividualTableRow {
     }
 }
 
+pub struct IndividualTableRowView<'a> {
+    table: &'a IndividualTable,
+    pub id: IndividualId,
+    pub flags: IndividualFlags,
+    pub location: Option<&'a [Location]>,
+    pub parents: Option<&'a [IndividualId]>,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> IndividualTableRowView<'a> {
+    fn new(table: &'a IndividualTable) -> Self {
+        Self {
+            table,
+            id: (-1_i32).into(),
+            flags: 0.into(),
+            location: None,
+            parents: None,
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.flags = self.table.flags(self.id).unwrap_or_else(|| 0.into());
+        self.location = self.table.location(self.id);
+        self.parents = self.table.parents(self.id);
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immutable view of a individual table.
 ///
 /// These are not created directly but are accessed
@@ -103,6 +139,8 @@ impl IndividualTable {
         // SAFETY: NonNull
         unsafe { self.table_.as_ref() }
     }
+
+    raw_metadata_getter_for_tables!(IndividualId);
 
     /// Return the number of rows
     pub fn num_rows(&self) -> crate::SizeType {
@@ -347,6 +385,10 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
     ///
     pub fn iter(&self) -> impl Iterator<Item = IndividualTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&IndividualTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> IndividualTableRowView {
+        IndividualTableRowView::new(self)
     }
 
     /// Return row `r` of the table.

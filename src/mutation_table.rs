@@ -76,6 +76,48 @@ impl Iterator for MutationTableIterator {
     }
 }
 
+pub struct MutationTableRowView<'a> {
+    table: &'a MutationTable,
+    pub id: MutationId,
+    pub site: SiteId,
+    pub node: NodeId,
+    pub parent: MutationId,
+    pub time: Time,
+    pub derived_state: Option<&'a [u8]>,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> MutationTableRowView<'a> {
+    fn new(table: &'a MutationTable) -> Self {
+        Self {
+            table,
+            id: MutationId::NULL,
+            site: SiteId::NULL,
+            node: NodeId::NULL,
+            parent: MutationId::NULL,
+            time: f64::NAN.into(),
+            derived_state: None,
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.site = self.table.site(self.id).unwrap_or(SiteId::NULL);
+        self.node = self.table.node(self.id).unwrap_or(NodeId::NULL);
+        self.parent = self.table.parent(self.id).unwrap_or(MutationId::NULL);
+        self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.derived_state = self.table.derived_state(self.id);
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immutable view of site table.
 ///
 /// These are not created directly but are accessed
@@ -104,6 +146,8 @@ impl MutationTable {
     pub fn num_rows(&self) -> SizeType {
         self.as_ref().num_rows.into()
     }
+
+    raw_metadata_getter_for_tables!(MutationId);
 
     /// Return the ``site`` value from row ``row`` of the table.
     ///
@@ -216,6 +260,10 @@ impl MutationTable {
     /// The value of the iterator is [`MutationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = MutationTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&MutationTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> MutationTableRowView {
+        MutationTableRowView::new(self)
     }
 
     /// Return row `r` of the table.

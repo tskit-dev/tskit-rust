@@ -73,6 +73,51 @@ impl Iterator for MigrationTableIterator {
     }
 }
 
+pub struct MigrationTableRowView<'a> {
+    table: &'a MigrationTable,
+    pub id: MigrationId,
+    pub left: Position,
+    pub right: Position,
+    pub node: NodeId,
+    pub source: PopulationId,
+    pub dest: PopulationId,
+    pub time: Time,
+    pub metadata: Option<&'a [u8]>,
+}
+
+impl<'a> MigrationTableRowView<'a> {
+    fn new(table: &'a MigrationTable) -> Self {
+        Self {
+            table,
+            id: MigrationId::NULL,
+            left: Position::from(f64::NAN),
+            right: Position::from(f64::NAN),
+            node: NodeId::NULL,
+            source: PopulationId::NULL,
+            dest: PopulationId::NULL,
+            time: Time::from(f64::NAN),
+            metadata: None,
+        }
+    }
+}
+
+impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
+    type Item = Self;
+
+    row_lending_iterator_get!();
+
+    fn advance(&mut self) {
+        self.id = (i32::from(self.id) + 1).into();
+        self.left = self.table.left(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.right = self.table.right(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.node = self.table.node(self.id).unwrap_or(NodeId::NULL);
+        self.source = self.table.source(self.id).unwrap_or(PopulationId::NULL);
+        self.dest = self.table.dest(self.id).unwrap_or(PopulationId::NULL);
+        self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
+        self.metadata = self.table.raw_metadata(self.id);
+    }
+}
+
 /// An immutable view of a migration table.
 ///
 /// These are not created directly but are accessed
@@ -101,6 +146,8 @@ impl MigrationTable {
     pub fn num_rows(&self) -> SizeType {
         self.as_ref().num_rows.into()
     }
+
+    raw_metadata_getter_for_tables!(MigrationId);
 
     /// Return the left coordinate for a given row.
     ///
@@ -230,6 +277,10 @@ impl MigrationTable {
     /// The value of the iterator is [`MigrationTableRow`].
     pub fn iter(&self) -> impl Iterator<Item = MigrationTableRow> + '_ {
         crate::table_iterator::make_table_iterator::<&MigrationTable>(self)
+    }
+
+    pub fn lending_iter(&self) -> MigrationTableRowView {
+        MigrationTableRowView::new(self)
     }
 
     /// Return row `r` of the table.
