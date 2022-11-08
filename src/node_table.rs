@@ -66,6 +66,7 @@ impl Iterator for NodeTableIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeTableRowView<'a> {
     table: &'a NodeTable,
     pub id: NodeId,
@@ -90,6 +91,41 @@ impl<'a> NodeTableRowView<'a> {
     }
 }
 
+impl<'a> PartialEq for NodeTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.flags == other.flags
+            && self.population == other.population
+            && self.individual == other.individual
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && self.metadata == other.metadata
+    }
+}
+
+impl<'a> Eq for NodeTableRowView<'a> {}
+
+impl<'a> PartialEq<NodeTableRow> for NodeTableRowView<'a> {
+    fn eq(&self, other: &NodeTableRow) -> bool {
+        self.id == other.id
+            && self.flags == other.flags
+            && self.population == other.population
+            && self.individual == other.individual
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
+impl PartialEq<NodeTableRowView<'_>> for NodeTableRow {
+    fn eq(&self, other: &NodeTableRowView) -> bool {
+        self.id == other.id
+            && self.flags == other.flags
+            && self.population == other.population
+            && self.individual == other.individual
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
 impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
     type Item = Self;
 
@@ -110,6 +146,7 @@ impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
 /// These are not created directly but are accessed
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
+#[derive(Debug)]
 pub struct NodeTable {
     table_: NonNull<ll_bindings::tsk_node_table_t>,
 }

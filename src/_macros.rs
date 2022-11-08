@@ -1104,6 +1104,29 @@ macro_rules! row_lending_iterator_get {
     };
 }
 
+macro_rules! optional_container_comparison {
+    ($lhs: expr, $rhs: expr) => {
+        if let Some(value) = &$lhs {
+            if let Some(ovalue) = &$rhs {
+                if value.len() != ovalue.len() {
+                    return false;
+                }
+                if value.iter().zip(ovalue.iter()).any(|(a, b)| a != b) {
+                    false
+                } else {
+                    true
+                }
+            } else {
+                false
+            }
+        } else if $rhs.is_some() {
+            false
+        } else {
+            true
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;

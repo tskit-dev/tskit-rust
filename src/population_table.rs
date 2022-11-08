@@ -61,6 +61,7 @@ impl Iterator for PopulationTableIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct PopulationTableRowView<'a> {
     table: &'a PopulationTable,
     pub id: PopulationId,
@@ -74,6 +75,26 @@ impl<'a> PopulationTableRowView<'a> {
             id: PopulationId::NULL,
             metadata: None,
         }
+    }
+}
+
+impl<'a> PartialEq for PopulationTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.metadata == other.metadata
+    }
+}
+
+impl<'a> Eq for PopulationTableRowView<'a> {}
+
+impl<'a> PartialEq<PopulationTableRow> for PopulationTableRowView<'a> {
+    fn eq(&self, other: &PopulationTableRow) -> bool {
+        self.id == other.id && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
+impl PartialEq<PopulationTableRowView<'_>> for PopulationTableRow {
+    fn eq(&self, other: &PopulationTableRowView) -> bool {
+        self.id == other.id && optional_container_comparison!(self.metadata, other.metadata)
     }
 }
 
@@ -94,6 +115,7 @@ impl<'a> streaming_iterator::StreamingIterator for PopulationTableRowView<'a> {
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct PopulationTable {
     table_: NonNull<ll_bindings::tsk_population_table_t>,
 }

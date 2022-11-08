@@ -24,27 +24,11 @@ impl PartialEq for IndividualTableRow {
             && self.flags == other.flags
             && self.parents == other.parents
             && self.metadata == other.metadata
-            && match &self.location {
-                None => other.location.is_none(),
-                Some(a) => match &other.location {
-                    None => false,
-                    Some(b) => {
-                        if a.len() != b.len() {
-                            false
-                        } else {
-                            for (i, j) in a.iter().enumerate() {
-                                if !crate::util::partial_cmp_equal(&b[i], j) {
-                                    return false;
-                                }
-                            }
-                            true
-                        }
-                    }
-                },
-            }
+            && self.location == other.location
     }
 }
 
+#[derive(Debug)]
 pub struct IndividualTableRowView<'a> {
     table: &'a IndividualTable,
     pub id: IndividualId,
@@ -67,6 +51,38 @@ impl<'a> IndividualTableRowView<'a> {
     }
 }
 
+impl<'a> PartialEq for IndividualTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.flags == other.flags
+            && self.parents == other.parents
+            && self.metadata == other.metadata
+            && self.location == other.location
+    }
+}
+
+impl<'a> Eq for IndividualTableRowView<'a> {}
+
+impl<'a> PartialEq<IndividualTableRow> for IndividualTableRowView<'a> {
+    fn eq(&self, other: &IndividualTableRow) -> bool {
+        self.id == other.id
+            && self.flags == other.flags
+            && optional_container_comparison!(self.parents, other.parents)
+            && optional_container_comparison!(self.metadata, other.metadata)
+            && optional_container_comparison!(self.location, other.location)
+    }
+}
+
+impl PartialEq<IndividualTableRowView<'_>> for IndividualTableRow {
+    fn eq(&self, other: &IndividualTableRowView) -> bool {
+        self.id == other.id
+            && self.flags == other.flags
+            && optional_container_comparison!(self.parents, other.parents)
+            && optional_container_comparison!(self.metadata, other.metadata)
+            && optional_container_comparison!(self.location, other.location)
+    }
+}
+
 impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
     type Item = Self;
 
@@ -86,6 +102,7 @@ impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
 /// These are not created directly but are accessed
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
+#[derive(Debug)]
 pub struct IndividualTable {
     table_: NonNull<ll_bindings::tsk_individual_table_t>,
 }

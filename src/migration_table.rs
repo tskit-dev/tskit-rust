@@ -73,6 +73,7 @@ impl Iterator for MigrationTableIterator {
     }
 }
 
+#[derive(Debug)]
 pub struct MigrationTableRowView<'a> {
     table: &'a MigrationTable,
     pub id: MigrationId,
@@ -101,6 +102,47 @@ impl<'a> MigrationTableRowView<'a> {
     }
 }
 
+impl<'a> PartialEq for MigrationTableRowView<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.node == other.node
+            && self.source == other.source
+            && self.dest == other.dest
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && self.metadata == other.metadata
+    }
+}
+
+impl<'a> Eq for MigrationTableRowView<'a> {}
+
+impl<'a> PartialEq<MigrationTableRow> for MigrationTableRowView<'a> {
+    fn eq(&self, other: &MigrationTableRow) -> bool {
+        self.id == other.id
+            && self.node == other.node
+            && self.source == other.source
+            && self.dest == other.dest
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
+impl PartialEq<MigrationTableRowView<'_>> for MigrationTableRow {
+    fn eq(&self, other: &MigrationTableRowView) -> bool {
+        self.id == other.id
+            && self.node == other.node
+            && self.source == other.source
+            && self.dest == other.dest
+            && crate::util::partial_cmp_equal(&self.left, &other.left)
+            && crate::util::partial_cmp_equal(&self.right, &other.right)
+            && crate::util::partial_cmp_equal(&self.time, &other.time)
+            && optional_container_comparison!(self.metadata, other.metadata)
+    }
+}
+
 impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
     type Item = Self;
 
@@ -123,6 +165,7 @@ impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
 /// These are not created directly but are accessed
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
+#[derive(Debug)]
 pub struct MigrationTable {
     table_: NonNull<ll_bindings::tsk_migration_table_t>,
 }
