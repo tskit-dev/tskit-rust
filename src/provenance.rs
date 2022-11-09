@@ -47,8 +47,8 @@ impl std::fmt::Display for ProvenanceTableRow {
 fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
     Some(ProvenanceTableRow {
         id: pos.into(),
-        timestamp: table.timestamp(pos)?,
-        record: table.record(pos)?,
+        timestamp: table.timestamp(pos)?.to_string(),
+        record: table.record(pos)?.to_string(),
     })
 }
 
@@ -122,35 +122,10 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
 
     row_lending_iterator_get!();
 
-    // FIXME: bad duplication
     fn advance(&mut self) {
         self.id = (i32::from(self.id) + 1).into();
-        let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
-            self.id.0,
-            0,
-            self.table.num_rows(),
-            self.table.as_ref(),
-            record,
-            record_offset,
-            record_length
-        );
-        self.record = match record_slice {
-            Some(r) => std::str::from_utf8(r).unwrap(),
-            None => "",
-        };
-        let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
-            self.id.0,
-            0,
-            self.table.num_rows(),
-            self.table.as_ref(),
-            timestamp,
-            timestamp_offset,
-            timestamp_length
-        );
-        self.timestamp = match timestamp_slice {
-            Some(t) => std::str::from_utf8(t).unwrap(),
-            None => "",
-        };
+        self.record = self.table.record(self.id).unwrap_or("");
+        self.timestamp = self.table.timestamp(self.id).unwrap_or("");
     }
 }
 
@@ -209,8 +184,8 @@ impl ProvenanceTable {
     /// # panic!("Expected Some(timestamp)");
     /// # }
     /// ```
-    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<String> {
-        unsafe_tsk_ragged_char_column_access!(
+    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
+        let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
             row.into().0,
             0,
             self.num_rows(),
@@ -218,7 +193,11 @@ impl ProvenanceTable {
             timestamp,
             timestamp_offset,
             timestamp_length
-        )
+        );
+        match timestamp_slice {
+            Some(tstamp) => std::str::from_utf8(tstamp).ok(),
+            None => None,
+        }
     }
 
     /// Get the provenance record for row `row`.
@@ -241,8 +220,8 @@ impl ProvenanceTable {
     /// # else {
     /// # panic!("Expected Some(timestamp)");
     /// # }
-    pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<String> {
-        unsafe_tsk_ragged_char_column_access!(
+    pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
+        let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
             row.into().0,
             0,
             self.num_rows(),
@@ -250,7 +229,11 @@ impl ProvenanceTable {
             record,
             record_offset,
             record_length
-        )
+        );
+        match record_slice {
+            Some(rec) => std::str::from_utf8(rec).ok(),
+            None => None,
+        }
     }
 
     /// Obtain a [`ProvenanceTableRow`] for row `row`.
@@ -271,37 +254,12 @@ impl ProvenanceTable {
     /// * `None` otherwise
     pub fn row_view<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRowView> {
         match u64::try_from(row.into().0).ok() {
-            // FIXME: bad duplication
             Some(x) if x < self.num_rows() => {
-                let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
-                    row.into().0,
-                    0,
-                    self.num_rows(),
-                    self.as_ref(),
-                    record,
-                    record_offset,
-                    record_length
-                );
-                let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
-                    row.into().0,
-                    0,
-                    self.num_rows(),
-                    self.as_ref(),
-                    timestamp,
-                    timestamp_offset,
-                    timestamp_length
-                );
                 let view = ProvenanceTableRowView {
                     table: self,
                     id: row.into(),
-                    record: match record_slice {
-                        Some(r) => std::str::from_utf8(r).unwrap(),
-                        None => "",
-                    },
-                    timestamp: match timestamp_slice {
-                        Some(t) => std::str::from_utf8(t).unwrap(),
-                        None => "",
-                    },
+                    record: self.record(row)?,
+                    timestamp: self.timestamp(row)?,
                 };
                 Some(view)
             }
