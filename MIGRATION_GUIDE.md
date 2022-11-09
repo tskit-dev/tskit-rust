@@ -18,6 +18,9 @@ Acronyms used:
 
 ### Breaking changes
 
+* Provenance table getters now return `Option<&str>` rather than `Option<String>`.
+  These two types are very close to identical in API.
+  Breakage is only possible if code relied on the return value owning its data.
 * Several member functions of Tree previously accepted `NodeId` as arguments.
   They now take `N: Into<NodeId> + Copy`.
   Thus, code passing in integers will have to drop the `.into()` calls.

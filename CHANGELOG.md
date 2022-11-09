@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0-alpha.1] - 2022-11-09
+
+### Bug Fixes
+
+- [**breaking**] MetadataError::RoundtripError now requires Send + Sync ([#396](https://github.com/tskit-dev/tskit-rust/pull/396))
+
+### Documentation
+
+- Add haploid WF example to book ([#397](https://github.com/tskit-dev/tskit-rust/pull/397))
+
+### Features
+
+- Add examples/haploid_wright_fisher.rs ([#394](https://github.com/tskit-dev/tskit-rust/pull/394))
+- Add lending iterators over table row "views" ([#398](https://github.com/tskit-dev/tskit-rust/pull/398))
+- Impl PartialEq for table row views. ([#400](https://github.com/tskit-dev/tskit-rust/pull/400))
+- Add ProvenenceTableRowView ([#401](https://github.com/tskit-dev/tskit-rust/pull/401))
+- Add row_view() for tables ([#402](https://github.com/tskit-dev/tskit-rust/pull/402))
+- Add row_view() for tables ([#402](https://github.com/tskit-dev/tskit-rust/pull/402))
+- Column slice getters for tables ([#404](https://github.com/tskit-dev/tskit-rust/pull/404))
+
+### Refactor
+
+- [**breaking**] Return &str from provenance table getters ([#403](https://github.com/tskit-dev/tskit-rust/pull/403))
+- Deprecate NodeTable::flags_array_mut and NodeTable::time_array_mut ([#405](https://github.com/tskit-dev/tskit-rust/pull/405))
+
 ## [0.12.0-alpha.0] - 2022-11-06
 
 ### Documentation
