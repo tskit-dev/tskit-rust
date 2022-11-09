@@ -47,8 +47,8 @@ impl std::fmt::Display for ProvenanceTableRow {
 fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<ProvenanceTableRow> {
     Some(ProvenanceTableRow {
         id: pos.into(),
-        timestamp: table.timestamp(pos)?,
-        record: table.record(pos)?,
+        timestamp: table.timestamp(pos)?.to_string(),
+        record: table.record(pos)?.to_string(),
     })
 }
 
@@ -209,8 +209,8 @@ impl ProvenanceTable {
     /// # panic!("Expected Some(timestamp)");
     /// # }
     /// ```
-    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<String> {
-        unsafe_tsk_ragged_char_column_access!(
+    pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
+        let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
             row.into().0,
             0,
             self.num_rows(),
@@ -218,7 +218,11 @@ impl ProvenanceTable {
             timestamp,
             timestamp_offset,
             timestamp_length
-        )
+        );
+        match timestamp_slice {
+            Some(tstamp) => std::str::from_utf8(tstamp).ok(),
+            None => None,
+        }
     }
 
     /// Get the provenance record for row `row`.
@@ -241,8 +245,8 @@ impl ProvenanceTable {
     /// # else {
     /// # panic!("Expected Some(timestamp)");
     /// # }
-    pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<String> {
-        unsafe_tsk_ragged_char_column_access!(
+    pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
+        let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
             row.into().0,
             0,
             self.num_rows(),
@@ -250,7 +254,11 @@ impl ProvenanceTable {
             record,
             record_offset,
             record_length
-        )
+        );
+        match record_slice {
+            Some(rec) => std::str::from_utf8(rec).ok(),
+            None => None,
+        }
     }
 
     /// Obtain a [`ProvenanceTableRow`] for row `row`.
