@@ -229,82 +229,7 @@ impl NodeTable {
         )
     }
 
-    /// Mutable access to node flags.
-    ///
-    /// # Examples
-    ///
-    ///
-    /// ```
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// let flags = tables.nodes_mut().flags_array_mut();
-    /// for flag in flags {
-    /// // Can do something...
-    /// # assert!(flag.is_sample());
-    /// }
-    /// ```
-    ///
-    /// ```
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// for flag in  tables.nodes_mut().flags_array_mut() {
-    /// # assert!(flag.is_sample());
-    /// }
-    /// ```
-    ///
-    /// The returned slice is *mutable*, allowing one to do things like
-    /// clear the sample status of all nodes:
-    ///
-    /// A copy of the flags can be obtained by collecting results into `Vec`:
-    ///
-    /// ```
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// for flag in tables.nodes_mut().flags_array_mut() {
-    ///     flag.remove(tskit::NodeFlags::IS_SAMPLE);
-    /// }
-    /// assert!(!tables.nodes_mut().flags_array_mut().iter().any(|f| f.is_sample()));
-    /// assert!(tables.nodes().samples_as_vector().is_empty());
-    /// ```
-    ///
-    /// ```
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// let flags = tables.nodes_mut().flags_array_mut().to_vec();
-    /// # assert!(flags.iter().all(|f| f.is_sample()));
-    /// ```
-    ///
-    /// ## Standalone tables
-    ///
-    /// The ownership semantics differ when tables are not part of a
-    /// table collection:
-    ///
-    /// ```
-    /// let mut nodes = tskit::OwnedNodeTable::default();
-    /// assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
-    /// # assert_eq!(nodes.num_rows(), 1);
-    /// let flags = nodes.flags_array_mut();
-    /// # assert_eq!(flags.len(), 1);
-    /// assert!(flags.iter().all(|f| f.is_sample()));
-    ///
-    /// // while we are at it, let's use our node
-    /// // table to populate a table collection.
-    /// #
-    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
-    /// tables.set_nodes(&nodes);
-    /// assert_eq!(tables.nodes().num_rows(), 1);
-    /// assert_eq!(tables.nodes_mut().flags_array_mut().iter().filter(|f| f.is_sample()).count(), 1);
-    /// ```
-    ///
-    /// # Note
-    ///
-    /// Internally, we rely on a conversion of u64 to usize.
-    /// This conversion is fallible on some platforms.
-    /// If the conversion fails, an empty slice is returned.
+    #[deprecated(since = "0.12.0", note = "use flags_slice_mut instead")]
     pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
         unsafe {
             std::slice::from_raw_parts_mut(
@@ -314,38 +239,7 @@ impl NodeTable {
         }
     }
 
-    /// Mutable access to node times.
-    ///
-    /// # Examples
-    ///
-    /// For a [`crate::TableCollection`], accessing the table creates a temporary
-    /// that will be dropped, causing this code to not compile:
-    ///
-    /// ```compile_fail
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// let time = tables.nodes().time_array_mut();
-    /// println!("{}", time.len()); // ERROR: the temporary node table is dropped by now
-    /// ```
-    ///
-    /// Treating the returned slice as an iterable succeeds:
-    ///
-    /// ```
-    /// # use tskit::prelude::*;
-    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
-    /// for time in tables.nodes_mut().time_array_mut() {
-    ///     *time = 55.0.into(); // change each node's time value
-    /// }
-    /// assert!(tables.nodes_mut().time_array_mut().iter().all(|t| t == &55.0));
-    /// ```
-    ///
-    /// # Note
-    ///
-    /// Internally, we rely on a conversion of u64 to usize.
-    /// This conversion is fallible on some platforms.
-    /// If the conversion fails, an empty slice is returned.
+    #[deprecated(since = "0.12.0", note = "use time_slice_mut instead")]
     pub fn time_array_mut(&mut self) -> &mut [Time] {
         unsafe {
             std::slice::from_raw_parts_mut(
@@ -528,7 +422,38 @@ impl NodeTable {
         /// Get the time column as a slice
         => time, time_slice_raw, f64);
     build_table_column_slice_mut_getter!(
-        /// Get the time column as a mutable slice
+    /// Get the time column as a mutable slice
+    ///
+    /// # Examples
+    ///
+    /// For a [`crate::TableCollection`], accessing the table creates a temporary
+    /// that will be dropped, causing this code to not compile:
+    ///
+    /// ```compile_fail
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// let time = tables.nodes().time_slice_mut();
+    /// println!("{}", time.len()); // ERROR: the temporary node table is dropped by now
+    /// ```
+    ///
+    /// Treating the returned slice as an iterable succeeds:
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for time in tables.nodes_mut().time_slice_mut() {
+    ///     *time = 55.0.into(); // change each node's time value
+    /// }
+    /// assert!(tables.nodes_mut().time_slice_mut().iter().all(|t| t == &55.0));
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Internally, we rely on a conversion of u64 to usize.
+    /// This conversion is fallible on some platforms.
+    /// If the conversion fails, this function will panic.
         => time, time_slice_mut, Time);
     build_table_column_slice_mut_getter!(
         /// Get the time column as a mutable slice
@@ -540,7 +465,82 @@ impl NodeTable {
         /// Get the flags column as a slice
         => flags, flags_slice_raw, ll_bindings::tsk_flags_t);
     build_table_column_slice_mut_getter!(
-        /// Get the flags column as a mutable slice
+    /// Get the flags column as a mutable slice
+    ///
+    /// # Examples
+    ///
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// let flags = tables.nodes_mut().flags_slice_mut();
+    /// for flag in flags {
+    /// // Can do something...
+    /// # assert!(flag.is_sample());
+    /// }
+    /// ```
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for flag in  tables.nodes_mut().flags_slice_mut() {
+    /// # assert!(flag.is_sample());
+    /// }
+    /// ```
+    ///
+    /// The returned slice is *mutable*, allowing one to do things like
+    /// clear the sample status of all nodes:
+    ///
+    /// A copy of the flags can be obtained by collecting results into `Vec`:
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// for flag in tables.nodes_mut().flags_slice_mut() {
+    ///     flag.remove(tskit::NodeFlags::IS_SAMPLE);
+    /// }
+    /// assert!(!tables.nodes_mut().flags_slice_mut().iter().any(|f| f.is_sample()));
+    /// assert!(tables.nodes().samples_as_vector().is_empty());
+    /// ```
+    ///
+    /// ```
+    /// # use tskit::prelude::*;
+    /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// let flags = tables.nodes_mut().flags_slice_mut().to_vec();
+    /// # assert!(flags.iter().all(|f| f.is_sample()));
+    /// ```
+    ///
+    /// ## Standalone tables
+    ///
+    /// The ownership semantics differ when tables are not part of a
+    /// table collection:
+    ///
+    /// ```
+    /// let mut nodes = tskit::OwnedNodeTable::default();
+    /// assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
+    /// # assert_eq!(nodes.num_rows(), 1);
+    /// let flags = nodes.flags_slice_mut();
+    /// # assert_eq!(flags.len(), 1);
+    /// assert!(flags.iter().all(|f| f.is_sample()));
+    ///
+    /// // while we are at it, let's use our node
+    /// // table to populate a table collection.
+    /// #
+    /// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    /// tables.set_nodes(&nodes);
+    /// assert_eq!(tables.nodes().num_rows(), 1);
+    /// assert_eq!(tables.nodes_mut().flags_slice_mut().iter().filter(|f| f.is_sample()).count(), 1);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Internally, we rely on a conversion of u64 to usize.
+    /// This conversion is fallible on some platforms.
+    /// If the conversion fails, this function will panic.
         => flags, flags_slice_mut, NodeFlags);
     build_table_column_slice_mut_getter!(
         /// Get the flags column as a mutable slice
