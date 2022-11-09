@@ -520,6 +520,43 @@ impl NodeTable {
             .map(|row| row.id)
             .collect::<Vec<_>>()
     }
+
+    build_table_column_slice_getter!(
+        /// Get the time column as a slice
+        => time, time_slice, Time);
+    build_table_column_slice_getter!(
+        /// Get the time column as a slice
+        => time, time_slice_raw, f64);
+    build_table_column_slice_mut_getter!(
+        /// Get the time column as a mutable slice
+        => time, time_slice_mut, Time);
+    build_table_column_slice_mut_getter!(
+        /// Get the time column as a mutable slice
+        => time, time_slice_raw_mut, f64);
+    build_table_column_slice_getter!(
+        /// Get the flags column as a slice
+        => flags, flags_slice, NodeFlags);
+    build_table_column_slice_getter!(
+        /// Get the flags column as a slice
+        => flags, flags_slice_raw, ll_bindings::tsk_flags_t);
+    build_table_column_slice_mut_getter!(
+        /// Get the flags column as a mutable slice
+        => flags, flags_slice_mut, NodeFlags);
+    build_table_column_slice_mut_getter!(
+        /// Get the flags column as a mutable slice
+        => flags, flags_slice_raw_mut, ll_bindings::tsk_flags_t);
+    build_table_column_slice_getter!(
+        /// Get the individual column as a slice
+        => individual, individual_slice, IndividualId);
+    build_table_column_slice_getter!(
+        /// Get the individual column as a slice
+        => individual, individual_slice_raw, crate::tsk_id_t);
+    build_table_column_slice_getter!(
+        /// Get the population column as a slice
+        => population, population_slice, PopulationId);
+    build_table_column_slice_getter!(
+        /// Get the population column as a slice
+        => population, population_slice_raw, crate::tsk_id_t);
 }
 
 build_owned_table_type!(

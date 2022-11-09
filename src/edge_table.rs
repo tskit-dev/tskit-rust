@@ -312,6 +312,31 @@ impl EdgeTable {
         };
         Some(view)
     }
+
+    build_table_column_slice_getter!(
+        /// Get the left column as a slice
+        => left, left_slice, Position);
+    build_table_column_slice_getter!(
+        /// Get the left column as a slice of [`f64`] 
+        => left, left_slice_raw, f64);
+    build_table_column_slice_getter!(
+        /// Get the right column as a slice
+        => right, right_slice, Position);
+    build_table_column_slice_getter!(
+        /// Get the left column as a slice of [`f64`] 
+        => right, right_slice_raw, f64);
+    build_table_column_slice_getter!(
+        /// Get the parent column as a slice
+        => parent, parent_slice, NodeId);
+    build_table_column_slice_getter!(
+        /// Get the parent column as a slice of [`crate::bindings::tsk_id_t`]
+        => parent, parent_slice_raw, ll_bindings::tsk_id_t);
+    build_table_column_slice_getter!(
+        /// Get the child column as a slice
+        => child, child_slice, NodeId);
+    build_table_column_slice_getter!(
+        /// Get the child column as a slice of [`crate::bindings::tsk_id_t`]
+        => child, child_slice_raw, ll_bindings::tsk_id_t);
 }
 
 build_owned_table_type!(
