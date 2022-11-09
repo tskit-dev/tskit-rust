@@ -422,6 +422,28 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
         let ri = r.into().0;
         table_row_access!(ri, self, make_individual_table_row)
     }
+
+    /// Return a view of `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<I: Into<IndividualId> + Copy>(&self, r: I) -> Option<IndividualTableRowView> {
+        let view = IndividualTableRowView {
+            table: self,
+            id: r.into(),
+            flags: self.flags(r)?,
+            location: self.location(r),
+            parents: self.parents(r),
+            metadata: self.raw_metadata(r.into()),
+        };
+        Some(view)
+    }
 }
 
 build_owned_table_type!(

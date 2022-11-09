@@ -340,6 +340,31 @@ impl MigrationTable {
         let ri = r.into().0;
         table_row_access!(ri, self, make_migration_table_row)
     }
+
+    /// Return a view of `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<M: Into<MigrationId> + Copy>(&self, r: M) -> Option<MigrationTableRowView> {
+        let view = MigrationTableRowView {
+            table: self,
+            id: r.into(),
+            left: self.left(r)?,
+            right: self.right(r)?,
+            node: self.node(r)?,
+            source: self.source(r)?,
+            dest: self.dest(r)?,
+            time: self.time(r)?,
+            metadata: self.raw_metadata(r.into()),
+        };
+        Some(view)
+    }
 }
 
 build_owned_table_type!(

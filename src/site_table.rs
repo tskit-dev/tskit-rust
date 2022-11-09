@@ -242,6 +242,27 @@ impl SiteTable {
         let ri = r.into().0;
         table_row_access!(ri, self, make_site_table_row)
     }
+
+    /// Return a view of row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<S: Into<SiteId> + Copy>(&self, r: S) -> Option<SiteTableRowView> {
+        let view = SiteTableRowView {
+            table: self,
+            id: r.into(),
+            position: self.position(r)?,
+            ancestral_state: self.ancestral_state(r),
+            metadata: self.raw_metadata(r.into()),
+        };
+        Some(view)
+    }
 }
 
 build_owned_table_type!(

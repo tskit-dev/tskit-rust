@@ -289,6 +289,29 @@ impl EdgeTable {
     pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<EdgeTableRow> {
         table_row_access!(r.into().0, self, make_edge_table_row)
     }
+
+    /// Return a view of row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row_view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<EdgeTableRowView> {
+        let view = EdgeTableRowView {
+            table: self,
+            id: r.into(),
+            left: self.left(r)?,
+            right: self.right(r)?,
+            parent: self.parent(r)?,
+            child: self.child(r)?,
+            metadata: self.raw_metadata(r.into()),
+        };
+        Some(view)
+    }
 }
 
 build_owned_table_type!(

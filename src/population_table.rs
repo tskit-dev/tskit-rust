@@ -191,6 +191,30 @@ impl PopulationTable {
         let ri = r.into().0;
         table_row_access!(ri, self, make_population_table_row)
     }
+
+    /// Return a view of row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<PopulationTableRowView> {
+        match SizeType::try_from(r.into().0).ok() {
+            Some(row) if row < self.num_rows() => {
+                let view = PopulationTableRowView {
+                    table: self,
+                    id: r.into(),
+                    metadata: self.raw_metadata(r.into()),
+                };
+                Some(view)
+            }
+            _ => None,
+        }
+    }
 }
 
 build_owned_table_type!(

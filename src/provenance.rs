@@ -122,6 +122,7 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
 
     row_lending_iterator_get!();
 
+    // FIXME: bad duplication
     fn advance(&mut self) {
         self.id = (i32::from(self.id) + 1).into();
         let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
@@ -260,6 +261,52 @@ impl ProvenanceTable {
     /// * `None` otherwise
     pub fn row<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRow> {
         make_provenance_row(self, row.into().0)
+    }
+
+    /// Obtain a [`ProvenanceTableRowView`] for row `row`.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRowView> {
+        match u64::try_from(row.into().0).ok() {
+            // FIXME: bad duplication
+            Some(x) if x < self.num_rows() => {
+                let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
+                    row.into().0,
+                    0,
+                    self.num_rows(),
+                    self.as_ref(),
+                    record,
+                    record_offset,
+                    record_length
+                );
+                let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
+                    row.into().0,
+                    0,
+                    self.num_rows(),
+                    self.as_ref(),
+                    timestamp,
+                    timestamp_offset,
+                    timestamp_length
+                );
+                let view = ProvenanceTableRowView {
+                    table: self,
+                    id: row.into(),
+                    record: match record_slice {
+                        Some(r) => std::str::from_utf8(r).unwrap(),
+                        None => "",
+                    },
+                    timestamp: match timestamp_slice {
+                        Some(t) => std::str::from_utf8(t).unwrap(),
+                        None => "",
+                    },
+                };
+                Some(view)
+            }
+            _ => None,
+        }
     }
 
     /// Return an iterator over rows of the table.
