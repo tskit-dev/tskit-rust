@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Metadata schema - The tskit (rust) book</title>
+        <title>Example programs - The tskit (rust) book</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.4.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html" class="active"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="examples.html"><strong aria-hidden="true">5.</strong> Example programs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="examples_haploid_wright_fisher.html"><strong aria-hidden="true">5.1.</strong> Haploid Wright-Fisher simulation</a></li></ol></li><li class="chapter-item expanded "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.4.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="examples.html" class="active"><strong aria-hidden="true">5.</strong> Example programs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="examples_haploid_wright_fisher.html"><strong aria-hidden="true">5.1.</strong> Haploid Wright-Fisher simulation</a></li></ol></li><li class="chapter-item expanded "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -134,33 +134,16 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="metadata-schema"><a class="header" href="#metadata-schema">Metadata schema</a></h1>
-<p>For useful data interchange with <code>tskit-python</code>, we need to define <a href="https://tskit.dev/tskit/docs/stable/metadata.html">metadata schema</a>.</p>
-<p>There are currently several points slowing down a rust API for schema:</p>
-<ul>
-<li>It is not clear which <code>serde</code> formats are compatible with metadata on the Python side.</li>
-<li>Experiments have shown that <code>serde_json</code> works with <code>tskit-python</code>.
-<ul>
-<li>Ideally, we would also like a binary format compatible with the Python <code>struct</code>
-module.</li>
-</ul>
-</li>
-<li>However, we have not found a solution eliminating the need to manually write the
-schema as a string and add it to the tables.
-Various crates to generate JSON schema from rust structs return schema that are over-specified
-and fail to validate in <code>tskit-python</code>.</li>
-<li>We also have the problem that we will need to add some Python to our CI to prove to ourselves
-that some reasonable tests can pass.</li>
-</ul>
+                        <h1 id="example-programs"><a class="header" href="#example-programs">Example programs <img align="right" width="73" height="45" src="https://raw.githubusercontent.com/tskit-dev/administrative/main/logos/svg/tskit-rust/Tskit_rust_logo.eps.svg"></a></h1>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="metadata_tables.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="error_handling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                            <a rel="next" href="error_handling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="examples_haploid_wright_fisher.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -169,10 +152,10 @@ that some reasonable tests can pass.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="metadata_tables.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="error_handling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                    <a rel="next" href="error_handling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="examples_haploid_wright_fisher.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
