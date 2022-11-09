@@ -483,6 +483,28 @@ impl NodeTable {
         table_row_access!(ri, self, make_node_table_row)
     }
 
+    /// Return a view of row `r` of the table.
+    ///
+    /// # Parameters
+    ///
+    /// * `r`: the row id.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(row view)` if `r` is valid
+    /// * `None` otherwise
+    pub fn row_view<N: Into<NodeId> + Copy>(&self, r: N) -> Option<NodeTableRowView> {
+        let view = NodeTableRowView {
+            table: self,
+            id: r.into(),
+            time: self.time(r)?,
+            flags: self.flags(r)?,
+            population: self.population(r)?,
+            individual: self.individual(r)?,
+            metadata: self.raw_metadata(r.into()),
+        };
+        Some(view)
+    }
     /// Obtain a vector containing the indexes ("ids")
     /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
     /// is `true`.

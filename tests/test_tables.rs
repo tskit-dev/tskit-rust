@@ -3,6 +3,7 @@ fn test_empty_table_collection() {
     macro_rules! validate_empty_tables {
         ($tables: ident, $table: ident, $table_iter: ident, $row: expr) => {
             assert!($tables.$table().row($row).is_none());
+            assert!($tables.$table().row_view($row).is_none());
             assert_eq!($tables.$table().num_rows(), 0);
             assert_eq!($tables.$table().iter().count(), 0);
             assert_eq!($tables.$table_iter().count(), 0);
@@ -43,6 +44,10 @@ mod test_adding_rows_without_metadata {
                         // are held in an Option.
                         match tables.$table().row(id) {
                             Some(row) => {
+                                match tables.$table().row_view(id) {
+                                    Some(view) => assert_eq!(view, row),
+                                    None => panic!("if there is a row, there must be a row view")
+                                }
                                 assert!(row.metadata.is_none());
 
                                 // A row equals itself
@@ -273,7 +278,13 @@ mod test_metadata_round_trips {
                     assert_eq!($tables.$table().num_rows(), 1);
 
                     match $tables.$table().row(id) {
-                        Some(row) => assert!(row.metadata.is_some()),
+                        Some(row) => {
+                            assert!(row.metadata.is_some());
+                            match $tables.$table().row_view(id) {
+                                Some(view) => assert_eq!(row, view),
+                                None => panic!("if there is a row, there must be a view!"),
+                            }
+                        }
                         None => panic!("Expected Some(row) from {} table", stringify!(table)),
                     }
 
