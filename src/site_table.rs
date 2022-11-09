@@ -263,6 +263,13 @@ impl SiteTable {
         };
         Some(view)
     }
+
+    build_table_column_slice_getter!(
+        /// Get the position column as a slice
+        => position, position_slice, Position);
+    build_table_column_slice_getter!(
+        /// Get the position column as a slice
+        => position, position_slice_raw, f64);
 }
 
 build_owned_table_type!(

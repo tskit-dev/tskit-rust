@@ -444,6 +444,13 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
         };
         Some(view)
     }
+
+    build_table_column_slice_getter!(
+        /// Get the flags column as a slice
+        => flags, flags_slice, IndividualFlags);
+    build_table_column_slice_getter!(
+        /// Get the flags column as a slice
+        => flags, flags_slice_raw, ll_bindings::tsk_flags_t);
 }
 
 build_owned_table_type!(

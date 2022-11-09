@@ -71,8 +71,37 @@ mod test_adding_rows_without_metadata {
                     Err(e) => panic!("Err from tables.{}: {:?}", stringify!(adder), e)
                 }
                 assert_eq!(tables.$table().iter().count(), 2);
+                tables
             }
         }};
+    }
+
+    macro_rules! compare_column_to_raw_column {
+        ($table: expr, $col: ident, $raw: ident) => {
+            assert_eq!(
+                $table.$col().len(),
+                usize::try_from($table.num_rows()).unwrap()
+            );
+            assert_eq!(
+                $table.$raw().len(),
+                usize::try_from($table.num_rows()).unwrap()
+            );
+            assert!($table
+                .$col()
+                .iter()
+                .zip($table.$raw().iter())
+                .all(|(a, b)| a == b))
+        };
+    }
+
+    macro_rules! compare_column_to_row {
+        ($table: expr, $col: ident, $target: ident) => {
+            assert!($table
+                .$col()
+                .iter()
+                .zip($table.iter())
+                .all(|(c, r)| c == &r.$target));
+        };
     }
 
     // NOTE: all functions arguments for adding rows are Into<T>
@@ -82,7 +111,18 @@ mod test_adding_rows_without_metadata {
 
     #[test]
     fn test_adding_edge() {
-        add_row_without_metadata!(edges, add_edge, 0.1, 0.5, 0, 1); // left, right, parent, child
+        {
+            let tables = add_row_without_metadata!(edges, add_edge, 0.1, 0.5, 0, 1); // left, right, parent, child
+            compare_column_to_raw_column!(tables.edges(), left_slice, left_slice_raw);
+            compare_column_to_raw_column!(tables.edges(), right_slice, right_slice_raw);
+            compare_column_to_raw_column!(tables.edges(), parent_slice, parent_slice_raw);
+            compare_column_to_raw_column!(tables.edges(), child_slice, child_slice_raw);
+
+            compare_column_to_row!(tables.edges(), left_slice, left);
+            compare_column_to_row!(tables.edges(), right_slice, right);
+            compare_column_to_row!(tables.edges(), parent_slice, parent);
+            compare_column_to_row!(tables.edges(), child_slice, child);
+        }
         add_row_without_metadata!(edges, add_edge, tskit::Position::from(0.1), 0.5, 0, 1); // left, right, parent, child
         add_row_without_metadata!(edges, add_edge, 0.1, tskit::Position::from(0.5), 0, 1); // left, right, parent, child
         add_row_without_metadata!(
@@ -105,8 +145,30 @@ mod test_adding_rows_without_metadata {
 
     #[test]
     fn test_adding_node() {
-        add_row_without_metadata!(nodes, add_node, 0, 0.1, -1, -1); // flags, time, population,
-                                                                    // individual
+        {
+            let tables =
+                add_row_without_metadata!(nodes, add_node, tskit::TSK_NODE_IS_SAMPLE, 0.1, -1, -1); // flags, time, population,
+                                                                                                    // individual
+            assert!(tables
+                .nodes()
+                .flags_slice()
+                .iter()
+                .zip(tables.nodes().flags_slice_raw().iter())
+                .all(|(a, b)| a.bits() == *b));
+            compare_column_to_raw_column!(tables.nodes(), time_slice, time_slice_raw);
+            compare_column_to_raw_column!(tables.nodes(), population_slice, population_slice_raw);
+            compare_column_to_raw_column!(tables.nodes(), individual_slice, individual_slice_raw);
+
+            assert!(tables
+                .nodes()
+                .flags_slice()
+                .iter()
+                .zip(tables.nodes().iter())
+                .all(|(c, r)| c == &r.flags));
+            compare_column_to_row!(tables.nodes(), time_slice, time);
+            compare_column_to_row!(tables.nodes(), population_slice, population);
+            compare_column_to_row!(tables.nodes(), individual_slice, individual);
+        }
         add_row_without_metadata!(
             nodes,
             add_node,
@@ -120,7 +182,11 @@ mod test_adding_rows_without_metadata {
     #[test]
     fn test_adding_site() {
         // No ancestral state
-        add_row_without_metadata!(sites, add_site, 2. / 3., None);
+        {
+            let tables = add_row_without_metadata!(sites, add_site, 2. / 3., None);
+            compare_column_to_raw_column!(tables.sites(), position_slice, position_slice_raw);
+            compare_column_to_row!(tables.sites(), position_slice, position);
+        }
         add_row_without_metadata!(sites, add_site, tskit::Position::from(2. / 3.), None);
         add_row_without_metadata!(sites, add_site, 2. / 3., Some(&[1_u8]));
         add_row_without_metadata!(
@@ -136,14 +202,40 @@ mod test_adding_rows_without_metadata {
         // site, node, parent mutation, time, derived_state
         // Each value is a different Into<T> so we skip doing
         // permutations
-        add_row_without_metadata!(mutations, add_mutation, 0, 0, -1, 0.0, None);
+        {
+            let tables = add_row_without_metadata!(mutations, add_mutation, 0, 0, -1, 0.0, None);
+            compare_column_to_raw_column!(tables.mutations(), node_slice, node_slice_raw);
+            compare_column_to_raw_column!(tables.mutations(), time_slice, time_slice_raw);
+            compare_column_to_raw_column!(tables.mutations(), site_slice, site_slice_raw);
+            compare_column_to_raw_column!(tables.mutations(), parent_slice, parent_slice_raw);
+
+            compare_column_to_row!(tables.mutations(), node_slice, node);
+            compare_column_to_row!(tables.mutations(), time_slice, time);
+            compare_column_to_row!(tables.mutations(), site_slice, site);
+            compare_column_to_row!(tables.mutations(), parent_slice, parent);
+        }
+
         add_row_without_metadata!(mutations, add_mutation, 0, 0, -1, 0.0, Some(&[23_u8]));
     }
 
     #[test]
     fn test_adding_individual() {
         // flags, location, parents
-        add_row_without_metadata!(individuals, add_individual, 0, None, None);
+        {
+            let tables = add_row_without_metadata!(individuals, add_individual, 0, None, None);
+            assert!(tables
+                .individuals()
+                .flags_slice()
+                .iter()
+                .zip(tables.individuals().flags_slice_raw().iter())
+                .all(|(a, b)| a.bits() == *b));
+            assert!(tables
+                .individuals()
+                .flags_slice()
+                .iter()
+                .zip(tables.individuals().iter())
+                .all(|(c, r)| c == &r.flags));
+        }
         add_row_without_metadata!(
             individuals,
             add_individual,
@@ -179,7 +271,23 @@ mod test_adding_rows_without_metadata {
     fn test_adding_migration() {
         // migration table
         // (left, right), node, (source, dest), time
-        add_row_without_metadata!(migrations, add_migration, (0., 1.), 0, (0, 1), 0.0);
+        {
+            let tables =
+                add_row_without_metadata!(migrations, add_migration, (0., 1.), 0, (0, 1), 0.0);
+            compare_column_to_raw_column!(tables.migrations(), left_slice, left_slice_raw);
+            compare_column_to_raw_column!(tables.migrations(), right_slice, right_slice_raw);
+            compare_column_to_raw_column!(tables.migrations(), node_slice, node_slice_raw);
+            compare_column_to_raw_column!(tables.migrations(), time_slice, time_slice_raw);
+            compare_column_to_raw_column!(tables.migrations(), source_slice, source_slice_raw);
+            compare_column_to_raw_column!(tables.migrations(), dest_slice, dest_slice_raw);
+
+            compare_column_to_row!(tables.migrations(), left_slice, left);
+            compare_column_to_row!(tables.migrations(), right_slice, right);
+            compare_column_to_row!(tables.migrations(), node_slice, node);
+            compare_column_to_row!(tables.migrations(), time_slice, time);
+            compare_column_to_row!(tables.migrations(), source_slice, source);
+            compare_column_to_row!(tables.migrations(), dest_slice, dest);
+        }
         add_row_without_metadata!(
             migrations,
             add_migration,

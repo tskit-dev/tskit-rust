@@ -344,6 +344,31 @@ impl MutationTable {
         };
         Some(view)
     }
+
+    build_table_column_slice_getter!(
+        /// Get the node column as a slice
+        => node, node_slice, NodeId);
+    build_table_column_slice_getter!(
+        /// Get the node column as a slice
+        => node, node_slice_raw, crate::tsk_id_t);
+    build_table_column_slice_getter!(
+        /// Get the site column as a slice
+        => site, site_slice, SiteId);
+    build_table_column_slice_getter!(
+        /// Get the site column as a slice
+        => site, site_slice_raw, crate::tsk_id_t);
+    build_table_column_slice_getter!(
+        /// Get the time column as a slice
+        => time, time_slice, Time);
+    build_table_column_slice_getter!(
+        /// Get the time column as a slice
+        => time, time_slice_raw, f64);
+    build_table_column_slice_getter!(
+        /// Get the parent column as a slice
+        => parent, parent_slice, MutationId);
+    build_table_column_slice_getter!(
+        /// Get the parent column as a slice
+        => parent, parent_slice_raw, crate::tsk_id_t);
 }
 
 build_owned_table_type!(

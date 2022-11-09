@@ -365,6 +365,43 @@ impl MigrationTable {
         };
         Some(view)
     }
+
+    build_table_column_slice_getter!(
+        /// Get the left column as a slice
+        => left, left_slice, Position);
+    build_table_column_slice_getter!(
+        /// Get the left column as a slice
+        => left, left_slice_raw, f64);
+    build_table_column_slice_getter!(
+        /// Get the right column as a slice
+        => right, right_slice, Position);
+    build_table_column_slice_getter!(
+        /// Get the right column as a slice
+        => right, right_slice_raw, f64);
+    build_table_column_slice_getter!(
+        /// Get the time column as a slice
+        => time, time_slice, Time);
+    build_table_column_slice_getter!(
+        /// Get the time column as a slice
+        => time, time_slice_raw, f64);
+    build_table_column_slice_getter!(
+        /// Get the node column as a slice
+        => node, node_slice, NodeId);
+    build_table_column_slice_getter!(
+        /// Get the node column as a slice
+        => node, node_slice_raw, ll_bindings::tsk_id_t);
+    build_table_column_slice_getter!(
+        /// Get the source column as a slice
+        => source, source_slice, PopulationId);
+    build_table_column_slice_getter!(
+        /// Get the source column as a slice
+        => source, source_slice_raw, ll_bindings::tsk_id_t);
+    build_table_column_slice_getter!(
+        /// Get the dest column as a slice
+        => dest, dest_slice, PopulationId);
+    build_table_column_slice_getter!(
+        /// Get the dest column as a slice
+        => dest, dest_slice_raw, ll_bindings::tsk_id_t);
 }
 
 build_owned_table_type!(
