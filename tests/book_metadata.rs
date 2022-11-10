@@ -1,6 +1,9 @@
 #[cfg(feature = "derive")]
 #[test]
 fn book_mutation_metadata() {
+    use streaming_iterator::StreamingIterator;
+    use tskit::metadata::MetadataRoundtrip;
+
     // ANCHOR: metadata_derive
     #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
     #[serializer("serde_json")]
@@ -89,4 +92,30 @@ fn book_mutation_metadata() {
         .metadata::<MutationMetadata>(2.into())
         .is_none());
     // ANCHOR_END: metadata_retrieval_none
+
+    // ANCHOR: metadata_bulk_decode_lending_iter
+    let mut mutation_row_lending_iterator = tables.mutations().lending_iter();
+    let mut decoded_md = vec![];
+    while let Some(row_view) = mutation_row_lending_iterator.next() {
+        match row_view.metadata {
+            Some(slice) => decoded_md.push(Some(MutationMetadata::decode(slice).unwrap())),
+            None => decoded_md.push(None),
+        }
+    }
+    // ANCHOR_END: metadata_bulk_decode_lending_iter
+
+    // ANCHOR: metadata_bulk_decode_lending_iter_with_filter
+    let mut mutation_row_lending_iterator = tables.mutations().lending_iter();
+    let mut decoded_md = vec![];
+    while let Some(row_view) = mutation_row_lending_iterator
+        .next()
+        .filter(|rv| rv.metadata.is_some())
+    {
+        decoded_md.push((
+            row_view.id,
+            // The unwrap will never panic because of our filter
+            MutationMetadata::decode(row_view.metadata.unwrap()).unwrap(),
+        ));
+    }
+    // ANCHOR_END: metadata_bulk_decode_lending_iter_with_filter
 }
