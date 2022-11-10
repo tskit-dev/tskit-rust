@@ -70,6 +70,7 @@ fn add_node_handle_error() {
 #[test]
 fn get_data_from_edge_table() {
     use rand::distributions::Distribution;
+    use tskit::prelude::*;
     let sequence_length = tskit::Position::from(100.0);
     let mut rng = rand::thread_rng();
     let random_pos = rand::distributions::Uniform::new::<f64, f64>(0., sequence_length.into());
@@ -119,6 +120,35 @@ fn get_data_from_edge_table() {
         panic!("that should have worked...");
     }
     // ANCHOR_END: get_edge_table_row_by_id
+
+    // ANCHOR: get_edge_table_row_view_by_id
+    if let Some(row_view) = tables.edges().row_view(edge_id) {
+        assert_eq!(row_view.id, 0);
+        assert_eq!(row_view.left, left);
+        assert_eq!(row_view.right, right);
+        assert_eq!(row_view.parent, parent);
+        assert_eq!(row_view.child, child);
+    } else {
+        panic!("that should have worked...");
+    }
+    // ANCHOR_END: get_edge_table_row_view_by_id
+
+    // ANCHOR: get_edge_table_rows_by_lending_iterator
+    let mut edge_table_lending_iter = tables.edges().lending_iter();
+    while let Some(row_view) = edge_table_lending_iter.next() {
+        // there is only one row!
+        assert_eq!(row_view.id, 0);
+        assert_eq!(row_view.left, left);
+        assert_eq!(row_view.right, right);
+        assert_eq!(row_view.parent, parent);
+        assert_eq!(row_view.child, child);
+        assert!(row_view.metadata.is_none()); // no metadata in our table
+    }
+    // ANCHOR_END: get_edge_table_rows_by_lending_iterator
+
+    assert!(tables
+        .check_integrity(tskit::TableIntegrityCheckFlags::default())
+        .is_ok());
 
     // ANCHOR: get_edge_table_rows_by_iterator
     for row in tables.edges_iter() {
