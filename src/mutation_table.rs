@@ -377,9 +377,9 @@ build_owned_table_type!(
 /// # Examples
 ///
 /// ```
-/// use tskit::OwnedMutationTable;
+/// use tskit::OwningMutationTable;
 ///
-/// let mut mutations = OwnedMutationTable::default();
+/// let mut mutations = OwningMutationTable::default();
 /// let rowid = mutations.add_row(1, 2, 0, 1.0, None).unwrap();
 /// assert_eq!(rowid, 0);
 /// assert_eq!(mutations.num_rows(), 1);
@@ -390,7 +390,7 @@ build_owned_table_type!(
 ///
 /// ```
 /// # #[cfg(any(feature="doc", feature="derive"))] {
-/// use tskit::OwnedMutationTable;
+/// use tskit::OwningMutationTable;
 ///
 /// #[derive(serde::Serialize,
 ///          serde::Deserialize,
@@ -402,7 +402,7 @@ build_owned_table_type!(
 ///
 /// let metadata = MutationMetadata{value: 42};
 ///
-/// let mut mutations = OwnedMutationTable::default();
+/// let mut mutations = OwningMutationTable::default();
 ///
 /// let rowid = mutations.add_row_with_metadata(0, 1, 5, 10.0, None, &metadata).unwrap();
 /// assert_eq!(rowid, 0);
@@ -416,7 +416,7 @@ build_owned_table_type!(
 /// }
 /// # }
 /// ```
-    => OwnedMutationTable,
+    => OwningMutationTable,
     MutationTable,
     tsk_mutation_table_t,
     tsk_mutation_table_init,
@@ -424,7 +424,7 @@ build_owned_table_type!(
     ll_bindings::tsk_mutation_table_clear
 );
 
-impl OwnedMutationTable {
+impl OwningMutationTable {
     mutation_table_add_row!(=> add_row, self, *self.table);
     mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }

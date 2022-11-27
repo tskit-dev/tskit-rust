@@ -925,7 +925,7 @@ impl TableCollection {
     /// ```
     => add_provenance, self, self.inner.provenances);
 
-    /// Set the edge table from an [`OwnedEdgeTable`](`crate::OwnedEdgeTable`)
+    /// Set the edge table from an [`OwningEdgeTable`](`crate::OwningEdgeTable`)
     ///
     /// # Errors
     ///
@@ -936,7 +936,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut edges = tskit::OwnedEdgeTable::default();
+    /// let mut edges = tskit::OwningEdgeTable::default();
     /// edges.add_row(0., 1., 0, 12).unwrap();
     /// tables.set_edges(&edges).unwrap();
     /// assert_eq!(tables.edges().num_rows(), 1);
@@ -944,7 +944,7 @@ impl TableCollection {
     /// # edges.clear().unwrap();
     /// # assert_eq!(edges.num_rows(), 0);
     /// ```
-    pub fn set_edges(&mut self, edges: &crate::OwnedEdgeTable) -> TskReturnValue {
+    pub fn set_edges(&mut self, edges: &crate::OwningEdgeTable) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -962,7 +962,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the node table from an [`OwnedNodeTable`](`crate::OwnedNodeTable`)
+    /// Set the node table from an [`OwningNodeTable`](`crate::OwningNodeTable`)
     ///
     /// # Errors
     ///
@@ -973,7 +973,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut nodes = tskit::OwnedNodeTable::default();
+    /// let mut nodes = tskit::OwningNodeTable::default();
     /// nodes.add_row(0, 10.0, -1, -1).unwrap();
     /// tables.set_nodes(&nodes).unwrap();
     /// assert_eq!(tables.nodes().num_rows(), 1);
@@ -981,7 +981,7 @@ impl TableCollection {
     /// # nodes.clear().unwrap();
     /// # assert_eq!(nodes.num_rows(), 0);
     /// ```
-    pub fn set_nodes(&mut self, nodes: &crate::OwnedNodeTable) -> TskReturnValue {
+    pub fn set_nodes(&mut self, nodes: &crate::OwningNodeTable) -> TskReturnValue {
         // SAFETY: neither self nor nodes are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -999,7 +999,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the site table from an [`OwnedSiteTable`](`crate::OwnedSiteTable`)
+    /// Set the site table from an [`OwningSiteTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1010,7 +1010,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut sites = tskit::OwnedSiteTable::default();
+    /// let mut sites = tskit::OwningSiteTable::default();
     /// sites.add_row(11.0, None).unwrap();
     /// tables.set_sites(&sites).unwrap();
     /// assert_eq!(tables.sites().num_rows(), 1);
@@ -1018,7 +1018,7 @@ impl TableCollection {
     /// # sites.clear().unwrap();
     /// # assert_eq!(sites.num_rows(), 0);
     /// ```
-    pub fn set_sites(&mut self, sites: &crate::OwnedSiteTable) -> TskReturnValue {
+    pub fn set_sites(&mut self, sites: &crate::OwningSiteTable) -> TskReturnValue {
         // SAFETY: neither self nor nodes are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -1035,7 +1035,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the mutation table from an [`OwnedMutationTable`](`crate::OwnedSiteTable`)
+    /// Set the mutation table from an [`OwningMutationTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1046,7 +1046,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut mutations = tskit::OwnedMutationTable::default();
+    /// let mut mutations = tskit::OwningMutationTable::default();
     /// mutations.add_row(14, 12, -1, 11.3, None).unwrap();
     /// tables.set_mutations(&mutations).unwrap();
     /// assert_eq!(tables.mutations().num_rows(), 1);
@@ -1054,7 +1054,7 @@ impl TableCollection {
     /// # mutations.clear().unwrap();
     /// # assert_eq!(mutations.num_rows(), 0);
     /// ```
-    pub fn set_mutations(&mut self, mutations: &crate::OwnedMutationTable) -> TskReturnValue {
+    pub fn set_mutations(&mut self, mutations: &crate::OwningMutationTable) -> TskReturnValue {
         // SAFETY: neither self nor nodes are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -1074,7 +1074,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the individual table from an [`OwnedIndividualTable`](`crate::OwnedSiteTable`)
+    /// Set the individual table from an [`OwningIndividualTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1085,7 +1085,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut individuals = tskit::OwnedIndividualTable::default();
+    /// let mut individuals = tskit::OwningIndividualTable::default();
     /// individuals.add_row(0, [0.1, 10.0], None).unwrap();
     /// tables.set_individuals(&individuals).unwrap();
     /// assert_eq!(tables.individuals().num_rows(), 1);
@@ -1094,7 +1094,10 @@ impl TableCollection {
     /// # individuals.clear().unwrap();
     /// # assert_eq!(individuals.num_rows(), 0);
     /// ```
-    pub fn set_individuals(&mut self, individuals: &crate::OwnedIndividualTable) -> TskReturnValue {
+    pub fn set_individuals(
+        &mut self,
+        individuals: &crate::OwningIndividualTable,
+    ) -> TskReturnValue {
         // SAFETY: neither self nor nodes are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -1113,7 +1116,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the migration table from an [`OwnedMigrationTable`](`crate::OwnedSiteTable`)
+    /// Set the migration table from an [`OwningMigrationTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1124,7 +1127,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut migrations = tskit::OwnedMigrationTable::default();
+    /// let mut migrations = tskit::OwningMigrationTable::default();
     /// migrations.add_row((0.25, 0.37), 1, (0, 1), 111.0).unwrap();
     /// tables.set_migrations(&migrations).unwrap();
     /// assert_eq!(tables.migrations().num_rows(), 1);
@@ -1132,7 +1135,7 @@ impl TableCollection {
     /// # migrations.clear().unwrap();
     /// # assert_eq!(migrations.num_rows(), 0);
     /// ```
-    pub fn set_migrations(&mut self, migrations: &crate::OwnedMigrationTable) -> TskReturnValue {
+    pub fn set_migrations(&mut self, migrations: &crate::OwningMigrationTable) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -1152,7 +1155,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the population table from an [`OwnedPopulationTable`](`crate::OwnedSiteTable`)
+    /// Set the population table from an [`OwningPopulationTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1163,14 +1166,17 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut populations = tskit::OwnedPopulationTable::default();
+    /// let mut populations = tskit::OwningPopulationTable::default();
     /// populations.add_row().unwrap();
     /// tables.set_populations(&populations).unwrap();
     /// assert_eq!(tables.populations().num_rows(), 1);
     /// # populations.clear().unwrap();
     /// # assert_eq!(populations.num_rows(), 0);
     /// ```
-    pub fn set_populations(&mut self, populations: &crate::OwnedPopulationTable) -> TskReturnValue {
+    pub fn set_populations(
+        &mut self,
+        populations: &crate::OwningPopulationTable,
+    ) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
@@ -1187,7 +1193,7 @@ impl TableCollection {
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Set the provenance table from an
-    /// [`OwnedProvenanceTable`](`crate::provenance::OwnedProvenanceTable`)
+    /// [`OwningProvenanceTable`](`crate::provenance::OwningProvenanceTable`)
     ///
     /// # Errors
     ///
@@ -1199,7 +1205,7 @@ impl TableCollection {
     /// # #[cfg(feature="provenance")] {
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut provenances = tskit::provenance::OwnedProvenanceTable::default();
+    /// let mut provenances = tskit::provenance::OwningProvenanceTable::default();
     /// provenances.add_row("I like pancakes").unwrap();
     /// tables.set_provenances(&provenances).unwrap();
     /// assert_eq!(tables.provenances().num_rows(), 1);
@@ -1210,7 +1216,7 @@ impl TableCollection {
     /// ```
     pub fn set_provenances(
         &mut self,
-        provenances: &crate::provenance::OwnedProvenanceTable,
+        provenances: &crate::provenance::OwningProvenanceTable,
     ) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.

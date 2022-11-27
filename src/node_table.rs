@@ -514,13 +514,13 @@ impl NodeTable {
     /// # assert!(flags.iter().all(|f| f.is_sample()));
     /// ```
     ///
-    /// ## Standalone tables
+    /// ## Owning tables
     ///
     /// The ownership semantics differ when tables are not part of a
     /// table collection:
     ///
     /// ```
-    /// let mut nodes = tskit::OwnedNodeTable::default();
+    /// let mut nodes = tskit::OwningNodeTable::default();
     /// assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
     /// # assert_eq!(nodes.num_rows(), 1);
     /// let flags = nodes.flags_slice_mut();
@@ -565,9 +565,9 @@ build_owned_table_type!(
     /// # Examples
     ///
     /// ```
-    /// use tskit::OwnedNodeTable;
+    /// use tskit::OwningNodeTable;
     ///
-    /// let mut nodes = OwnedNodeTable::default();
+    /// let mut nodes = OwningNodeTable::default();
     /// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
     /// assert_eq!(rowid, 0);
     /// assert_eq!(nodes.num_rows(), 1);
@@ -578,7 +578,7 @@ build_owned_table_type!(
     ///
     /// ```
     /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwnedNodeTable;
+    /// use tskit::OwningNodeTable;
     ///
     /// #[derive(serde::Serialize,
     ///          serde::Deserialize,
@@ -590,7 +590,7 @@ build_owned_table_type!(
     ///
     /// let metadata = NodeMetadata{value: 42};
     ///
-    /// let mut nodes = OwnedNodeTable::default();
+    /// let mut nodes = OwningNodeTable::default();
     ///
     /// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
@@ -605,7 +605,7 @@ build_owned_table_type!(
     ///
     /// # }
     /// ```
-    => OwnedNodeTable,
+    => OwningNodeTable,
     NodeTable,
     tsk_node_table_t,
     tsk_node_table_init,
@@ -613,7 +613,7 @@ build_owned_table_type!(
     ll_bindings::tsk_node_table_clear
 );
 
-impl OwnedNodeTable {
+impl OwningNodeTable {
     node_table_add_row!(=> add_row, self, (*self.table));
     node_table_add_row_with_metadata!(=> add_row_with_metadata, self, (*self.table));
 }
@@ -624,7 +624,7 @@ mod test_owned_node_table {
 
     #[test]
     fn test_add_row() {
-        let mut nodes = OwnedNodeTable::default();
+        let mut nodes = OwningNodeTable::default();
         let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
         assert_eq!(rowid, 0);
         assert_eq!(nodes.num_rows(), 1);

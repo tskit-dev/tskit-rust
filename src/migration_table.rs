@@ -410,9 +410,9 @@ build_owned_table_type!(
     /// # Examples
     ///
     /// ```
-    /// use tskit::OwnedMigrationTable;
+    /// use tskit::OwningMigrationTable;
     ///
-    /// let mut migrations = OwnedMigrationTable::default();
+    /// let mut migrations = OwningMigrationTable::default();
     /// let rowid = migrations.add_row((0., 1.), 1, (0, 1), 10.3).unwrap();
     /// assert_eq!(rowid, 0);
     /// assert_eq!(migrations.num_rows(), 1);
@@ -423,7 +423,7 @@ build_owned_table_type!(
     ///
     /// ```
     /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwnedMigrationTable;
+    /// use tskit::OwningMigrationTable;
     ///
     /// #[derive(serde::Serialize,
     ///          serde::Deserialize,
@@ -435,7 +435,7 @@ build_owned_table_type!(
     ///
     /// let metadata = MigrationMetadata{value: 42};
     ///
-    /// let mut migrations = OwnedMigrationTable::default();
+    /// let mut migrations = OwningMigrationTable::default();
     ///
     /// let rowid = migrations.add_row_with_metadata((0., 1.), 1, (0, 1), 10.3, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
@@ -450,7 +450,7 @@ build_owned_table_type!(
     ///
     /// # }
     /// ```
-    => OwnedMigrationTable,
+    => OwningMigrationTable,
     MigrationTable,
     tsk_migration_table_t,
     tsk_migration_table_init,
@@ -458,7 +458,7 @@ build_owned_table_type!(
     ll_bindings::tsk_migration_table_clear
 );
 
-impl OwnedMigrationTable {
+impl OwningMigrationTable {
     migration_table_add_row!(=> add_row, self, *self.table);
     migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }

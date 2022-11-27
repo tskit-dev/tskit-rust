@@ -223,9 +223,9 @@ build_owned_table_type!(
 /// # Examples
 ///
 /// ```
-/// use tskit::OwnedPopulationTable;
+/// use tskit::OwningPopulationTable;
 ///
-/// let mut populations = OwnedPopulationTable::default();
+/// let mut populations = OwningPopulationTable::default();
 /// let rowid = populations.add_row().unwrap();
 /// assert_eq!(rowid, 0);
 /// assert_eq!(populations.num_rows(), 1);
@@ -236,7 +236,7 @@ build_owned_table_type!(
 ///
 /// ```
 /// # #[cfg(any(feature="doc", feature="derive"))] {
-/// use tskit::OwnedPopulationTable;
+/// use tskit::OwningPopulationTable;
 ///
 /// #[derive(serde::Serialize,
 ///          serde::Deserialize,
@@ -248,7 +248,7 @@ build_owned_table_type!(
 ///
 /// let metadata = PopulationMetadata{name: "YRB".to_string()};
 ///
-/// let mut populations = OwnedPopulationTable::default();
+/// let mut populations = OwningPopulationTable::default();
 ///
 /// let rowid = populations.add_row_with_metadata(&metadata).unwrap();
 /// assert_eq!(rowid, 0);
@@ -262,7 +262,7 @@ build_owned_table_type!(
 /// }
 /// # }
 /// ```
-    => OwnedPopulationTable,
+    => OwningPopulationTable,
     PopulationTable,
     tsk_population_table_t,
     tsk_population_table_init,
@@ -270,7 +270,7 @@ build_owned_table_type!(
     ll_bindings::tsk_population_table_clear
 );
 
-impl OwnedPopulationTable {
+impl OwningPopulationTable {
     population_table_add_row!(=> add_row, self, *self.table);
     population_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }

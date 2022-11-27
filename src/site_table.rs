@@ -278,9 +278,9 @@ build_owned_table_type!(
     /// # Examples
     ///
     /// ```
-    /// use tskit::OwnedSiteTable;
+    /// use tskit::OwningSiteTable;
     ///
-    /// let mut sites = OwnedSiteTable::default();
+    /// let mut sites = OwningSiteTable::default();
     /// let rowid = sites.add_row(1., None).unwrap();
     /// assert_eq!(rowid, 0);
     /// assert_eq!(sites.num_rows(), 1);
@@ -291,7 +291,7 @@ build_owned_table_type!(
     ///
     /// ```
     /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwnedSiteTable;
+    /// use tskit::OwningSiteTable;
     ///
     /// #[derive(serde::Serialize,
     ///          serde::Deserialize,
@@ -303,7 +303,7 @@ build_owned_table_type!(
     ///
     /// let metadata = SiteMetadata{value: 42};
     ///
-    /// let mut sites = OwnedSiteTable::default();
+    /// let mut sites = OwningSiteTable::default();
     ///
     /// let rowid = sites.add_row_with_metadata(0., None, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
@@ -317,7 +317,7 @@ build_owned_table_type!(
     /// }
     /// # }
     /// ```
-    => OwnedSiteTable,
+    => OwningSiteTable,
     SiteTable,
     tsk_site_table_t,
     tsk_site_table_init,
@@ -325,7 +325,7 @@ build_owned_table_type!(
     ll_bindings::tsk_site_table_clear
 );
 
-impl OwnedSiteTable {
+impl OwningSiteTable {
     site_table_add_row!(=> add_row, self, *self.table);
     site_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
