@@ -1191,6 +1191,121 @@ macro_rules! build_table_column_slice_mut_getter {
     };
 }
 
+macro_rules! delegate_table_view_api {
+    () => {
+        delegate::delegate! {
+            to self.views {
+                /// Get reference to the [``EdgeTable``](crate::EdgeTable).
+                pub fn edges(&self) -> &crate::EdgeTable;
+                /// Get reference to the [``IndividualTable``](crate::IndividualTable).
+                pub fn individuals(&self) -> &crate::IndividualTable;
+                /// Get reference to the [``MigrationTable``](crate::MigrationTable).
+                pub fn migrations(&self) -> &crate::MigrationTable;
+                /// Get reference to the [``MutationTable``](crate::MutationTable).
+                pub fn mutations(&self) -> &crate::MutationTable;
+                /// Get reference to the [``NodeTable``](crate::NodeTable).
+                pub fn nodes(&self) -> &crate::NodeTable;
+                /// Get reference to the [``PopulationTable``](crate::PopulationTable).
+                pub fn populations(&self) -> &crate::PopulationTable;
+                /// Get reference to the [``SiteTable``](crate::SiteTable).
+                pub fn sites(&self) -> &crate::SiteTable;
+
+                #[cfg(feature = "provenance")]
+                #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+                /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
+                pub fn provenances(&self) -> &crate::provenance::ProvenanceTable ;
+
+                /// Return an iterator over the individuals.
+                pub fn individuals_iter(&self) -> impl Iterator<Item = crate::IndividualTableRow> + '_;
+                /// Return an iterator over the nodes.
+                pub fn nodes_iter(&self) -> impl Iterator<Item = crate::NodeTableRow> + '_;
+                /// Return an iterator over the edges.
+                pub fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_;
+                /// Return an iterator over the migrations.
+                pub fn migrations_iter(&self) -> impl Iterator<Item = crate::MigrationTableRow> + '_;
+                /// Return an iterator over the mutations.
+                pub fn mutations_iter(&self) -> impl Iterator<Item = crate::MutationTableRow> + '_;
+                /// Return an iterator over the populations.
+                pub fn populations_iter(&self) -> impl Iterator<Item = crate::PopulationTableRow> + '_;
+                /// Return an iterator over the sites.
+                pub fn sites_iter(&self) -> impl Iterator<Item = crate::SiteTableRow> + '_;
+
+                #[cfg(feature = "provenance")]
+                #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+                /// Return an iterator over provenances
+                pub fn provenances_iter(&self,) -> impl Iterator<Item = crate::provenance::ProvenanceTableRow> + '_;
+
+                /// Obtain a vector containing the indexes ("ids")
+                /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
+                /// is `true`.
+                ///
+                /// The provided implementation dispatches to
+                /// [`crate::NodeTable::samples_as_vector`].
+                pub fn samples_as_vector(&self) -> Vec<crate::NodeId>;
+
+                /// Obtain a vector containing the indexes ("ids") of all nodes
+                /// satisfying a certain criterion.
+                ///
+                /// The provided implementation dispatches to
+                /// [`crate::NodeTable::create_node_id_vector`].
+                ///
+                /// # Parameters
+                ///
+                /// * `f`: a function.  The function is passed the current table
+                ///    collection and each [`crate::node_table::NodeTableRow`].
+                ///    If `f` returns `true`, the index of that row is included
+                ///    in the return value.
+                ///
+                /// # Examples
+                ///
+                /// Get all nodes with time > 0.0:
+                ///
+                /// ```
+                /// use tskit::bindings::tsk_id_t;
+                ///
+                /// let mut tables = tskit::TableCollection::new(100.).unwrap();
+                /// tables
+                ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 0.0, tskit::PopulationId::NULL,
+                ///     tskit::IndividualId::NULL)
+                ///     .unwrap();
+                /// tables
+                ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 1.0, tskit::PopulationId::NULL,
+                ///     tskit::IndividualId::NULL)
+                ///     .unwrap();
+                /// let samples = tables.create_node_id_vector(
+                ///     |row: &tskit::NodeTableRow| row.time > 0.,
+                /// );
+                /// assert_eq!(samples[0], 1);
+                ///
+                /// // Get all nodes that have a mutation:
+                ///
+                /// // fn node_has_mutation(
+                /// //     // dyn trait here means this
+                /// //     // will work with TreeSequence, too.
+                /// //     tables_type: &dyn std::ops::Deref<Target=tskit::table_views::TableViews>,
+                /// //     row: &tskit::NodeTableRow,
+                /// // ) -> bool {
+                /// //     for mrow in tables_type.mutations_iter() {
+                /// //         if mrow.node == row.id {
+                /// //             return true;
+                /// //         }
+                /// //     }
+                /// //     false
+                /// // }
+                ///
+                /// // // Get all nodes that have a mutation:
+                ///
+                /// // tables.add_mutation(0, 0, tskit::MutationId::NULL, 0.0, None).unwrap();
+                /// // let samples_with_mut = tables.create_node_id_vector(
+                /// //     |row: &tskit::NodeTableRow| node_has_mutation(&tables, row));
+                /// // assert_eq!(samples_with_mut[0], 0);
+                /// ```
+                pub fn create_node_id_vector(&self, f: impl FnMut(&crate::NodeTableRow) -> bool) -> Vec<crate::NodeId>;
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::error::TskitError;
