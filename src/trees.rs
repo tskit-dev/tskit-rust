@@ -209,14 +209,6 @@ impl Drop for TreeSequence {
     }
 }
 
-impl std::ops::Deref for TreeSequence {
-    type Target = crate::table_views::TableViews;
-
-    fn deref(&self) -> &Self::Target {
-        &self.views
-    }
-}
-
 impl TreeSequence {
     /// Create a tree sequence from a [`TableCollection`].
     /// In general, [`TableCollection::tree_sequence`] may be preferred.
@@ -545,6 +537,8 @@ impl TreeSequence {
         };
         handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
     }
+
+    delegate_table_view_api!();
 }
 
 impl TryFrom<TableCollection> for TreeSequence {

@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use delegate::delegate;
 use std::vec;
 
 use crate::bindings as ll_bindings;
@@ -73,20 +73,6 @@ impl Drop for TableCollection {
     fn drop(&mut self) {
         let rv = unsafe { tsk_table_collection_free(self.as_mut_ptr()) };
         assert_eq!(rv, 0);
-    }
-}
-
-impl Deref for TableCollection {
-    type Target = crate::table_views::TableViews;
-
-    fn deref(&self) -> &Self::Target {
-        &self.views
-    }
-}
-
-impl DerefMut for TableCollection {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.views
     }
 }
 
@@ -797,8 +783,10 @@ impl TableCollection {
         idmap: bool,
     ) -> Result<Option<&[NodeId]>, TskitError> {
         if idmap {
-            self.idmap
-                .resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
+            self.idmap.resize(
+                usize::try_from(self.views.nodes().num_rows())?,
+                NodeId::NULL,
+            );
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -1232,4 +1220,13 @@ impl TableCollection {
         };
         handle_tsk_return_value!(rv)
     }
+
+    delegate! {
+        to self.views {
+            /// Get mutable reference to the [``NodeTable``](crate::NodeTable).
+            pub fn nodes_mut(&mut self) -> &mut crate::NodeTable;
+        }
+    }
+
+    delegate_table_view_api!();
 }
