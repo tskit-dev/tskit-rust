@@ -345,9 +345,9 @@ build_owned_table_type!(
     /// # Examples
     ///
     /// ```
-    /// use tskit::OwnedEdgeTable;
+    /// use tskit::OwningEdgeTable;
     ///
-    /// let mut edges = OwnedEdgeTable::default();
+    /// let mut edges = OwningEdgeTable::default();
     /// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
     /// assert_eq!(rowid, 0);
     /// assert_eq!(edges.num_rows(), 1);
@@ -361,7 +361,7 @@ build_owned_table_type!(
     ///
     /// ```
     /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwnedEdgeTable;
+    /// use tskit::OwningEdgeTable;
     ///
     /// #[derive(serde::Serialize,
     ///          serde::Deserialize,
@@ -373,7 +373,7 @@ build_owned_table_type!(
     ///
     /// let metadata = EdgeMetadata{value: 42};
     ///
-    /// let mut edges = OwnedEdgeTable::default();
+    /// let mut edges = OwningEdgeTable::default();
     ///
     /// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
@@ -387,7 +387,7 @@ build_owned_table_type!(
     /// }
     /// # }
     /// ```
-    => OwnedEdgeTable,
+    => OwningEdgeTable,
     EdgeTable,
     tsk_edge_table_t,
     tsk_edge_table_init,
@@ -395,7 +395,7 @@ build_owned_table_type!(
     crate::bindings::tsk_edge_table_clear
 );
 
-impl OwnedEdgeTable {
+impl OwningEdgeTable {
     edge_table_add_row!(=> add_row, self, *self.table);
     edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }

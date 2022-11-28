@@ -287,14 +287,14 @@ build_owned_table_type!(
     /// # #[cfg(feature = "provenance")]
     /// # #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// {
-    /// use tskit::provenance::OwnedProvenanceTable;
-    /// let mut provenances = OwnedProvenanceTable::default();
+    /// use tskit::provenance::OwningProvenanceTable;
+    /// let mut provenances = OwningProvenanceTable::default();
     /// let id = provenances.add_row("message").unwrap();
     /// assert_eq!(id, 0);
     /// assert_eq!(provenances.num_rows(), 1);
     /// # }
     /// ```
-    => OwnedProvenanceTable,
+    => OwningProvenanceTable,
     ProvenanceTable,
     tsk_provenance_table_t,
     tsk_provenance_table_init,
@@ -302,7 +302,7 @@ build_owned_table_type!(
     ll_bindings::tsk_provenance_table_clear
 );
 
-impl OwnedProvenanceTable {
+impl OwningProvenanceTable {
     provenance_table_add_row!(=> add_row, self, *self.table);
 }
 

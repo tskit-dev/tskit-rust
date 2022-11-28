@@ -427,15 +427,15 @@ impl_time_position_arithmetic!(Position, Time);
 /// "Null" identifier value.
 pub(crate) const TSK_NULL: tsk_id_t = -1;
 
-pub use edge_table::{EdgeTable, EdgeTableRow, OwnedEdgeTable};
+pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
 pub use error::TskitError;
 pub use flags::*;
-pub use individual_table::{IndividualTable, IndividualTableRow, OwnedIndividualTable};
-pub use migration_table::{MigrationTable, MigrationTableRow, OwnedMigrationTable};
-pub use mutation_table::{MutationTable, MutationTableRow, OwnedMutationTable};
-pub use node_table::{NodeTable, NodeTableRow, OwnedNodeTable};
-pub use population_table::{OwnedPopulationTable, PopulationTable, PopulationTableRow};
-pub use site_table::{OwnedSiteTable, SiteTable, SiteTableRow};
+pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividualTable};
+pub use migration_table::{MigrationTable, MigrationTableRow, OwningMigrationTable};
+pub use mutation_table::{MutationTable, MutationTableRow, OwningMutationTable};
+pub use node_table::{NodeTable, NodeTableRow, OwningNodeTable};
+pub use population_table::{OwningPopulationTable, PopulationTable, PopulationTableRow};
+pub use site_table::{OwningSiteTable, SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;

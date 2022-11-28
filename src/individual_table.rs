@@ -459,9 +459,9 @@ build_owned_table_type!(
     /// # Examples
     ///
     /// ```
-    /// use tskit::OwnedIndividualTable;
+    /// use tskit::OwningIndividualTable;
     ///
-    /// let mut individuals = OwnedIndividualTable::default();
+    /// let mut individuals = OwningIndividualTable::default();
     /// let rowid = individuals.add_row(0, None, None).unwrap();
     /// assert_eq!(rowid, 0);
     /// assert_eq!(individuals.num_rows(), 1);
@@ -473,7 +473,7 @@ build_owned_table_type!(
     ///
     /// ```
     /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwnedIndividualTable;
+    /// use tskit::OwningIndividualTable;
     ///
     /// #[derive(serde::Serialize,
     ///          serde::Deserialize,
@@ -485,7 +485,7 @@ build_owned_table_type!(
     ///
     /// let metadata = IndividualMetadata{value: 42};
     ///
-    /// let mut individuals = OwnedIndividualTable::default();
+    /// let mut individuals = OwningIndividualTable::default();
     ///
     /// let rowid = individuals.add_row_with_metadata(0, None, None, &metadata).unwrap();
     /// assert_eq!(rowid, 0);
@@ -500,7 +500,7 @@ build_owned_table_type!(
     ///
     /// # }
     /// ```
-    => OwnedIndividualTable,
+    => OwningIndividualTable,
     IndividualTable,
     tsk_individual_table_t,
     tsk_individual_table_init,
@@ -508,7 +508,7 @@ build_owned_table_type!(
     crate::bindings::tsk_individual_table_clear
 );
 
-impl OwnedIndividualTable {
+impl OwningIndividualTable {
     individual_table_add_row!(=> add_row, self, *self.table);
     individual_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
 }
