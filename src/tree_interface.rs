@@ -7,7 +7,6 @@ use crate::SizeType;
 use crate::Time;
 use crate::TreeFlags;
 use crate::TskitError;
-use crate::TskitTypeAccess;
 use std::ptr::NonNull;
 
 pub struct TreeInterface {
@@ -15,16 +14,6 @@ pub struct TreeInterface {
     num_nodes: tsk_size_t,
     array_len: tsk_size_t,
     flags: TreeFlags,
-}
-
-impl TskitTypeAccess<ll_bindings::tsk_tree_t> for TreeInterface {
-    fn as_ptr(&self) -> *const ll_bindings::tsk_tree_t {
-        self.non_owned_pointer.as_ptr()
-    }
-
-    fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_tree_t {
-        self.non_owned_pointer.as_ptr()
-    }
 }
 
 impl TreeInterface {
@@ -40,6 +29,16 @@ impl TreeInterface {
             array_len,
             flags,
         }
+    }
+
+    /// Pointer to the low-level C type.
+    pub fn as_ptr(&self) -> *const ll_bindings::tsk_tree_t {
+        self.non_owned_pointer.as_ptr()
+    }
+
+    /// Mutable pointer to the low-level C type.
+    pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_tree_t {
+        self.non_owned_pointer.as_ptr()
     }
 
     pub fn flags(&self) -> TreeFlags {

@@ -1,13 +1,5 @@
 //! Traits related to user-facing types
 
-/// Provide pointer access to underlying C types
-pub trait TskitTypeAccess<T> {
-    /// Return const pointer
-    fn as_ptr(&self) -> *const T;
-    /// Return mutable pointer
-    fn as_mut_ptr(&mut self) -> *mut T;
-}
-
 /// Abstraction of individual location.
 ///
 /// This trait exists to streamline the API of

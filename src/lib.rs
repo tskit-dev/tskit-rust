@@ -439,7 +439,6 @@ pub use site_table::{OwningSiteTable, SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
-pub use traits::TskitTypeAccess;
 pub use tree_interface::{NodeTraversalOrder, TreeInterface};
 pub use trees::{Tree, TreeSequence};
 

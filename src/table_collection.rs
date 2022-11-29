@@ -14,7 +14,6 @@ use crate::TableOutputOptions;
 use crate::TableSortOptions;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
-use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t};
 use crate::{EdgeId, NodeId};
 use ll_bindings::tsk_table_collection_free;
@@ -57,16 +56,6 @@ pub struct TableCollection {
     inner: MBox<ll_bindings::tsk_table_collection_t>,
     idmap: Vec<NodeId>,
     views: crate::table_views::TableViews,
-}
-
-impl TskitTypeAccess<ll_bindings::tsk_table_collection_t> for TableCollection {
-    fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
-        &*self.inner
-    }
-
-    fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
-        &mut *self.inner
-    }
 }
 
 impl Drop for TableCollection {
@@ -1229,4 +1218,14 @@ impl TableCollection {
     }
 
     delegate_table_view_api!();
+
+    /// Pointer to the low-level C type.
+    pub fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
+        &*self.inner
+    }
+
+    /// Mutable pointer to the low-level C type.
+    pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
+        &mut *self.inner
+    }
 }

@@ -12,7 +12,6 @@ use crate::TreeFlags;
 use crate::TreeInterface;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
-use crate::TskitTypeAccess;
 use crate::{tsk_id_t, tsk_size_t, TableCollection};
 use ll_bindings::tsk_tree_free;
 use std::ptr::NonNull;
@@ -192,16 +191,6 @@ pub struct TreeSequence {
 unsafe impl Send for TreeSequence {}
 unsafe impl Sync for TreeSequence {}
 
-impl TskitTypeAccess<ll_bindings::tsk_treeseq_t> for TreeSequence {
-    fn as_ptr(&self) -> *const ll_bindings::tsk_treeseq_t {
-        &self.inner
-    }
-
-    fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_treeseq_t {
-        &mut self.inner
-    }
-}
-
 impl Drop for TreeSequence {
     fn drop(&mut self) {
         let rv = unsafe { ll_bindings::tsk_treeseq_free(&mut self.inner) };
@@ -268,6 +257,16 @@ impl TreeSequence {
             let inner = unsafe { inner.assume_init() };
             Self { inner, views }
         })
+    }
+
+    /// Pointer to the low-level C type.
+    pub fn as_ptr(&self) -> *const ll_bindings::tsk_treeseq_t {
+        &self.inner
+    }
+
+    /// Mutable pointer to the low-level C type.
+    pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_treeseq_t {
+        &mut self.inner
     }
 
     /// Dump the tree sequence to file.
