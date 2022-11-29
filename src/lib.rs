@@ -79,6 +79,7 @@
 pub mod bindings;
 
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
+mod edge_differences;
 mod edge_table;
 pub mod error;
 mod flags;
@@ -427,6 +428,7 @@ impl_time_position_arithmetic!(Position, Time);
 /// "Null" identifier value.
 pub(crate) const TSK_NULL: tsk_id_t = -1;
 
+pub use edge_differences::*;
 pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
 pub use error::TskitError;
 pub use flags::*;
