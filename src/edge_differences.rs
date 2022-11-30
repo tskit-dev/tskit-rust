@@ -28,12 +28,14 @@ impl Drop for LLEdgeDifferenceIterator {
 }
 
 impl LLEdgeDifferenceIterator {
-    pub fn new_from_treeseq(treeseq: &TreeSequence, flags: bindings::tsk_flags_t) -> Option<Self> {
+    pub fn new_from_treeseq(
+        treeseq: &TreeSequence,
+        flags: bindings::tsk_flags_t,
+    ) -> Result<Self, crate::TskitError> {
         let mut inner = std::mem::MaybeUninit::<bindings::tsk_diff_iter_t>::uninit();
-        match unsafe { bindings::tsk_diff_iter_init(inner.as_mut_ptr(), treeseq.as_ptr(), flags) } {
-            x if x < 0 => None,
-            _ => Some(Self(unsafe { inner.assume_init() })),
-        }
+        let code =
+            unsafe { bindings::tsk_diff_iter_init(inner.as_mut_ptr(), treeseq.as_ptr(), flags) };
+        handle_tsk_return_value!(code, Self(unsafe { inner.assume_init() }))
     }
 }
 
@@ -191,7 +193,7 @@ impl EdgeDifferencesIterator {
     pub(crate) fn new_from_treeseq(
         treeseq: &TreeSequence,
         flags: bindings::tsk_flags_t,
-    ) -> Option<Self> {
+    ) -> Result<Self, crate::TskitError> {
         LLEdgeDifferenceIterator::new_from_treeseq(treeseq, flags).map(|inner| Self {
             inner,
             insertion: LLEdgeInsertionList::default(),
