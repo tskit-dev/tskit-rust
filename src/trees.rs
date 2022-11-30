@@ -538,6 +538,19 @@ impl TreeSequence {
     }
 
     delegate_table_view_api!();
+
+    /// Build a lending iterator over edge differences.
+    ///
+    /// # Returns
+    ///
+    /// * None if the `C` back end is unable to allocate
+    ///   needed memory
+    /// * `Some(iterator)` otherwise.
+    pub fn edge_differences_iter(
+        &self,
+    ) -> Option<crate::edge_differences::EdgeDifferencesIterator> {
+        crate::edge_differences::EdgeDifferencesIterator::new_from_treeseq(self, 0)
+    }
 }
 
 impl TryFrom<TableCollection> for TreeSequence {
@@ -859,6 +872,56 @@ pub(crate) mod test_trees {
             }
         } else {
             panic!("Expected a tree.");
+        }
+    }
+
+    // TODO: use trybuild to add tests that the iterator
+    // lifetime is indeed coupled to that of the treeseq
+    #[test]
+    fn test_edge_diffs_lending_iterator_num_trees() {
+        {
+            let treeseq = treeseq_from_small_table_collection_two_trees();
+            let num_nodes: usize = treeseq.nodes().num_rows().try_into().unwrap();
+            let mut parents = vec![NodeId::NULL; num_nodes + 1];
+            if let Some(mut ediff_iter) = treeseq.edge_differences_iter() {
+                let mut tree_iter = treeseq.tree_iterator(0).unwrap();
+                let mut ntrees = 0;
+                while let Some(diffs) = ediff_iter.next() {
+                    let tree = tree_iter.next().unwrap();
+
+                    for edge_out in diffs.edge_removals() {
+                        let p = edge_out.child();
+                        parents[usize::try_from(p).unwrap()] = NodeId::NULL;
+                    }
+
+                    for edge_in in diffs.edge_insertions() {
+                        let c: usize = edge_in.child().try_into().unwrap();
+                        parents[c] = edge_in.parent();
+                    }
+
+                    assert_eq!(tree.parent_array(), &parents);
+                    ntrees += 1;
+                }
+                assert_eq!(ntrees, 2);
+            } else {
+                panic!("expected an edge differences iterator");
+            }
+        }
+
+        {
+            let treeseq = treeseq_from_small_table_collection_two_trees();
+            let mut ediff_iter = treeseq.edge_differences_iter().unwrap();
+
+            let mut ntrees = 0;
+            while let Some(diffs) = ediff_iter.next() {
+                if ntrees == 0 {
+                    assert_eq!(diffs.interval(), (0.0.into(), 500.0.into()));
+                } else {
+                    assert_eq!(diffs.interval(), (500.0.into(), 1000.0.into()));
+                }
+                ntrees += 1;
+            }
+            assert_eq!(ntrees, 2);
         }
     }
 }
