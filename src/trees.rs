@@ -541,14 +541,13 @@ impl TreeSequence {
 
     /// Build a lending iterator over edge differences.
     ///
-    /// # Returns
+    /// # Errors
     ///
-    /// * None if the `C` back end is unable to allocate
+    /// * [`TskitError`] if the `C` back end is unable to allocate
     ///   needed memory
-    /// * `Some(iterator)` otherwise.
     pub fn edge_differences_iter(
         &self,
-    ) -> Option<crate::edge_differences::EdgeDifferencesIterator> {
+    ) -> Result<crate::edge_differences::EdgeDifferencesIterator, TskitError> {
         crate::edge_differences::EdgeDifferencesIterator::new_from_treeseq(self, 0)
     }
 }
@@ -883,7 +882,7 @@ pub(crate) mod test_trees {
             let treeseq = treeseq_from_small_table_collection_two_trees();
             let num_nodes: usize = treeseq.nodes().num_rows().try_into().unwrap();
             let mut parents = vec![NodeId::NULL; num_nodes + 1];
-            if let Some(mut ediff_iter) = treeseq.edge_differences_iter() {
+            if let Ok(mut ediff_iter) = treeseq.edge_differences_iter() {
                 let mut tree_iter = treeseq.tree_iterator(0).unwrap();
                 let mut ntrees = 0;
                 while let Some(diffs) = ediff_iter.next() {
