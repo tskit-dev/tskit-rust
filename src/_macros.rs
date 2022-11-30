@@ -253,6 +253,25 @@ macro_rules! impl_id_traits {
             pub fn is_null(&self) -> bool {
                 *self == Self::NULL
             }
+
+            /// Convenience function to convert to usize.
+            ///
+            /// Works via [`TryFrom`].
+            ///
+            /// # Returns
+            ///
+            /// * `None` if the underlying value is negative.
+            /// * `Some(usize)` otherwise.
+            pub fn to_usize(&self) -> Option<usize> {
+                usize::try_from(*self).ok()
+            }
+
+            /// Convenience function to convert to usize.
+            /// Implemented via `as`.
+            /// Negative values with therefore wrap.
+            pub fn as_usize(&self) -> usize {
+                self.0 as usize
+            }
         }
 
         impl std::fmt::Display for $idtype {
