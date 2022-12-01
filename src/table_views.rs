@@ -204,8 +204,6 @@ impl TableViews {
     /// Get all nodes with time > 0.0:
     ///
     /// ```
-    /// use tskit::bindings::tsk_id_t;
-    ///
     /// let mut tables = tskit::TableCollection::new(100.).unwrap();
     /// tables
     ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 0.0, tskit::PopulationId::NULL,
@@ -219,30 +217,6 @@ impl TableViews {
     ///     |row: &tskit::NodeTableRow| row.time > 0.,
     /// );
     /// assert_eq!(samples[0], 1);
-    ///
-    /// // Get all nodes that have a mutation:
-    ///
-    /// // fn node_has_mutation(
-    /// //     // dyn trait here means this
-    /// //     // will work with TreeSequence, too.
-    /// //     tables_type: &dyn std::ops::Deref<Target=tskit::table_views::TableViews>,
-    /// //     row: &tskit::NodeTableRow,
-    /// // ) -> bool {
-    /// //     for mrow in tables_type.mutations_iter() {
-    /// //         if mrow.node == row.id {
-    /// //             return true;
-    /// //         }
-    /// //     }
-    /// //     false
-    /// // }
-    ///
-    /// // // Get all nodes that have a mutation:
-    ///
-    /// // tables.add_mutation(0, 0, tskit::MutationId::NULL, 0.0, None).unwrap();
-    /// // let samples_with_mut = tables.create_node_id_vector(
-    /// //     |row: &tskit::NodeTableRow| node_has_mutation(&tables, row));
-    /// // assert_eq!(samples_with_mut[0], 0);
-    /// ```
     pub fn create_node_id_vector(
         &self,
         f: impl FnMut(&crate::NodeTableRow) -> bool,
