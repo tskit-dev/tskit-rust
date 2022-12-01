@@ -27,7 +27,8 @@ See below.
 
 ### Read-only table access
 
-A `TreeSequence` has a `Deref` target giving read-only access to the tables:
+A `TreeSequence` has access to the tables.
+For example:
 
 ```rust, noplayground, ignore
 for _edge in treeseq.edges_iter() {
