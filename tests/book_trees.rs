@@ -142,4 +142,46 @@ fn initialize_from_table_collection() {
         }
     }
     // ANCHOR_END: iterate_node_siblings_via_array_getters
+
+    // ANCHOR: iterate_edge_differences
+    if let Ok(mut edge_diff_iterator) = treeseq.edge_differences_iter() {
+        while let Some(diffs) = edge_diff_iterator.next() {
+            for edge_removal in diffs.edge_removals() {
+                println!("{}", edge_removal);
+            }
+            for edge_insertion in diffs.edge_insertions() {
+                println!("{}", edge_insertion);
+            }
+        }
+    } else {
+        panic!("creating edge diffs iterator failed");
+    }
+    // ANCHOR_END: iterate_edge_differences
+
+    // ANCHOR: iterate_edge_differences_update_parents
+    let num_nodes: usize = treeseq.nodes().num_rows().try_into().unwrap();
+    // num_nodes + 1 to reflect a "virtual root" present in
+    // the tree arrays
+    let mut parents = vec![NodeId::NULL; num_nodes + 1];
+    match treeseq.edge_differences_iter() {
+        Ok(mut ediff_iter) => match treeseq.tree_iterator(0) {
+            Ok(mut tree_iter) => {
+                while let Some(diffs) = ediff_iter.next() {
+                    let tree = tree_iter.next().unwrap();
+                    for edge_out in diffs.edge_removals() {
+                        let c = edge_out.child();
+                        parents[c.as_usize()] = NodeId::NULL;
+                    }
+                    for edge_in in diffs.edge_insertions() {
+                        let c = edge_in.child();
+                        parents[c.as_usize()] = edge_in.parent();
+                    }
+                    assert_eq!(tree.parent_array(), &parents);
+                }
+            }
+            Err(e) => panic!("error creating tree iter: {:?}", e),
+        },
+        Err(e) => panic!("error creating edge diff iter: {:?}", e),
+    }
+    // ANCHOR_END: iterate_edge_differences_update_parents
 }
