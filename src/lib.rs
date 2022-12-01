@@ -263,6 +263,27 @@ impl_size_type_comparisons_for_row_ids!(MigrationId);
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct SizeType(tsk_size_t);
 
+impl SizeType {
+    /// Convenience function to convert to usize.
+    ///
+    /// Works via [`TryFrom`].
+    ///
+    /// # Returns
+    ///
+    /// * `None` if the underlying value is negative.
+    /// * `Some(usize)` otherwise.
+    pub fn to_usize(&self) -> Option<usize> {
+        (*self).try_into().ok()
+    }
+
+    /// Convenience function to convert to usize.
+    /// Implemented via `as`.
+    /// Negative values with therefore wrap.
+    pub fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
+}
+
 impl std::fmt::Display for SizeType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -297,9 +318,17 @@ impl TryFrom<SizeType> for usize {
     }
 }
 
-impl From<usize> for SizeType {
-    fn from(value: usize) -> Self {
-        Self(value as tsk_size_t)
+impl TryFrom<usize> for SizeType {
+    type Error = TskitError;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        match tsk_size_t::try_from(value) {
+            Ok(x) => Ok(Self(x)),
+            Err(_) => Err(TskitError::RangeError(format!(
+                "could not convert usize {} to SizeType",
+                value
+            ))),
+        }
     }
 }
 
@@ -537,6 +566,22 @@ mod tests {
             .expect("Error occurred while trying to write in String");
         assert_eq!(output, "1".to_string());
     }
+}
+
+#[test]
+fn test_usize_to_size_type() {
+    let x = usize::MAX;
+    let s = SizeType::try_from(x).ok();
+
+    #[cfg(target_pointer_width = "64")]
+    assert_eq!(s, Some(bindings::tsk_size_t::MAX.into()));
+
+    #[cfg(target_pointer_width = "32")]
+    assert_eq!(s, Some((usize::MAX as bindings::tsk_size_t).into()));
+
+    let x = usize::MIN;
+    let s = SizeType::try_from(x).ok();
+    assert_eq!(s, Some(0.into()));
 }
 
 // Testing modules

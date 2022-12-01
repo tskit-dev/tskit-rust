@@ -676,12 +676,13 @@ macro_rules! node_table_add_row_with_metadata {
             M: $crate::metadata::NodeMetadata,
         {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
+            let mdlen = md.len()?;
             node_table_add_row_details!(flags,
                                         time,
                                         population,
                                         individual,
                                         md.as_ptr(),
-                                        md.len().into(),
+                                        mdlen.into(),
                                         $table)
         }
     };
@@ -761,7 +762,7 @@ macro_rules! edge_table_add_row_with_metadata {
                                         parent,
                                         child,
                                         md.as_ptr(),
-                                        md.len().into(),
+                                        md.len()?.into(),
                                         $table)
         }
     };
@@ -791,7 +792,7 @@ macro_rules! population_table_add_row_with_metadata {
         pub fn $name<M>(&mut $self, metadata: &M) -> Result<$crate::PopulationId, $crate::TskitError>
         where M: $crate::metadata::PopulationMetadata {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
-            population_table_add_row_details!(md.as_ptr(), md.len().into(), $table)
+            population_table_add_row_details!(md.as_ptr(), md.len()?.into(), $table)
         }
     };
 }
@@ -865,7 +866,7 @@ macro_rules! individual_table_add_row_with_metadata {
                                                   location,
                                                   parents,
                                                   md.as_ptr(),
-                                                  md.len().into(),
+                                                  md.len()?.into(),
                                                   $table)
             }
     };
@@ -946,7 +947,7 @@ macro_rules! mutation_table_add_row_with_metadata {
                                             time,
                                             derived_state,
                                             md.as_ptr(),
-                                            md.len().into(),
+                                            md.len()?.into(),
                                             $table)
         }
     };
@@ -1002,7 +1003,7 @@ macro_rules! site_table_add_row_with_metadata {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
             site_table_add_row_details!(position, ancestral_state,
                                         md.as_ptr(),
-                                        md.len().into(),
+                                        md.len()?.into(),
                                         $table)
         }
     };
@@ -1076,7 +1077,7 @@ macro_rules! migration_table_add_row_with_metadata {
         {
             let md = $crate::metadata::EncodedMetadata::new(metadata)?;
             migration_table_add_row_details!(span, node, source_dest, time,
-                                             md.as_ptr(), md.len().into(), $table)
+                                             md.as_ptr(), md.len()?.into(), $table)
         }
     };
 }
