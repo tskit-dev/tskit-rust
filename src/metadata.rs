@@ -234,8 +234,8 @@ impl EncodedMetadata {
         }
     }
 
-    pub(crate) fn len(&self) -> SizeType {
-        self.encoded.len().into()
+    pub(crate) fn len(&self) -> Result<SizeType, crate::TskitError> {
+        SizeType::try_from(self.encoded.len())
     }
 }
 
@@ -365,7 +365,7 @@ mod tests {
         let enc = EncodedMetadata::new(&f).unwrap();
         let p = enc.as_ptr();
         let mut d = vec![];
-        for i in 0..usize::try_from(enc.len()).unwrap() {
+        for i in 0..usize::try_from(enc.len().unwrap()).unwrap() {
             d.push(unsafe { *p.add(i) as u8 });
         }
         let df = F::decode(&d).unwrap();
@@ -399,7 +399,7 @@ mod test_serde {
         let enc = EncodedMetadata::new(&f).unwrap();
         let p = enc.as_ptr();
         let mut d = vec![];
-        for i in 0..usize::try_from(enc.len()).unwrap() {
+        for i in 0..usize::try_from(enc.len().unwrap()).unwrap() {
             d.push(unsafe { *p.add(i) as u8 });
         }
         let df = F::decode(&d).unwrap();

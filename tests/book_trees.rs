@@ -159,7 +159,7 @@ fn initialize_from_table_collection() {
     // ANCHOR_END: iterate_edge_differences
 
     // ANCHOR: iterate_edge_differences_update_parents
-    let num_nodes: usize = treeseq.nodes().num_rows().try_into().unwrap();
+    let num_nodes = treeseq.nodes().num_rows().as_usize();
     // num_nodes + 1 to reflect a "virtual root" present in
     // the tree arrays
     let mut parents = vec![NodeId::NULL; num_nodes + 1];
