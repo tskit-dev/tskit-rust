@@ -619,9 +619,9 @@ macro_rules! node_table_add_row_details {
             $crate::bindings::tsk_node_table_add_row(
                 &mut $table,
                 $flags.into().bits(),
-                $time.into().0,
-                $population.into().0,
-                $individual.into().0,
+                $time.into().into(),
+                $population.into().into(),
+                $individual.into().into(),
                 $metadata,
                 $metadata_len,
             )
@@ -699,10 +699,10 @@ macro_rules! edge_table_add_row_details {
         let rv = unsafe {
             $crate::bindings::tsk_edge_table_add_row(
                 &mut $table,
-                $left.into().0,
-                $right.into().0,
-                $parent.into().0,
-                $child.into().0,
+                $left.into().into(),
+                $right.into().into(),
+                $parent.into().into(),
+                $child.into().into(),
                 $metadata,
                 $metadata_len,
             )
@@ -882,10 +882,10 @@ macro_rules! mutation_table_add_row_details {
         let rv = unsafe {
             $crate::bindings::tsk_mutation_table_add_row(
                 &mut $table,
-                $site.into().0,
-                $node.into().0,
-                $parent.into().0,
-                $time.into().0,
+                $site.into().into(),
+                $node.into().into(),
+                $parent.into().into(),
+                $time.into().into(),
                 dstate.0,
                 dstate.1,
                 $metadata,
@@ -963,7 +963,7 @@ macro_rules! site_table_add_row_details {
         let rv = unsafe {
             $crate::bindings::tsk_site_table_add_row(
                 &mut $table,
-                $position.into().0,
+                $position.into().into(),
                 astate.0,
                 astate.1,
                 $metadata,
@@ -1020,12 +1020,12 @@ macro_rules! migration_table_add_row_details {
         let rv = unsafe {
             $crate::bindings::tsk_migration_table_add_row(
                 &mut $table,
-                $span.0.into().0,
-                $span.1.into().0,
-                $node.into().0,
-                $source_dest.0.into().0,
-                $source_dest.1.into().0,
-                $time.into().0,
+                $span.0.into().into(),
+                $span.1.into().into(),
+                $node.into().into(),
+                $source_dest.0.into().into(),
+                $source_dest.1.into().into(),
+                $time.into().into(),
                 $metadata,
                 $metadata_len,
             )
@@ -1136,7 +1136,7 @@ macro_rules! raw_metadata_getter_for_tables {
                 self,
                 self.as_ref().metadata,
                 self.as_ref().metadata_offset,
-                row.0,
+                row.into(),
                 self.num_rows().into(),
                 self.as_ref().metadata_length,
             )
