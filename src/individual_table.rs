@@ -171,13 +171,7 @@ impl IndividualTable {
     /// * `Some(flags)` if `row` is valid.
     /// * `None` otherwise.
     pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<IndividualFlags> {
-        unsafe_tsk_column_access_and_map_into!(
-            row.into().0,
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            flags
-        )
+        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), flags)
     }
 
     /// Return the locations for a given row.
@@ -188,7 +182,7 @@ impl IndividualTable {
     /// * `None` otherwise.
     pub fn location<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[Location]> {
         unsafe_tsk_ragged_column_access!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -207,7 +201,7 @@ impl IndividualTable {
     /// * `None` otherwise.
     pub fn parents<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[IndividualId]> {
         unsafe_tsk_ragged_column_access!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -393,7 +387,7 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
         row: IndividualId,
     ) -> Option<Result<T, TskitError>> {
         let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -419,7 +413,7 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
     pub fn row<I: Into<IndividualId> + Copy>(&self, r: I) -> Option<IndividualTableRow> {
-        let ri = r.into().0;
+        let ri = r.into().into();
         table_row_access!(ri, self, make_individual_table_row)
     }
 

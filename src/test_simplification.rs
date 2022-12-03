@@ -21,8 +21,8 @@ mod tests {
         assert!(idmap_option.is_some());
         let idmap = idmap_option.unwrap();
         for i in samples.iter() {
-            assert_ne!(idmap[i.0 as usize], NodeId::NULL);
-            assert!(!idmap[i.0 as usize].is_null());
+            assert_ne!(idmap[i.as_usize()], NodeId::NULL);
+            assert!(!idmap[i.as_usize()].is_null());
         }
     }
 

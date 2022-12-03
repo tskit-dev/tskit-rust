@@ -181,7 +181,7 @@ impl EdgeTable {
     /// * `None` otherwise.
     pub fn parent<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
         unsafe_tsk_column_access!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -197,14 +197,7 @@ impl EdgeTable {
     /// * `Some(child)` if `u` is valid.
     /// * `None` otherwise.
     pub fn child<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
-        unsafe_tsk_column_access!(
-            row.into().0,
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            child,
-            NodeId
-        )
+        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), child, NodeId)
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -215,7 +208,7 @@ impl EdgeTable {
     /// * `None` otherwise.
     pub fn left<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
         unsafe_tsk_column_access!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -231,13 +224,7 @@ impl EdgeTable {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn right<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(
-            row.into().0,
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            right
-        )
+        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), right)
     }
 
     /// Retrieve decoded metadata for a `row`.
@@ -261,7 +248,7 @@ impl EdgeTable {
         row: EdgeId,
     ) -> Option<Result<T, TskitError>> {
         let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -287,7 +274,7 @@ impl EdgeTable {
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
     pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<EdgeTableRow> {
-        table_row_access!(r.into().0, self, make_edge_table_row)
+        table_row_access!(r.into().into(), self, make_edge_table_row)
     }
 
     /// Return a view of row `r` of the table.

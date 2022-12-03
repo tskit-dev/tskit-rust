@@ -297,7 +297,7 @@ impl TreeInterface {
     fn left_sample<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.num_nodes, ptr, left_sample, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.num_nodes, ptr, left_sample, NodeId)
     }
 
     // error if we are not tracking samples,
@@ -305,7 +305,7 @@ impl TreeInterface {
     fn right_sample<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.num_nodes, ptr, right_sample, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.num_nodes, ptr, right_sample, NodeId)
     }
 
     /// Return the `[left, right)` coordinates of the tree.
@@ -330,7 +330,7 @@ impl TreeInterface {
     pub fn parent<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, parent, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.array_len, ptr, parent, NodeId)
     }
 
     /// Get the left child of node `u`.
@@ -339,7 +339,7 @@ impl TreeInterface {
     pub fn left_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, left_child, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.array_len, ptr, left_child, NodeId)
     }
 
     /// Get the right child of node `u`.
@@ -348,7 +348,7 @@ impl TreeInterface {
     pub fn right_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, right_child, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.array_len, ptr, right_child, NodeId)
     }
 
     /// Get the left sib of node `u`.
@@ -357,7 +357,7 @@ impl TreeInterface {
     pub fn left_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, left_sib, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.array_len, ptr, left_sib, NodeId)
     }
 
     /// Get the right sib of node `u`.
@@ -366,7 +366,7 @@ impl TreeInterface {
     pub fn right_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         // SAFETY: internal pointer cannot be NULL
         let ptr = unsafe { *self.as_ptr() };
-        unsafe_tsk_column_access!(u.into().0, 0, self.array_len, ptr, right_sib, NodeId)
+        unsafe_tsk_column_access!(u.into(), 0, self.array_len, ptr, right_sib, NodeId)
     }
 
     /// Obtain the list of samples for the current tree/tree sequence
@@ -520,11 +520,12 @@ impl TreeInterface {
         &self,
         u: N,
     ) -> Result<SizeType, TskitError> {
-        let mut n = SizeType(tsk_size_t::MAX);
-        let np: *mut tsk_size_t = &mut n.0;
-        let code =
-            unsafe { ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into().0, np) };
-        handle_tsk_return_value!(code, n)
+        let mut n = tsk_size_t::MAX;
+        let np: *mut tsk_size_t = &mut n;
+        let code = unsafe {
+            ll_bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into().into(), np)
+        };
+        handle_tsk_return_value!(code, n.into())
     }
 
     /// Calculate the average Kendall-Colijn (`K-C`) distance between
@@ -842,18 +843,19 @@ impl NodeIterator for SamplesIterator<'_> {
         self.current_node = match self.next_sample_index {
             NodeId::NULL => None,
             r => {
+                let raw = crate::tsk_id_t::from(r);
                 if r == self.last_sample_index {
                     let cr =
-                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
+                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(raw as isize) }.into());
                     self.next_sample_index = NodeId::NULL;
                     cr
                 } else {
                     assert!(r >= 0);
                     let cr =
-                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(r.0 as isize) }.into());
+                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(raw as isize) }.into());
                     //self.next_sample_index = self.next_sample[r];
                     self.next_sample_index =
-                        unsafe { *(*self.tree.as_ptr()).next_sample.offset(r.0 as isize) }.into();
+                        unsafe { *(*self.tree.as_ptr()).next_sample.offset(raw as isize) }.into();
                     cr
                 }
             }
