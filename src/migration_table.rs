@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
@@ -167,22 +165,19 @@ impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 pub struct MigrationTable {
-    table_: NonNull<ll_bindings::tsk_migration_table_t>,
+    table_: sys::LLMigrationTableRef,
 }
 
 impl MigrationTable {
     pub(crate) fn new_from_table(
         migrations: *mut ll_bindings::tsk_migration_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(migrations).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_migration_table_t".to_string())
-        })?;
-        Ok(MigrationTable { table_: n })
+        let table_ = sys::LLMigrationTableRef::new_from_table(migrations)?;
+        Ok(MigrationTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_migration_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     /// Return the number of rows

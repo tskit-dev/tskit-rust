@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
@@ -148,22 +146,19 @@ impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 pub struct NodeTable {
-    table_: NonNull<ll_bindings::tsk_node_table_t>,
+    table_: sys::LLNodeTableRef,
 }
 
 impl NodeTable {
     pub(crate) fn new_from_table(
         nodes: *mut ll_bindings::tsk_node_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(nodes).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_node_table_t".to_string())
-        })?;
-        Ok(NodeTable { table_: n })
+        let table_ = sys::LLNodeTableRef::new_from_table(nodes)?;
+        Ok(NodeTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_node_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     /// Return the number of rows

@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
@@ -148,22 +146,19 @@ impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct EdgeTable {
-    pub(crate) table_: NonNull<ll_bindings::tsk_edge_table_t>,
+    pub(crate) table_: sys::LLEdgeTableRef,
 }
 
 impl EdgeTable {
     pub(crate) fn new_from_table(
         edges: *mut ll_bindings::tsk_edge_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(edges).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_edge_table_t".to_string())
-        })?;
-        Ok(EdgeTable { table_: n })
+        let table_ = sys::LLEdgeTableRef::new_from_table(edges)?;
+        Ok(EdgeTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_edge_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     /// Return the number of rows

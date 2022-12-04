@@ -1,4 +1,51 @@
-use crate::bindings;
+use crate::{bindings, TskitError};
+use bindings::tsk_edge_table_t;
+use bindings::tsk_individual_table_t;
+use bindings::tsk_migration_table_t;
+use bindings::tsk_mutation_table_t;
+use bindings::tsk_node_table_t;
+use bindings::tsk_population_table_t;
+use bindings::tsk_site_table_t;
+use std::ptr::NonNull;
+
+#[cfg(feature = "provenance")]
+use bindings::tsk_provenance_table_t;
+
+macro_rules! basic_lltableref_impl {
+    ($lltable: ident, $tsktable: ident) => {
+        #[repr(transparent)]
+        #[derive(Debug)]
+        pub struct $lltable(NonNull<bindings::$tsktable>);
+
+        impl $lltable {
+            pub fn new_from_table(table: *mut $tsktable) -> Result<Self, TskitError> {
+                let internal = NonNull::new(table).ok_or_else(|| {
+                    let msg = format!("null pointer to {}", stringify!($tsktable));
+                    TskitError::LibraryError(msg)
+                })?;
+                Ok(Self(internal))
+            }
+
+            pub fn as_ref(&self) -> &$tsktable {
+                // SAFETY: we cannot get this far w/o
+                // going through new_from_table and that
+                // fn protects us from null ptrs
+                unsafe { self.0.as_ref() }
+            }
+        }
+    };
+}
+
+basic_lltableref_impl!(LLEdgeTableRef, tsk_edge_table_t);
+basic_lltableref_impl!(LLNodeTableRef, tsk_node_table_t);
+basic_lltableref_impl!(LLMutationTableRef, tsk_mutation_table_t);
+basic_lltableref_impl!(LLSiteTableRef, tsk_site_table_t);
+basic_lltableref_impl!(LLMigrationTableRef, tsk_migration_table_t);
+basic_lltableref_impl!(LLPopulationTableRef, tsk_population_table_t);
+basic_lltableref_impl!(LLIndividualTableRef, tsk_individual_table_t);
+
+#[cfg(feature = "provenance")]
+basic_lltableref_impl!(LLProvenanceTableRef, tsk_provenance_table_t);
 
 fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_size_t>, T: Copy>(
     row: R,

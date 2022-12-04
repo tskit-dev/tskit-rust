@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
@@ -164,22 +162,19 @@ impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 pub struct MutationTable {
-    table_: NonNull<ll_bindings::tsk_mutation_table_t>,
+    table_: sys::LLMutationTableRef,
 }
 
 impl MutationTable {
     pub(crate) fn new_from_table(
         mutations: *mut ll_bindings::tsk_mutation_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(mutations).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_mutation_table_t".to_string())
-        })?;
-        Ok(MutationTable { table_: n })
+        let table_ = sys::LLMutationTableRef::new_from_table(mutations)?;
+        Ok(MutationTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_mutation_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     /// Return the number of rows.

@@ -1,7 +1,6 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::tsk_id_t;
 use crate::PopulationId;
 use crate::SizeType;
@@ -116,22 +115,19 @@ impl<'a> streaming_iterator::StreamingIterator for PopulationTableRowView<'a> {
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct PopulationTable {
-    table_: NonNull<ll_bindings::tsk_population_table_t>,
+    table_: sys::LLPopulationTableRef,
 }
 
 impl PopulationTable {
     pub(crate) fn new_from_table(
         populations: *mut ll_bindings::tsk_population_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(populations).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_population_table_t".to_string())
-        })?;
-        Ok(PopulationTable { table_: n })
+        let table_ = sys::LLPopulationTableRef::new_from_table(populations)?;
+        Ok(PopulationTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_population_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     raw_metadata_getter_for_tables!(PopulationId);

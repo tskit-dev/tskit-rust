@@ -109,7 +109,7 @@ impl TableCollection {
         // AHA?
         assert!(std::ptr::eq(
             &mbox.as_ref().edges as *const ll_bindings::tsk_edge_table_t,
-            views.edges().table_.as_ptr() as *const ll_bindings::tsk_edge_table_t
+            views.edges().table_.as_ref() as *const ll_bindings::tsk_edge_table_t
         ));
         let mut tables = Self {
             inner: mbox,
