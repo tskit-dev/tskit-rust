@@ -26,7 +26,7 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
 
     match index {
         i if i < table.num_rows() => {
-            let metadata = table.raw_metadata(pos.into()).map(|m| m.to_vec());
+            let metadata = table.raw_metadata(pos).map(|m| m.to_vec());
             Some(PopulationTableRow {
                 id: pos.into(),
                 metadata,

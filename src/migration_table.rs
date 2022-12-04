@@ -45,7 +45,7 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
         source: table.source(pos)?,
         dest: table.dest(pos)?,
         time: table.time(pos)?,
-        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 

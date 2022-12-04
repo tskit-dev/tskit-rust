@@ -965,7 +965,7 @@ macro_rules! build_owned_table_type {
 
 macro_rules! raw_metadata_getter_for_tables {
     ($idtype: ty) => {
-        fn raw_metadata(&self, row: $idtype) -> Option<&[u8]> {
+        fn raw_metadata<I: Into<$idtype>>(&self, row: I) -> Option<&[u8]> {
             $crate::sys::tsk_ragged_column_access::<'_, u8, $idtype, _, _>(
                 row.into(),
                 self.as_ref().metadata,
