@@ -96,7 +96,7 @@ impl TableCollection {
         let sequence_length = sequence_length.into();
         if sequence_length <= 0. {
             return Err(TskitError::ValueError {
-                got: sequence_length.0.to_string(),
+                got: f64::from(sequence_length).to_string(),
                 expected: "sequence_length >= 0.0".to_string(),
             });
         }
@@ -117,7 +117,7 @@ impl TableCollection {
             views,
         };
         unsafe {
-            (*tables.as_mut_ptr()).sequence_length = sequence_length.0;
+            (*tables.as_mut_ptr()).sequence_length = f64::from(sequence_length);
         }
         Ok(tables)
     }

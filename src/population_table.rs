@@ -163,7 +163,7 @@ impl PopulationTable {
         row: PopulationId,
     ) -> Option<Result<T, TskitError>> {
         let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 
@@ -188,7 +188,7 @@ impl PopulationTable {
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
     pub fn row<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<PopulationTableRow> {
-        let ri = r.into().0;
+        let ri = r.into().into();
         table_row_access!(ri, self, make_population_table_row)
     }
 
@@ -203,7 +203,7 @@ impl PopulationTable {
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
     pub fn row_view<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<PopulationTableRowView> {
-        match SizeType::try_from(r.into().0).ok() {
+        match SizeType::try_from(r.into()).ok() {
             Some(row) if row < self.num_rows() => {
                 let view = PopulationTableRowView {
                     table: self,

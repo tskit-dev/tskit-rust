@@ -196,14 +196,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn site<M: Into<MutationId> + Copy>(&self, row: M) -> Option<SiteId> {
-        unsafe_tsk_column_access!(
-            row.into().0,
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            site,
-            SiteId
-        )
+        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), site, SiteId)
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -213,14 +206,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn node<M: Into<MutationId> + Copy>(&self, row: M) -> Option<NodeId> {
-        unsafe_tsk_column_access!(
-            row.into().0,
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            node,
-            NodeId
-        )
+        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), node, NodeId)
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -231,7 +217,7 @@ impl MutationTable {
     /// if ``row`` is out of range.
     pub fn parent<M: Into<MutationId> + Copy>(&self, row: M) -> Option<MutationId> {
         unsafe_tsk_column_access!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -247,7 +233,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn time<M: Into<MutationId> + Copy>(&self, row: M) -> Option<Time> {
-        unsafe_tsk_column_access!(row.into().0, 0, self.num_rows(), self.as_ref(), time, Time)
+        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), time, Time)
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.
@@ -265,7 +251,7 @@ impl MutationTable {
             self,
             self.as_ref().derived_state,
             self.as_ref().derived_state_offset,
-            row.into().0,
+            row.into().into(),
             self.as_ref().num_rows,
             self.as_ref().derived_state_length,
         )
@@ -292,7 +278,7 @@ impl MutationTable {
         row: MutationId,
     ) -> Option<Result<T, TskitError>> {
         let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -317,7 +303,7 @@ impl MutationTable {
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
     pub fn row<M: Into<MutationId> + Copy>(&self, r: M) -> Option<MutationTableRow> {
-        let ri = r.into().0;
+        let ri = r.into().into();
         table_row_access!(ri, self, make_mutation_table_row)
     }
 

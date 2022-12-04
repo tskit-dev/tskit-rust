@@ -167,7 +167,7 @@ impl SiteTable {
     /// * `None` otherwise.
     pub fn position<S: Into<SiteId> + Copy>(&self, row: S) -> Option<Position> {
         unsafe_tsk_column_access!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -187,7 +187,7 @@ impl SiteTable {
             self,
             self.as_ref().ancestral_state,
             self.as_ref().ancestral_state_offset,
-            row.into().0,
+            row.into().into(),
             self.as_ref().num_rows,
             self.as_ref().ancestral_state_length,
         )
@@ -214,7 +214,7 @@ impl SiteTable {
         row: SiteId,
     ) -> Option<Result<T, TskitError>> {
         let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.0)?;
+        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 
@@ -239,7 +239,7 @@ impl SiteTable {
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
     pub fn row<S: Into<SiteId> + Copy>(&self, r: S) -> Option<SiteTableRow> {
-        let ri = r.into().0;
+        let ri = r.into().into();
         table_row_access!(ri, self, make_site_table_row)
     }
 

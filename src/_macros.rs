@@ -29,7 +29,8 @@ macro_rules! panic_on_tskit_error {
 
 macro_rules! unsafe_tsk_column_access {
     ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident) => {{
-        if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
+        let x = $crate::tsk_id_t::from($i);
+        if x < $lo || (x as $crate::tsk_size_t) >= $hi {
             None
         } else {
             debug_assert!(!($owner).$array.is_null());
@@ -37,14 +38,15 @@ macro_rules! unsafe_tsk_column_access {
                 // SAFETY: array is not null
                 // and we did our best effort
                 // on bounds checking
-                Some(unsafe { *$owner.$array.offset($i as isize) })
+                Some(unsafe { *$owner.$array.offset(x as isize) })
             } else {
                 None
             }
         }
     }};
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $output_id_type: expr) => {{
-        if $i < $lo || ($i as $crate::tsk_size_t) >= $hi {
+    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $output_id_type: ty) => {{
+        let x = $crate::tsk_id_t::from($i);
+        if x < $lo || (x as $crate::tsk_size_t) >= $hi {
             None
         } else {
             debug_assert!(!($owner).$array.is_null());
@@ -52,7 +54,7 @@ macro_rules! unsafe_tsk_column_access {
                 // SAFETY: array is not null
                 // and we did our best effort
                 // on bounds checking
-                unsafe { Some($output_id_type(*($owner.$array.offset($i as isize)))) }
+                unsafe { Some(<$output_id_type>::from(*($owner.$array.offset(x as isize)))) }
             } else {
                 None
             }
@@ -78,10 +80,11 @@ macro_rules! unsafe_tsk_ragged_column_access {
             if $owner.$array.is_null() {
                 return None;
             }
+            let offset = i.as_usize() as isize;
             // SAFETY: we have checked bounds and ensured not null
-            let start = unsafe { *$owner.$offset_array.offset($i as isize) };
+            let start = unsafe { *$owner.$offset_array.offset(offset) };
             let stop = if i < $hi {
-                unsafe { *$owner.$offset_array.offset(($i + 1) as isize) }
+                unsafe { *$owner.$offset_array.offset((offset + 1) as isize) }
             } else {
                 $owner.$offset_array_len as tsk_size_t
             };
@@ -145,9 +148,10 @@ macro_rules! unsafe_tsk_ragged_char_column_access_to_slice_u8 {
         } else {
             assert!(!$owner.$array.is_null());
             assert!(!$owner.$offset_array.is_null());
-            let start = unsafe { *$owner.$offset_array.offset($i as isize) };
+            let offset = i.as_usize() as isize;
+            let start = unsafe { *$owner.$offset_array.offset(offset) };
             let stop = if i < $hi {
-                unsafe { *$owner.$offset_array.offset(($i + 1) as isize) }
+                unsafe { *$owner.$offset_array.offset((offset + 1) as isize) }
             } else {
                 $owner.$offset_array_len as tsk_size_t
             };

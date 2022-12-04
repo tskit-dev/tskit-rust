@@ -186,7 +186,7 @@ impl ProvenanceTable {
     /// ```
     pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
         let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -222,7 +222,7 @@ impl ProvenanceTable {
     /// # }
     pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
         let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
-            row.into().0,
+            row.into(),
             0,
             self.num_rows(),
             self.as_ref(),
@@ -243,7 +243,7 @@ impl ProvenanceTable {
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
     pub fn row<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRow> {
-        make_provenance_row(self, row.into().0)
+        make_provenance_row(self, row.into().into())
     }
 
     /// Obtain a [`ProvenanceTableRowView`] for row `row`.
@@ -253,8 +253,8 @@ impl ProvenanceTable {
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
     pub fn row_view<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRowView> {
-        match u64::try_from(row.into().0).ok() {
-            Some(x) if x < self.num_rows() => {
+        match row.into().to_usize() {
+            Some(x) if (x as u64) < self.num_rows() => {
                 let view = ProvenanceTableRowView {
                     table: self,
                     id: row.into(),
@@ -327,12 +327,11 @@ mod test_provenances {
 
     #[test]
     fn test_add_rows() {
-        use crate::provenance::*;
         let records = vec!["banana".to_string(), "split".to_string()];
         let mut tables = crate::TableCollection::new(10.).unwrap();
         for (i, r) in records.iter().enumerate() {
             let row_id = tables.add_provenance(r).unwrap();
-            assert!(row_id == ProvenanceId(i as crate::tsk_id_t));
+            assert!(row_id == i as crate::tsk_id_t);
             assert_eq!(tables.provenances().record(row_id).unwrap(), *r);
         }
         assert_eq!(
