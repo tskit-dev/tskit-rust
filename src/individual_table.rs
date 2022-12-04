@@ -6,7 +6,7 @@ use crate::sys;
 use crate::IndividualFlags;
 use crate::IndividualId;
 use crate::Location;
-use crate::{tsk_id_t, tsk_size_t, TskitError};
+use crate::{tsk_id_t, TskitError};
 use ll_bindings::{tsk_individual_table_free, tsk_individual_table_init};
 
 /// Row of a [`IndividualTable`]
@@ -109,13 +109,12 @@ pub struct IndividualTable {
 }
 
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
-    let table_ref = table.as_ref();
     Some(IndividualTableRow {
         id: pos.into(),
         flags: table.flags(pos)?,
         location: table.location(pos).map(|s| s.to_vec()),
         parents: table.parents(pos).map(|s| s.to_vec()),
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
     })
 }
 
@@ -186,15 +185,12 @@ impl IndividualTable {
     /// * `Some(location)` if `row` is valid.
     /// * `None` otherwise.
     pub fn location<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[Location]> {
-        unsafe_tsk_ragged_column_access!(
+        sys::tsk_ragged_column_access(
             row.into(),
-            0,
+            self.as_ref().location,
             self.num_rows(),
-            self.as_ref(),
-            location,
-            location_offset,
-            location_length,
-            Location
+            self.as_ref().location_offset,
+            self.as_ref().location_length,
         )
     }
 
@@ -205,15 +201,12 @@ impl IndividualTable {
     /// * `Some(parents)` if `row` is valid.
     /// * `None` otherwise.
     pub fn parents<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[IndividualId]> {
-        unsafe_tsk_ragged_column_access!(
+        sys::tsk_ragged_column_access(
             row.into(),
-            0,
+            self.as_ref().parents,
             self.num_rows(),
-            self.as_ref(),
-            parents,
-            parents_offset,
-            parents_length,
-            IndividualId
+            self.as_ref().parents_offset,
+            self.as_ref().parents_length,
         )
     }
 
@@ -391,8 +384,7 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
         &self,
         row: IndividualId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 

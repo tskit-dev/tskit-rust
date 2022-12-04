@@ -29,13 +29,12 @@ impl PartialEq for SiteTableRow {
 }
 
 fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
-    let table_ref = table.as_ref();
     let ancestral_state = table.ancestral_state(pos).map(|s| s.to_vec());
     Some(SiteTableRow {
         id: pos.into(),
         position: table.position(pos)?,
         ancestral_state,
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
     })
 }
 
@@ -181,12 +180,11 @@ impl SiteTable {
     /// * `Some(ancestral state)` if `row` is valid.
     /// * `None` otherwise.
     pub fn ancestral_state<S: Into<SiteId>>(&self, row: S) -> Option<&[u8]> {
-        crate::metadata::char_column_to_slice(
-            self,
+        sys::tsk_ragged_column_access(
+            row.into(),
             self.as_ref().ancestral_state,
+            self.num_rows(),
             self.as_ref().ancestral_state_offset,
-            row.into().into(),
-            self.as_ref().num_rows,
             self.as_ref().ancestral_state_length,
         )
     }
@@ -211,8 +209,7 @@ impl SiteTable {
         &self,
         row: SiteId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 

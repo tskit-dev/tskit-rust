@@ -37,7 +37,6 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
     let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
     match index {
         i if i < table.num_rows() => {
-            let table_ref = table.as_ref();
             let derived_state = table.derived_state(pos).map(|s| s.to_vec());
             Some(MutationTableRow {
                 id: pos.into(),
@@ -46,7 +45,7 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
                 parent: table.parent(pos)?,
                 time: table.time(pos)?,
                 derived_state,
-                metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+                metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
             })
         }
         _ => None,
@@ -245,12 +244,11 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn derived_state<M: Into<MutationId>>(&self, row: M) -> Option<&[u8]> {
-        metadata::char_column_to_slice(
-            self,
+        sys::tsk_ragged_column_access(
+            row.into(),
             self.as_ref().derived_state,
+            self.num_rows(),
             self.as_ref().derived_state_offset,
-            row.into().into(),
-            self.as_ref().num_rows,
             self.as_ref().derived_state_length,
         )
     }
@@ -275,8 +273,7 @@ impl MutationTable {
         &self,
         row: MutationId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 

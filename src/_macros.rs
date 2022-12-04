@@ -27,127 +27,9 @@ macro_rules! panic_on_tskit_error {
     };
 }
 
-macro_rules! unsafe_tsk_ragged_column_access {
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident, $output_id_type: ty) => {{
-        let i = $crate::SizeType::try_from($i).ok()?;
-        if $i < $lo || i >= $hi {
-            None
-        } else if $owner.$offset_array_len == 0 {
-            None
-        } else {
-            debug_assert!(!$owner.$array.is_null());
-            if $owner.$array.is_null() {
-                return None;
-            }
-            let offset = i.as_usize() as isize;
-            // SAFETY: we have checked bounds and ensured not null
-            let start = unsafe { *$owner.$offset_array.offset(offset) };
-            let stop = if i < $hi {
-                unsafe { *$owner.$offset_array.offset((offset + 1) as isize) }
-            } else {
-                $owner.$offset_array_len as tsk_size_t
-            };
-            if start == stop {
-                None
-            } else {
-                Some(unsafe {
-                    std::slice::from_raw_parts(
-                        $owner.$array.offset(start as isize) as *const $output_id_type,
-                        stop as usize - start as usize,
-                    )
-                })
-            }
-        }
-    }};
-}
-
-// Allow this to be unused for default features
-// to pass clippy checks
-#[allow(unused_macros)]
-macro_rules! unsafe_tsk_ragged_char_column_access {
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident) => {{
-        let i = $crate::SizeType::try_from($i).ok()?;
-        if $i < $lo || i >= $hi {
-            None
-        } else if $owner.$offset_array_len == 0 {
-            None
-        } else {
-            assert!(!$owner.$array.is_null());
-            assert!(!$owner.$offset_array.is_null());
-            let start = unsafe { *$owner.$offset_array.offset($i as isize) };
-            let stop = if i < $hi {
-                unsafe { *$owner.$offset_array.offset(($i + 1) as isize) }
-            } else {
-                $owner.$offset_array_len as tsk_size_t
-            };
-            if start == stop {
-                None
-            } else {
-                let mut buffer = String::new();
-                for i in start..stop {
-                    buffer.push(unsafe { *$owner.$array.offset(i as isize) as u8 as char });
-                }
-                Some(buffer)
-            }
-        }
-    }};
-}
-
-#[cfg(feature = "provenance")]
-macro_rules! unsafe_tsk_ragged_char_column_access_to_slice_u8 {
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident) => {{
-        let i = match $crate::SizeType::try_from($i).ok() {
-            Some(j) => j,
-            None => $crate::SizeType::from(u64::MAX),
-        };
-        if $i < $lo || i >= $hi {
-            None
-        } else if $owner.$offset_array_len == 0 {
-            None
-        } else {
-            assert!(!$owner.$array.is_null());
-            assert!(!$owner.$offset_array.is_null());
-            let offset = i.as_usize() as isize;
-            let start = unsafe { *$owner.$offset_array.offset(offset) };
-            let stop = if i < $hi {
-                unsafe { *$owner.$offset_array.offset((offset + 1) as isize) }
-            } else {
-                $owner.$offset_array_len as tsk_size_t
-            };
-            if start == stop {
-                None
-            } else {
-                let ptr = unsafe { $owner.$array.offset(start as isize) as *const u8 };
-                let len = (stop - start) as usize;
-                let slice = unsafe { std::slice::from_raw_parts(ptr, len) };
-                Some(slice)
-            }
-        }
-    }};
-}
-
-macro_rules! metadata_to_vector {
-    ($outer: ident, $table: expr, $row: expr) => {
-        $crate::metadata::char_column_to_slice(
-            $outer,
-            $table.metadata,
-            $table.metadata_offset,
-            $row,
-            $table.num_rows,
-            $table.metadata_length,
-        )
-    };
-}
-
 macro_rules! decode_metadata_row {
     ($T: ty, $buffer: expr) => {
         <$T as $crate::metadata::MetadataRoundtrip>::decode($buffer)
-    };
-}
-
-macro_rules! table_row_decode_metadata {
-    ($owner: ident, $table: ident, $pos: ident) => {
-        metadata_to_vector!($owner, $table, $pos)
     };
 }
 
@@ -1093,14 +975,13 @@ macro_rules! build_owned_table_type {
 }
 
 macro_rules! raw_metadata_getter_for_tables {
-    ($idtype: ident) => {
+    ($idtype: ty) => {
         fn raw_metadata(&self, row: $idtype) -> Option<&[u8]> {
-            $crate::metadata::char_column_to_slice(
-                self,
-                self.as_ref().metadata,
-                self.as_ref().metadata_offset,
+            $crate::sys::tsk_ragged_column_access::<'_, u8, $idtype, _, _>(
                 row.into(),
-                self.num_rows().into(),
+                self.as_ref().metadata,
+                self.num_rows(),
+                self.as_ref().metadata_offset,
                 self.as_ref().metadata_length,
             )
         }

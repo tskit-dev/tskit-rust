@@ -31,14 +31,13 @@ impl PartialEq for EdgeTableRow {
 }
 
 fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
-    let table_ref = table.as_ref();
     Some(EdgeTableRow {
         id: pos.into(),
         left: table.left(pos)?,
         right: table.right(pos)?,
         parent: table.parent(pos)?,
         child: table.child(pos)?,
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
     })
 }
 
@@ -238,8 +237,7 @@ impl EdgeTable {
         &self,
         row: EdgeId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
