@@ -2,6 +2,7 @@ use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::Position;
 use crate::{tsk_id_t, TskitError};
 use crate::{EdgeId, NodeId};
@@ -180,14 +181,7 @@ impl EdgeTable {
     /// * `Some(parent)` if `u` is valid.
     /// * `None` otherwise.
     pub fn parent<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
-        unsafe_tsk_column_access!(
-            row.into(),
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            parent,
-            NodeId
-        )
+        sys::tsk_column_access::<NodeId, _, _, _>(row.into(), self.as_ref().parent, self.num_rows())
     }
 
     /// Return the ``child`` value from row ``row`` of the table.
@@ -197,7 +191,7 @@ impl EdgeTable {
     /// * `Some(child)` if `u` is valid.
     /// * `None` otherwise.
     pub fn child<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), child, NodeId)
+        sys::tsk_column_access::<NodeId, _, _, _>(row.into(), self.as_ref().child, self.num_rows())
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -207,14 +201,7 @@ impl EdgeTable {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn left<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
-        unsafe_tsk_column_access!(
-            row.into(),
-            0,
-            self.num_rows(),
-            self.as_ref(),
-            left,
-            Position
-        )
+        sys::tsk_column_access::<Position, _, _, _>(row.into(), self.as_ref().left, self.num_rows())
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
@@ -224,7 +211,11 @@ impl EdgeTable {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn right<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), right)
+        sys::tsk_column_access::<Position, _, _, _>(
+            row.into(),
+            self.as_ref().right,
+            self.num_rows(),
+        )
     }
 
     /// Retrieve decoded metadata for a `row`.

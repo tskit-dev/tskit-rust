@@ -2,6 +2,7 @@ use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::IndividualFlags;
 use crate::IndividualId;
 use crate::Location;
@@ -171,7 +172,11 @@ impl IndividualTable {
     /// * `Some(flags)` if `row` is valid.
     /// * `None` otherwise.
     pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<IndividualFlags> {
-        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), flags)
+        sys::tsk_column_access::<IndividualFlags, _, _, _>(
+            row.into(),
+            self.as_ref().flags,
+            self.num_rows(),
+        )
     }
 
     /// Return the locations for a given row.

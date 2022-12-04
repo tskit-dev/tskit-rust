@@ -2,6 +2,7 @@ use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
@@ -196,7 +197,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn site<M: Into<MutationId> + Copy>(&self, row: M) -> Option<SiteId> {
-        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), site, SiteId)
+        sys::tsk_column_access::<SiteId, _, _, _>(row.into(), self.as_ref().site, self.num_rows())
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -206,7 +207,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn node<M: Into<MutationId> + Copy>(&self, row: M) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), node, NodeId)
+        sys::tsk_column_access::<NodeId, _, _, _>(row.into(), self.as_ref().node, self.num_rows())
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -216,13 +217,10 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn parent<M: Into<MutationId> + Copy>(&self, row: M) -> Option<MutationId> {
-        unsafe_tsk_column_access!(
+        sys::tsk_column_access::<MutationId, _, _, _>(
             row.into(),
-            0,
+            self.as_ref().parent,
             self.num_rows(),
-            self.as_ref(),
-            parent,
-            MutationId
         )
     }
 
@@ -233,7 +231,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn time<M: Into<MutationId> + Copy>(&self, row: M) -> Option<Time> {
-        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), time, Time)
+        sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.
