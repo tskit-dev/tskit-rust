@@ -27,47 +27,6 @@ macro_rules! panic_on_tskit_error {
     };
 }
 
-macro_rules! unsafe_tsk_column_access {
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident) => {{
-        let x = $crate::tsk_id_t::from($i);
-        if x < $lo || (x as $crate::tsk_size_t) >= $hi {
-            None
-        } else {
-            debug_assert!(!($owner).$array.is_null());
-            if !$owner.$array.is_null() {
-                // SAFETY: array is not null
-                // and we did our best effort
-                // on bounds checking
-                Some(unsafe { *$owner.$array.offset(x as isize) })
-            } else {
-                None
-            }
-        }
-    }};
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $output_id_type: ty) => {{
-        let x = $crate::tsk_id_t::from($i);
-        if x < $lo || (x as $crate::tsk_size_t) >= $hi {
-            None
-        } else {
-            debug_assert!(!($owner).$array.is_null());
-            if !$owner.$array.is_null() {
-                // SAFETY: array is not null
-                // and we did our best effort
-                // on bounds checking
-                unsafe { Some(<$output_id_type>::from(*($owner.$array.offset(x as isize)))) }
-            } else {
-                None
-            }
-        }
-    }};
-}
-
-macro_rules! unsafe_tsk_column_access_and_map_into {
-    ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident) => {{
-        unsafe_tsk_column_access!($i, $lo, $hi, $owner, $array).map(|v| v.into())
-    }};
-}
-
 macro_rules! unsafe_tsk_ragged_column_access {
     ($i: expr, $lo: expr, $hi: expr, $owner: expr, $array: ident, $offset_array: ident, $offset_array_len: ident, $output_id_type: ty) => {{
         let i = $crate::SizeType::try_from($i).ok()?;

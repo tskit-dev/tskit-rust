@@ -2,6 +2,7 @@ use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::Position;
 use crate::SizeType;
 use crate::Time;
@@ -199,7 +200,7 @@ impl MigrationTable {
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
     pub fn left<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), left)
+        sys::tsk_column_access::<Position, _, _, _>(row.into(), self.as_ref().left, self.num_rows())
     }
 
     /// Return the right coordinate for a given row.
@@ -209,7 +210,11 @@ impl MigrationTable {
     /// * `Some(positions)` if `row` is valid.
     /// * `None` otherwise.
     pub fn right<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Position> {
-        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), right)
+        sys::tsk_column_access::<Position, _, _, _>(
+            row.into(),
+            self.as_ref().right,
+            self.num_rows(),
+        )
     }
 
     /// Return the node for a given row.
@@ -219,7 +224,7 @@ impl MigrationTable {
     /// * `Some(node)` if `row` is valid.
     /// * `None` otherwise.
     pub fn node<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<NodeId> {
-        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), node, NodeId)
+        sys::tsk_column_access::<NodeId, _, _, _>(row.into(), self.as_ref().node, self.num_rows())
     }
 
     /// Return the source population for a given row.
@@ -229,13 +234,10 @@ impl MigrationTable {
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
     pub fn source<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<PopulationId> {
-        unsafe_tsk_column_access!(
+        sys::tsk_column_access::<PopulationId, _, _, _>(
             row.into(),
-            0,
+            self.as_ref().source,
             self.num_rows(),
-            self.as_ref(),
-            source,
-            PopulationId
         )
     }
 
@@ -246,13 +248,10 @@ impl MigrationTable {
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
     pub fn dest<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<PopulationId> {
-        unsafe_tsk_column_access!(
+        sys::tsk_column_access::<PopulationId, _, _, _>(
             row.into(),
-            0,
+            self.as_ref().dest,
             self.num_rows(),
-            self.as_ref(),
-            dest,
-            PopulationId
         )
     }
 
@@ -263,7 +262,7 @@ impl MigrationTable {
     /// * `Some(time)` if `row` is valid.
     /// * `None` otherwise.
     pub fn time<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Time> {
-        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), time)
+        sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
     }
 
     /// Retrieve decoded metadata for a `row`.

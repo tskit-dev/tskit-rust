@@ -2,6 +2,7 @@ use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::NodeFlags;
 use crate::SizeType;
 use crate::Time;
@@ -195,7 +196,7 @@ impl NodeTable {
     /// # }
     /// ```
     pub fn time<N: Into<NodeId> + Copy>(&self, row: N) -> Option<Time> {
-        unsafe_tsk_column_access!(row.into(), 0, self.num_rows(), self.as_ref(), time, Time)
+        sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -220,7 +221,11 @@ impl NodeTable {
     /// # }
     /// ```
     pub fn flags<N: Into<NodeId> + Copy>(&self, row: N) -> Option<NodeFlags> {
-        unsafe_tsk_column_access_and_map_into!(row.into(), 0, self.num_rows(), self.as_ref(), flags)
+        sys::tsk_column_access::<NodeFlags, _, _, _>(
+            row.into(),
+            self.as_ref().flags,
+            self.num_rows(),
+        )
     }
 
     #[deprecated(since = "0.12.0", note = "use flags_slice_mut instead")]
@@ -265,13 +270,10 @@ impl NodeTable {
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
     pub fn population<N: Into<NodeId> + Copy>(&self, row: N) -> Option<PopulationId> {
-        unsafe_tsk_column_access!(
+        sys::tsk_column_access::<PopulationId, _, _, _>(
             row.into(),
-            0,
+            self.as_ref().population,
             self.num_rows(),
-            self.as_ref(),
-            population,
-            PopulationId
         )
     }
 
@@ -311,13 +313,10 @@ impl NodeTable {
     /// * `Some(individual)` if `row` is valid.
     /// * `None` otherwise.
     pub fn individual<N: Into<NodeId> + Copy>(&self, row: N) -> Option<IndividualId> {
-        unsafe_tsk_column_access!(
+        sys::tsk_column_access::<IndividualId, _, _, _>(
             row.into(),
-            0,
+            self.as_ref().individual,
             self.num_rows(),
-            self.as_ref(),
-            individual,
-            IndividualId
         )
     }
 

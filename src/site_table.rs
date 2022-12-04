@@ -2,6 +2,7 @@ use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::sys;
 use crate::tsk_id_t;
 use crate::Position;
 use crate::SiteId;
@@ -166,13 +167,10 @@ impl SiteTable {
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
     pub fn position<S: Into<SiteId> + Copy>(&self, row: S) -> Option<Position> {
-        unsafe_tsk_column_access!(
+        sys::tsk_column_access::<Position, _, _, _>(
             row.into(),
-            0,
+            self.as_ref().position,
             self.num_rows(),
-            self.as_ref(),
-            position,
-            Position
         )
     }
 
