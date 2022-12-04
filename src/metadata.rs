@@ -163,7 +163,6 @@
 //! * We have not yet tested importing metadata encoded using `rust`
 //!   into `Python` via the `tskit` `Python API`.
 
-use crate::bindings::{tsk_id_t, tsk_size_t};
 use crate::SizeType;
 use thiserror::Error;
 
@@ -248,59 +247,6 @@ pub enum MetadataError {
         #[from]
         value: Box<dyn std::error::Error + Send + Sync>,
     },
-}
-
-pub(crate) fn char_column_to_slice<T: Sized>(
-    _lifetime: &T,
-    column: *const libc::c_char,
-    column_offset: *const tsk_size_t,
-    row: tsk_id_t,
-    num_rows: tsk_size_t,
-    column_length: tsk_size_t,
-) -> Option<&[u8]> {
-    let row = match tsk_size_t::try_from(row).ok() {
-        Some(r) if r < num_rows => r,
-        _ => return None,
-    };
-    if column_length == 0 {
-        return None;
-    }
-    let row_isize = match isize::try_from(row).ok() {
-        Some(x) => x,
-        None => return None,
-    };
-    debug_assert!(!column.is_null());
-    debug_assert!(!column_offset.is_null());
-    if column.is_null() {
-        return None;
-    }
-    if column_offset.is_null() {
-        return None;
-    }
-    // SAFETY: not null and best effort bounds check
-    let start = unsafe { *column_offset.offset(row_isize) };
-    let stop = if (row as tsk_size_t) < num_rows {
-        unsafe { *column_offset.offset(row_isize + 1) }
-    } else {
-        column_length
-    };
-    if start >= stop {
-        return None;
-    }
-    if column_length == 0 {
-        return None;
-    }
-    let istart = match isize::try_from(start).ok() {
-        Some(v) => v,
-        None => return None,
-    };
-    let ustop = match usize::try_from(stop).ok() {
-        Some(v) => v,
-        None => return None,
-    };
-    Some(unsafe {
-        std::slice::from_raw_parts(column.offset(istart) as *const u8, ustop - istart as usize)
-    })
 }
 
 #[cfg(test)]

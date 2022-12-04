@@ -37,7 +37,6 @@ impl PartialEq for MigrationTableRow {
 }
 
 fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
-    let table_ref = table.as_ref();
     Some(MigrationTableRow {
         id: pos.into(),
         left: table.left(pos)?,
@@ -46,7 +45,7 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
         source: table.source(pos)?,
         dest: table.dest(pos)?,
         time: table.time(pos)?,
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
     })
 }
 
@@ -285,8 +284,7 @@ impl MigrationTable {
         &self,
         row: MigrationId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 

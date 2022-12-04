@@ -33,14 +33,13 @@ impl PartialEq for NodeTableRow {
 }
 
 fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow> {
-    let table_ref = table.as_ref();
     Some(NodeTableRow {
         id: pos.into(),
         time: table.time(pos)?,
         flags: table.flags(pos)?,
         population: table.population(pos)?,
         individual: table.individual(pos)?,
-        metadata: table_row_decode_metadata!(table, table_ref, pos).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
     })
 }
 
@@ -340,8 +339,7 @@ impl NodeTable {
         &self,
         row: NodeId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 

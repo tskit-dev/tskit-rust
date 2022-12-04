@@ -22,12 +22,11 @@ impl PartialEq for PopulationTableRow {
 }
 
 fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
-    let table_ref = table.as_ref();
     let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
 
     match index {
         i if i < table.num_rows() => {
-            let metadata = table_row_decode_metadata!(table, table_ref, pos).map(|s| s.to_vec());
+            let metadata = table.raw_metadata(pos.into()).map(|m| m.to_vec());
             Some(PopulationTableRow {
                 id: pos.into(),
                 metadata,
@@ -162,8 +161,7 @@ impl PopulationTable {
         &self,
         row: PopulationId,
     ) -> Option<Result<T, TskitError>> {
-        let table_ref = self.as_ref();
-        let buffer = metadata_to_vector!(self, table_ref, row.into())?;
+        let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 

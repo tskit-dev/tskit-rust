@@ -13,6 +13,7 @@
 use std::ptr::NonNull;
 
 use crate::bindings as ll_bindings;
+use crate::sys;
 use crate::SizeType;
 use crate::{tsk_id_t, tsk_size_t, ProvenanceId};
 use ll_bindings::{tsk_provenance_table_free, tsk_provenance_table_init};
@@ -185,14 +186,12 @@ impl ProvenanceTable {
     /// # }
     /// ```
     pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
-        let timestamp_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
+        let timestamp_slice = sys::tsk_ragged_column_access(
             row.into(),
-            0,
+            self.as_ref().timestamp,
             self.num_rows(),
-            self.as_ref(),
-            timestamp,
-            timestamp_offset,
-            timestamp_length
+            self.as_ref().timestamp_offset,
+            self.as_ref().timestamp_length,
         );
         match timestamp_slice {
             Some(tstamp) => std::str::from_utf8(tstamp).ok(),
@@ -221,14 +220,12 @@ impl ProvenanceTable {
     /// # panic!("Expected Some(timestamp)");
     /// # }
     pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
-        let record_slice = unsafe_tsk_ragged_char_column_access_to_slice_u8!(
+        let record_slice = sys::tsk_ragged_column_access(
             row.into(),
-            0,
+            self.as_ref().record,
             self.num_rows(),
-            self.as_ref(),
-            record,
-            record_offset,
-            record_length
+            self.as_ref().record_offset,
+            self.as_ref().record_length,
         );
         match record_slice {
             Some(rec) => std::str::from_utf8(rec).ok(),
