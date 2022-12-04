@@ -77,17 +77,6 @@ macro_rules! iterator_for_nodeiterator {
     };
 }
 
-macro_rules! tree_array_slice {
-    ($self: ident, $array: ident, $len: expr) => {
-        unsafe {
-            std::slice::from_raw_parts(
-                (*$self.as_ptr()).$array as *const $crate::NodeId,
-                $len as usize,
-            )
-        }
-    };
-}
-
 macro_rules! impl_id_traits {
     ($idtype: ty) => {
         impl $idtype {
