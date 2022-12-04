@@ -34,7 +34,7 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
         id: pos.into(),
         position: table.position(pos)?,
         ancestral_state,
-        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 

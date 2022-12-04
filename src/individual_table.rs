@@ -114,7 +114,7 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
         flags: table.flags(pos)?,
         location: table.location(pos).map(|s| s.to_vec()),
         parents: table.parents(pos).map(|s| s.to_vec()),
-        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 

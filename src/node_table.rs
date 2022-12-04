@@ -39,7 +39,7 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
         flags: table.flags(pos)?,
         population: table.population(pos)?,
         individual: table.individual(pos)?,
-        metadata: table.raw_metadata(pos.into()).map(|m| m.to_vec()),
+        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 
