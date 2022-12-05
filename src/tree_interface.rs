@@ -69,7 +69,7 @@ impl TreeInterface {
     /// }
     /// ```
     pub fn parent_array(&self) -> &[NodeId] {
-        sys::tree_array_slice(self.as_ref().parent, self.array_len)
+        sys::generate_slice(self.as_ref().parent, self.array_len)
     }
 
     /// # Failing examples
@@ -107,7 +107,7 @@ impl TreeInterface {
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
         err_if_not_tracking_samples!(
             self.flags,
-            sys::tree_array_slice(self.as_ref().samples, num_samples)
+            sys::generate_slice(self.as_ref().samples, num_samples)
         )
     }
 
@@ -144,7 +144,7 @@ impl TreeInterface {
     pub fn next_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            sys::tree_array_slice(self.as_ref().next_sample, self.array_len)
+            sys::generate_slice(self.as_ref().next_sample, self.array_len)
         )
     }
 
@@ -181,7 +181,7 @@ impl TreeInterface {
     pub fn left_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            sys::tree_array_slice(self.as_ref().left_sample, self.array_len)
+            sys::generate_slice(self.as_ref().left_sample, self.array_len)
         )
     }
 
@@ -218,7 +218,7 @@ impl TreeInterface {
     pub fn right_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            sys::tree_array_slice(self.as_ref().right_sample, self.array_len)
+            sys::generate_slice(self.as_ref().right_sample, self.array_len)
         )
     }
 
@@ -239,7 +239,7 @@ impl TreeInterface {
     /// }
     /// ```
     pub fn left_sib_array(&self) -> &[NodeId] {
-        sys::tree_array_slice(self.as_ref().left_sib, self.array_len)
+        sys::generate_slice(self.as_ref().left_sib, self.array_len)
     }
 
     /// # Failing examples
@@ -259,7 +259,7 @@ impl TreeInterface {
     /// }
     /// ```
     pub fn right_sib_array(&self) -> &[NodeId] {
-        sys::tree_array_slice(self.as_ref().right_sib, self.array_len)
+        sys::generate_slice(self.as_ref().right_sib, self.array_len)
     }
 
     /// # Failing examples
@@ -279,7 +279,7 @@ impl TreeInterface {
     /// }
     /// ```
     pub fn left_child_array(&self) -> &[NodeId] {
-        sys::tree_array_slice(self.as_ref().left_child, self.array_len)
+        sys::generate_slice(self.as_ref().left_child, self.array_len)
     }
 
     /// # Failing examples
@@ -299,7 +299,7 @@ impl TreeInterface {
     /// }
     /// ```
     pub fn right_child_array(&self) -> &[NodeId] {
-        sys::tree_array_slice(self.as_ref().right_child, self.array_len)
+        sys::generate_slice(self.as_ref().right_child, self.array_len)
     }
 
     // error if we are not tracking samples,
@@ -405,7 +405,7 @@ impl TreeInterface {
     pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples =
             unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
-        sys::tree_array_slice(self.as_ref().samples, num_samples)
+        sys::generate_slice(self.as_ref().samples, num_samples)
     }
 
     /// Return an [`Iterator`] from the node `u` to the root of the tree,

@@ -134,11 +134,20 @@ pub fn tsk_ragged_column_access<
         .map(|(p, n)| unsafe { std::slice::from_raw_parts(p.cast::<O>(), n) })
 }
 
-pub fn tree_array_slice<'a, L: Into<bindings::tsk_size_t>>(
-    data: *const bindings::tsk_id_t,
+pub fn generate_slice<'a, L: Into<bindings::tsk_size_t>, I, O>(
+    data: *const I,
     length: L,
-) -> &'a [crate::NodeId] {
+) -> &'a [O] {
     assert!(!data.is_null());
     // SAFETY: pointer is not null, length comes from C API
-    unsafe { std::slice::from_raw_parts(data.cast::<crate::NodeId>(), length.into() as usize) }
+    unsafe { std::slice::from_raw_parts(data.cast::<O>(), length.into() as usize) }
+}
+
+pub fn generate_slice_mut<'a, L: Into<bindings::tsk_size_t>, I, O>(
+    data: *mut I,
+    length: L,
+) -> &'a mut [O] {
+    assert!(!data.is_null());
+    // SAFETY: pointer is not null, length comes from C API
+    unsafe { std::slice::from_raw_parts_mut(data.cast::<O>(), length.into() as usize) }
 }

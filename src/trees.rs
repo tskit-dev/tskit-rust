@@ -396,7 +396,7 @@ impl TreeSequence {
     /// Get the list of sample nodes as a slice.
     pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
-        sys::tree_array_slice(self.as_ref().samples, num_samples)
+        sys::generate_slice(self.as_ref().samples, num_samples)
     }
 
     /// Get the number of trees.
