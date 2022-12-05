@@ -104,7 +104,7 @@ impl TreeInterface {
     /// ```
     pub fn samples_array(&self) -> Result<&[NodeId], TskitError> {
         let num_samples =
-            unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
+            unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
         err_if_not_tracking_samples!(
             self.flags,
             sys::generate_slice(self.as_ref().samples, num_samples)
@@ -305,25 +305,28 @@ impl TreeInterface {
     // error if we are not tracking samples,
     // Ok(None) if u is out of range
     fn left_sample<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.left_sample, self.num_nodes)
+        sys::tsk_column_access::<NodeId, _, _, _>(
+            u.into(),
+            self.as_ref().left_sample,
+            self.num_nodes,
+        )
     }
 
     // error if we are not tracking samples,
     // Ok(None) if u is out of range
     fn right_sample<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.right_sample, self.num_nodes)
+        sys::tsk_column_access::<NodeId, _, _, _>(
+            u.into(),
+            self.as_ref().right_sample,
+            self.num_nodes,
+        )
     }
 
     /// Return the `[left, right)` coordinates of the tree.
     pub fn interval(&self) -> (Position, Position) {
         (
-            // SAFETY: internal pointer cannot be NULL
-            unsafe { (*self.as_ptr()).interval }.left.into(),
-            unsafe { (*self.as_ptr()).interval }.right.into(),
+            self.as_ref().interval.left.into(),
+            self.as_ref().interval.right.into(),
         )
     }
 
@@ -338,45 +341,43 @@ impl TreeInterface {
     ///
     /// Returns `None` if `u` is out of range.
     pub fn parent<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.parent, self.array_len)
+        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), self.as_ref().parent, self.array_len)
     }
 
     /// Get the left child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn left_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.left_child, self.array_len)
+        sys::tsk_column_access::<NodeId, _, _, _>(
+            u.into(),
+            self.as_ref().left_child,
+            self.array_len,
+        )
     }
 
     /// Get the right child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn right_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.right_child, self.array_len)
+        sys::tsk_column_access::<NodeId, _, _, _>(
+            u.into(),
+            self.as_ref().right_child,
+            self.array_len,
+        )
     }
 
     /// Get the left sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn left_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.left_sib, self.array_len)
+        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), self.as_ref().left_sib, self.array_len)
     }
 
     /// Get the right sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn right_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        // SAFETY: internal pointer cannot be NULL
-        let ptr = unsafe { *self.as_ptr() };
-        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), ptr.right_sib, self.array_len)
+        sys::tsk_column_access::<NodeId, _, _, _>(u.into(), self.as_ref().right_sib, self.array_len)
     }
 
     /// Obtain the list of samples for the current tree/tree sequence
@@ -388,12 +389,12 @@ impl TreeInterface {
     #[deprecated(since = "0.2.3", note = "Please use Tree::sample_nodes instead")]
     pub fn samples_to_vec(&self) -> Vec<NodeId> {
         let num_samples =
-            unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
+            unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
         let mut rv = vec![];
 
         for i in 0..num_samples {
             let u = match isize::try_from(i) {
-                Ok(o) => unsafe { *(*(*self.as_ptr()).tree_sequence).samples.offset(o) },
+                Ok(o) => unsafe { *(*(self.as_ref()).tree_sequence).samples.offset(o) },
                 Err(e) => panic!("{}", e),
             };
             rv.push(u.into());
@@ -404,7 +405,7 @@ impl TreeInterface {
     /// Get the list of sample nodes as a slice.
     pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples =
-            unsafe { ll_bindings::tsk_treeseq_get_num_samples((*self.as_ptr()).tree_sequence) };
+            unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
         sys::generate_slice(self.as_ref().samples, num_samples)
     }
 
@@ -561,7 +562,7 @@ impl TreeInterface {
 
     /// Return the virtual root of the tree.
     pub fn virtual_root(&self) -> NodeId {
-        unsafe { (*self.as_ptr()).virtual_root }.into()
+        self.as_ref().virtual_root.into()
     }
 }
 
