@@ -1016,14 +1016,7 @@ macro_rules! build_table_column_slice_getter {
     ($(#[$attr:meta])* => $column: ident, $name: ident, $cast: ty) => {
         $(#[$attr])*
         pub fn $name(&self) -> &[$cast] {
-            // Caveat: num_rows is u64 but we need usize
-            // The conversion is fallible but unlikely.
-            let num_rows =
-                usize::try_from(self.num_rows()).expect("conversion of num_rows to usize failed");
-            let ptr = self.as_ref().$column as *const $cast;
-            // SAFETY: tables are initialzed, num rows comes
-            // from the C back end.
-            unsafe { std::slice::from_raw_parts(ptr, num_rows) }
+            $crate::sys::generate_slice(self.as_ref().$column, self.num_rows())
         }
     };
 }
@@ -1032,14 +1025,7 @@ macro_rules! build_table_column_slice_mut_getter {
     ($(#[$attr:meta])* => $column: ident, $name: ident, $cast: ty) => {
         $(#[$attr])*
         pub fn $name(&mut self) -> &mut [$cast] {
-            // Caveat: num_rows is u64 but we need usize
-            // The conversion is fallible but unlikely.
-            let num_rows =
-                usize::try_from(self.num_rows()).expect("conversion of num_rows to usize failed");
-            let ptr = self.as_ref().$column as *mut $cast;
-            // SAFETY: tables are initialzed, num rows comes
-            // from the C back end.
-            unsafe { std::slice::from_raw_parts_mut(ptr, num_rows) }
+            $crate::sys::generate_slice_mut(self.as_ref().$column, self.num_rows())
         }
     };
 }
