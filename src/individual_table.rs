@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
@@ -105,7 +103,7 @@ impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 pub struct IndividualTable {
-    table_: NonNull<ll_bindings::tsk_individual_table_t>,
+    table_: sys::LLIndividualTableRef,
 }
 
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
@@ -146,15 +144,12 @@ impl IndividualTable {
     pub(crate) fn new_from_table(
         individuals: *mut ll_bindings::tsk_individual_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(individuals).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_individual_table_t".to_string())
-        })?;
-        Ok(IndividualTable { table_: n })
+        let table_ = sys::LLIndividualTableRef::new_from_table(individuals)?;
+        Ok(IndividualTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_individual_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     raw_metadata_getter_for_tables!(IndividualId);

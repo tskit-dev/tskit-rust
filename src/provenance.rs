@@ -10,8 +10,6 @@
 //!   [`ProvenanceTable::iter`].
 //!
 
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::sys;
 use crate::SizeType;
@@ -141,23 +139,19 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
 ///
 #[derive(Debug)]
 pub struct ProvenanceTable {
-    table_: NonNull<ll_bindings::tsk_provenance_table_t>,
+    table_: sys::LLProvenanceTableRef,
 }
 
 impl ProvenanceTable {
     pub(crate) fn new_from_table(
         provenances: *mut ll_bindings::tsk_provenance_table_t,
     ) -> Result<Self, crate::TskitError> {
-        // FIXME: unwrap
-        let n = NonNull::new(provenances).ok_or_else(|| {
-            crate::TskitError::LibraryError("null pointer to tsk_provenance_table_t".to_string())
-        })?;
-        Ok(ProvenanceTable { table_: n })
+        let table_ = sys::LLProvenanceTableRef::new_from_table(provenances)?;
+        Ok(ProvenanceTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_provenance_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     /// Return the number of rows

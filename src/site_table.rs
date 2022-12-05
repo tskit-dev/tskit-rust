@@ -1,5 +1,3 @@
-use std::ptr::NonNull;
-
 use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
@@ -134,22 +132,19 @@ impl<'a> streaming_iterator::StreamingIterator for SiteTableRowView<'a> {
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 pub struct SiteTable {
-    table_: NonNull<ll_bindings::tsk_site_table_t>,
+    table_: sys::LLSiteTableRef,
 }
 
 impl SiteTable {
     pub(crate) fn new_from_table(
         sites: *mut ll_bindings::tsk_site_table_t,
     ) -> Result<Self, TskitError> {
-        let n = NonNull::new(sites).ok_or_else(|| {
-            TskitError::LibraryError("null pointer to tsk_site_table_t".to_string())
-        })?;
-        Ok(SiteTable { table_: n })
+        let table_ = sys::LLSiteTableRef::new_from_table(sites)?;
+        Ok(SiteTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_site_table_t {
-        // SAFETY: NonNull
-        unsafe { self.table_.as_ref() }
+        self.table_.as_ref()
     }
 
     raw_metadata_getter_for_tables!(SiteId);
