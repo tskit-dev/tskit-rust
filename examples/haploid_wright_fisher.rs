@@ -114,7 +114,25 @@ proptest! {
 #[test]
     fn test_simulate_proptest(seed in any::<u64>(),
                               num_generations in 50..100i32,
-                              simplify_interval in 1..100i32 ) {
-        let _ = simulate(seed, 100, num_generations, simplify_interval).unwrap();
+                              simplify_interval in 1..100i32) {
+        let ts = simulate(seed, 100, num_generations, simplify_interval).unwrap();
+
+        // stress test the branch length fn b/c it is not a trivial
+        // wrapper around the C API.
+        {
+            use streaming_iterator::StreamingIterator;
+            let mut x = f64::NAN;
+            if let Ok(mut tree_iter) = ts.tree_iterator(0) {
+                // We will only do the first tree to save time.
+                if let Some(tree) = tree_iter.next() {
+                    let b = tree.total_branch_length(false).unwrap();
+                    let b2 = unsafe {
+                        tskit::bindings::tsk_tree_get_total_branch_length(tree.as_ptr(), -1, &mut x)
+                    };
+                    assert!(b2 >= 0, "{}", b2);
+                    assert!(f64::from(b) - x <= 1e-8);
+                }
+            }
+        }
     }
 }
