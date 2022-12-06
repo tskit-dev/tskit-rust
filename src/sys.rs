@@ -6,6 +6,7 @@ use bindings::tsk_mutation_table_t;
 use bindings::tsk_node_table_t;
 use bindings::tsk_population_table_t;
 use bindings::tsk_site_table_t;
+use std::ffi::CString;
 use std::ptr::NonNull;
 
 #[cfg(feature = "provenance")]
@@ -46,6 +47,94 @@ basic_lltableref_impl!(LLIndividualTableRef, tsk_individual_table_t);
 
 #[cfg(feature = "provenance")]
 basic_lltableref_impl!(LLProvenanceTableRef, tsk_provenance_table_t);
+
+#[repr(transparent)]
+pub struct LLTreeSeq(bindings::tsk_treeseq_t);
+
+impl LLTreeSeq {
+    pub fn new(
+        tables: *mut bindings::tsk_table_collection_t,
+        flags: bindings::tsk_flags_t,
+    ) -> Result<Self, TskitError> {
+        let mut inner = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
+        let mut flags = flags;
+        flags |= bindings::TSK_TAKE_OWNERSHIP;
+        let rv = unsafe { bindings::tsk_treeseq_init(inner.as_mut_ptr(), tables, flags) };
+        handle_tsk_return_value!(rv, Self(unsafe { inner.assume_init() }))
+    }
+
+    pub fn as_ref(&self) -> &bindings::tsk_treeseq_t {
+        &self.0
+    }
+
+    pub fn as_ptr(&self) -> *const bindings::tsk_treeseq_t {
+        &self.0
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut bindings::tsk_treeseq_t {
+        &mut self.0
+    }
+
+    pub fn simplify(
+        &self,
+        samples: &[bindings::tsk_id_t],
+        options: bindings::tsk_flags_t,
+        idmap: *mut bindings::tsk_id_t,
+    ) -> Result<Self, TskitError> {
+        // The output is an UNINITIALIZED treeseq,
+        // else we leak memory.
+        let mut ts = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
+        // SAFETY: samples is not null, idmap is allowed to be.
+        // self.as_ptr() is not null
+        let rv = unsafe {
+            bindings::tsk_treeseq_simplify(
+                self.as_ptr(),
+                samples.as_ptr(),
+                samples.len() as bindings::tsk_size_t,
+                options,
+                ts.as_mut_ptr(),
+                idmap,
+            )
+        };
+        let init = unsafe { ts.assume_init() };
+        if rv < 0 {
+            // SAFETY: the ptr is not null
+            // and tsk_treeseq_free uses safe methods
+            // to clean up.
+            unsafe { bindings::tsk_treeseq_free(ts.as_mut_ptr()) };
+        }
+        handle_tsk_return_value!(rv, Self(init))
+    }
+
+    pub fn dump(
+        &self,
+        filename: CString,
+        options: bindings::tsk_flags_t,
+    ) -> Result<i32, TskitError> {
+        // SAFETY: self pointer is not null
+        let rv = unsafe { bindings::tsk_treeseq_dump(self.as_ptr(), filename.as_ptr(), options) };
+        handle_tsk_return_value!(rv)
+    }
+
+    pub fn num_trees(&self) -> bindings::tsk_size_t {
+        // SAFETY: self pointer is not null
+        unsafe { bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }
+    }
+
+    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
+        let mut kc: f64 = f64::NAN;
+        let kcp: *mut f64 = &mut kc;
+        // SAFETY: self pointer is not null
+        let code = unsafe {
+            bindings::tsk_treeseq_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp)
+        };
+        handle_tsk_return_value!(code, kc)
+    }
+
+    pub fn num_samples(&self) -> bindings::tsk_size_t {
+        unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ptr()) }
+    }
+}
 
 fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_size_t>, T: Copy>(
     row: R,
