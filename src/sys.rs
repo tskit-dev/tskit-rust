@@ -1,4 +1,9 @@
-use crate::{bindings, TskitError};
+use std::ffi::CString;
+use std::ptr::NonNull;
+
+use thiserror::Error;
+
+use crate::bindings;
 use bindings::tsk_edge_table_t;
 use bindings::tsk_individual_table_t;
 use bindings::tsk_migration_table_t;
@@ -6,8 +11,15 @@ use bindings::tsk_mutation_table_t;
 use bindings::tsk_node_table_t;
 use bindings::tsk_population_table_t;
 use bindings::tsk_site_table_t;
-use std::ffi::CString;
-use std::ptr::NonNull;
+
+#[non_exhaustive]
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("{}", 0)]
+    Message(String),
+    #[error("{}", 0)]
+    Code(i32),
+}
 
 #[cfg(feature = "provenance")]
 use bindings::tsk_provenance_table_t;
@@ -19,10 +31,10 @@ macro_rules! basic_lltableref_impl {
         pub struct $lltable(NonNull<bindings::$tsktable>);
 
         impl $lltable {
-            pub fn new_from_table(table: *mut $tsktable) -> Result<Self, TskitError> {
+            pub fn new_from_table(table: *mut $tsktable) -> Result<Self, Error> {
                 let internal = NonNull::new(table).ok_or_else(|| {
                     let msg = format!("null pointer to {}", stringify!($tsktable));
-                    TskitError::LibraryError(msg)
+                    Error::Message(msg)
                 })?;
                 Ok(Self(internal))
             }
@@ -55,12 +67,14 @@ impl LLTreeSeq {
     pub fn new(
         tables: *mut bindings::tsk_table_collection_t,
         flags: bindings::tsk_flags_t,
-    ) -> Result<Self, TskitError> {
+    ) -> Result<Self, Error> {
         let mut inner = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
         let mut flags = flags;
         flags |= bindings::TSK_TAKE_OWNERSHIP;
-        let rv = unsafe { bindings::tsk_treeseq_init(inner.as_mut_ptr(), tables, flags) };
-        handle_tsk_return_value!(rv, Self(unsafe { inner.assume_init() }))
+        match unsafe { bindings::tsk_treeseq_init(inner.as_mut_ptr(), tables, flags) } {
+            code if code < 0 => Err(Error::Code(code)),
+            _ => Ok(Self(unsafe { inner.assume_init() })),
+        }
     }
 
     pub fn as_ref(&self) -> &bindings::tsk_treeseq_t {
@@ -80,7 +94,7 @@ impl LLTreeSeq {
         samples: &[bindings::tsk_id_t],
         options: bindings::tsk_flags_t,
         idmap: *mut bindings::tsk_id_t,
-    ) -> Result<Self, TskitError> {
+    ) -> Result<Self, Error> {
         // The output is an UNINITIALIZED treeseq,
         // else we leak memory.
         let mut ts = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
@@ -102,18 +116,18 @@ impl LLTreeSeq {
             // and tsk_treeseq_free uses safe methods
             // to clean up.
             unsafe { bindings::tsk_treeseq_free(ts.as_mut_ptr()) };
+            Err(Error::Code(rv))
+        } else {
+            Ok(Self(init))
         }
-        handle_tsk_return_value!(rv, Self(init))
     }
 
-    pub fn dump(
-        &self,
-        filename: CString,
-        options: bindings::tsk_flags_t,
-    ) -> Result<i32, TskitError> {
+    pub fn dump(&self, filename: CString, options: bindings::tsk_flags_t) -> Result<i32, Error> {
         // SAFETY: self pointer is not null
-        let rv = unsafe { bindings::tsk_treeseq_dump(self.as_ptr(), filename.as_ptr(), options) };
-        handle_tsk_return_value!(rv)
+        match unsafe { bindings::tsk_treeseq_dump(self.as_ptr(), filename.as_ptr(), options) } {
+            code if code < 0 => Err(Error::Code(code)),
+            code => Ok(code),
+        }
     }
 
     pub fn num_trees(&self) -> bindings::tsk_size_t {
@@ -121,14 +135,16 @@ impl LLTreeSeq {
         unsafe { bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }
     }
 
-    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
+    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, Error> {
         let mut kc: f64 = f64::NAN;
         let kcp: *mut f64 = &mut kc;
         // SAFETY: self pointer is not null
-        let code = unsafe {
+        match unsafe {
             bindings::tsk_treeseq_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp)
-        };
-        handle_tsk_return_value!(code, kc)
+        } {
+            code if code < 0 => Err(Error::Code(code)),
+            _ => Ok(kc),
+        }
     }
 
     pub fn num_samples(&self) -> bindings::tsk_size_t {

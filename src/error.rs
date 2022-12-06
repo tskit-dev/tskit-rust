@@ -1,5 +1,6 @@
 //! Error handling
 
+use crate::sys;
 use crate::TskReturnValue;
 use thiserror::Error;
 
@@ -34,6 +35,15 @@ pub enum TskitError {
     /// General error variant
     #[error("{}", *.0)]
     LibraryError(String),
+}
+
+impl From<crate::sys::Error> for TskitError {
+    fn from(error: sys::Error) -> Self {
+        match error {
+            sys::Error::Message(msg) => TskitError::LibraryError(msg),
+            sys::Error::Code(code) => TskitError::ErrorCode { code },
+        }
+    }
 }
 
 /// Takes the return code from a tskit
