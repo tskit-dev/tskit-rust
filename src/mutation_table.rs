@@ -5,7 +5,6 @@ use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{MutationId, NodeId, SiteId};
-use ll_bindings::{tsk_mutation_table_free, tsk_mutation_table_init};
 
 /// Row of a [`MutationTable`]
 #[derive(Debug)]
@@ -394,13 +393,11 @@ build_owned_table_type!(
 /// ```
     => OwningMutationTable,
     MutationTable,
-    tsk_mutation_table_t,
-    tsk_mutation_table_init,
-    tsk_mutation_table_free,
-    ll_bindings::tsk_mutation_table_clear
+    crate::sys::LLOwningMutationTable,
+    crate::bindings::tsk_mutation_table_t
 );
 
 impl OwningMutationTable {
-    mutation_table_add_row!(=> add_row, self, *self.table);
-    mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+    mutation_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }

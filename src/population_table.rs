@@ -5,7 +5,6 @@ use crate::tsk_id_t;
 use crate::PopulationId;
 use crate::SizeType;
 use crate::TskitError;
-use ll_bindings::{tsk_population_table_free, tsk_population_table_init};
 
 /// Row of a [`PopulationTable`]
 #[derive(Eq, Debug)]
@@ -258,13 +257,11 @@ build_owned_table_type!(
 /// ```
     => OwningPopulationTable,
     PopulationTable,
-    tsk_population_table_t,
-    tsk_population_table_init,
-    tsk_population_table_free,
-    ll_bindings::tsk_population_table_clear
+    crate::sys::LLOwningPopulationTable,
+    crate::bindings::tsk_population_table_t
 );
 
 impl OwningPopulationTable {
-    population_table_add_row!(=> add_row, self, *self.table);
-    population_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+    population_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    population_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }

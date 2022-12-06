@@ -375,24 +375,16 @@ macro_rules! handle_metadata_return {
 }
 
 macro_rules! build_owned_tables {
-    ($name: ty, $deref: ident, $llname: ty, $init: ident, $free: ident, $clear: expr) => {
+    ($name: ty, $deref: ident, $lltype: ty, $tsktable: ty) => {
         impl $name {
             fn new() -> Self {
-                let temp = unsafe { libc::malloc(std::mem::size_of::<$llname>()) as *mut $llname };
-                let nonnull = match std::ptr::NonNull::<$llname>::new(temp) {
-                    Some(x) => x,
-                    None => panic!("out of memory"),
-                };
-                let mut table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
-                let rv = unsafe { $init(&mut (*table), 0) };
-                assert_eq!(rv, 0);
+                let table = <$lltype>::new();
                 Self { table }
             }
 
             /// Clear the table.
             pub fn clear(&mut self) -> $crate::TskReturnValue {
-                let rv = unsafe { $clear(self.as_mut_ptr()) };
-                handle_tsk_return_value!(rv)
+                self.table.clear().map_err(|e| e.into())
             }
         }
 
@@ -420,22 +412,13 @@ macro_rules! build_owned_tables {
             }
         }
 
-        impl Drop for $name {
-            fn drop(&mut self) {
-                let rv = unsafe { $free(&mut (*self.table)) };
-                if rv != 0 {
-                    panic!("error when calling {}: {}", stringify!(free), rv);
-                }
-            }
-        }
-
         impl $name {
-            pub fn as_ptr(&self) -> *const $llname {
-                &*self.table
+            pub fn as_ptr(&self) -> *const $tsktable {
+                self.table.as_ptr()
             }
 
-            pub fn as_mut_ptr(&mut self) -> *mut $llname {
-                &mut *self.table as *mut $llname
+            pub fn as_mut_ptr(&mut self) -> *mut $tsktable {
+                self.table.as_mut_ptr()
             }
         }
     };
@@ -451,7 +434,7 @@ macro_rules! node_table_add_row_details {
      $table: expr) => {{
         let rv = unsafe {
             $crate::bindings::tsk_node_table_add_row(
-                &mut $table,
+                $table,
                 $flags.into().bits(),
                 $time.into().into(),
                 $population.into().into(),
@@ -532,7 +515,7 @@ macro_rules! edge_table_add_row_details {
      $table: expr) => {{
         let rv = unsafe {
             $crate::bindings::tsk_edge_table_add_row(
-                &mut $table,
+                $table,
                 $left.into().into(),
                 $right.into().into(),
                 $parent.into().into(),
@@ -605,7 +588,7 @@ macro_rules! edge_table_add_row_with_metadata {
 macro_rules! population_table_add_row_details {
     ($metadata: expr, $metadata_len: expr, $table: expr) => {{
         let rv = unsafe {
-            $crate::bindings::tsk_population_table_add_row(&mut $table, $metadata, $metadata_len)
+            $crate::bindings::tsk_population_table_add_row($table, $metadata, $metadata_len)
         };
         handle_tsk_return_value!(rv, rv.into())
     }};
@@ -640,7 +623,7 @@ macro_rules! individual_table_add_row_details {
      $table: expr) => {{
         let rv = unsafe {
             $crate::bindings::tsk_individual_table_add_row(
-                &mut $table,
+                $table,
                 $flags.into().bits(),
                 $location.get_slice().as_ptr().cast::<f64>(),
                 $location.get_slice().len() as $crate::bindings::tsk_size_t,
@@ -715,7 +698,7 @@ macro_rules! mutation_table_add_row_details {
         let dstate = process_state_input!($derived_state);
         let rv = unsafe {
             $crate::bindings::tsk_mutation_table_add_row(
-                &mut $table,
+                $table,
                 $site.into().into(),
                 $node.into().into(),
                 $parent.into().into(),
@@ -796,7 +779,7 @@ macro_rules! site_table_add_row_details {
         let astate = process_state_input!($ancestral_state);
         let rv = unsafe {
             $crate::bindings::tsk_site_table_add_row(
-                &mut $table,
+                $table,
                 $position.into().into(),
                 astate.0,
                 astate.1,
@@ -853,7 +836,7 @@ macro_rules! migration_table_add_row_details {
      $table: expr) => {{
         let rv = unsafe {
             $crate::bindings::tsk_migration_table_add_row(
-                &mut $table,
+                $table,
                 $span.0.into().into(),
                 $span.1.into().into(),
                 $node.into().into(),
@@ -928,7 +911,7 @@ macro_rules! provenance_table_add_row {
             let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
             let rv = unsafe {
                 $crate::bindings::tsk_provenance_table_add_row(
-                    &mut $table,
+                    $table,
                     timestamp.as_ptr() as *mut i8,
                     timestamp.len() as tsk_size_t,
                     record.as_ptr() as *mut i8,
@@ -943,22 +926,18 @@ macro_rules! provenance_table_add_row {
 macro_rules! build_owned_table_type {
     ($(#[$attr:meta])* => $name: ident,
     $deref_type: ident,
-    $tskname: ident,
-    $tskinit: ident,
-    $tskfree: ident,
-    $tskclear: expr) => {
+    $lltype: ty,
+    $tsktable: ty) => {
         $(#[$attr])*
         pub struct $name {
-            table: mbox::MBox<$crate::bindings::$tskname>,
+            table: $lltype
         }
 
         build_owned_tables!(
             $name,
             $deref_type,
-            $crate::bindings::$tskname,
-            $tskinit,
-            $tskfree,
-            $tskclear
+            $lltype,
+            $tsktable
         );
     };
 }

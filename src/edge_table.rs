@@ -4,7 +4,6 @@ use crate::sys;
 use crate::Position;
 use crate::{tsk_id_t, TskitError};
 use crate::{EdgeId, NodeId};
-use ll_bindings::{tsk_edge_table_free, tsk_edge_table_init};
 
 /// Row of an [`EdgeTable`]
 #[derive(Debug)]
@@ -360,13 +359,11 @@ build_owned_table_type!(
     /// ```
     => OwningEdgeTable,
     EdgeTable,
-    tsk_edge_table_t,
-    tsk_edge_table_init,
-    tsk_edge_table_free,
-    crate::bindings::tsk_edge_table_clear
+    crate::sys::LLOwningEdgeTable,
+    crate::bindings::tsk_edge_table_t
 );
 
 impl OwningEdgeTable {
-    edge_table_add_row!(=> add_row, self, *self.table);
-    edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+    edge_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }
