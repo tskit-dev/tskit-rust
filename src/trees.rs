@@ -282,7 +282,9 @@ impl TreeSequence {
         let c_str = std::ffi::CString::new(filename).map_err(|_| {
             TskitError::LibraryError("call to ffi::Cstring::new failed".to_string())
         })?;
-        self.inner.dump(c_str, options.into().bits())
+        self.inner
+            .dump(c_str, options.into().bits())
+            .map_err(|e| e.into())
     }
 
     /// Load from a file.
@@ -404,7 +406,9 @@ impl TreeSequence {
     /// * `lambda` specifies the relative weight of topology and branch length.
     ///    See [`TreeInterface::kc_distance`] for more details.
     pub fn kc_distance(&self, other: &TreeSequence, lambda: f64) -> Result<f64, TskitError> {
-        self.inner.kc_distance(&other.inner, lambda)
+        self.inner
+            .kc_distance(&other.inner, lambda)
+            .map_err(|e| e.into())
     }
 
     // FIXME: document
