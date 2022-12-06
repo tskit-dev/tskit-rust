@@ -191,13 +191,6 @@ pub struct TreeSequence {
 unsafe impl Send for TreeSequence {}
 unsafe impl Sync for TreeSequence {}
 
-impl Drop for TreeSequence {
-    fn drop(&mut self) {
-        let rv = unsafe { ll_bindings::tsk_treeseq_free(self.as_mut_ptr()) };
-        assert_eq!(rv, 0);
-    }
-}
-
 impl TreeSequence {
     /// Create a tree sequence from a [`TableCollection`].
     /// In general, [`TableCollection::tree_sequence`] may be preferred.
