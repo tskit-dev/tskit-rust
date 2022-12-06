@@ -6,7 +6,6 @@ use crate::Position;
 use crate::SiteId;
 use crate::SizeType;
 use crate::TskitError;
-use ll_bindings::{tsk_site_table_free, tsk_site_table_init};
 
 /// Row of a [`SiteTable`]
 #[derive(Debug)]
@@ -309,13 +308,11 @@ build_owned_table_type!(
     /// ```
     => OwningSiteTable,
     SiteTable,
-    tsk_site_table_t,
-    tsk_site_table_init,
-    tsk_site_table_free,
-    ll_bindings::tsk_site_table_clear
+    crate::sys::LLOwningSiteTable,
+    crate::bindings::tsk_site_table_t
 );
 
 impl OwningSiteTable {
-    site_table_add_row!(=> add_row, self, *self.table);
-    site_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+    site_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    site_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }

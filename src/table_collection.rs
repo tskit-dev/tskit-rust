@@ -259,7 +259,7 @@ impl TableCollection {
     ///
     /// See [`TableCollection::check_integrity`] for how to catch these data model
     /// violations.
-    => add_edge, self, self.inner.edges);
+    => add_edge, self, &mut(*self.as_mut_ptr()).edges);
 
     edge_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the edge table
@@ -282,7 +282,7 @@ impl TableCollection {
     /// assert!(tables.add_edge_with_metadata(0., 53., 1, 11, &metadata).is_ok());
     /// # }
     /// ```
-    => add_edge_with_metadata, self, self.inner.edges);
+    => add_edge_with_metadata, self, &mut(*self.as_mut_ptr()).edges);
 
     individual_table_add_row!(
     /// Add a row to the individual table
@@ -321,7 +321,7 @@ impl TableCollection {
     /// #     None => panic!("expected parents"),
     /// # }
     /// ```
-    => add_individual, self, self.inner.individuals);
+    => add_individual, self, &mut (*self.as_mut_ptr()).individuals);
 
     individual_table_add_row_with_metadata!(
     /// Add a row with metadata to the individual table
@@ -347,7 +347,7 @@ impl TableCollection {
     /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
     /// # assert_eq!(decoded.x, 1);
     /// # }
-    => add_individual_with_metadata, self, self.inner.individuals);
+    => add_individual_with_metadata, self, &mut (*self.as_mut_ptr()).individuals);
 
     migration_table_add_row!(
     /// Add a row to the migration table
@@ -365,7 +365,7 @@ impl TableCollection {
     ///                              (0, 1),
     ///                              53.5).is_ok());
     /// ```
-    => add_migration, self, self.inner.migrations);
+    => add_migration, self, &mut (*self.as_mut_ptr()).migrations);
 
     migration_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the migration table
@@ -397,15 +397,13 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    => add_migration_with_metadata, self, self.inner.migrations);
+    => add_migration_with_metadata, self, &mut (*self.as_mut_ptr()).migrations);
 
     node_table_add_row!(
     /// Add a row to the node table
-    => add_node, self, self.inner.nodes
-    );
+    => add_node, self, &mut (*self.as_mut_ptr()).nodes);
 
     node_table_add_row_with_metadata!(
-
     /// Add a row with optional metadata to the node table
     ///
     /// # Examples
@@ -426,11 +424,11 @@ impl TableCollection {
     /// assert!(tables.add_node_with_metadata(0, 0.0, -1, -1, &metadata).is_ok());
     /// # }
     /// ```
-    => add_node_with_metadata, self, self.inner.nodes);
+    => add_node_with_metadata, self, &mut (*self.as_mut_ptr()).nodes);
 
     site_table_add_row!(
     /// Add a row to the site table
-    => add_site, self, self.inner.sites);
+    => add_site, self, &mut (*self.as_mut_ptr()).sites);
 
     site_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the site table
@@ -455,11 +453,11 @@ impl TableCollection {
     ///                                       &metadata).is_ok());
     /// # }
     /// ```
-    => add_site_with_metadata, self, self.inner.sites);
+    => add_site_with_metadata, self, &mut (*self.as_mut_ptr()).sites);
 
     mutation_table_add_row!(
     /// Add a row to the mutation table.
-    => add_mutation, self, self.inner.mutations);
+    => add_mutation, self, &mut (*self.as_mut_ptr()).mutations);
 
     mutation_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the mutation table.
@@ -483,7 +481,7 @@ impl TableCollection {
     ///                                           &metadata).is_ok());
     /// # }
     /// ```
-    => add_mutation_with_metadata, self, self.inner.mutations);
+    => add_mutation_with_metadata, self, &mut (*self.as_mut_ptr()).mutations);
 
     population_table_add_row!(
     /// Add a row to the population_table
@@ -494,7 +492,7 @@ impl TableCollection {
     /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
     /// tables.add_population().unwrap();
     /// ```
-    => add_population, self, self.inner.populations);
+    => add_population, self, &mut (*self.as_mut_ptr()).populations);
 
     population_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the population_table
@@ -516,7 +514,7 @@ impl TableCollection {
     /// let metadata = PopulationMetadata{x: 1};
     /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
     /// # }
-    => add_population_with_metadata, self, self.inner.populations);
+    => add_population_with_metadata, self, &mut (*self.as_mut_ptr()).populations);
 
     /// Build the "input" and "output"
     /// indexes for the edge table.
@@ -900,7 +898,7 @@ impl TableCollection {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
     /// # }
     /// ```
-    => add_provenance, self, self.inner.provenances);
+    => add_provenance, self, &mut (*self.as_mut_ptr()).provenances);
 
     /// Set the edge table from an [`OwningEdgeTable`](`crate::OwningEdgeTable`)
     ///

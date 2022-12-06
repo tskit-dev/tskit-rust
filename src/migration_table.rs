@@ -6,7 +6,6 @@ use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{MigrationId, NodeId, PopulationId};
-use ll_bindings::{tsk_migration_table_free, tsk_migration_table_init};
 
 /// Row of a [`MigrationTable`]
 #[derive(Debug)]
@@ -419,13 +418,11 @@ build_owned_table_type!(
     /// ```
     => OwningMigrationTable,
     MigrationTable,
-    tsk_migration_table_t,
-    tsk_migration_table_init,
-    tsk_migration_table_free,
-    ll_bindings::tsk_migration_table_clear
+    crate::sys::LLOwningMigrationTable,
+    crate::bindings::tsk_migration_table_t
 );
 
 impl OwningMigrationTable {
-    migration_table_add_row!(=> add_row, self, *self.table);
-    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+    migration_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }

@@ -14,7 +14,6 @@ use crate::bindings as ll_bindings;
 use crate::sys;
 use crate::SizeType;
 use crate::{tsk_id_t, tsk_size_t, ProvenanceId};
-use ll_bindings::{tsk_provenance_table_free, tsk_provenance_table_init};
 
 #[derive(Eq, Debug)]
 /// Row of a [`ProvenanceTable`].
@@ -287,14 +286,12 @@ build_owned_table_type!(
     /// ```
     => OwningProvenanceTable,
     ProvenanceTable,
-    tsk_provenance_table_t,
-    tsk_provenance_table_init,
-    tsk_provenance_table_free,
-    ll_bindings::tsk_provenance_table_clear
+    crate::sys::LLOwningProvenanceTable,
+    crate::bindings::tsk_provenance_table_t
 );
 
 impl OwningProvenanceTable {
-    provenance_table_add_row!(=> add_row, self, *self.table);
+    provenance_table_add_row!(=> add_row, self, self.as_mut_ptr());
 }
 
 #[cfg(test)]

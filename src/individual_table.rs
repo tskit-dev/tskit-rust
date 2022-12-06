@@ -5,7 +5,6 @@ use crate::IndividualFlags;
 use crate::IndividualId;
 use crate::Location;
 use crate::{tsk_id_t, TskitError};
-use ll_bindings::{tsk_individual_table_free, tsk_individual_table_init};
 
 /// Row of a [`IndividualTable`]
 #[derive(Debug)]
@@ -488,13 +487,11 @@ build_owned_table_type!(
     /// ```
     => OwningIndividualTable,
     IndividualTable,
-    tsk_individual_table_t,
-    tsk_individual_table_init,
-    tsk_individual_table_free,
-    crate::bindings::tsk_individual_table_clear
+    crate::sys::LLOwningIndividualTable,
+    crate::bindings::tsk_individual_table_t
 );
 
 impl OwningIndividualTable {
-    individual_table_add_row!(=> add_row, self, *self.table);
-    individual_table_add_row_with_metadata!(=> add_row_with_metadata, self, *self.table);
+    individual_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    individual_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }

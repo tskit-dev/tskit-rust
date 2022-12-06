@@ -6,7 +6,6 @@ use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{IndividualId, NodeId, PopulationId};
-use ll_bindings::{tsk_node_table_free, tsk_node_table_init};
 
 /// Row of a [`NodeTable`]
 #[derive(Debug)]
@@ -583,15 +582,13 @@ build_owned_table_type!(
     /// ```
     => OwningNodeTable,
     NodeTable,
-    tsk_node_table_t,
-    tsk_node_table_init,
-    tsk_node_table_free,
-    ll_bindings::tsk_node_table_clear
+    crate::sys::LLOwningNodeTable,
+    crate::bindings::tsk_node_table_t
 );
 
 impl OwningNodeTable {
-    node_table_add_row!(=> add_row, self, (*self.table));
-    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, (*self.table));
+    node_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
 }
 
 #[cfg(test)]
