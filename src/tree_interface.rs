@@ -340,7 +340,7 @@ impl TreeInterface {
     /// Get the parent of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
-    pub fn parent<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
+    pub fn parent<N: Into<NodeId> + Copy + std::fmt::Debug>(&self, u: N) -> Option<NodeId> {
         sys::tsk_column_access::<NodeId, _, _, _>(u.into(), self.as_ref().parent, self.array_len)
     }
 
@@ -489,12 +489,9 @@ impl TreeInterface {
     /// (and the tree sequence from which it came).
     ///
     /// This is a convenience function for accessing node times, etc..
-    pub fn node_table(&self) -> crate::NodeTable {
-        unimplemented!("this needs to return &NodeTable");
-        // crate::NodeTable::new_from_table(unsafe {
-        //     &(*(*(*self.as_ptr()).tree_sequence).tables).nodes
-        // })
-    }
+    //    fn node_table(&self) -> &crate::NodeTable {
+    //       &self.nodes
+    //  }
 
     /// Calculate the total length of the tree via a preorder traversal.
     ///
@@ -506,13 +503,19 @@ impl TreeInterface {
     ///
     /// [`TskitError`] may be returned if a node index is out of range.
     pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
-        let nt = self.node_table();
+        let time: &[Time] = sys::generate_slice(
+            unsafe {
+                (*(*(*self.non_owned_pointer.as_ptr()).tree_sequence).tables)
+                    .nodes
+                    .time
+            },
+            self.num_nodes,
+        );
         let mut b = Time::from(0.);
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self.parent(n).ok_or(TskitError::IndexError {})?;
             if p != NodeId::NULL {
-                b += nt.time(p).ok_or(TskitError::IndexError {})?
-                    - nt.time(n).ok_or(TskitError::IndexError {})?;
+                b += time[p.as_usize()] - time[n.as_usize()]
             }
         }
 
