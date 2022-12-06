@@ -15,9 +15,9 @@ use bindings::tsk_site_table_t;
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("{}", 0)]
+    #[error("{}", *.0)]
     Message(String),
-    #[error("{}", 0)]
+    #[error("{}", get_tskit_error_message(*.0))]
     Code(i32),
 }
 
@@ -150,6 +150,22 @@ impl LLTreeSeq {
     pub fn num_samples(&self) -> bindings::tsk_size_t {
         unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ptr()) }
     }
+
+    fn free(&mut self) -> Result<(), Error> {
+        match unsafe { bindings::tsk_treeseq_free(self.as_mut_ptr()) } {
+            code if code < 0 => Err(Error::Code(code)),
+            _ => Ok(()),
+        }
+    }
+}
+
+impl Drop for LLTreeSeq {
+    fn drop(&mut self) {
+        match self.free() {
+            Ok(_) => (),
+            Err(e) => panic!("{:?}", e),
+        }
+    }
 }
 
 fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_size_t>, T: Copy>(
@@ -255,4 +271,47 @@ pub fn generate_slice_mut<'a, L: Into<bindings::tsk_size_t>, I, O>(
     assert!(!data.is_null());
     // SAFETY: pointer is not null, length comes from C API
     unsafe { std::slice::from_raw_parts_mut(data.cast::<O>(), length.into() as usize) }
+}
+
+pub fn get_tskit_error_message(code: i32) -> String {
+    let c_str = unsafe { std::ffi::CStr::from_ptr(crate::bindings::tsk_strerror(code)) };
+    c_str
+        .to_str()
+        .expect("failed to convert c_str to &str")
+        .to_owned()
+}
+
+#[test]
+fn test_error_message() {
+    fn foo() -> Result<(), Error> {
+        Err(Error::Message("foobar".to_owned()))
+    }
+
+    let msg = "foobar".to_owned();
+    match foo() {
+        Err(Error::Message(m)) => assert_eq!(m, msg),
+        _ => panic!("unexpected match"),
+    }
+}
+
+#[test]
+fn test_error_code() {
+    fn foo() -> Result<(), Error> {
+        Err(Error::Code(-202))
+    }
+
+    match foo() {
+        Err(Error::Code(x)) => {
+            assert_eq!(x, -202);
+        }
+        _ => panic!("unexpected match"),
+    }
+
+    match foo() {
+        Err(e) => {
+            let m = format!("{}", e);
+            assert_eq!(&m, "Node out of bounds. (TSK_ERR_NODE_OUT_OF_BOUNDS)");
+        }
+        _ => panic!("unexpected match"),
+    }
 }
