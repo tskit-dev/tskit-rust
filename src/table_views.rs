@@ -217,6 +217,7 @@ impl TableViews {
     ///     |row: &tskit::NodeTableRow| row.time > 0.,
     /// );
     /// assert_eq!(samples[0], 1);
+    /// ```
     pub fn create_node_id_vector(
         &self,
         f: impl FnMut(&crate::NodeTableRow) -> bool,
