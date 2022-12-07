@@ -137,6 +137,7 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
 /// * The type is enabled by the `"provenance"` feature.
 ///
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct ProvenanceTable {
     table_: sys::LLProvenanceTableRef,
 }

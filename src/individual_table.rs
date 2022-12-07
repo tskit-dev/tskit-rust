@@ -101,6 +101,7 @@ impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct IndividualTable {
     table_: sys::LLIndividualTableRef,
 }

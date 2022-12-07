@@ -145,7 +145,7 @@ impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct EdgeTable {
-    pub(crate) table_: sys::LLEdgeTableRef,
+    table_: sys::LLEdgeTableRef,
 }
 
 impl EdgeTable {
