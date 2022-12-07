@@ -144,6 +144,7 @@ impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
 /// by types implementing [`std::ops::Deref`] to
 /// [`crate::table_views::TableViews`]
 #[derive(Debug)]
+#[repr(transparent)]
 pub struct NodeTable {
     table_: sys::LLNodeTableRef,
 }
