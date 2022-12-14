@@ -1039,6 +1039,9 @@ work as expected and for compatibility with future versions of tskit.
 int tsk_tree_init(
     tsk_tree_t *self, const tsk_treeseq_t *tree_sequence, tsk_flags_t options);
 
+void
+tsk_tree_insert_edge(tsk_tree_t *self, tsk_id_t p, tsk_id_t c, tsk_id_t edge_id);
+
 /**
 @brief Free the internal memory for the specified tree.
 

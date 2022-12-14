@@ -4294,7 +4294,7 @@ tsk_tree_remove_edge(tsk_tree_t *self, tsk_id_t p, tsk_id_t c)
     }
 }
 
-static void
+void
 tsk_tree_insert_edge(tsk_tree_t *self, tsk_id_t p, tsk_id_t c, tsk_id_t edge_id)
 {
     tsk_id_t *restrict parent = self->parent;
