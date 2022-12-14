@@ -134,6 +134,23 @@ impl Tree {
             }
         }
 
+        // clunky -- seems we should be working with i32 and not a size type.
+        unsafe { *tree.as_mut_ptr() }.index = tree_index.as_usize() as i32;
+        unsafe { *tree.as_mut_ptr() }.interval.left = pos;
+
+        let num_trees: u64 = ts.num_trees().into();
+        unsafe { *tree.as_mut_ptr() }.interval.right = if tree_index < num_trees - 1 {
+            tree_indexes.left[tree_index.as_usize() + 1]
+        } else {
+            unsafe { (*ts.as_ref().tables).sequence_length }
+        };
+
+        // this is the part I am unsure of
+        unsafe { *tree.as_mut_ptr() }.left_index =
+            tree_indexes.insertion[tree_index.as_usize()] as i32;
+        unsafe { *tree.as_mut_ptr() }.right_index =
+            tree_indexes.removal[tree_index.as_usize()] as i32;
+
         Ok(tree)
     }
 }
@@ -425,6 +442,17 @@ impl TreeSequence {
     /// ```
     pub fn tree_iterator<F: Into<TreeFlags>>(&self, flags: F) -> Result<Tree, TskitError> {
         let tree = Tree::new(self, flags)?;
+
+        Ok(tree)
+    }
+
+    pub fn tree_iterator_at_index<F: Into<TreeFlags>>(
+        &self,
+        index: SizeType,
+        tree_indexes: &TreesIndex,
+        flags: F,
+    ) -> Result<Tree, TskitError> {
+        let tree = Tree::new_at_index(self, index, tree_indexes, flags)?;
 
         Ok(tree)
     }
