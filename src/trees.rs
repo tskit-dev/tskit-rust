@@ -153,6 +153,106 @@ impl Tree {
 
         Ok(tree)
     }
+
+    pub fn new_at_index_jk<F: Into<TreeFlags>>(
+        ts: &TreeSequence,
+        tree_index: SizeType,
+        tree_indexes: &TreesIndex,
+        flags: F,
+    ) -> Result<Self, TskitError> {
+        let mut tree = Self::new(ts, flags)?;
+
+        let num_edges = ts.edges().num_rows().as_usize();
+
+        let edge_insertion = unsafe {
+            std::slice::from_raw_parts(
+                (*(*ts.as_ptr()).tables).indexes.edge_insertion_order,
+                num_edges,
+            )
+        };
+        let edge_removal = unsafe {
+            std::slice::from_raw_parts(
+                (*(*ts.as_ptr()).tables).indexes.edge_removal_order,
+                num_edges,
+            )
+        };
+        let edge_left = ts.edges().left_slice();
+        let edge_right = ts.edges().right_slice();
+        let edge_parent = ts.edges().parent_slice();
+        let edge_child = ts.edges().child_slice();
+
+        // FIXME: will panic if index is out of range
+        let pos = tree_indexes.left[tree_index.as_usize()];
+
+        let mut j = 0_usize;
+        let mut k = 0_usize;
+        let mut left = 0.0;
+        let mut right = -1.0;
+        let seqlen = unsafe { (*ts.as_ref().tables).sequence_length };
+
+        while j < num_edges || left <= seqlen {
+            while k < num_edges && edge_right[edge_removal[k] as usize] == left {
+                k += 1;
+            }
+            while j < num_edges && edge_left[edge_insertion[j] as usize] == left {
+                if pos >= edge_left[edge_insertion[j] as usize]
+                    && pos < edge_right[edge_insertion[j] as usize]
+                {
+                    let p = edge_parent[edge_insertion[j] as usize];
+                    let c = edge_child[edge_insertion[j] as usize];
+                    unsafe {
+                        ll_bindings::tsk_tree_insert_edge(
+                            tree.as_mut_ptr(),
+                            p.into(),
+                            c.into(),
+                            edge_insertion[j],
+                        )
+                    };
+                }
+                j += 1;
+            }
+
+            // Boy, lack of total ordering stinks...
+            if j < num_edges {
+                right = if right < edge_left[edge_insertion[j] as usize] {
+                    right
+                } else {
+                    edge_left[edge_insertion[j] as usize].into()
+                };
+            }
+            if k < num_edges {
+                right = if right < edge_left[edge_removal[j] as usize] {
+                    right
+                } else {
+                    edge_left[edge_removal[j] as usize].into()
+                };
+            }
+            if pos >= left && pos < right {
+                // added all edges from target tree?
+                break;
+            }
+            left = right;
+        }
+
+        // clunky -- seems we should be working with i32 and not a size type.
+        unsafe { *tree.as_mut_ptr() }.index = tree_index.as_usize() as i32;
+        unsafe { *tree.as_mut_ptr() }.interval.left = pos;
+
+        let num_trees: u64 = ts.num_trees().into();
+        unsafe { *tree.as_mut_ptr() }.interval.right = if tree_index < num_trees - 1 {
+            tree_indexes.left[tree_index.as_usize() + 1]
+        } else {
+            seqlen
+        };
+
+        // this is the part I am unsure of
+        unsafe { *tree.as_mut_ptr() }.left_index =
+            tree_indexes.insertion[tree_index.as_usize()] as i32;
+        unsafe { *tree.as_mut_ptr() }.right_index =
+            tree_indexes.removal[tree_index.as_usize()] as i32;
+
+        Ok(tree)
+    }
 }
 
 impl streaming_iterator::StreamingIterator for Tree {
@@ -453,6 +553,17 @@ impl TreeSequence {
         flags: F,
     ) -> Result<Tree, TskitError> {
         let tree = Tree::new_at_index(self, index, tree_indexes, flags)?;
+
+        Ok(tree)
+    }
+
+    pub fn tree_iterator_at_index_jk<F: Into<TreeFlags>>(
+        &self,
+        index: SizeType,
+        tree_indexes: &TreesIndex,
+        flags: F,
+    ) -> Result<Tree, TskitError> {
+        let tree = Tree::new_at_index_jk(self, index, tree_indexes, flags)?;
 
         Ok(tree)
     }
