@@ -74,6 +74,9 @@ fn main() {
             ttime_lib
         );
 
+        assert_eq!(tree_at.interval(), tree_at_lib.interval());
+        assert_eq!(tree_at_jk.interval(), tree_at_lib.interval());
+
         compare(
             i,
             "parent",
