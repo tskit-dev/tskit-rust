@@ -35,6 +35,7 @@ fn main() {
     let flags = tskit::TreeFlags::SAMPLE_LISTS;
     let indexes = tskit::TreesIndex::new(&treeseq).unwrap();
 
+    println!("method index time");
     for i in (0..num_trees).step_by(args.stepsize as usize) {
         assert!(i < num_trees);
         let now = Instant::now();
@@ -47,12 +48,8 @@ fn main() {
             .tree_iterator_at_index_lib(i.into(), &indexes, flags)
             .unwrap();
         let duration_lib = now.elapsed();
-        println!(
-            "{} {:?} {:?}",
-            i,
-            duration.as_micros(),
-            duration_lib.as_micros()
-        );
+        println!("indexes {:?} {:?}", i, duration.as_micros(),);
+        println!("lib {:?} {:?}", i, duration_lib.as_micros(),);
 
         compare(
             i,
