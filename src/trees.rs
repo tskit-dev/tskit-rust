@@ -187,10 +187,11 @@ impl Tree {
         let mut j = 0_usize;
         let mut k = 0_usize;
         let mut left = 0.0;
-        let mut right = -1.0;
+        let mut right: f64;
         let seqlen = unsafe { (*ts.as_ref().tables).sequence_length };
 
         while j < num_edges || left <= seqlen {
+            //println!("{} {} {} {} {}", j, k, num_edges, left, seqlen);
             while k < num_edges && edge_right[edge_removal[k] as usize] == left {
                 k += 1;
             }
@@ -213,6 +214,7 @@ impl Tree {
             }
 
             // Boy, lack of total ordering stinks...
+            right = seqlen;
             if j < num_edges {
                 right = if right < edge_left[edge_insertion[j] as usize] {
                     right
@@ -221,10 +223,10 @@ impl Tree {
                 };
             }
             if k < num_edges {
-                right = if right < edge_left[edge_removal[j] as usize] {
+                right = if right < edge_right[edge_removal[j] as usize] {
                     right
                 } else {
-                    edge_left[edge_removal[j] as usize].into()
+                    edge_right[edge_removal[j] as usize].into()
                 };
             }
             if pos >= left && pos < right {

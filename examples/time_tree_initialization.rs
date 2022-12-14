@@ -46,13 +46,25 @@ fn main() {
             .tree_iterator_at_index_lib(i.into(), &indexes, flags)
             .unwrap();
         let duration_lib = now.elapsed();
+        let now = Instant::now();
+        let tree_at_jk = treeseq
+            .tree_iterator_at_index_jk(i.into(), &indexes, flags)
+            .unwrap();
+        let duration_jk = now.elapsed();
         println!("indexes {:?} {:?}", i, duration.as_micros(),);
         println!("lib {:?} {:?}", i, duration_lib.as_micros(),);
+        println!("jk {:?} {:?}", i, duration_jk.as_micros(),);
 
         compare(
             i,
             "parent",
             tree_at.parent_array(),
+            tree_at_lib.parent_array(),
+        );
+        compare(
+            i,
+            "parent",
+            tree_at_jk.parent_array(),
             tree_at_lib.parent_array(),
         );
 
