@@ -59,8 +59,20 @@ fn main() {
         let ttime_lib: f64 = tree_at_lib.total_branch_length(false).unwrap().into();
         let ttime_jk: f64 = tree_at_jk.total_branch_length(false).unwrap().into();
 
-        assert!((ttime_at - ttime_lib).abs() <= 1e-8);
-        assert!((ttime_jk - ttime_lib).abs() <= 1e-8);
+        // The "liberal" tolerance here is b/c our example
+        // data has large ttl times is abs value.
+        assert!(
+            (ttime_jk - ttime_lib).abs() <= 1e-5,
+            "jk vs lib: {} {}",
+            ttime_jk,
+            ttime_lib
+        );
+        assert!(
+            (ttime_at - ttime_lib).abs() <= 1e-5,
+            "at vs lib: {} {}",
+            ttime_at,
+            ttime_lib
+        );
 
         compare(
             i,

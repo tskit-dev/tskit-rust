@@ -110,6 +110,12 @@ impl Tree {
                 num_edges,
             )
         };
+        let edge_removal = unsafe {
+            std::slice::from_raw_parts(
+                (*(*ts.as_ptr()).tables).indexes.edge_removal_order,
+                num_edges,
+            )
+        };
         let left = ts.edges().left_slice();
         let right = ts.edges().right_slice();
         let parent = ts.edges().parent_slice();
@@ -117,19 +123,39 @@ impl Tree {
 
         // FIXME: will panic if index is out of range
         let pos = tree_indexes.left[tree_index.as_usize()];
-        for e in edge_insertion {
-            let idx = usize::try_from(*e).unwrap();
-            if left[idx] > pos {
-                break;
+        let seqlen = unsafe { (*ts.as_ref().tables).sequence_length };
+        if pos <= seqlen / 2. {
+            for e in edge_insertion {
+                let idx = usize::try_from(*e).unwrap();
+                if left[idx] > pos {
+                    break;
+                }
+                if pos >= left[idx] && pos < right[idx] {
+                    unsafe {
+                        ll_bindings::tsk_tree_insert_edge(
+                            tree.as_mut_ptr(),
+                            parent[idx].into(),
+                            child[idx].into(),
+                            *e,
+                        )
+                    }
+                }
             }
-            if pos >= left[idx] && pos < right[idx] {
-                unsafe {
-                    ll_bindings::tsk_tree_insert_edge(
-                        tree.as_mut_ptr(),
-                        parent[idx].into(),
-                        child[idx].into(),
-                        *e,
-                    )
+        } else {
+            for e in edge_removal.iter().rev() {
+                let idx = usize::try_from(*e).unwrap();
+                if right[idx] < pos {
+                    break;
+                }
+                if pos >= left[idx] && pos < right[idx] {
+                    unsafe {
+                        ll_bindings::tsk_tree_insert_edge(
+                            tree.as_mut_ptr(),
+                            parent[idx].into(),
+                            child[idx].into(),
+                            *e,
+                        )
+                    }
                 }
             }
         }
