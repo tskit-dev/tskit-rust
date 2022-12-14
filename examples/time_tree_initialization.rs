@@ -12,6 +12,8 @@ struct Args {
     stepsize: u64,
 }
 
+// NOTE: direct slice comparison (a == b) fails.
+// That may be an issue in tskit-rust?  Need to check that.
 fn compare(tree: u64, name: &str, left: &[NodeId], right: &[NodeId]) {
     for (i, (l, r)) in left.iter().zip(right.iter()).enumerate() {
         if *l != *r {
