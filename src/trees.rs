@@ -457,6 +457,21 @@ impl TreeSequence {
         Ok(tree)
     }
 
+    /// Uses the indexes to cheat to find the right position
+    pub fn tree_iterator_at_index_lib<F: Into<TreeFlags>>(
+        &self,
+        index: SizeType,
+        tree_indexes: &TreesIndex,
+        flags: F,
+    ) -> Result<Tree, TskitError> {
+        let index = index.as_usize();
+        let position = tree_indexes.left[index];
+        let flags = flags.into().bits();
+        let mut tree = Tree::new(self, flags)?;
+        let rv = unsafe { ll_bindings::tsk_tree_seek(tree.as_mut_ptr(), position, flags) };
+        handle_tsk_return_value!(rv, tree)
+    }
+
     /// Get the list of samples as a vector.
     /// # Panics
     ///
