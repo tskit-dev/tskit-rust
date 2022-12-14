@@ -12,8 +12,6 @@ struct Args {
     stepsize: u64,
 }
 
-// NOTE: direct slice comparison (a == b) fails.
-// That may be an issue in tskit-rust?  Need to check that.
 fn compare(tree: u64, name: &str, left: &[NodeId], right: &[NodeId]) {
     for (i, (l, r)) in left.iter().zip(right.iter()).enumerate() {
         if *l != *r {
@@ -57,29 +55,34 @@ fn main() {
             tree_at.parent_array(),
             tree_at_lib.parent_array(),
         );
-        compare(
-            i,
-            "left_child",
-            tree_at.left_child_array(),
-            tree_at_lib.left_child_array(),
-        );
-        compare(
-            i,
-            "right_child",
-            tree_at.right_child_array(),
-            tree_at_lib.right_child_array(),
-        );
-        compare(
-            i,
-            "left_sib",
-            tree_at.left_sib_array(),
-            tree_at_lib.left_sib_array(),
-        );
-        compare(
-            i,
-            "right_sib",
-            tree_at.right_sib_array(),
-            tree_at_lib.right_sib_array(),
-        );
+
+        // The following may not be valid:
+        // the different remove/insert ops
+        // could change orders of stuff in sub-trees?
+
+        //compare(
+        //    i,
+        //    "left_child",
+        //    tree_at.left_child_array(),
+        //    tree_at_lib.left_child_array(),
+        //);
+        //compare(
+        //    i,
+        //    "right_child",
+        //    tree_at.right_child_array(),
+        //    tree_at_lib.right_child_array(),
+        //);
+        //compare(
+        //    i,
+        //    "left_sib",
+        //    tree_at.left_sib_array(),
+        //    tree_at_lib.left_sib_array(),
+        //);
+        //compare(
+        //    i,
+        //    "right_sib",
+        //    tree_at.right_sib_array(),
+        //    tree_at_lib.right_sib_array(),
+        //);
     }
 }
