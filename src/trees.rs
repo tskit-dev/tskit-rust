@@ -15,6 +15,7 @@ use crate::TskReturnValue;
 use crate::{tsk_id_t, TableCollection};
 use ll_bindings::tsk_tree_free;
 use std::ptr::NonNull;
+use streaming_iterator::StreamingIterator;
 
 /// A Tree.
 ///
@@ -137,6 +138,37 @@ impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
         } else if rv < 0 {
             panic_on_tskit_error!(rv);
         }
+    }
+}
+
+pub struct TreesIndex {
+    insertion: Vec<usize>,
+    removal: Vec<usize>,
+    left: Vec<f64>,
+}
+
+impl TreesIndex {
+    pub fn new(treeseq: &TreeSequence) -> Result<Self, TskitError> {
+        let mut insertion = vec![];
+        let mut removal = vec![];
+        let mut left = vec![];
+        let mut j: usize = 0;
+        let mut k: usize = 0;
+
+        let mut diffs = treeseq.edge_differences_iter()?;
+
+        while let Some(local_diffs) = diffs.next() {
+            insertion.push(j);
+            removal.push(k);
+            left.push(local_diffs.left().into());
+            k += local_diffs.edge_removals().count();
+            j += local_diffs.edge_insertions().count();
+        }
+        Ok(Self {
+            insertion,
+            removal,
+            left,
+        })
     }
 }
 

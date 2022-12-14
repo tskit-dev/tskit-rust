@@ -133,7 +133,7 @@ pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
 pub use tree_interface::{NodeTraversalOrder, TreeInterface};
-pub use trees::{Tree, TreeSequence};
+pub use trees::{Tree, TreeSequence, TreesIndex};
 
 // Optional features
 #[cfg(feature = "provenance")]
