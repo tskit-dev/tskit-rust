@@ -55,6 +55,13 @@ fn main() {
         println!("lib {:?} {:?}", i, duration_lib.as_micros(),);
         println!("jk {:?} {:?}", i, duration_jk.as_micros(),);
 
+        let ttime_at: f64 = tree_at.total_branch_length(false).unwrap().into();
+        let ttime_lib: f64 = tree_at_lib.total_branch_length(false).unwrap().into();
+        let ttime_jk: f64 = tree_at_jk.total_branch_length(false).unwrap().into();
+
+        assert!((ttime_at - ttime_lib).abs() <= 1e-8);
+        assert!((ttime_jk - ttime_lib).abs() <= 1e-8);
+
         compare(
             i,
             "parent",
