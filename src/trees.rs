@@ -93,6 +93,49 @@ impl Tree {
             }
         )
     }
+
+    pub fn new_at_index<F: Into<TreeFlags>>(
+        ts: &TreeSequence,
+        tree_index: SizeType,
+        tree_indexes: &TreesIndex,
+        flags: F,
+    ) -> Result<Self, TskitError> {
+        let mut tree = Self::new(ts, flags)?;
+
+        let num_edges = ts.edges().num_rows().as_usize();
+
+        let edge_insertion = unsafe {
+            std::slice::from_raw_parts(
+                (*(*ts.as_ptr()).tables).indexes.edge_insertion_order,
+                num_edges,
+            )
+        };
+        let left = ts.edges().left_slice();
+        let right = ts.edges().right_slice();
+        let parent = ts.edges().parent_slice();
+        let child = ts.edges().child_slice();
+
+        // FIXME: will panic if index is out of range
+        let pos = tree_indexes.left[tree_index.as_usize()];
+        for e in edge_insertion {
+            let idx = usize::try_from(*e).unwrap();
+            if left[idx] > pos {
+                break;
+            }
+            if pos >= left[idx] && pos < right[idx] {
+                unsafe {
+                    ll_bindings::tsk_tree_insert_edge(
+                        tree.as_mut_ptr(),
+                        parent[idx].into(),
+                        child[idx].into(),
+                        *e,
+                    )
+                }
+            }
+        }
+
+        Ok(tree)
+    }
 }
 
 impl streaming_iterator::StreamingIterator for Tree {
