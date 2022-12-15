@@ -103,6 +103,12 @@ fn main() {
             unsafe { (*tree_at_lib.as_ptr()).right_index },
             unsafe { (*tree_at.as_ptr()).right_index }
         );
+        assert_eq!(unsafe { (*tree_at_lib.as_ptr()).num_edges }, unsafe {
+            (*tree_at.as_ptr()).num_edges
+        });
+        assert_eq!(unsafe { (*tree_at_lib.as_ptr()).num_edges }, unsafe {
+            (*tree_at_jk.as_ptr()).num_edges
+        });
         while let Some(tree_at_lib) = tree_at_lib.next() {
             let tree_at = tree_at.next().unwrap();
             let tree_at_jk = tree_at_jk.next().unwrap();
