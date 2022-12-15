@@ -175,14 +175,14 @@ impl Tree {
 
         // this is the part I am unsure of
         unsafe {
-            (*tree.as_mut_ptr()).left_index = tree_indexes.insertion[tree_index.as_usize()] as i32
+            (*tree.as_mut_ptr()).left_index =
+                tree_indexes.insertion[tree_index.as_usize() + 1] as i32
         };
         unsafe {
-            (*tree.as_mut_ptr()).right_index = tree_indexes.removal[tree_index.as_usize()] as i32
+            (*tree.as_mut_ptr()).right_index =
+                tree_indexes.removal[tree_index.as_usize() + 1] as i32
         };
-        unsafe {
-            (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows
-        };
+        unsafe { (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows };
         tree.current_tree = tree_index.as_usize() as i32;
 
         Ok(tree)
@@ -282,14 +282,14 @@ impl Tree {
 
         // this is the part I am unsure of
         unsafe {
-            (*tree.as_mut_ptr()).left_index = tree_indexes.insertion[tree_index.as_usize()] as i32
+            (*tree.as_mut_ptr()).left_index =
+                tree_indexes.insertion[tree_index.as_usize() + 1] as i32
         };
         unsafe {
-            (*tree.as_mut_ptr()).right_index = tree_indexes.removal[tree_index.as_usize()] as i32
+            (*tree.as_mut_ptr()).right_index =
+                tree_indexes.removal[tree_index.as_usize() + 1] as i32
         };
-        unsafe {
-            (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows
-        };
+        unsafe { (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows };
         tree.current_tree = tree_index.as_usize() as i32;
 
         Ok(tree)
