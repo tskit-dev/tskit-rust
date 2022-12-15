@@ -252,6 +252,13 @@ impl Tree {
             }
         }
 
+        // manually determine the tree index
+        let breakpoints = unsafe{std::slice::from_raw_parts(ts.as_ref().breakpoints, ts.num_trees().as_usize())};
+        let i = match breakpoints.iter().position(|b| b > &pos) {
+           Some(value) => value - 1,
+           None => panic!("bad things happened that should be an Err")
+        };
+        assert_eq!(i, tree_index.as_usize());
         // clunky -- seems we should be working with i32 and not a size type.
         unsafe { (*tree.as_mut_ptr()).index = tree_index.as_usize() as i32 };
         unsafe { (*tree.as_mut_ptr()).interval.left = pos };
