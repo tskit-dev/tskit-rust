@@ -180,6 +180,10 @@ impl Tree {
         unsafe {
             (*tree.as_mut_ptr()).right_index = tree_indexes.removal[tree_index.as_usize()] as i32
         };
+        unsafe {
+            (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows
+        };
+        tree.current_tree = tree_index.as_usize() as i32;
 
         Ok(tree)
     }
@@ -253,12 +257,16 @@ impl Tree {
         }
 
         // manually determine the tree index
-        let breakpoints = unsafe{std::slice::from_raw_parts(ts.as_ref().breakpoints, ts.num_trees().as_usize())};
+        let breakpoints = unsafe {
+            std::slice::from_raw_parts(ts.as_ref().breakpoints, ts.num_trees().as_usize())
+        };
         let i = match breakpoints.iter().position(|b| b > &pos) {
-           Some(value) => value - 1,
-           None => panic!("bad things happened that should be an Err")
+            Some(value) => value - 1,
+            None => panic!("bad things happened that should be an Err"),
         };
         assert_eq!(i, tree_index.as_usize());
+        assert!(pos >= breakpoints[i]);
+        assert!(pos < breakpoints[i + 1]);
         // clunky -- seems we should be working with i32 and not a size type.
         unsafe { (*tree.as_mut_ptr()).index = tree_index.as_usize() as i32 };
         unsafe { (*tree.as_mut_ptr()).interval.left = pos };
@@ -279,6 +287,10 @@ impl Tree {
         unsafe {
             (*tree.as_mut_ptr()).right_index = tree_indexes.removal[tree_index.as_usize()] as i32
         };
+        unsafe {
+            (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows
+        };
+        tree.current_tree = tree_index.as_usize() as i32;
 
         Ok(tree)
     }
@@ -608,6 +620,7 @@ impl TreeSequence {
         let position = tree_indexes.left[index];
         let flags = flags.into().bits();
         let mut tree = Tree::new(self, flags)?;
+        tree.current_tree = index as i32;
         let rv = unsafe { ll_bindings::tsk_tree_seek(tree.as_mut_ptr(), position, flags) };
         handle_tsk_return_value!(rv, tree)
     }

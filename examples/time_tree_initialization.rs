@@ -37,17 +37,17 @@ fn main() {
     for i in (0..num_trees).step_by(args.stepsize as usize) {
         assert!(i < num_trees);
         let now = Instant::now();
-        let tree_at = treeseq
+        let mut tree_at = treeseq
             .tree_iterator_at_index(i.into(), &indexes, flags)
             .unwrap();
         let duration = now.elapsed();
         let now = Instant::now();
-        let tree_at_lib = treeseq
+        let mut tree_at_lib = treeseq
             .tree_iterator_at_index_lib(i.into(), &indexes, flags)
             .unwrap();
         let duration_lib = now.elapsed();
         let now = Instant::now();
-        let tree_at_jk = treeseq
+        let mut tree_at_jk = treeseq
             .tree_iterator_at_index_jk(i.into(), &indexes, flags)
             .unwrap();
         let duration_jk = now.elapsed();
@@ -89,6 +89,22 @@ fn main() {
             tree_at_jk.parent_array(),
             tree_at_lib.parent_array(),
         );
+
+        let mut niterations = 0;
+        println!("{} {} {}", i,
+                 unsafe { (*tree_at_lib.as_ptr()).left_index },
+                 unsafe { (*tree_at.as_ptr()).left_index }
+
+                 );
+        while let Some(tree_at_lib) = tree_at_lib.next() {
+            //let tree_at = tree_at.next().unwrap();
+            //let tree_at_jk = tree_at_jk.next().unwrap();
+
+            //assert_eq!(tree_at_lib.interval(), tree_at.interval());
+            //assert_eq!(tree_at_lib.interval(), tree_at_jk.interval());
+            niterations += 1;
+        }
+        println!("{}", niterations);
 
         // The following may not be valid:
         // the different remove/insert ops
