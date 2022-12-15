@@ -214,56 +214,42 @@ impl Tree {
         // FIXME: will panic if index is out of range
         let pos = tree_indexes.left[tree_index.as_usize()];
 
-        let mut j = 0_usize;
-        let mut k = 0_usize;
-        let mut left = 0.0;
-        let mut right: f64;
         let seqlen = unsafe { (*ts.as_ref().tables).sequence_length };
 
-        while j < num_edges || left <= seqlen {
-            //println!("{} {} {} {} {}", j, k, num_edges, left, seqlen);
-            while k < num_edges && edge_right[edge_removal[k] as usize] == left {
-                k += 1;
-            }
-            while j < num_edges && edge_left[edge_insertion[j] as usize] == left {
-                if pos >= edge_left[edge_insertion[j] as usize]
-                    && pos < edge_right[edge_insertion[j] as usize]
-                {
-                    let p = edge_parent[edge_insertion[j] as usize];
-                    let c = edge_child[edge_insertion[j] as usize];
+        if pos <= seqlen / 2. {
+            for e in edge_insertion.iter() {
+                let idx = usize::try_from(*e).unwrap();
+                if edge_left[idx] > pos {
+                    break;
+                }
+                if pos >= edge_left[idx] && pos < edge_right[idx] {
                     unsafe {
                         ll_bindings::tsk_tree_insert_edge(
                             tree.as_mut_ptr(),
-                            p.into(),
-                            c.into(),
-                            edge_insertion[j],
+                            edge_parent[idx].into(),
+                            edge_child[idx].into(),
+                            *e,
                         )
-                    };
+                    }
                 }
-                j += 1;
             }
-
-            // Boy, lack of total ordering stinks...
-            right = seqlen;
-            if j < num_edges {
-                right = if right < edge_left[edge_insertion[j] as usize] {
-                    right
-                } else {
-                    edge_left[edge_insertion[j] as usize].into()
-                };
+        } else {
+            for e in edge_removal.iter().rev() {
+                let idx = usize::try_from(*e).unwrap();
+                if edge_right[idx] < pos {
+                    break;
+                }
+                if pos >= edge_left[idx] && pos < edge_right[idx] {
+                    unsafe {
+                        ll_bindings::tsk_tree_insert_edge(
+                            tree.as_mut_ptr(),
+                            edge_parent[idx].into(),
+                            edge_child[idx].into(),
+                            *e,
+                        )
+                    }
+                }
             }
-            if k < num_edges {
-                right = if right < edge_right[edge_removal[j] as usize] {
-                    right
-                } else {
-                    edge_right[edge_removal[j] as usize].into()
-                };
-            }
-            if pos >= left && pos < right {
-                // added all edges from target tree?
-                break;
-            }
-            left = right;
         }
 
         // clunky -- seems we should be working with i32 and not a size type.
