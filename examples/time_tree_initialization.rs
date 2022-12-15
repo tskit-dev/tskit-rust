@@ -91,13 +91,13 @@ fn main() {
         );
 
         let mut niterations = 0;
-        println!("{} {} {}", i,
+        println!("LEFT INDEX: {} {} {}", i,
                  unsafe { (*tree_at_lib.as_ptr()).left_index },
                  unsafe { (*tree_at.as_ptr()).left_index }
 
                  );
         while let Some(tree_at_lib) = tree_at_lib.next() {
-            //let tree_at = tree_at.next().unwrap();
+            let tree_at = tree_at.next().unwrap();
             //let tree_at_jk = tree_at_jk.next().unwrap();
 
             //assert_eq!(tree_at_lib.interval(), tree_at.interval());
