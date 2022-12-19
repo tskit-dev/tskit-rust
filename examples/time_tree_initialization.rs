@@ -92,10 +92,10 @@ fn main() {
 
         let mut niterations = 0;
         assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
-            (*tree_at.as_ptr()).left_index
+            (*tree_at_jk.as_ptr()).left_index
         });
         assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
-            (*tree_at.as_ptr()).right_index
+            (*tree_at_jk.as_ptr()).right_index
         });
         assert_eq!(unsafe { (*tree_at_lib.as_ptr()).num_edges }, unsafe {
             (*tree_at.as_ptr()).num_edges
@@ -134,6 +134,14 @@ fn main() {
                 "tree index = {}",
                 i
             );
+            //let ttime_lib: f64 = tree_at_lib.total_branch_length(false).unwrap().into();
+            //let ttime_jk: f64 = tree_at_jk.total_branch_length(false).unwrap().into();
+            //assert!(
+            //    (ttime_jk - ttime_lib).abs() <= 1e-6,
+            //    "{} {}",
+            //    ttime_lib,
+            //    ttime_jk
+            //);
             //compare(
             //    i,
             //    "parent",
