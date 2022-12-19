@@ -94,7 +94,6 @@ fn main() {
             tree_at_lib.parent_array(),
         );
 
-        let mut niterations = 0;
         //assert_eq!(
         //    unsafe { (*tree_at_lib.as_ptr()).direction },
         //    tskit::bindings::TSK_DIR_FORWARD as i32
@@ -172,9 +171,7 @@ fn main() {
                 ttime_lib,
                 ttime_jk
             );
-            niterations += 1;
         }
-        println!("{}", niterations);
 
         // The following may not be valid:
         // the different remove/insert ops
