@@ -148,12 +148,12 @@ fn main() {
             //    ttime_lib,
             //    ttime_jk
             //);
-            //compare(
-            //    i,
-            //    "parent",
-            //    tree_at.parent_array(),
-            //    tree_at_lib.parent_array(),
-            //);
+            compare(
+                i,
+                "parent",
+                tree_at.parent_array(),
+                tree_at_lib.parent_array(),
+            );
             compare(
                 i,
                 "parent jk",
