@@ -196,10 +196,10 @@ impl Tree {
     ) -> Result<Self, TskitError> {
         let mut tree = Self::new(ts, flags)?;
 
-        let edge_left = ts.edges().left_slice();
-        let edge_right = ts.edges().right_slice();
-        let edge_parent = ts.edges().parent_slice();
-        let edge_child = ts.edges().child_slice();
+        let edge_left = ts.edges().left_slice_raw();
+        let edge_right = ts.edges().right_slice_raw();
+        let edge_parent = ts.edges().parent_slice_raw();
+        let edge_child = ts.edges().child_slice_raw();
         let num_edges = edge_left.len();
 
         let edge_insertion = unsafe {
@@ -252,14 +252,14 @@ impl Tree {
                 right = if right < edge_left[edge_insertion[j] as usize] {
                     right
                 } else {
-                    edge_left[edge_insertion[j] as usize].into()
+                    edge_left[edge_insertion[j] as usize]
                 };
             }
             if k < num_edges {
                 right = if right < edge_right[edge_removal[k] as usize] {
                     right
                 } else {
-                    edge_right[edge_removal[k] as usize].into()
+                    edge_right[edge_removal[k] as usize]
                 };
             }
             //if pos >= left && pos < right {

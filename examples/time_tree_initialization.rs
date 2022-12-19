@@ -124,6 +124,9 @@ fn main() {
             assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
                 (*tree_at.as_ptr()).right_index
             });
+            assert_eq!(unsafe { (*tree_at_lib.as_ptr()).num_edges }, unsafe {
+                (*tree_at_jk.as_ptr()).num_edges
+            });
             assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
                 (*tree_at_jk.as_ptr()).left_index
             });
