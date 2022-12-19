@@ -171,6 +171,8 @@ impl Tree {
         } else {
             unsafe { (*ts.as_ref().tables).sequence_length }
         };
+        assert!(unsafe { (*tree.as_mut_ptr()).interval.left } < right);
+
         unsafe { (*tree.as_mut_ptr()).interval.right = right };
 
         // this is the part I am unsure of
@@ -185,6 +187,8 @@ impl Tree {
         unsafe { (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows };
         unsafe { (*tree.as_mut_ptr()).direction = ll_bindings::TSK_DIR_FORWARD as i32 };
         tree.current_tree = tree_index.as_usize() as i32;
+        assert!(pos >= unsafe { (*tree.as_ptr()).interval.left });
+        assert!(pos < unsafe { (*tree.as_ptr()).interval.right });
 
         Ok(tree)
     }
@@ -296,6 +300,7 @@ impl Tree {
         } else {
             unsafe { (*ts.as_ref().tables).sequence_length }
         };
+        assert!(unsafe { (*tree.as_mut_ptr()).interval.left } < right);
         unsafe { (*tree.as_mut_ptr()).interval.right = right };
 
         // this is the part I am unsure of
@@ -314,6 +319,9 @@ impl Tree {
             tree_indexes.removal[tree_index.as_usize()],
             tree_indexes.removal[tree_index.as_usize() + 1],
         );
+
+        assert!(pos >= unsafe { (*tree.as_ptr()).interval.left });
+        assert!(pos < unsafe { (*tree.as_ptr()).interval.right });
 
         Ok(tree)
     }
