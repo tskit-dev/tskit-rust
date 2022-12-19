@@ -232,7 +232,6 @@ impl Tree {
 
         //while (j < num_edges || left <= seqlen) && pos >= left {
         while j < num_edges || left <= seqlen {
-            println!("{} {} {} {} | {}", j, num_edges, left, seqlen, pos);
             while k < num_edges && edge_right[edge_removal[k] as usize] == left {
                 k += 1;
             }
@@ -309,16 +308,6 @@ impl Tree {
         unsafe { (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows };
         unsafe { (*tree.as_mut_ptr()).direction = ll_bindings::TSK_DIR_FORWARD as i32 };
         tree.current_tree = tree_index.as_usize() as i32;
-
-        println!(
-            "leaving with {} {}|{}, {} {}|{}",
-            j,
-            tree_indexes.insertion[tree_index.as_usize()],
-            tree_indexes.insertion[tree_index.as_usize() + 1],
-            k,
-            tree_indexes.removal[tree_index.as_usize()],
-            tree_indexes.removal[tree_index.as_usize() + 1],
-        );
 
         assert!(pos >= unsafe { (*tree.as_ptr()).interval.left });
         assert!(pos < unsafe { (*tree.as_ptr()).interval.right });
