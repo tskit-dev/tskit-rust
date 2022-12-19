@@ -231,7 +231,7 @@ impl Tree {
         let mut left = 0.0;
 
         //while (j < num_edges || left <= seqlen) && pos >= left {
-        while j < num_edges && pos >= left {
+        while j < num_edges || left <= seqlen {
             println!("{} {} {} {} | {}", j, num_edges, left, seqlen, pos);
             while k < num_edges && edge_right[edge_removal[k] as usize] == left {
                 k += 1;
@@ -240,8 +240,8 @@ impl Tree {
                 if pos >= edge_left[edge_insertion[j] as usize]
                     && pos < edge_right[edge_insertion[j] as usize]
                 {
-                    let p: i32 = edge_parent[edge_insertion[j] as usize].into();
-                    let c: i32 = edge_child[edge_insertion[j] as usize].into();
+                    let p: i32 = edge_parent[edge_insertion[j] as usize];
+                    let c: i32 = edge_child[edge_insertion[j] as usize];
                     unsafe {
                         ll_bindings::tsk_tree_insert_edge(
                             tree.as_mut_ptr(),
@@ -268,9 +268,9 @@ impl Tree {
                     edge_right[edge_removal[k] as usize]
                 };
             }
-            //if pos >= left && pos < right {
-            //    break;
-            //}
+            if pos >= left && pos < right {
+                break;
+            }
             left = right;
         }
         // HACK: why is this needed?
