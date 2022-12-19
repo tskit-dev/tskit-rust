@@ -261,10 +261,9 @@ impl Tree {
                     edge_right[edge_removal[k] as usize].into()
                 };
             }
-            if edge_left[edge_insertion[j] as usize] > pos { break; }
-            //if pos >= left && pos < right {
-            //    break;
-            //}
+            if pos >= left && pos < right {
+                break;
+            }
             left = right;
         }
         // HACK: why is this needed?
