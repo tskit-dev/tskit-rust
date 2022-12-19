@@ -13,6 +13,9 @@ struct Args {
 }
 
 fn compare(tree: u64, name: &str, left: &[NodeId], right: &[NodeId]) {
+    let not_null = left.iter().filter(|x| !x.is_null()).count();
+    let not_null_r = right.iter().filter(|x| !x.is_null()).count();
+    assert_eq!(not_null, not_null_r);
     for (i, (l, r)) in left.iter().zip(right.iter()).enumerate() {
         if *l != *r {
             panic!(
@@ -77,12 +80,12 @@ fn main() {
         assert_eq!(tree_at.interval(), tree_at_lib.interval());
         assert_eq!(tree_at_jk.interval(), tree_at_lib.interval());
 
-        compare(
-            i,
-            "parent",
-            tree_at.parent_array(),
-            tree_at_lib.parent_array(),
-        );
+        // compare(
+        //     i,
+        //     "parent",
+        //     tree_at.parent_array(),
+        //     tree_at_lib.parent_array(),
+        // );
         compare(
             i,
             "parent",
@@ -148,12 +151,12 @@ fn main() {
             //    tree_at.parent_array(),
             //    tree_at_lib.parent_array(),
             //);
-            //compare(
-            //    i,
-            //    "parent jk",
-            //    tree_at_jk.parent_array(),
-            //    tree_at_lib.parent_array(),
-            //);
+            compare(
+                i,
+                "parent jk",
+                tree_at_jk.parent_array(),
+                tree_at_lib.parent_array(),
+            );
             niterations += 1;
         }
         println!("{}", niterations);

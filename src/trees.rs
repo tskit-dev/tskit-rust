@@ -224,7 +224,8 @@ impl Tree {
         let mut right: f64;
         let mut left = 0.0;
 
-        while j < num_edges || left <= seqlen {
+        //while (j < num_edges || left <= seqlen) && pos >= left {
+        while j < num_edges  && pos >= left {
             println!("{} {} {} {} | {}", j, num_edges, left, seqlen, pos);
             while k < num_edges && edge_right[edge_removal[k] as usize] == left {
                 k += 1;
@@ -261,9 +262,9 @@ impl Tree {
                     edge_right[edge_removal[k] as usize].into()
                 };
             }
-            if pos >= left && pos < right {
-                break;
-            }
+            //if pos >= left && pos < right {
+            //    break;
+            //}
             left = right;
         }
         // HACK: why is this needed?
@@ -300,6 +301,16 @@ impl Tree {
         unsafe { (*tree.as_mut_ptr()).right_index = k as i32 };
         unsafe { (*tree.as_mut_ptr()).num_nodes = (*ts.as_ref().tables).nodes.num_rows };
         tree.current_tree = tree_index.as_usize() as i32;
+
+        println!(
+            "leaving with {} {}|{}, {} {}|{}",
+            j,
+            tree_indexes.insertion[tree_index.as_usize()],
+            tree_indexes.insertion[tree_index.as_usize() + 1],
+            k,
+            tree_indexes.removal[tree_index.as_usize()],
+            tree_indexes.removal[tree_index.as_usize() + 1],
+        );
 
         Ok(tree)
     }
