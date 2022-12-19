@@ -201,6 +201,7 @@ impl Tree {
         let edge_parent = ts.edges().parent_slice_raw();
         let edge_child = ts.edges().child_slice_raw();
         let num_edges = edge_left.len();
+        assert_eq!(num_edges, ts.edges().num_rows().as_usize());
 
         let edge_insertion = unsafe {
             std::slice::from_raw_parts(
@@ -225,7 +226,7 @@ impl Tree {
         let mut left = 0.0;
 
         //while (j < num_edges || left <= seqlen) && pos >= left {
-        while j < num_edges  && pos >= left {
+        while j < num_edges && pos >= left {
             println!("{} {} {} {} | {}", j, num_edges, left, seqlen, pos);
             while k < num_edges && edge_right[edge_removal[k] as usize] == left {
                 k += 1;
