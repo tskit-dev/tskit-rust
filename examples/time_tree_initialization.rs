@@ -37,7 +37,7 @@ fn main() {
     let indexes = tskit::TreesIndex::new(&treeseq).unwrap();
 
     println!("method index time");
-    for i in (0..num_trees).step_by(args.stepsize as usize) {
+    for i in (0..(num_trees-1)).step_by(args.stepsize as usize) {
         assert!(i < num_trees);
         let now = Instant::now();
         let mut tree_at = treeseq
@@ -48,6 +48,7 @@ fn main() {
         let mut tree_at_lib = treeseq
             .tree_iterator_at_index_lib(i.into(), &indexes, flags)
             .unwrap();
+        // unsafe { (*tree_at_lib.as_mut_ptr()).direction = 1 };
         let duration_lib = now.elapsed();
         let now = Instant::now();
         let mut tree_at_jk = treeseq
@@ -94,12 +95,20 @@ fn main() {
         );
 
         let mut niterations = 0;
-        assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
-            (*tree_at_jk.as_ptr()).left_index
-        });
-        assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
-            (*tree_at_jk.as_ptr()).right_index
-        });
+        //assert_eq!(
+        //    unsafe { (*tree_at_lib.as_ptr()).direction },
+        //    tskit::bindings::TSK_DIR_FORWARD as i32
+        //);
+        assert_eq!(
+            unsafe { (*tree_at_jk.as_ptr()).direction },
+            tskit::bindings::TSK_DIR_FORWARD as i32
+        );
+        //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
+        //    (*tree_at_jk.as_ptr()).left_index
+        //});
+        //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
+        //    (*tree_at_jk.as_ptr()).right_index
+        //});
         assert_eq!(unsafe { (*tree_at_lib.as_ptr()).num_edges }, unsafe {
             (*tree_at.as_ptr()).num_edges
         });
@@ -125,6 +134,7 @@ fn main() {
             //    tree_at_lib.parent_array(),
             //);
 
+            //println!("JK");
             let tree_at_jk = tree_at_jk.next().unwrap();
             assert_eq!(tree_at_lib.interval(), tree_at_jk.interval());
             assert_eq!(unsafe { (*tree_at_lib.as_ptr()).index }, unsafe {

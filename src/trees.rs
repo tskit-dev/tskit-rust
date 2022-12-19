@@ -274,10 +274,10 @@ impl Tree {
             left = right;
         }
         // HACK: why is this needed?
-        if pos > seqlen / 2. {
-            j -= 1;
-            k -= 1;
-        }
+        //if pos > seqlen / 2. {
+        //    j -= 1;
+        //    k -= 1;
+        //}
         // manually determine the tree index
         let breakpoints = unsafe {
             std::slice::from_raw_parts(ts.as_ref().breakpoints, ts.num_trees().as_usize())
