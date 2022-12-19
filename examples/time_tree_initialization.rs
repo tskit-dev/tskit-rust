@@ -116,23 +116,31 @@ fn main() {
             (*tree_at_jk.as_ptr()).num_edges
         });
         while let Some(tree_at_lib) = tree_at_lib.next() {
-            //let tree_at = tree_at.next().unwrap();
-            //assert_eq!(tree_at_lib.interval(), tree_at.interval());
-            //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).index }, unsafe {
-            //    (*tree_at.as_ptr()).index
-            //});
+            let tree_at = tree_at.next().unwrap();
+            assert_eq!(tree_at_lib.interval(), tree_at.interval());
+            assert_eq!(unsafe { (*tree_at_lib.as_ptr()).index }, unsafe {
+                (*tree_at.as_ptr()).index
+            });
             //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
             //    (*tree_at.as_ptr()).left_index
             //});
             //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
             //    (*tree_at.as_ptr()).right_index
             //});
-            //compare(
-            //    i,
-            //    "parent",
-            //    tree_at.parent_array(),
-            //    tree_at_lib.parent_array(),
-            //);
+            compare(
+                i,
+                "parent",
+                tree_at.parent_array(),
+                tree_at_lib.parent_array(),
+            );
+            let ttime_lib: f64 = tree_at_lib.total_branch_length(false).unwrap().into();
+            let ttime: f64 = tree_at.total_branch_length(false).unwrap().into();
+            assert!(
+                (ttime - ttime_lib).abs() <= 1e-6,
+                "{} {}",
+                ttime_lib,
+                ttime
+            );
 
             //println!("JK");
             let tree_at_jk = tree_at_jk.next().unwrap();
