@@ -37,7 +37,7 @@ fn main() {
     let indexes = tskit::TreesIndex::new(&treeseq).unwrap();
 
     println!("method index time");
-    for i in (0..(num_trees-1)).step_by(args.stepsize as usize) {
+    for i in (0..(num_trees - 1)).step_by(args.stepsize as usize) {
         assert!(i < num_trees);
         let now = Instant::now();
         let mut tree_at = treeseq
@@ -51,9 +51,7 @@ fn main() {
         // unsafe { (*tree_at_lib.as_mut_ptr()).direction = 1 };
         let duration_lib = now.elapsed();
         let now = Instant::now();
-        let mut tree_at_jk = treeseq
-            .tree_iterator_at_index_jk(i.into(), &indexes, flags)
-            .unwrap();
+        let mut tree_at_jk = treeseq.tree_iterator_at_index_jk(i.into(), flags).unwrap();
         let duration_jk = now.elapsed();
         println!("indexes {:?} {:?}", i, duration.as_micros(),);
         println!("lib {:?} {:?}", i, duration_lib.as_micros(),);
@@ -114,18 +112,22 @@ fn main() {
         assert_eq!(unsafe { (*tree_at_lib.as_ptr()).num_edges }, unsafe {
             (*tree_at_jk.as_ptr()).num_edges
         });
+        let mut iterations = 0;
         while let Some(tree_at_lib) = tree_at_lib.next() {
+            if iterations >= 100 {
+                break;
+            }
             let tree_at = tree_at.next().unwrap();
             assert_eq!(tree_at_lib.interval(), tree_at.interval());
             assert_eq!(unsafe { (*tree_at_lib.as_ptr()).index }, unsafe {
                 (*tree_at.as_ptr()).index
             });
-            //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
-            //    (*tree_at.as_ptr()).left_index
-            //});
-            //assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
-            //    (*tree_at.as_ptr()).right_index
-            //});
+            assert_eq!(unsafe { (*tree_at_lib.as_ptr()).left_index }, unsafe {
+                (*tree_at.as_ptr()).left_index
+            });
+            assert_eq!(unsafe { (*tree_at_lib.as_ptr()).right_index }, unsafe {
+                (*tree_at.as_ptr()).right_index
+            });
             compare(
                 i,
                 "parent",
@@ -134,12 +136,7 @@ fn main() {
             );
             let ttime_lib: f64 = tree_at_lib.total_branch_length(false).unwrap().into();
             let ttime: f64 = tree_at.total_branch_length(false).unwrap().into();
-            assert!(
-                (ttime - ttime_lib).abs() <= 1e-6,
-                "{} {}",
-                ttime_lib,
-                ttime
-            );
+            assert!((ttime - ttime_lib).abs() <= 1e-6, "{} {}", ttime_lib, ttime);
 
             //println!("JK");
             let tree_at_jk = tree_at_jk.next().unwrap();
@@ -163,7 +160,6 @@ fn main() {
                 tree_at_lib.parent_array(),
             );
 
-            let ttime_lib: f64 = tree_at_lib.total_branch_length(false).unwrap().into();
             let ttime_jk: f64 = tree_at_jk.total_branch_length(false).unwrap().into();
             assert!(
                 (ttime_jk - ttime_lib).abs() <= 1e-6,
@@ -171,6 +167,7 @@ fn main() {
                 ttime_lib,
                 ttime_jk
             );
+            iterations += 1;
         }
 
         // The following may not be valid:

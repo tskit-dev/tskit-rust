@@ -196,10 +196,14 @@ impl Tree {
     pub fn new_at_index_jk<F: Into<TreeFlags>>(
         ts: &TreeSequence,
         tree_index: SizeType,
-        tree_indexes: &TreesIndex,
+        //tree_indexes: &TreesIndex,
         flags: F,
     ) -> Result<Self, TskitError> {
         let mut tree = Self::new(ts, flags)?;
+        let breakpoints = unsafe {
+            std::slice::from_raw_parts(ts.as_ref().breakpoints, ts.num_trees().as_usize())
+        };
+        let pos = breakpoints[tree_index.as_usize()];
 
         let edge_left = ts.edges().left_slice_raw();
         let edge_right = ts.edges().right_slice_raw();
@@ -222,72 +226,121 @@ impl Tree {
         };
 
         // FIXME: will panic if index is out of range
-        let pos = tree_indexes.left[tree_index.as_usize()];
+        //let pos = tree_indexes.left[tree_index.as_usize()];
 
         let seqlen = unsafe { (*ts.as_ref().tables).sequence_length };
-        let mut j = 0_usize;
-        let mut k = 0_usize;
-        let mut right: f64;
-        let mut left = 0.0;
+        let mut j: usize = 0;
 
-        //while (j < num_edges || left <= seqlen) && pos >= left {
-        while j < num_edges || left <= seqlen {
-            while k < num_edges && edge_right[edge_removal[k] as usize] == left {
-                k += 1;
-            }
-            while j < num_edges && edge_left[edge_insertion[j] as usize] == left {
+        if pos <= seqlen / 2. {
+            while j < num_edges {
+                if edge_left[edge_insertion[j] as usize] > pos {
+                    break;
+                }
                 if pos >= edge_left[edge_insertion[j] as usize]
                     && pos < edge_right[edge_insertion[j] as usize]
                 {
-                    let p: i32 = edge_parent[edge_insertion[j] as usize];
-                    let c: i32 = edge_child[edge_insertion[j] as usize];
                     unsafe {
                         ll_bindings::tsk_tree_insert_edge(
                             tree.as_mut_ptr(),
-                            p,
-                            c,
+                            edge_parent[edge_insertion[j] as usize],
+                            edge_child[edge_insertion[j] as usize],
                             edge_insertion[j],
                         )
                     };
                 }
                 j += 1;
             }
-            right = seqlen;
-            if j < num_edges {
-                right = if right < edge_left[edge_insertion[j] as usize] {
-                    right
-                } else {
-                    edge_left[edge_insertion[j] as usize]
-                };
+        } else {
+            while j < num_edges {
+                let e = num_edges - j - 1;
+                if edge_right[edge_removal[e] as usize] < pos {
+                    // TODO: is this general?
+                    j = e;
+                    while j < num_edges && edge_left[edge_insertion[j] as usize] <= pos {
+                        j += 1;
+                    }
+                    break;
+                }
+                if pos >= edge_left[edge_removal[e] as usize]
+                    && pos < edge_right[edge_removal[e] as usize]
+                {
+                    unsafe {
+                        ll_bindings::tsk_tree_insert_edge(
+                            tree.as_mut_ptr(),
+                            edge_parent[edge_removal[e] as usize],
+                            edge_child[edge_removal[e] as usize],
+                            edge_removal[e],
+                        )
+                    };
+                }
+                j += 1;
             }
-            if k < num_edges {
-                right = if right < edge_right[edge_removal[k] as usize] {
-                    right
-                } else {
-                    edge_right[edge_removal[k] as usize]
-                };
-            }
-            if pos >= left && pos < right {
-                break;
-            }
-            left = right;
         }
+
+        let mut k = 0;
+        while k < num_edges && edge_right[edge_removal[k] as usize] <= pos {
+            k += 1;
+        }
+        //let mut j = 0_usize;
+        //let mut k = 0_usize;
+        //let mut right: f64;
+        //let mut left = 0.0;
+
+        ////while (j < num_edges || left <= seqlen) && pos >= left {
+        //while j < num_edges || left <= seqlen {
+        //    while k < num_edges && edge_right[edge_removal[k] as usize] == left {
+        //        k += 1;
+        //    }
+        //    while j < num_edges && edge_left[edge_insertion[j] as usize] == left {
+        //        if pos >= edge_left[edge_insertion[j] as usize]
+        //            && pos < edge_right[edge_insertion[j] as usize]
+        //        {
+        //            let p: i32 = edge_parent[edge_insertion[j] as usize];
+        //            let c: i32 = edge_child[edge_insertion[j] as usize];
+        //            unsafe {
+        //                ll_bindings::tsk_tree_insert_edge(
+        //                    tree.as_mut_ptr(),
+        //                    p,
+        //                    c,
+        //                    edge_insertion[j],
+        //                )
+        //            };
+        //        }
+        //        j += 1;
+        //    }
+        //    right = seqlen;
+        //    if j < num_edges {
+        //        right = if right < edge_left[edge_insertion[j] as usize] {
+        //            right
+        //        } else {
+        //            edge_left[edge_insertion[j] as usize]
+        //        };
+        //    }
+        //    if k < num_edges {
+        //        right = if right < edge_right[edge_removal[k] as usize] {
+        //            right
+        //        } else {
+        //            edge_right[edge_removal[k] as usize]
+        //        };
+        //    }
+        //    if pos >= left && pos < right {
+        //        break;
+        //    }
+        //    left = right;
+        //}
         // HACK: why is this needed?
         //if pos > seqlen / 2. {
         //    j -= 1;
         //    k -= 1;
         //}
         // manually determine the tree index
-        let breakpoints = unsafe {
-            std::slice::from_raw_parts(ts.as_ref().breakpoints, ts.num_trees().as_usize())
-        };
-        let i = match breakpoints.iter().position(|b| b > &pos) {
-            Some(value) => value - 1,
-            None => panic!("bad things happened that should be an Err"),
-        };
-        assert_eq!(i, tree_index.as_usize());
-        assert!(pos >= breakpoints[i]);
-        assert!(pos < breakpoints[i + 1]);
+        //let i = match breakpoints.iter().position(|b| b > &pos) {
+        //    Some(value) => value - 1,
+        //    None => panic!("bad things happened that should be an Err"),
+        //};
+        //assert_eq!(i, tree_index.as_usize());
+        //assert!(pos >= breakpoints[i]);
+        //assert!(pos < breakpoints[i + 1]);
         // clunky -- seems we should be working with i32 and not a size type.
         unsafe { (*tree.as_mut_ptr()).index = tree_index.as_usize() as i32 };
         unsafe { (*tree.as_mut_ptr()).interval.left = pos };
@@ -621,10 +674,9 @@ impl TreeSequence {
     pub fn tree_iterator_at_index_jk<F: Into<TreeFlags>>(
         &self,
         index: SizeType,
-        tree_indexes: &TreesIndex,
         flags: F,
     ) -> Result<Tree, TskitError> {
-        let tree = Tree::new_at_index_jk(self, index, tree_indexes, flags)?;
+        let tree = Tree::new_at_index_jk(self, index, flags)?;
 
         Ok(tree)
     }
