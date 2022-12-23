@@ -50,6 +50,7 @@ pkg-config = "0.3"
 [features]
 provenance = ["humantime"]
 derive = ["tskit-derive", "serde", "serde_json", "bincode"]
+edgebuffer = []
 
 [package.metadata.docs.rs]
 all-features = true
@@ -58,3 +59,7 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 # Not run during tests
 [[example]]
 name = "tree_traversals"
+
+[[example]]
+name = "haploid_wright_fisher_edge_buffering"
+required-features = ["edgebuffer"]

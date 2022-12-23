@@ -140,6 +140,13 @@ pub use trees::{Tree, TreeSequence};
 #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
 pub mod provenance;
 
+#[cfg(feature = "edgebuffer")]
+mod edgebuffer;
+
+#[cfg(feature = "edgebuffer")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "edgebuffer")))]
+pub use edgebuffer::EdgeBuffer;
+
 /// Handles return codes from low-level tskit functions.
 ///
 /// When an error from the tskit C API is detected,
