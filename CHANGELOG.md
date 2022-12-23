@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - 2022-12-23
+
+### Documentation
+
+- Book section on lending row iterators ([#406](https://github.com/tskit-dev/tskit-rust/pull/406))
+- Advanced metadata topics in book ([#407](https://github.com/tskit-dev/tskit-rust/pull/407))
+- Book chapter on edge differences ([#417](https://github.com/tskit-dev/tskit-rust/pull/417))
+
+### Features
+
+- TreeSequence::edge_differences_iter ([#410](https://github.com/tskit-dev/tskit-rust/pull/410))
+- Add convience functions to get usize from row ids. ([#413](https://github.com/tskit-dev/tskit-rust/pull/413))
+- Tree::total_branch_length now works. ([#429](https://github.com/tskit-dev/tskit-rust/pull/429))
+- Add getters/setters for Bookmark. ([#437](https://github.com/tskit-dev/tskit-rust/pull/437))
+
+### Miscellaneous Tasks
+
+- Update bindgen requirement from 0.61.0 to 0.63.0 ([#415](https://github.com/tskit-dev/tskit-rust/pull/415))
+
+### Refactor
+
+- [**breaking**] Replace Deref with delegation of TableViews API ([#409](https://github.com/tskit-dev/tskit-rust/pull/409))
+- [**breaking**] Remove TskitTypeAccess trait ([#411](https://github.com/tskit-dev/tskit-rust/pull/411))
+- Allow TreeSequence::edge_differences_iter to Err. ([#412](https://github.com/tskit-dev/tskit-rust/pull/412))
+- [**breaking**] Usize to SizeType conversion is now fallible. ([#419](https://github.com/tskit-dev/tskit-rust/pull/419))
+- Macros only use newtype public API. ([#420](https://github.com/tskit-dev/tskit-rust/pull/420))
+- Move newtypes into module ([#421](https://github.com/tskit-dev/tskit-rust/pull/421))
+- The raw_metadata fn for tables now takes Into<row id>. ([#425](https://github.com/tskit-dev/tskit-rust/pull/425))
+- Add low-level table wrappers to sys ([#426](https://github.com/tskit-dev/tskit-rust/pull/426))
+- Generalize slice building in sys ([#427](https://github.com/tskit-dev/tskit-rust/pull/427))
+- Remove many unsafe calls from tree_interface.rs ([#428](https://github.com/tskit-dev/tskit-rust/pull/428))
+- Add sys::LLTreeSeq. ([#430](https://github.com/tskit-dev/tskit-rust/pull/430))
+- Sys module no longer depends on TskitError ([#431](https://github.com/tskit-dev/tskit-rust/pull/431))
+- Move Drop details for TreeSequence to sys. ([#432](https://github.com/tskit-dev/tskit-rust/pull/432))
+- Add low level owning tables to sys ([#433](https://github.com/tskit-dev/tskit-rust/pull/433))
+- Tidy up table definitions ([#434](https://github.com/tskit-dev/tskit-rust/pull/434))
+
+### Styling
+
+- [**breaking**] Rename all OwnedX tables to OwningX. ([#408](https://github.com/tskit-dev/tskit-rust/pull/408))
+- Replace column access macro with generic fn ([#422](https://github.com/tskit-dev/tskit-rust/pull/422))
+- Generic fns for ragged column access ([#423](https://github.com/tskit-dev/tskit-rust/pull/423))
+- Use fn to get array slices from Trees. ([#424](https://github.com/tskit-dev/tskit-rust/pull/424))
+
 ## [0.12.0-alpha.1] - 2022-11-09
 
 ### Bug Fixes
