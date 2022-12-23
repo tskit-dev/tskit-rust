@@ -16,6 +16,24 @@ pub struct Bookmark {
     pub offsets: ll_bindings::tsk_bookmark_t,
 }
 
+macro_rules! bookmark_getter {
+    ($name: ident) => {
+        /// Get the current value
+        pub fn $name(&self) -> $crate::SizeType {
+            self.offsets.$name.into()
+        }
+    };
+}
+
+macro_rules! bookmark_setter {
+    ($name: ident, $field: ident) => {
+        /// Set the current value
+        pub fn $name<I: Into<$crate::bindings::tsk_size_t>>(&mut self, value: I) {
+            self.offsets.$field = value.into();
+        }
+    };
+}
+
 impl Bookmark {
     pub const fn new() -> Self {
         Bookmark {
@@ -31,12 +49,36 @@ impl Bookmark {
             },
         }
     }
+
+    bookmark_getter!(individuals);
+    bookmark_getter!(nodes);
+    bookmark_getter!(edges);
+    bookmark_getter!(migrations);
+    bookmark_getter!(sites);
+    bookmark_getter!(mutations);
+    bookmark_getter!(populations);
+    bookmark_getter!(provenances);
+    bookmark_setter!(set_individuals, individuals);
+    bookmark_setter!(set_nodes, nodes);
+    bookmark_setter!(set_edges, edges);
+    bookmark_setter!(set_migrations, migrations);
+    bookmark_setter!(set_sites, sites);
+    bookmark_setter!(set_mutations, mutations);
+    bookmark_setter!(set_populations, populations);
+    bookmark_setter!(set_provenances, provenances);
 }
 
 #[cfg(test)]
 mod test {
 
     use super::*;
+
+    macro_rules! test_set {
+        ($bmark: ident, $setter: ident, $getter: ident) => {
+            $bmark.$setter($crate::SizeType::from(3));
+            assert_eq!($bmark.$getter(), 3);
+        };
+    }
 
     #[test]
     fn test_bookmark_mutability() {
@@ -49,7 +91,22 @@ mod test {
         assert_eq!(b.offsets.mutations, 0);
         assert_eq!(b.offsets.populations, 0);
         assert_eq!(b.offsets.provenances, 0);
-        b.offsets.nodes = 3;
-        assert_eq!(b.offsets.nodes, 3);
+        assert_eq!(b.nodes(), 0);
+        assert_eq!(b.edges(), 0);
+        assert_eq!(b.individuals(), 0);
+        assert_eq!(b.migrations(), 0);
+        assert_eq!(b.sites(), 0);
+        assert_eq!(b.mutations(), 0);
+        assert_eq!(b.populations(), 0);
+        assert_eq!(b.provenances(), 0);
+
+        test_set!(b, set_nodes, nodes);
+        test_set!(b, set_edges, edges);
+        test_set!(b, set_migrations, migrations);
+        test_set!(b, set_sites, sites);
+        test_set!(b, set_mutations, mutations);
+        test_set!(b, set_populations, populations);
+        test_set!(b, set_provenances, provenances);
+        test_set!(b, set_individuals, individuals);
     }
 }
