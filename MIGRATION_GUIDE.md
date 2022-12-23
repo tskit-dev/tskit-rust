@@ -28,6 +28,14 @@ Acronyms used:
   They now return `Iterator<...>`.
   Data leading to `None` being returned in previous versions now return an iterator
   that will end immediately.
+* `Deref` to `TableViews` was replaced with delegation because using `Deref`
+  to model inheritance is an anti-pattern.
+* `usize` to `SizeType` conversions are now fallible (*e.g.*, `TryFrom` replaces `From`).
+* The `TskitTypeAccess` trait was removed because it was a bad idea.
+  (It makes no sense to be generic over returning pointers to low-level tskit types.)
+  The functionality is replaced with `impl fn`s.
+* The names of all `Owned` tables are now `Owning`.
+* `MetadataError::RoundtripError` now requires `Send + Sync`.
 
 ## v0.11.0
 
