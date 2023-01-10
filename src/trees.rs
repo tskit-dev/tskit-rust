@@ -229,34 +229,38 @@ impl Tree {
         //let pos = tree_indexes.left[tree_index.as_usize()];
 
         let seqlen = unsafe { (*ts.as_ref().tables).sequence_length };
-        let mut j: usize = 0;
+        let mut j: i32 = -1;
 
         if pos <= seqlen / 2. {
-            while j < num_edges {
-                if edge_left[edge_insertion[j] as usize] > pos {
+            let mut edge = 0_usize;
+            while edge < num_edges {
+                let e = edge_insertion[edge];
+                if edge_left[e as usize] > pos {
+                    j = edge as i32;
                     break;
                 }
-                if pos >= edge_left[edge_insertion[j] as usize]
-                    && pos < edge_right[edge_insertion[j] as usize]
-                {
+                if pos >= edge_left[e as usize] && pos < edge_right[e as usize] {
                     unsafe {
                         ll_bindings::tsk_tree_insert_edge(
                             tree.as_mut_ptr(),
-                            edge_parent[edge_insertion[j] as usize],
-                            edge_child[edge_insertion[j] as usize],
-                            edge_insertion[j],
+                            edge_parent[e as usize],
+                            edge_child[e as usize],
+                            e,
                         )
                     };
                 }
-                j += 1;
+                edge += 1;
             }
         } else {
-            while j < num_edges {
-                let e = num_edges - j - 1;
+            let mut edge = 0_usize;
+            while edge < num_edges {
+                let e = num_edges - edge - 1;
                 if edge_right[edge_removal[e] as usize] < pos {
                     // TODO: is this general?
-                    j = e;
-                    while j < num_edges && edge_left[edge_insertion[j] as usize] <= pos {
+                    j = e as i32;
+                    while j < num_edges as i32
+                        && edge_left[edge_insertion[j as usize] as usize] <= pos
+                    {
                         j += 1;
                     }
                     break;
@@ -273,6 +277,13 @@ impl Tree {
                         )
                     };
                 }
+                edge += 1;
+            }
+        }
+
+        if j == -1 {
+            j = 0;
+            while j < num_edges as i32 && edge_left[edge_insertion[j as usize] as usize] <= pos {
                 j += 1;
             }
         }
