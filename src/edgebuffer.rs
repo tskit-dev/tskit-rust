@@ -366,6 +366,8 @@ impl EdgeBuffer {
         Ok(rv)
     }
 
+    // FIXME: clean up commented-out code
+    // if we decide we don't need it.
     fn collect_pre_existing_edges(
         &self,
         alive_node_times: AliveNodeTimes,
@@ -374,14 +376,14 @@ impl EdgeBuffer {
         let mut edges = vec![];
         let mut i = 0;
         let parent = tables.edges().parent_slice();
-        let child = tables.edges().child_slice();
+        //let child = tables.edges().child_slice();
         let node_time = tables.nodes().time_slice();
         while i < parent.len() {
             let p = parent[i];
-            let c = child[i];
+            // let c = child[i];
             if node_time[p.as_usize()] <= alive_node_times.max
-                || (node_time[c.as_usize()] < alive_node_times.max
-                    && node_time[p.as_usize()] > alive_node_times.max)
+            //|| (node_time[c.as_usize()] < alive_node_times.max
+            //    && node_time[p.as_usize()] > alive_node_times.max)
             {
                 let mut j = 0_usize;
                 while i + j < parent.len() && parent[i + j] == p {
