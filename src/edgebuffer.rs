@@ -107,6 +107,9 @@ pub struct EdgeBuffer {
     //    It is hard to fix this -- we cannot
     //    guarantee that parents are entered
     //    in any specific order.
+    // 3. Performance IMPROVES MEASURABLY
+    //    if we use u32 here. But tsk_size_t
+    //    is u64.
     head: Vec<usize>,
     tail: Vec<usize>,
     next: Vec<usize>,
