@@ -539,6 +539,13 @@ impl Drop for StreamingSimplifier {
     }
 }
 
+// TODO:
+// 1. The edge buffer API is wrong here.
+//    We need to encapsulate the existing type,
+//    and make one whose public API does what we need.
+// 2. If this works out, it measn we need to extract
+//    the core buffer ops out to a private type
+//    and make public newtypes using it.
 pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     samples: &[NodeId],
     options: O,
