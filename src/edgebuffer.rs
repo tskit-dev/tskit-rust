@@ -539,12 +539,19 @@ impl Drop for StreamingSimplifier {
     }
 }
 
-pub fn simplfify_from_buffer(
+pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     samples: &[NodeId],
+    options: O,
     tables: &mut TableCollection,
     buffer: &mut EdgeBuffer,
     node_map: Option<&mut [NodeId]>,
 ) -> Result<(), TskitError> {
+    let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
+    for (i, h) in buffer.head.iter().rev().enumerate() {
+        unimplemented!()
+    }
+
+    Ok(())
 }
 
 #[test]
