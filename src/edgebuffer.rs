@@ -539,6 +539,14 @@ impl Drop for StreamingSimplifier {
     }
 }
 
+pub fn simplfify_from_buffer(
+    samples: &[NodeId],
+    tables: &mut TableCollection,
+    buffer: &mut EdgeBuffer,
+    node_map: Option<&mut [NodeId]>,
+) -> Result<(), TskitError> {
+}
+
 #[test]
 fn test_pre_simplification() {
     let mut tables = TableCollection::new(10.).unwrap();
