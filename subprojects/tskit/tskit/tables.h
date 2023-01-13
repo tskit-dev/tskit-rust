@@ -671,11 +671,9 @@ typedef struct {
 } tsk_identity_segments_t;
 
 // KRT's latest insanity
-struct tsk_streaming_simplifier_impl_t;
-
 typedef struct {
     /* don't leak private types into public API */
-    struct tsk_streaming_simplifier_impl_t * pimpl;
+    struct __tsk_streaming_simplifier_impl_t * pimpl;
 } tsk_streaming_simplifier_t;
 
 int tsk_streaming_simplifier_init(tsk_streaming_simplifier_t * self,

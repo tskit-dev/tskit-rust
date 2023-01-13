@@ -12874,7 +12874,7 @@ out:
 
 // KRT's latest madness
 
-typedef struct {
+typedef struct __tsk_streaming_simplifier_impl_t {
     simplifier_t simplifier;
 } tsk_streaming_simplifier_impl_t;
 
@@ -12910,7 +12910,7 @@ int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, 
 
 int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t * node_map) {
     int ret = 0;
-    simplifier_t * simplifier = self->pimpl->simplifier;
+    simplifier_t * simplifier = &self->pimpl->simplifier;
     ret = simplifier_output_sites(simplifier);
     if (ret != 0) {
         goto out;
