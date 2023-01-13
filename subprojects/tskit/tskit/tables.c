@@ -12872,6 +12872,8 @@ out:
     return ret;
 }
 
+// KRT's latest madness
+
 typedef struct {
     simplifier_t simplifier,
 } tsk_streaming_simplifier_impl_t;
@@ -12893,5 +12895,3 @@ int tsk_streaming_simplifier_init(tsk_streaming_simplifier_impl_t * self,
 out:
     return ret;
 }
-
-// KRT's latest madness
