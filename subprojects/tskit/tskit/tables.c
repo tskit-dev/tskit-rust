@@ -23,6 +23,7 @@
  * SOFTWARE.
  */
 
+#include "tables.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -12870,3 +12871,27 @@ tsk_squash_edges(tsk_edge_t *edges, tsk_size_t num_edges, tsk_size_t *num_output
 out:
     return ret;
 }
+
+typedef struct {
+    simplifier_t simplifier,
+} tsk_streaming_simplifier_impl_t;
+
+int tsk_streaming_simplifier_init(tsk_streaming_simplifier_impl_t * self,
+    tsk_table_collection_t *tables, const tsk_id_t *samples,
+    tsk_size_t num_samples, tsk_flags_t options, tsk_id_t *node_map) {
+    int ret = 0;
+    self->pimpl = tsk_malloc(sizeof(tsk_streaming_simplifier_impl_t));
+    if (self->pimpl == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+    ret = tsk_simplifier_init(&self->pimpl.simplifier, tables, samples, num_samples, options, node_map);
+    if (ret != 0) {
+        goto out;
+    }
+
+out:
+    return ret;
+}
+
+// KRT's latest madness
