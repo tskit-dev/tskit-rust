@@ -462,6 +462,83 @@ impl EdgeBuffer {
     }
 }
 
+struct StreamingSimplifier {
+    simplifier: crate::bindings::tsk_streaming_simplifier_t,
+}
+
+impl StreamingSimplifier {
+    fn new<O: Into<crate::SimplificationOptions>>(
+        samples: &[NodeId],
+        options: O,
+        tables: &mut TableCollection,
+    ) -> Result<Self, TskitError> {
+        let mut simplifier =
+            std::mem::MaybeUninit::<crate::bindings::tsk_streaming_simplifier_t>::uninit();
+        let num_samples = samples.len() as crate::bindings::tsk_size_t;
+        match unsafe {
+            crate::bindings::tsk_streaming_simplifier_init(
+                simplifier.as_mut_ptr(),
+                tables.as_mut_ptr(),
+                samples.as_ptr().cast::<crate::bindings::tsk_id_t>(),
+                num_samples,
+                options.into().bits(),
+            )
+        } {
+            code if code < 0 => Err(TskitError::ErrorCode { code }),
+            _ => Ok(Self {
+                simplifier: unsafe { simplifier.assume_init() },
+            }),
+        }
+    }
+
+    fn add_edge(
+        &mut self,
+        left: Position,
+        right: Position,
+        parent: NodeId, // FIXME: shouldn't be here
+        child: NodeId,
+    ) -> Result<(), TskitError> {
+        let code = unsafe {
+            crate::bindings::tsk_streaming_simplifier_add_edge(
+                &mut self.simplifier,
+                left.into(),
+                right.into(),
+                parent.into(),
+                child.into(),
+            )
+        };
+        handle_tsk_return_value!(code, ())
+    }
+
+    fn merge_ancestors(&mut self, parent: NodeId) -> Result<(), TskitError> {
+        let code = unsafe {
+            crate::bindings::tsk_streaming_simplifier_merge_ancestors(
+                &mut self.simplifier,
+                parent.into(),
+            )
+        };
+        handle_tsk_return_value!(code, ())
+    }
+
+    // FIXME: need to be able to validate that node_map is correct length!
+    fn finalise(&mut self, node_map: Option<&mut [NodeId]>) -> Result<(), TskitError> {
+        let n = match node_map {
+            Some(x) => x.as_mut_ptr().cast::<crate::bindings::tsk_id_t>(),
+            None => std::ptr::null_mut(),
+        };
+        let code =
+            unsafe { crate::bindings::tsk_streaming_simplifier_finalise(&mut self.simplifier, n) };
+        handle_tsk_return_value!(code, ())
+    }
+}
+
+impl Drop for StreamingSimplifier {
+    fn drop(&mut self) {
+        let code = unsafe { crate::bindings::tsk_streaming_simplifier_free(&mut self.simplifier) };
+        assert_eq!(code, 0);
+    }
+}
+
 #[test]
 fn test_pre_simplification() {
     let mut tables = TableCollection::new(10.).unwrap();
