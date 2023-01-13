@@ -12875,19 +12875,19 @@ out:
 // KRT's latest madness
 
 typedef struct {
-    simplifier_t simplifier,
+    simplifier_t simplifier;
 } tsk_streaming_simplifier_impl_t;
 
-int tsk_streaming_simplifier_init(tsk_streaming_simplifier_impl_t * self,
+int tsk_streaming_simplifier_init(tsk_streaming_simplifier_t * self,
     tsk_table_collection_t *tables, const tsk_id_t *samples,
-    tsk_size_t num_samples, tsk_flags_t options, tsk_id_t *node_map) {
+    tsk_size_t num_samples, tsk_flags_t options) {
     int ret = 0;
     self->pimpl = tsk_malloc(sizeof(tsk_streaming_simplifier_impl_t));
     if (self->pimpl == NULL) {
         ret = TSK_ERR_NO_MEMORY;
         goto out;
     }
-    ret = tsk_simplifier_init(&self->pimpl.simplifier, tables, samples, num_samples, options, node_map);
+    ret = simplifier_init(&self->pimpl->simplifier, samples, num_samples, tables, options);
     if (ret != 0) {
         goto out;
     }
@@ -12895,3 +12895,43 @@ int tsk_streaming_simplifier_init(tsk_streaming_simplifier_impl_t * self,
 out:
     return ret;
 }
+
+// FIXME: parent not used
+int tsk_streaming_simplifier_add_edge(tsk_streaming_simplifier_t * self,
+    double left, double right, tsk_id_t parent, tsk_id_t child) {
+    int ret = simplifier_extract_ancestry(&self->pimpl->simplifier, left, right, child); 
+    return ret;
+}
+
+int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, tsk_id_t parent) {
+    int ret = simplifier_merge_ancestors(&self->pimpl->simplifier, parent);
+    return ret;
+}
+
+int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t * node_map) {
+    int ret = 0;
+    simplifier_t * simplifier = self->pimpl->simplifier;
+    ret = simplifier_output_sites(simplifier);
+    if (ret != 0) {
+        goto out;
+    }
+    ret = simplifier_finalise_references(simplifier);
+    if (ret != 0) {
+        goto out;
+    }
+    if (node_map != NULL) {
+        /* Finally, output the new IDs for the nodes, if required. */
+        tsk_memcpy(node_map, simplifier->node_id_map,
+            simplifier->input_tables.nodes.num_rows * sizeof(tsk_id_t));
+    }
+    if (simplifier->edge_sort_offset != TSK_NULL) {
+        tsk_bug_assert(simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS);
+        ret = simplifier_sort_edges(simplifier);
+        if (ret != 0) {
+            goto out;
+        }
+    }
+out:
+    return ret;
+}
+

@@ -671,23 +671,22 @@ typedef struct {
 } tsk_identity_segments_t;
 
 // KRT's latest insanity
-
 struct tsk_streaming_simplifier_impl_t;
 
 typedef struct {
     /* don't leak private types into public API */
-    tsk_streaming_simplifier_impl_t * pimpl;
+    struct tsk_streaming_simplifier_impl_t * pimpl;
 } tsk_streaming_simplifier_t;
 
-int tsk_streaming_simplifier_init(tsk_streaming_simplifier_impl_t * self,
+int tsk_streaming_simplifier_init(tsk_streaming_simplifier_t * self,
     tsk_table_collection_t *tables, const tsk_id_t *samples,
-    tsk_size_t num_samples, tsk_flags_t options, tsk_id_t *node_map);
-int tsk_streaming_simplifier_free(tsk_streaming_simplifier_impl_t * self);
+    tsk_size_t num_samples, tsk_flags_t options);
+int tsk_streaming_simplifier_free(tsk_streaming_simplifier_t * self);
 // metadata...
 int tsk_streaming_simplifier_add_edge(tsk_streaming_simplifier_t * self,
     double left, double right, tsk_id_t parent, tsk_id_t child);
-int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self);
-int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self);
+int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, tsk_id_t parent);
+int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t *node_map);
 
 /****************************************************************************/
 /* Common function options */
