@@ -12935,3 +12935,14 @@ out:
     return ret;
 }
 
+int tsk_streaming_simplifier_free(tsk_streaming_simplifier_t * self) {
+    int ret = 0;
+    ret = simplifier_free(&self->pimpl->simplifier);
+    if (ret != 0) {
+        goto out;
+    }
+    tsk_safe_free(self->pimpl);
+out:
+    return ret;
+}
+
