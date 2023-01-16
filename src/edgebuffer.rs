@@ -543,13 +543,12 @@ impl Drop for StreamingSimplifier {
 // 1. The edge buffer API is wrong here.
 //    We need to encapsulate the existing type,
 //    and make one whose public API does what we need.
-// 2. If this works out, it measn we need to extract
+// 2. If this works out, it means we need to extract
 //    the core buffer ops out to a private type
 //    and make public newtypes using it.
-// FIXME: this fails because simplification setup does
-// funny business with the pointers?.
 // FIXME: this function is unsafe b/c of how tskit-c
 //        messes w/pointers behind the scenes.
+//        Solution is to take ownership of the tables?
 pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     samples: &[NodeId],
     options: O,
@@ -557,40 +556,78 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     buffer: &mut EdgeBuffer,
     node_map: Option<&mut [NodeId]>,
 ) -> Result<(), TskitError> {
-    let a = tables.edges().num_rows();
-
-    // have to take copies of the current members of 
+    // have to take copies of the current members of
     // the edge table.
     let left = tables.edges().left_slice().to_vec();
     let right = tables.edges().right_slice().to_vec();
     let parent = tables.edges().parent_slice().to_vec();
     let child = tables.edges().child_slice().to_vec();
+    let node_times = tables.nodes().time_slice().to_vec();
     let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
-    assert_eq!(a, tables.edges().num_rows());
+    let mut last_parent_time = -1.0;
     // Simplify the most recent births
     for (i, h) in buffer.head.iter().rev().enumerate() {
         if *h != usize::MAX {
             let parent = buffer.head.len() - i - 1;
+            assert!(node_times[parent] >= last_parent_time);
+            last_parent_time = node_times[parent].into();
+            println!("foo: {},{} | {} {}", i, parent, *h, buffer.head.len());
             assert_ne!(parent, usize::MAX);
+            let mut edge_check: Vec<(NodeId, Position)> = vec![];
             simplifier.add_edge(
-                buffer.left[parent],
-                buffer.right[parent],
+                buffer.left[*h],
+                buffer.right[*h],
                 (parent as i32).into(),
-                buffer.child[parent],
+                buffer.child[*h],
             )?;
+            edge_check.push((buffer.child[*h], buffer.left[*h]));
             let mut next = buffer.next[*h];
+            assert_ne!(next, *h);
             let parent = NodeId::from(parent as i32);
             while next != usize::MAX {
                 println!("next={next:}, parent={parent:}");
+                assert!(!edge_check
+                    .iter()
+                    .any(|x| *x == (buffer.child[next], buffer.left[next])));
                 simplifier.add_edge(
                     buffer.left[next],
                     buffer.right[next],
                     parent,
                     buffer.child[next],
                 )?;
+                edge_check.push((buffer.child[next], buffer.left[next]));
                 next = buffer.next[next];
             }
+            println!("{edge_check:?}");
             simplifier.merge_ancestors(parent)?;
+
+            // major stress-test -- delete later
+            {
+                let l = tables.edges().left_slice();
+                let p = tables.edges().parent_slice();
+                let c = tables.edges().child_slice();
+                let mut i = 0;
+                while i < l.len() {
+                    let pi = p[i];
+                    while i < l.len() && p[i] == pi {
+                        if i > 0 && c[i] == c[i - 1] {
+                            assert_ne!(
+                                l[i],
+                                l[i - 1],
+                                "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
+                                p[i],
+                                p[i - 1],
+                                c[i],
+                                c[i - 1],
+                                l[i],
+                                l[i - 1],
+                                edge_check
+                            );
+                        }
+                        i += 1;
+                    }
+                }
+            }
         }
     }
     buffer.release_memory();
@@ -598,13 +635,43 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     // Simplify pre-existing edges.
     let mut i = 0;
     while i < left.len() {
-        println!("{i:} {}", left.len());
         let p = parent[i];
+        let mut edge_check: Vec<(NodeId, Position)> = vec![];
         while i < left.len() && parent[i] == p {
+            assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
             simplifier.add_edge(left[i], right[i], parent[i], child[i])?;
+            edge_check.push((child[i], left[i]));
             i += 1;
         }
+        println!("edge_check2: {edge_check:?}");
         simplifier.merge_ancestors(p)?;
+        // major stress-test -- delete later
+        {
+            let l = tables.edges().left_slice();
+            let p = tables.edges().parent_slice();
+            let c = tables.edges().child_slice();
+            let mut i = 0;
+            while i < l.len() {
+                let pi = p[i];
+                while i < l.len() && p[i] == pi {
+                    if i > 0 && c[i] == c[i - 1] {
+                        assert_ne!(
+                            l[i],
+                            l[i - 1],
+                            "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
+                            p[i],
+                            p[i - 1],
+                            c[i],
+                            c[i - 1],
+                            l[i],
+                            l[i - 1],
+                            edge_check
+                        );
+                    }
+                    i += 1;
+                }
+            }
+        }
     }
 
     simplifier.finalise(node_map)?;
