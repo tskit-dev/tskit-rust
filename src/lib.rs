@@ -147,6 +147,10 @@ mod edgebuffer;
 #[cfg_attr(doc_cfg, doc(cfg(feature = "edgebuffer")))]
 pub use edgebuffer::EdgeBuffer;
 
+#[cfg(feature = "edgebuffer")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "edgebuffer")))]
+pub use edgebuffer::simplfify_from_buffer;
+
 /// Handles return codes from low-level tskit functions.
 ///
 /// When an error from the tskit C API is detected,
