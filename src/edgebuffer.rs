@@ -530,6 +530,52 @@ impl StreamingSimplifier {
             unsafe { crate::bindings::tsk_streaming_simplifier_finalise(&mut self.simplifier, n) };
         handle_tsk_return_value!(code, ())
     }
+
+    fn input_num_edges(&self) -> usize {
+        unsafe {
+            crate::bindings::tsk_streaming_simplifier_get_num_input_edges(&self.simplifier) as usize
+        }
+    }
+
+    fn input_left(&self) -> &[Position] {
+        unsafe {
+            std::slice::from_raw_parts(
+                crate::bindings::tsk_streaming_simplifier_get_input_left(&self.simplifier)
+                    .cast::<Position>(),
+                self.input_num_edges(),
+            )
+        }
+    }
+
+    fn input_right(&self) -> &[Position] {
+        unsafe {
+            std::slice::from_raw_parts(
+                crate::bindings::tsk_streaming_simplifier_get_input_right(&self.simplifier)
+                    .cast::<Position>(),
+                self.input_num_edges(),
+            )
+        }
+    }
+
+    fn input_parent(&self) -> &[NodeId] {
+        unsafe {
+            std::slice::from_raw_parts(
+                crate::bindings::tsk_streaming_simplifier_get_input_parent(&self.simplifier)
+                    .cast::<NodeId>(),
+                self.input_num_edges(),
+            )
+        }
+    }
+
+    fn input_child(&self) -> &[NodeId] {
+        unsafe {
+            std::slice::from_raw_parts(
+                crate::bindings::tsk_streaming_simplifier_get_input_child(&self.simplifier)
+                    .cast::<NodeId>(),
+                self.input_num_edges(),
+            )
+        }
+    }
 }
 
 impl Drop for StreamingSimplifier {

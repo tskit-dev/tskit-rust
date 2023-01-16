@@ -685,10 +685,11 @@ int tsk_streaming_simplifier_add_edge(tsk_streaming_simplifier_t * self,
     double left, double right, tsk_id_t parent, tsk_id_t child);
 int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, tsk_id_t parent);
 int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t *node_map);
-const tsk_id_t * tsk_streaming_simplifier_get_input_parent(tsk_streaming_simplifier_t * self);
-const tsk_id_t * tsk_streaming_simplifier_get_input_child(tsk_streaming_simplifier_t * self);
-const double * tsk_streaming_simplifier_get_input_left(tsk_streaming_simplifier_t * self);
-tsk_size_t tsk_streaming_simplifier_get_num_input_edges(tsk_streaming_simplifier_t * self);
+const tsk_id_t * tsk_streaming_simplifier_get_input_parent(const tsk_streaming_simplifier_t * self);
+const tsk_id_t * tsk_streaming_simplifier_get_input_child(const tsk_streaming_simplifier_t * self);
+const double * tsk_streaming_simplifier_get_input_left(const tsk_streaming_simplifier_t * self);
+const double * tsk_streaming_simplifier_get_input_right(const tsk_streaming_simplifier_t * self);
+tsk_size_t tsk_streaming_simplifier_get_num_input_edges(const tsk_streaming_simplifier_t * self);
 
 /****************************************************************************/
 /* Common function options */
