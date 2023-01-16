@@ -18,7 +18,7 @@ fn overlapping_generations(seed: u64, pdeath: f64, simplify: i32) -> TreeSequenc
     let mut parents = vec![];
 
     for _ in 0..popsize {
-        let node = tables.add_node(0, 100.0, -1, -1).unwrap();
+        let node = tables.add_node(0, 10.0, -1, -1).unwrap();
         parents.push(node);
     }
 
@@ -83,7 +83,7 @@ fn overlapping_generations_streaming_simplification(
     let mut parents = vec![];
 
     for _ in 0..popsize {
-        let node = tables.add_node(0, 100.0, -1, -1).unwrap();
+        let node = tables.add_node(0, 10.0, -1, -1).unwrap();
         parents.push(node);
     }
 
@@ -92,6 +92,7 @@ fn overlapping_generations_streaming_simplification(
     let mut node_map: Vec<tskit::NodeId> = vec![];
 
     for birth_time in (0..10).rev() {
+        println!("birth time {birth_time:?}");
         let mut replacements = vec![];
         for i in 0..parents.len() {
             if death.sample(&mut rng) <= pdeath {
@@ -102,6 +103,7 @@ fn overlapping_generations_streaming_simplification(
 
         for _ in 0..replacements.len() {
             let parent_index = parent_picker.sample(&mut rng);
+            assert!(parent_index < parents.len());
             let parent = parents[parent_index];
             let child = tables.add_node(0, birth_time as f64, -1, -1).unwrap();
             births.push(child);
@@ -113,6 +115,7 @@ fn overlapping_generations_streaming_simplification(
             parents[*r] = *b;
         }
         if birth_time % simplify == 0 {
+            println!("simplifying!");
             node_map.resize(tables.nodes().num_rows().as_usize(), tskit::NodeId::NULL);
             tskit::simplfify_from_buffer(
                 &parents,
@@ -122,15 +125,16 @@ fn overlapping_generations_streaming_simplification(
                 Some(&mut node_map),
             )
             .unwrap();
+            println!("{parents:?}");
             for o in parents.iter_mut() {
                 assert!(o.as_usize() < node_map.len());
                 *o = node_map[usize::try_from(*o).unwrap()];
                 assert!(!o.is_null());
             }
+            println!("remapped {parents:?}");
             buffer.post_simplification(&parents, &mut tables).unwrap();
         }
     }
-
     tables.build_index().unwrap();
     tables.tree_sequence(0.into()).unwrap()
 }
