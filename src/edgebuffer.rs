@@ -604,19 +604,12 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
 ) -> Result<(), TskitError> {
     // have to take copies of the current members of
     // the edge table.
-    let left = tables.edges().left_slice().to_vec();
-    let right = tables.edges().right_slice().to_vec();
-    let parent = tables.edges().parent_slice().to_vec();
-    let child = tables.edges().child_slice().to_vec();
-    let node_times = tables.nodes().time_slice().to_vec();
     let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
     let mut last_parent_time = -1.0;
     // Simplify the most recent births
     for (i, h) in buffer.head.iter().rev().enumerate() {
         if *h != usize::MAX {
             let parent = buffer.head.len() - i - 1;
-            assert!(node_times[parent] >= last_parent_time);
-            last_parent_time = node_times[parent].into();
             assert_ne!(parent, usize::MAX);
             simplifier.add_edge(
                 buffer.left[*h],
@@ -672,10 +665,13 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
 
     // Simplify pre-existing edges.
     let mut i = 0;
-    while i < left.len() {
+    let num_input_edges = simplifier.input_num_edges();
+    let left = simplifier.input_left();
+    let right = simplifier.input_right();
+    let parent = simplifier.input_parent();
+    let child = simplifier.input_child();
+    while i < num_input_edges {
         let p = parent[i];
-        assert!(node_times[p.as_usize()] >= last_parent_time);
-        last_parent_time = node_times[p.as_usize()].into();
         //let mut edge_check: Vec<(NodeId, Position)> = vec![];
         while i < left.len() && parent[i] == p {
             //assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
