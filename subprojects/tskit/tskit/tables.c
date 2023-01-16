@@ -12911,6 +12911,12 @@ int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, 
 int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t * node_map) {
     int ret = 0;
     simplifier_t * simplifier = &self->pimpl->simplifier;
+    if (simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS) {
+        ret = simplifier_insert_input_roots(simplifier);
+        if (ret != 0) {
+            goto out;
+        }
+    }
     ret = simplifier_output_sites(simplifier);
     if (ret != 0) {
         goto out;
