@@ -578,15 +578,19 @@ impl StreamingSimplifier {
     }
 
     fn get_input_parent(&self, u: usize) -> NodeId {
+        assert!(u < self.input_num_edges());
         self.input_parent()[u]
     }
     fn get_input_child(&self, u: usize) -> NodeId {
+        assert!(u < self.input_num_edges());
         self.input_child()[u]
     }
     fn get_input_left(&self, u: usize) -> Position {
+        assert!(u < self.input_num_edges());
         self.input_left()[u]
     }
     fn get_input_right(&self, u: usize) -> Position {
+        assert!(u < self.input_num_edges());
         self.input_right()[u]
     }
 }
@@ -635,6 +639,7 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
             let parent = NodeId::from(parent as i32);
             assert!(parent >= 0);
             while next != usize::MAX {
+                assert!(next < buffer.left.len());
                 simplifier.add_edge(
                     buffer.left[next],
                     buffer.right[next],
