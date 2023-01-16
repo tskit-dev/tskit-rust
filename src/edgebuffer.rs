@@ -621,63 +621,69 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
 ) -> Result<(), TskitError> {
     // have to take copies of the current members of
     // the edge table.
-    let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
     let mut last_parent_time = -1.0;
-    // Simplify the most recent births
-    for (i, h) in buffer.head.iter().rev().enumerate() {
-        if *h != usize::MAX {
-            let parent = buffer.head.len() - i - 1;
-            assert_ne!(parent, usize::MAX);
-            simplifier.add_edge(
-                buffer.left[*h],
-                buffer.right[*h],
-                (parent as i32).into(),
-                buffer.child[*h],
-            )?;
-            let mut next = buffer.next[*h];
-            assert_ne!(next, *h);
-            let parent = NodeId::from(parent as i32);
-            assert!(parent >= 0);
-            while next != usize::MAX {
-                assert!(next < buffer.left.len());
-                simplifier.add_edge(
-                    buffer.left[next],
-                    buffer.right[next],
-                    parent,
-                    buffer.child[next],
-                )?;
-                next = buffer.next[next];
-            }
-            simplifier.merge_ancestors(parent)?;
+    let mut head_index: Vec<usize> = buffer
+        .head
+        .iter()
+        .enumerate()
+        .filter(|(_, j)| **j != usize::MAX)
+        .map(|(i, _)| i)
+        .collect();
 
-            // major stress-test -- delete later
-            //{
-            //    let l = tables.edges().left_slice();
-            //    let p = tables.edges().parent_slice();
-            //    let c = tables.edges().child_slice();
-            //    let mut i = 0;
-            //    while i < l.len() {
-            //        let pi = p[i];
-            //        while i < l.len() && p[i] == pi {
-            //            if i > 0 && c[i] == c[i - 1] {
-            //                assert_ne!(
-            //                    l[i],
-            //                    l[i - 1],
-            //                    "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
-            //                    p[i],
-            //                    p[i - 1],
-            //                    c[i],
-            //                    c[i - 1],
-            //                    l[i],
-            //                    l[i - 1],
-            //                    edge_check
-            //                );
-            //            }
-            //            i += 1;
-            //        }
-            //    }
-            //}
+    let node_time = tables.nodes().time_slice();
+    head_index.sort_by(|a, b| node_time[*a].partial_cmp(&node_time[*b]).unwrap());
+    let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
+    // Simplify the most recent births
+    //for (i, h) in buffer.head.iter().rev().enumerate() {
+    for h in head_index.into_iter() {
+        let parent = i32::try_from(h).unwrap();
+        simplifier.add_edge(
+            buffer.left[buffer.head[h]],
+            buffer.right[buffer.head[h]],
+            parent.into(),
+            buffer.child[buffer.head[h]],
+        )?;
+        let mut next = buffer.next[buffer.head[h]];
+        assert!(parent >= 0);
+        while next != usize::MAX {
+            assert!(next < buffer.left.len());
+            simplifier.add_edge(
+                buffer.left[next],
+                buffer.right[next],
+                parent.into(),
+                buffer.child[next],
+            )?;
+            next = buffer.next[next];
         }
+        simplifier.merge_ancestors(parent.into())?;
+
+        // major stress-test -- delete later
+        //{
+        //    let l = tables.edges().left_slice();
+        //    let p = tables.edges().parent_slice();
+        //    let c = tables.edges().child_slice();
+        //    let mut i = 0;
+        //    while i < l.len() {
+        //        let pi = p[i];
+        //        while i < l.len() && p[i] == pi {
+        //            if i > 0 && c[i] == c[i - 1] {
+        //                assert_ne!(
+        //                    l[i],
+        //                    l[i - 1],
+        //                    "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
+        //                    p[i],
+        //                    p[i - 1],
+        //                    c[i],
+        //                    c[i - 1],
+        //                    l[i],
+        //                    l[i - 1],
+        //                    edge_check
+        //                );
+        //            }
+        //            i += 1;
+        //        }
+        //    }
+        //}
     }
     buffer.release_memory();
 

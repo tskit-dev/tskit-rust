@@ -92,7 +92,6 @@ fn overlapping_generations_streaming_simplification(
     let mut node_map: Vec<tskit::NodeId> = vec![];
 
     for birth_time in (0..10).rev() {
-        println!("birth time {birth_time:?}");
         let mut replacements = vec![];
         for i in 0..parents.len() {
             if death.sample(&mut rng) <= pdeath {
@@ -109,13 +108,13 @@ fn overlapping_generations_streaming_simplification(
             births.push(child);
             buffer.buffer_birth(parent, child, 0., 1.).unwrap();
         }
+        assert_eq!(replacements.len(), births.len());
 
         for (r, b) in replacements.iter().zip(births.iter()) {
             assert!(*r < parents.len());
             parents[*r] = *b;
         }
         if birth_time % simplify == 0 {
-            println!("simplifying!");
             node_map.resize(tables.nodes().num_rows().as_usize(), tskit::NodeId::NULL);
             tskit::simplfify_from_buffer(
                 &parents,
@@ -125,13 +124,11 @@ fn overlapping_generations_streaming_simplification(
                 Some(&mut node_map),
             )
             .unwrap();
-            println!("{parents:?}");
             for o in parents.iter_mut() {
                 assert!(o.as_usize() < node_map.len());
                 *o = node_map[usize::try_from(*o).unwrap()];
                 assert!(!o.is_null());
             }
-            println!("remapped {parents:?}");
             buffer.post_simplification(&parents, &mut tables).unwrap();
         }
     }
