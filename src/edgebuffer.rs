@@ -571,71 +571,55 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
             let parent = buffer.head.len() - i - 1;
             assert!(node_times[parent] >= last_parent_time);
             last_parent_time = node_times[parent].into();
-            println!(
-                "foo: {},{} | {} {} | {}",
-                i,
-                parent,
-                *h,
-                buffer.head.len(),
-                last_parent_time
-            );
             assert_ne!(parent, usize::MAX);
-            let mut edge_check: Vec<(NodeId, Position)> = vec![];
             simplifier.add_edge(
                 buffer.left[*h],
                 buffer.right[*h],
                 (parent as i32).into(),
                 buffer.child[*h],
             )?;
-            edge_check.push((buffer.child[*h], buffer.left[*h]));
             let mut next = buffer.next[*h];
             assert_ne!(next, *h);
             let parent = NodeId::from(parent as i32);
             assert!(parent >= 0);
             while next != usize::MAX {
-                println!("next={next:}, parent={parent:}");
-                assert!(!edge_check
-                    .iter()
-                    .any(|x| *x == (buffer.child[next], buffer.left[next])));
                 simplifier.add_edge(
                     buffer.left[next],
                     buffer.right[next],
                     parent,
                     buffer.child[next],
                 )?;
-                edge_check.push((buffer.child[next], buffer.left[next]));
                 next = buffer.next[next];
             }
-            println!("{edge_check:?}");
             simplifier.merge_ancestors(parent)?;
 
             // major stress-test -- delete later
-            {
-                let l = tables.edges().left_slice();
-                let p = tables.edges().parent_slice();
-                let c = tables.edges().child_slice();
-                let mut i = 0;
-                while i < l.len() {
-                    let pi = p[i];
-                    while i < l.len() && p[i] == pi {
-                        if i > 0 && c[i] == c[i - 1] {
-                            assert_ne!(
-                                l[i],
-                                l[i - 1],
-                                "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
-                                p[i],
-                                p[i - 1],
-                                c[i],
-                                c[i - 1],
-                                l[i],
-                                l[i - 1],
-                                edge_check
-                            );
-                        }
-                        i += 1;
-                    }
-                }
-            }
+            //{
+            //    let l = tables.edges().left_slice();
+            //    let p = tables.edges().parent_slice();
+            //    let c = tables.edges().child_slice();
+            //    let mut i = 0;
+            //    while i < l.len() {
+            //        let pi = p[i];
+            //        while i < l.len() && p[i] == pi {
+            //            if i > 0 && c[i] == c[i - 1] {
+            //                assert_ne!(
+            //                    l[i],
+            //                    l[i - 1],
+            //                    "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
+            //                    p[i],
+            //                    p[i - 1],
+            //                    c[i],
+            //                    c[i - 1],
+            //                    l[i],
+            //                    l[i - 1],
+            //                    edge_check
+            //                );
+            //            }
+            //            i += 1;
+            //        }
+            //    }
+            //}
         }
     }
     buffer.release_memory();
@@ -646,42 +630,41 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
         let p = parent[i];
         assert!(node_times[p.as_usize()] >= last_parent_time);
         last_parent_time = node_times[p.as_usize()].into();
-        let mut edge_check: Vec<(NodeId, Position)> = vec![];
+        //let mut edge_check: Vec<(NodeId, Position)> = vec![];
         while i < left.len() && parent[i] == p {
-            assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
+            //assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
             simplifier.add_edge(left[i], right[i], parent[i], child[i])?;
-            edge_check.push((child[i], left[i]));
+            //edge_check.push((child[i], left[i]));
             i += 1;
         }
-        println!("edge_check2: {edge_check:?}");
         simplifier.merge_ancestors(p)?;
         // major stress-test -- delete later
-        {
-            let l = tables.edges().left_slice();
-            let p = tables.edges().parent_slice();
-            let c = tables.edges().child_slice();
-            let mut i = 0;
-            while i < l.len() {
-                let pi = p[i];
-                while i < l.len() && p[i] == pi {
-                    if i > 0 && c[i] == c[i - 1] {
-                        assert_ne!(
-                            l[i],
-                            l[i - 1],
-                            "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
-                            p[i],
-                            p[i - 1],
-                            c[i],
-                            c[i - 1],
-                            l[i],
-                            l[i - 1],
-                            edge_check
-                        );
-                    }
-                    i += 1;
-                }
-            }
-        }
+        //{
+        //    let l = tables.edges().left_slice();
+        //    let p = tables.edges().parent_slice();
+        //    let c = tables.edges().child_slice();
+        //    let mut i = 0;
+        //    while i < l.len() {
+        //        let pi = p[i];
+        //        while i < l.len() && p[i] == pi {
+        //            if i > 0 && c[i] == c[i - 1] {
+        //                assert_ne!(
+        //                    l[i],
+        //                    l[i - 1],
+        //                    "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
+        //                    p[i],
+        //                    p[i - 1],
+        //                    c[i],
+        //                    c[i - 1],
+        //                    l[i],
+        //                    l[i - 1],
+        //                    edge_check
+        //                );
+        //            }
+        //            i += 1;
+        //        }
+        //    }
+        //}
     }
 
     simplifier.finalise(node_map)?;

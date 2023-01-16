@@ -51,8 +51,6 @@ fn simulate(
     let mut node_map: Vec<NodeId> = vec![];
 
     for birth_time in (0..num_generations).rev() {
-        println!("birth_time = {birth_time:}");
-        tables.check_integrity(tskit::TableIntegrityCheckFlags::CHECK_EDGE_ORDERING)?;
         for c in children.iter_mut() {
             let bt = f64::from(birth_time);
             let child = tables.add_node(0, bt, -1, -1)?;
@@ -73,7 +71,6 @@ fn simulate(
         if birth_time % simplify_interval == 0 {
             //buffer.pre_simplification(&mut tables)?;
             //tables.full_sort(tskit::TableSortOptions::default())?;
-            println!("{parents:?}");
             node_map.resize(tables.nodes().num_rows().as_usize(), tskit::NodeId::NULL);
             tskit::simplfify_from_buffer(
                 children,
@@ -87,7 +84,6 @@ fn simulate(
                 *o = node_map[usize::try_from(*o)?];
                 assert!(!o.is_null());
             }
-            tables.check_integrity(tskit::TableIntegrityCheckFlags::CHECK_EDGE_ORDERING)?;
             //if let Some(idmap) =
             //    tables.simplify(children, tskit::SimplificationOptions::default(), true)?
             //{
