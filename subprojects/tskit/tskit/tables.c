@@ -12942,6 +12942,23 @@ out:
     return ret;
 }
 
+const tsk_id_t * tsk_streaming_simplifier_get_input_parent(tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.parent;
+}
+const tsk_id_t * tsk_streaming_simplifier_get_input_child(tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.child;
+}
+const double * tsk_streaming_simplifier_get_input_left(tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.left;
+}
+
+tsk_size_t tsk_streaming_simplifier_get_num_input_edges(tsk_streaming_simplifier_t * self) {
+    return self->pimpl->simplifier.input_tables.edges.num_rows;
+}
+
 int tsk_streaming_simplifier_free(tsk_streaming_simplifier_t * self) {
     int ret = 0;
     ret = simplifier_free(&self->pimpl->simplifier);
@@ -12952,4 +12969,3 @@ int tsk_streaming_simplifier_free(tsk_streaming_simplifier_t * self) {
 out:
     return ret;
 }
-
