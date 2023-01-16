@@ -220,7 +220,7 @@ impl EdgeBuffer {
     // NOTE: tskit is overly strict during simplification,
     // enforcing sorting requirements on the edge table
     // that are not strictly necessary.
-    fn buffer_birth<P, C, L, R>(
+    pub fn buffer_birth<P, C, L, R>(
         &mut self,
         parent: P,
         child: C,
@@ -546,6 +546,10 @@ impl Drop for StreamingSimplifier {
 // 2. If this works out, it measn we need to extract
 //    the core buffer ops out to a private type
 //    and make public newtypes using it.
+// FIXME: this fails because simplification setup does
+// funny business with the pointers?.
+// FIXME: this function is unsafe b/c of how tskit-c
+//        messes w/pointers behind the scenes.
 pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     samples: &[NodeId],
     options: O,
@@ -553,39 +557,48 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     buffer: &mut EdgeBuffer,
     node_map: Option<&mut [NodeId]>,
 ) -> Result<(), TskitError> {
+    let a = tables.edges().num_rows();
+
+    // have to take copies of the current members of 
+    // the edge table.
+    let left = tables.edges().left_slice().to_vec();
+    let right = tables.edges().right_slice().to_vec();
+    let parent = tables.edges().parent_slice().to_vec();
+    let child = tables.edges().child_slice().to_vec();
     let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
+    assert_eq!(a, tables.edges().num_rows());
     // Simplify the most recent births
     for (i, h) in buffer.head.iter().rev().enumerate() {
-        let parent = buffer.head.len() - i - 1;
-        assert_ne!(parent, usize::MAX);
-        simplifier.add_edge(
-            buffer.left[parent],
-            buffer.right[parent],
-            (parent as i32).into(),
-            buffer.child[parent],
-        )?;
-        let mut next = buffer.next[buffer.head[*h]];
-        let parent = NodeId::from(parent as i32);
-        while next != usize::MAX {
+        if *h != usize::MAX {
+            let parent = buffer.head.len() - i - 1;
+            assert_ne!(parent, usize::MAX);
             simplifier.add_edge(
-                buffer.left[next],
-                buffer.right[next],
-                parent,
-                buffer.child[next],
+                buffer.left[parent],
+                buffer.right[parent],
+                (parent as i32).into(),
+                buffer.child[parent],
             )?;
-            next = buffer.next[next];
+            let mut next = buffer.next[*h];
+            let parent = NodeId::from(parent as i32);
+            while next != usize::MAX {
+                println!("next={next:}, parent={parent:}");
+                simplifier.add_edge(
+                    buffer.left[next],
+                    buffer.right[next],
+                    parent,
+                    buffer.child[next],
+                )?;
+                next = buffer.next[next];
+            }
+            simplifier.merge_ancestors(parent)?;
         }
-        simplifier.merge_ancestors(parent)?;
     }
     buffer.release_memory();
 
     // Simplify pre-existing edges.
-    let left = tables.edges().left_slice();
-    let right = tables.edges().right_slice();
-    let parent = tables.edges().parent_slice();
-    let child = tables.edges().child_slice();
     let mut i = 0;
     while i < left.len() {
+        println!("{i:} {}", left.len());
         let p = parent[i];
         while i < left.len() && parent[i] == p {
             simplifier.add_edge(left[i], right[i], parent[i], child[i])?;

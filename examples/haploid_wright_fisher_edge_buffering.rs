@@ -7,6 +7,7 @@ use clap::Parser;
 use proptest::prelude::*;
 use rand::distributions::Distribution;
 use rand::SeedableRng;
+use tskit::NodeId;
 
 // ANCHOR: haploid_wright_fisher_edge_buffering
 fn simulate(
@@ -47,8 +48,10 @@ fn simulate(
     let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
     let mut buffer = tskit::EdgeBuffer::default();
+    let mut node_map: Vec<NodeId> = vec![];
 
     for birth_time in (0..num_generations).rev() {
+        println!("birth_time = {birth_time:}");
         for c in children.iter_mut() {
             let bt = f64::from(birth_time);
             let child = tables.add_node(0, bt, -1, -1)?;
@@ -58,25 +61,37 @@ fn simulate(
             let right_parent = parents
                 .get(parent_picker.sample(&mut rng))
                 .ok_or_else(|| anyhow::Error::msg("invalid right_parent index"))?;
-            buffer.setup_births(&[*left_parent, *right_parent], &[child])?;
+            //buffer.setup_births(&[*left_parent, *right_parent], &[child])?;
             let breakpoint = breakpoint_generator.sample(&mut rng);
-            buffer.record_birth(*left_parent, child, 0., breakpoint)?;
-            buffer.record_birth(*right_parent, child, breakpoint, 1.0)?;
-            buffer.finalize_births();
+            buffer.buffer_birth(*left_parent, child, 0., breakpoint)?;
+            buffer.buffer_birth(*right_parent, child, breakpoint, 1.0)?;
+            //buffer.finalize_births();
             *c = child;
         }
 
         if birth_time % simplify_interval == 0 {
-            buffer.pre_simplification(&mut tables)?;
+            //buffer.pre_simplification(&mut tables)?;
             //tables.full_sort(tskit::TableSortOptions::default())?;
-            if let Some(idmap) =
-                tables.simplify(children, tskit::SimplificationOptions::default(), true)?
-            {
-                // remap child nodes
-                for o in children.iter_mut() {
-                    *o = idmap[usize::try_from(*o)?];
-                }
+            node_map.resize(tables.nodes().num_rows().as_usize(), tskit::NodeId::NULL);
+            tskit::simplfify_from_buffer(
+                children,
+                tskit::SimplificationOptions::default(),
+                &mut tables,
+                &mut buffer,
+                Some(&mut node_map),
+            )?;
+            for o in children.iter_mut() {
+                assert!(o.as_usize() < node_map.len());
+                *o = node_map[usize::try_from(*o)?];
             }
+            //if let Some(idmap) =
+            //    tables.simplify(children, tskit::SimplificationOptions::default(), true)?
+            //{
+            //    // remap child nodes
+            //    for o in children.iter_mut() {
+            //        *o = idmap[usize::try_from(*o)?];
+            //    }
+            //}
             buffer.post_simplification(children, &mut tables)?;
         }
         std::mem::swap(&mut parents, &mut children);
@@ -141,4 +156,3 @@ proptest! {
         }
     }
 }
-
