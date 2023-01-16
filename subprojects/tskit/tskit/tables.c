@@ -12904,7 +12904,29 @@ int tsk_streaming_simplifier_add_edge(tsk_streaming_simplifier_t * self,
 }
 
 int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, tsk_id_t parent) {
+    tsk_id_t * p = self->pimpl->simplifier.tables->edges.parent;
+    tsk_id_t * c = self->pimpl->simplifier.tables->edges.child;
+    double * l = self->pimpl->simplifier.tables->edges.left;
+    tsk_size_t num_edges = self->pimpl->simplifier.tables->edges.num_rows, i=1;
+    while (i < num_edges) {
+        if (i>0 && p[i] == p[i-1]) {
+            if(c[i]==c[i-1] && l[i]==l[i-1]) {
+                fprintf(stdout, "bailing early\n");
+                abort(); }
+        }
+        i+=1;
+    }
     int ret = simplifier_merge_ancestors(&self->pimpl->simplifier, parent);
+    num_edges = self->pimpl->simplifier.tables->edges.num_rows;
+    i=1;
+    while (i < num_edges) {
+        if (i>0 && p[i] == p[i-1]) {
+            if(c[i]==c[i-1] && l[i]==l[i-1]) {
+                fprintf(stdout, "bailing %d %d %lf\n", p[i], c[i], l[i]);
+                abort(); }
+        }
+        i+=1;
+    }
     return ret;
 }
 
