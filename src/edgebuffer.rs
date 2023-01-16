@@ -576,6 +576,19 @@ impl StreamingSimplifier {
             )
         }
     }
+
+    fn get_input_parent(&self, u: usize) -> NodeId {
+        self.input_parent()[u]
+    }
+    fn get_input_child(&self, u: usize) -> NodeId {
+        self.input_child()[u]
+    }
+    fn get_input_left(&self, u: usize) -> Position {
+        self.input_left()[u]
+    }
+    fn get_input_right(&self, u: usize) -> Position {
+        self.input_right()[u]
+    }
 }
 
 impl Drop for StreamingSimplifier {
@@ -666,16 +679,17 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     // Simplify pre-existing edges.
     let mut i = 0;
     let num_input_edges = simplifier.input_num_edges();
-    let left = simplifier.input_left();
-    let right = simplifier.input_right();
-    let parent = simplifier.input_parent();
-    let child = simplifier.input_child();
     while i < num_input_edges {
-        let p = parent[i];
+        let p = simplifier.get_input_parent(i);
         //let mut edge_check: Vec<(NodeId, Position)> = vec![];
-        while i < left.len() && parent[i] == p {
+        while i < num_input_edges && simplifier.get_input_parent(i) == p {
             //assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
-            simplifier.add_edge(left[i], right[i], parent[i], child[i])?;
+            simplifier.add_edge(
+                simplifier.get_input_left(i),
+                simplifier.get_input_right(i),
+                simplifier.get_input_parent(i),
+                simplifier.get_input_child(i),
+            )?;
             //edge_check.push((child[i], left[i]));
             i += 1;
         }
