@@ -554,10 +554,47 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     node_map: Option<&mut [NodeId]>,
 ) -> Result<(), TskitError> {
     let mut simplifier = StreamingSimplifier::new(samples, options, tables)?;
+    // Simplify the most recent births
     for (i, h) in buffer.head.iter().rev().enumerate() {
-        unimplemented!()
+        let parent = buffer.head.len() - i - 1;
+        assert_ne!(parent, usize::MAX);
+        simplifier.add_edge(
+            buffer.left[parent],
+            buffer.right[parent],
+            (parent as i32).into(),
+            buffer.child[parent],
+        )?;
+        let mut next = buffer.next[buffer.head[*h]];
+        let parent = NodeId::from(parent as i32);
+        while next != usize::MAX {
+            simplifier.add_edge(
+                buffer.left[next],
+                buffer.right[next],
+                parent,
+                buffer.child[next],
+            )?;
+            next = buffer.next[next];
+        }
+        simplifier.merge_ancestors(parent)?;
+    }
+    buffer.release_memory();
+
+    // Simplify pre-existing edges.
+    let left = tables.edges().left_slice();
+    let right = tables.edges().right_slice();
+    let parent = tables.edges().parent_slice();
+    let child = tables.edges().child_slice();
+    let mut i = 0;
+    while i < left.len() {
+        let p = parent[i];
+        while i < left.len() && parent[i] == p {
+            simplifier.add_edge(left[i], right[i], parent[i], child[i])?;
+            i += 1;
+        }
+        simplifier.merge_ancestors(p)?;
     }
 
+    simplifier.finalise(node_map)?;
     Ok(())
 }
 
