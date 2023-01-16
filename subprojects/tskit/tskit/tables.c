@@ -12927,6 +12927,7 @@ int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, 
         }
         i+=1;
     }
+    self->pimpl->simplifier.segment_queue_size = 0;
     return ret;
 }
 
