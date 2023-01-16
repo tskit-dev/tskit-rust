@@ -571,7 +571,14 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
             let parent = buffer.head.len() - i - 1;
             assert!(node_times[parent] >= last_parent_time);
             last_parent_time = node_times[parent].into();
-            println!("foo: {},{} | {} {}", i, parent, *h, buffer.head.len());
+            println!(
+                "foo: {},{} | {} {} | {}",
+                i,
+                parent,
+                *h,
+                buffer.head.len(),
+                last_parent_time
+            );
             assert_ne!(parent, usize::MAX);
             let mut edge_check: Vec<(NodeId, Position)> = vec![];
             simplifier.add_edge(
