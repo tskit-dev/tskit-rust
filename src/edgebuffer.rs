@@ -591,6 +591,7 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
             let mut next = buffer.next[*h];
             assert_ne!(next, *h);
             let parent = NodeId::from(parent as i32);
+            assert!(parent >= 0);
             while next != usize::MAX {
                 println!("next={next:}, parent={parent:}");
                 assert!(!edge_check
@@ -643,6 +644,8 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     let mut i = 0;
     while i < left.len() {
         let p = parent[i];
+        assert!(node_times[p.as_usize()] >= last_parent_time);
+        last_parent_time = node_times[p.as_usize()].into();
         let mut edge_check: Vec<(NodeId, Position)> = vec![];
         while i < left.len() && parent[i] == p {
             assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
