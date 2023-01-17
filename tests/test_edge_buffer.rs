@@ -85,9 +85,10 @@ impl Recording for TableCollectionWithBuffer {
 
 impl From<TableCollectionWithBuffer> for TreeSequence {
     fn from(value: TableCollectionWithBuffer) -> Self {
-        let mut value = value;
-        value.tables.build_index().unwrap();
-        value.tables.tree_sequence(0.into()).unwrap()
+        value
+            .tables
+            .tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES)
+            .unwrap()
     }
 }
 
@@ -157,9 +158,10 @@ impl Recording for TableCollectionWithBufferForStreaming {
 
 impl From<TableCollectionWithBufferForStreaming> for TreeSequence {
     fn from(value: TableCollectionWithBufferForStreaming) -> Self {
-        let mut value = value;
-        value.tables.build_index().unwrap();
-        value.tables.tree_sequence(0.into()).unwrap()
+        value
+            .tables
+            .tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES)
+            .unwrap()
     }
 }
 
