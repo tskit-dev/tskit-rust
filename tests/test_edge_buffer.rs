@@ -226,6 +226,7 @@ where
 
     let death = rand::distributions::Uniform::new(0., 1.0);
     let parent_picker = rand::distributions::Uniform::new(0, popsize);
+    let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
 
     for birth_time in (0..10).rev() {
         let mut replacements = vec![];
@@ -239,10 +240,16 @@ where
         for _ in 0..replacements.len() {
             let parent_index = parent_picker.sample(&mut rng);
             let parent = parents[parent_index];
+            let parent_index = parent_picker.sample(&mut rng);
+            let parent2 = parents[parent_index];
             let child = recorder.add_node(0, birth_time as f64).unwrap();
             births.push(child);
-            recorder.start_recording(&[parent], &[child]);
-            recorder.add_edge(0., 1., parent, child).unwrap();
+            let child2 = recorder.add_node(0, birth_time as f64).unwrap();
+            births.push(child2);
+            let breakpoint = breakpoint_generator.sample(&mut rng);
+            recorder.start_recording(&[parent, parent2], &[child, child2]);
+            recorder.add_edge(0., breakpoint, parent, child).unwrap();
+            recorder.add_edge(breakpoint, 1., parent, child2).unwrap();
             recorder.end_recording();
         }
         for (r, b) in replacements.iter().zip(births.iter()) {
