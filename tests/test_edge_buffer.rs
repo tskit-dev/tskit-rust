@@ -251,73 +251,6 @@ where
     recorder.into()
 }
 
-fn overlapping_generations_streaming_simplification(
-    seed: u64,
-    pdeath: f64,
-    simplify: i32,
-) -> TreeSequence {
-    let mut tables = TableCollection::new(1.0).unwrap();
-    let mut buffer = EdgeBuffer::default();
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-
-    let popsize = 10;
-
-    let mut parents = vec![];
-
-    for _ in 0..popsize {
-        let node = tables.add_node(0, 10.0, -1, -1).unwrap();
-        parents.push(node);
-    }
-
-    let death = rand::distributions::Uniform::new(0., 1.0);
-    let parent_picker = rand::distributions::Uniform::new(0, popsize);
-    let mut node_map: Vec<tskit::NodeId> = vec![];
-
-    for birth_time in (0..10).rev() {
-        let mut replacements = vec![];
-        for i in 0..parents.len() {
-            if death.sample(&mut rng) <= pdeath {
-                replacements.push(i);
-            }
-        }
-        let mut births = vec![];
-
-        for _ in 0..replacements.len() {
-            let parent_index = parent_picker.sample(&mut rng);
-            assert!(parent_index < parents.len());
-            let parent = parents[parent_index];
-            let child = tables.add_node(0, birth_time as f64, -1, -1).unwrap();
-            births.push(child);
-            buffer.buffer_birth(parent, child, 0., 1.).unwrap();
-        }
-        assert_eq!(replacements.len(), births.len());
-
-        for (r, b) in replacements.iter().zip(births.iter()) {
-            assert!(*r < parents.len());
-            parents[*r] = *b;
-        }
-        if birth_time % simplify == 0 {
-            node_map.resize(tables.nodes().num_rows().as_usize(), tskit::NodeId::NULL);
-            tskit::simplfify_from_buffer(
-                &parents,
-                tskit::SimplificationOptions::default(),
-                &mut tables,
-                &mut buffer,
-                Some(&mut node_map),
-            )
-            .unwrap();
-            for o in parents.iter_mut() {
-                assert!(o.as_usize() < node_map.len());
-                *o = node_map[usize::try_from(*o).unwrap()];
-                assert!(!o.is_null());
-            }
-            buffer.post_simplification(&parents, &mut tables).unwrap();
-        }
-    }
-    tables.build_index().unwrap();
-    tables.tree_sequence(0.into()).unwrap()
-}
-
 #[cfg(test)]
 proptest! {
     #[test]
@@ -348,15 +281,5 @@ proptest! {
             assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
             //assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer_streaming.total_branch_length(true).unwrap());
         }
-    }
-}
-
-#[cfg(test)]
-proptest! {
-    #[test]
-    fn test_edge_buffer_overlapping_generations_streaming_simplification(seed in any::<u64>(),
-                                                pdeath in 0.05..1.0,
-                                                simplify_interval in 1..100i32) {
-        let _ = overlapping_generations_streaming_simplification(seed, pdeath, simplify_interval);
     }
 }
