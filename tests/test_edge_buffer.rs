@@ -270,6 +270,10 @@ proptest! {
 
         assert_eq!(standard_treeseq.num_trees(), standard_with_buffer.num_trees());
         assert_eq!(standard_treeseq.num_trees(), standard_with_buffer_streaming.num_trees());
+        assert_eq!(standard_treeseq.nodes().num_rows(), standard_with_buffer.nodes().num_rows());
+        assert_eq!(standard_treeseq.nodes().num_rows(), standard_with_buffer_streaming.nodes().num_rows());
+        assert_eq!(standard_treeseq.edges().num_rows(), standard_with_buffer.edges().num_rows());
+        assert_eq!(standard_treeseq.edges().num_rows(), standard_with_buffer_streaming.edges().num_rows());
 
         // cannot do KC distance b/c trees not fully coalesced.
         let mut trees_standard = standard_treeseq.tree_iterator(0).unwrap();
@@ -278,9 +282,10 @@ proptest! {
 
         while let Some(tree) = trees_standard.next() {
             let tree_with_buffer = trees_with_buffer.next().unwrap();
-            assert_eq!(tree.interval(), tree_with_buffer.interval());
-            assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer.total_branch_length(true).unwrap());
             let tree_with_buffer_streaming = trees_with_buffer_streaming.next().unwrap();
+            assert_eq!(tree.interval(), tree_with_buffer.interval());
+            assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
+            assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer.total_branch_length(true).unwrap());
             assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
             //assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer_streaming.total_branch_length(true).unwrap());
         }
