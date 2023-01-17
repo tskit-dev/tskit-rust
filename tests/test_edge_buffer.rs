@@ -259,8 +259,26 @@ where
     recorder.into()
 }
 
-fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i32) {
+fn compare_treeseqs(a: &TreeSequence, b: &TreeSequence) {
     use streaming_iterator::StreamingIterator;
+    assert_eq!(a.edges().num_rows(), b.edges().num_rows());
+    assert_eq!(a.nodes().num_rows(), b.nodes().num_rows());
+    assert_eq!(a.num_trees(), b.num_trees());
+
+    let mut trees_a = a.tree_iterator(0).unwrap();
+    let mut trees_b = b.tree_iterator(0).unwrap();
+
+    while let Some(tree_a) = trees_a.next() {
+        let tree_b = trees_b.next().unwrap();
+        assert_eq!(tree_a.interval(), tree_b.interval());
+        assert_eq!(
+            tree_a.total_branch_length(true).unwrap(),
+            tree_b.total_branch_length(true).unwrap()
+        );
+    }
+}
+
+fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i32) {
     let standard = StandardTableCollection::new();
     let standard_treeseq = overlapping_generations(seed, pdeath, simplify_interval, standard);
     let with_buffer = TableCollectionWithBuffer::new();
@@ -270,53 +288,8 @@ fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i
     let standard_with_buffer_streaming =
         overlapping_generations(seed, pdeath, simplify_interval, with_buffer_streaming);
 
-    assert_eq!(
-        standard_treeseq.num_trees(),
-        standard_with_buffer.num_trees()
-    );
-    assert_eq!(
-        standard_treeseq.num_trees(),
-        standard_with_buffer_streaming.num_trees()
-    );
-    assert_eq!(
-        standard_treeseq.nodes().num_rows(),
-        standard_with_buffer.nodes().num_rows()
-    );
-    assert_eq!(
-        standard_treeseq.nodes().num_rows(),
-        standard_with_buffer_streaming.nodes().num_rows()
-    );
-    assert_eq!(
-        standard_treeseq.edges().num_rows(),
-        standard_with_buffer.edges().num_rows()
-    );
-    assert_eq!(
-        standard_treeseq.edges().num_rows(),
-        standard_with_buffer_streaming.edges().num_rows()
-    );
-
-    // cannot do KC distance b/c trees not fully coalesced.
-    let mut trees_standard = standard_treeseq.tree_iterator(0).unwrap();
-    let mut trees_with_buffer = standard_with_buffer.tree_iterator(0).unwrap();
-    let mut trees_with_buffer_streaming = standard_with_buffer_streaming.tree_iterator(0).unwrap();
-
-    while let Some(tree) = trees_standard.next() {
-        let tree_with_buffer = trees_with_buffer.next().unwrap();
-        let tree_with_buffer_streaming = trees_with_buffer_streaming.next().unwrap();
-        assert_eq!(tree.interval(), tree_with_buffer.interval());
-        assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
-        assert_eq!(
-            tree.total_branch_length(true).unwrap(),
-            tree_with_buffer.total_branch_length(true).unwrap()
-        );
-        assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
-        assert_eq!(
-            tree.total_branch_length(true).unwrap(),
-            tree_with_buffer_streaming
-                .total_branch_length(true)
-                .unwrap()
-        );
-    }
+    compare_treeseqs(&standard_treeseq, &standard_with_buffer);
+    compare_treeseqs(&standard_treeseq, &standard_with_buffer_streaming);
 }
 
 #[cfg(test)]
