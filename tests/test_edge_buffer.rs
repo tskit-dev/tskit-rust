@@ -5,20 +5,104 @@ use rand::distributions::Distribution;
 use rand::SeedableRng;
 
 use tskit::EdgeBuffer;
+use tskit::EdgeId;
+use tskit::NodeId;
 use tskit::TableCollection;
 use tskit::TreeSequence;
+use tskit::TskitError;
 
-fn overlapping_generations(seed: u64, pdeath: f64, simplify: i32) -> TreeSequence {
-    let mut tables = TableCollection::new(1.0).unwrap();
-    let mut buffer = EdgeBuffer::default();
+trait Recording {
+    fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError>;
+    fn add_edge(
+        &mut self,
+        left: f64,
+        right: f64,
+        parent: NodeId,
+        child: NodeId,
+    ) -> Result<(), TskitError>;
+
+    fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError>;
+    fn start_recording(&mut self, parents: &[NodeId], child: &[NodeId]) {}
+    fn end_recording(&mut self) {}
+}
+
+struct StandardTableCollectionWithBuffer {
+    tables: TableCollection,
+    buffer: EdgeBuffer,
+}
+
+impl StandardTableCollectionWithBuffer {
+    fn new() -> Self {
+        Self {
+            tables: TableCollection::new(1.0).unwrap(),
+            buffer: EdgeBuffer::default(),
+        }
+    }
+}
+
+impl Recording for StandardTableCollectionWithBuffer {
+    fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError> {
+        self.tables.add_node(flags, time, -1, -1)
+    }
+
+    fn add_edge(
+        &mut self,
+        left: f64,
+        right: f64,
+        parent: NodeId,
+        child: NodeId,
+    ) -> Result<(), TskitError> {
+        self.buffer.record_birth(parent, child, left, right)
+    }
+
+    fn start_recording(&mut self, parents: &[NodeId], children: &[NodeId]) {
+        self.buffer.setup_births(parents, children).unwrap()
+    }
+
+    fn end_recording(&mut self) {
+        self.buffer.finalize_births()
+    }
+
+    fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
+        self.buffer.pre_simplification(&mut self.tables).unwrap();
+        match self.tables.simplify(samples, 0, true) {
+            Ok(Some(idmap)) => {
+                for s in samples.iter_mut() {
+                    *s = idmap[s.as_usize()];
+                }
+                self.buffer
+                    .post_simplification(samples, &mut self.tables)
+                    .unwrap();
+                Ok(())
+            }
+            Ok(None) => panic!(),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl From<StandardTableCollectionWithBuffer> for TreeSequence {
+    fn from(value: StandardTableCollectionWithBuffer) -> Self {
+        let mut value = value;
+        value.tables.build_index().unwrap();
+        value.tables.tree_sequence(0.into()).unwrap()
+    }
+}
+
+fn overlapping_generations<T>(seed: u64, pdeath: f64, simplify: i32, recorder: T) -> TreeSequence
+where
+    T: Into<TreeSequence> + Recording,
+{
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
     let popsize = 10;
 
     let mut parents = vec![];
 
+    let mut recorder = recorder;
+
     for _ in 0..popsize {
-        let node = tables.add_node(0, 10.0, -1, -1).unwrap();
+        let node = recorder.add_node(0, 10.0).unwrap();
         parents.push(node);
     }
 
@@ -37,11 +121,11 @@ fn overlapping_generations(seed: u64, pdeath: f64, simplify: i32) -> TreeSequenc
         for _ in 0..replacements.len() {
             let parent_index = parent_picker.sample(&mut rng);
             let parent = parents[parent_index];
-            let child = tables.add_node(0, birth_time as f64, -1, -1).unwrap();
+            let child = recorder.add_node(0, birth_time as f64).unwrap();
             births.push(child);
-            buffer.setup_births(&[parent], &[child]).unwrap();
-            buffer.record_birth(parent, child, 0., 1.).unwrap();
-            buffer.finalize_births();
+            recorder.start_recording(&[parent], &[child]);
+            recorder.add_edge(0., 1., parent, child).unwrap();
+            recorder.end_recording();
         }
 
         for (r, b) in replacements.iter().zip(births.iter()) {
@@ -49,24 +133,10 @@ fn overlapping_generations(seed: u64, pdeath: f64, simplify: i32) -> TreeSequenc
             parents[*r] = *b;
         }
         if birth_time % simplify == 0 {
-            buffer.pre_simplification(&mut tables).unwrap();
-            //tables.full_sort(tskit::TableSortOptions::default()).unwrap();
-            if let Some(idmap) = tables
-                .simplify(&parents, tskit::SimplificationOptions::default(), true)
-                .unwrap()
-            {
-                // remap child nodes
-                for o in parents.iter_mut() {
-                    *o = idmap[usize::try_from(*o).unwrap()];
-                }
-            }
-            buffer.post_simplification(&parents, &mut tables).unwrap();
+            recorder.simplify(&mut parents).unwrap();
         }
     }
-
-    tables.build_index().unwrap();
-
-    tables.tree_sequence(0.into()).unwrap()
+    recorder.into()
 }
 
 fn overlapping_generations_streaming_simplification(
@@ -142,7 +212,8 @@ proptest! {
     fn test_edge_buffer_overlapping_generations(seed in any::<u64>(),
                                                 pdeath in 0.05..1.0,
                                                 simplify_interval in 1..100i32) {
-        let _ = overlapping_generations(seed, pdeath, simplify_interval);
+        let with_buffer = StandardTableCollectionWithBuffer::new();
+        let _ = overlapping_generations(seed, pdeath, simplify_interval, with_buffer);
     }
 }
 
