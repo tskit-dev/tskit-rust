@@ -1,5 +1,7 @@
 #![cfg(feature = "edgebuffer")]
 
+use std::ops::Deref;
+
 use proptest::prelude::*;
 use rand::distributions::Distribution;
 use rand::SeedableRng;
@@ -26,12 +28,12 @@ trait Recording {
     fn end_recording(&mut self) {}
 }
 
-struct StandardTableCollectionWithBuffer {
+struct TableCollectionWithBuffer {
     tables: TableCollection,
     buffer: EdgeBuffer,
 }
 
-impl StandardTableCollectionWithBuffer {
+impl TableCollectionWithBuffer {
     fn new() -> Self {
         Self {
             tables: TableCollection::new(1.0).unwrap(),
@@ -40,7 +42,7 @@ impl StandardTableCollectionWithBuffer {
     }
 }
 
-impl Recording for StandardTableCollectionWithBuffer {
+impl Recording for TableCollectionWithBuffer {
     fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError> {
         self.tables.add_node(flags, time, -1, -1)
     }
@@ -81,11 +83,58 @@ impl Recording for StandardTableCollectionWithBuffer {
     }
 }
 
-impl From<StandardTableCollectionWithBuffer> for TreeSequence {
-    fn from(value: StandardTableCollectionWithBuffer) -> Self {
+impl From<TableCollectionWithBuffer> for TreeSequence {
+    fn from(value: TableCollectionWithBuffer) -> Self {
         let mut value = value;
         value.tables.build_index().unwrap();
         value.tables.tree_sequence(0.into()).unwrap()
+    }
+}
+
+struct StandardTableCollection(TableCollection);
+
+impl StandardTableCollection {
+    fn new() -> Self {
+        Self(TableCollection::new(1.0).unwrap())
+    }
+}
+
+impl Recording for StandardTableCollection {
+    fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError> {
+        self.0.add_node(flags, time, -1, -1)
+    }
+    fn add_edge(
+        &mut self,
+        left: f64,
+        right: f64,
+        parent: NodeId,
+        child: NodeId,
+    ) -> Result<(), TskitError> {
+        match self.0.add_edge(left, right, parent, child) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        }
+    }
+    fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
+        self.0.full_sort(0).unwrap();
+        match self.0.simplify(samples, 0, true) {
+            Ok(Some(idmap)) => {
+                for s in samples {
+                    *s = idmap[s.as_usize()];
+                }
+                Ok(())
+            }
+            Ok(None) => Ok(()),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl From<StandardTableCollection> for TreeSequence {
+    fn from(value: StandardTableCollection) -> Self {
+        let mut value = value;
+        value.0.build_index();
+        value.0.tree_sequence(0.into()).unwrap()
     }
 }
 
@@ -212,8 +261,12 @@ proptest! {
     fn test_edge_buffer_overlapping_generations(seed in any::<u64>(),
                                                 pdeath in 0.05..1.0,
                                                 simplify_interval in 1..100i32) {
-        let with_buffer = StandardTableCollectionWithBuffer::new();
-        let _ = overlapping_generations(seed, pdeath, simplify_interval, with_buffer);
+        let standard = StandardTableCollection::new();
+        let standard_treeseq = overlapping_generations(seed, pdeath, simplify_interval, standard);
+        let with_buffer = TableCollectionWithBuffer::new();
+        let standard_with_buffer = overlapping_generations(seed, pdeath, simplify_interval, with_buffer);
+
+        assert_eq!(standard_treeseq.num_trees(), standard_with_buffer.num_trees());
     }
 }
 
