@@ -26,6 +26,9 @@ trait Recording {
     fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError>;
     fn start_recording(&mut self, _parents: &[NodeId], _child: &[NodeId]) {}
     fn end_recording(&mut self) {}
+
+    // sugar that we don't need later
+    fn num_edges(&self) -> tskit::SizeType;
 }
 
 struct TableCollectionWithBuffer {
@@ -81,10 +84,15 @@ impl Recording for TableCollectionWithBuffer {
             Err(e) => Err(e),
         }
     }
+
+    fn num_edges(&self) -> tskit::SizeType {
+        self.tables.edges().num_rows()
+    }
 }
 
 impl From<TableCollectionWithBuffer> for TreeSequence {
     fn from(value: TableCollectionWithBuffer) -> Self {
+        println!("buffer export {}", value.tables.edges().num_rows());
         value
             .tables
             .tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES)
@@ -121,6 +129,7 @@ impl Recording for TableCollectionWithBufferForStreaming {
     fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError> {
         self.tables.add_node(flags, time, -1, -1)
     }
+
     fn add_edge(
         &mut self,
         left: f64,
@@ -137,7 +146,7 @@ impl Recording for TableCollectionWithBufferForStreaming {
             tskit::NodeId::NULL,
         );
         tskit::simplfify_from_buffer(
-            &samples,
+            samples,
             tskit::SimplificationOptions::default(),
             &mut self.tables,
             &mut self.buffer,
@@ -153,6 +162,10 @@ impl Recording for TableCollectionWithBufferForStreaming {
             .post_simplification(&samples, &mut self.tables)
             .unwrap();
         Ok(())
+    }
+
+    fn num_edges(&self) -> tskit::SizeType {
+        self.tables.edges().num_rows()
     }
 }
 
@@ -193,6 +206,9 @@ impl Recording for StandardTableCollection {
             Ok(None) => Ok(()),
             Err(e) => Err(e),
         }
+    }
+    fn num_edges(&self) -> tskit::SizeType {
+        self.0.edges().num_rows()
     }
 }
 
@@ -242,16 +258,73 @@ where
             recorder.add_edge(0., 1., parent, child).unwrap();
             recorder.end_recording();
         }
-
         for (r, b) in replacements.iter().zip(births.iter()) {
             assert!(*r < parents.len());
             parents[*r] = *b;
         }
         if birth_time % simplify == 0 {
+            println!("before simplify: {} {}", birth_time, recorder.num_edges());
             recorder.simplify(&mut parents).unwrap();
+            println!("simplify: {} {}", birth_time, recorder.num_edges());
         }
     }
+    println!("end {}", recorder.num_edges());
     recorder.into()
+}
+
+fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i32) {
+    use streaming_iterator::StreamingIterator;
+    let standard = StandardTableCollection::new();
+    let standard_treeseq = overlapping_generations(seed, pdeath, simplify_interval, standard);
+    let with_buffer = TableCollectionWithBuffer::new();
+    let standard_with_buffer =
+        overlapping_generations(seed, pdeath, simplify_interval, with_buffer);
+    let with_buffer_streaming = TableCollectionWithBufferForStreaming::new();
+    let standard_with_buffer_streaming =
+        overlapping_generations(seed, pdeath, simplify_interval, with_buffer_streaming);
+
+    assert_eq!(
+        standard_treeseq.num_trees(),
+        standard_with_buffer.num_trees()
+    );
+    assert_eq!(
+        standard_treeseq.num_trees(),
+        standard_with_buffer_streaming.num_trees()
+    );
+    assert_eq!(
+        standard_treeseq.nodes().num_rows(),
+        standard_with_buffer.nodes().num_rows()
+    );
+    assert_eq!(
+        standard_treeseq.nodes().num_rows(),
+        standard_with_buffer_streaming.nodes().num_rows()
+    );
+    assert_eq!(
+        standard_treeseq.edges().num_rows(),
+        standard_with_buffer.edges().num_rows()
+    );
+    assert_eq!(
+        standard_treeseq.edges().num_rows(),
+        standard_with_buffer_streaming.edges().num_rows()
+    );
+
+    // cannot do KC distance b/c trees not fully coalesced.
+    let mut trees_standard = standard_treeseq.tree_iterator(0).unwrap();
+    let mut trees_with_buffer = standard_with_buffer.tree_iterator(0).unwrap();
+    let mut trees_with_buffer_streaming = standard_with_buffer_streaming.tree_iterator(0).unwrap();
+
+    while let Some(tree) = trees_standard.next() {
+        let tree_with_buffer = trees_with_buffer.next().unwrap();
+        let tree_with_buffer_streaming = trees_with_buffer_streaming.next().unwrap();
+        assert_eq!(tree.interval(), tree_with_buffer.interval());
+        assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
+        assert_eq!(
+            tree.total_branch_length(true).unwrap(),
+            tree_with_buffer.total_branch_length(true).unwrap()
+        );
+        assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
+        //assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer_streaming.total_branch_length(true).unwrap());
+    }
 }
 
 #[cfg(test)]
@@ -260,34 +333,6 @@ proptest! {
     fn test_edge_buffer_overlapping_generations(seed in any::<u64>(),
                                                 pdeath in 0.05..1.0,
                                                 simplify_interval in 1..100i32) {
-        use streaming_iterator::StreamingIterator;
-        let standard = StandardTableCollection::new();
-        let standard_treeseq = overlapping_generations(seed, pdeath, simplify_interval, standard);
-        let with_buffer = TableCollectionWithBuffer::new();
-        let standard_with_buffer = overlapping_generations(seed, pdeath, simplify_interval, with_buffer);
-        let with_buffer_streaming = TableCollectionWithBufferForStreaming::new();
-        let standard_with_buffer_streaming = overlapping_generations(seed, pdeath, simplify_interval, with_buffer_streaming);
-
-        assert_eq!(standard_treeseq.num_trees(), standard_with_buffer.num_trees());
-        assert_eq!(standard_treeseq.num_trees(), standard_with_buffer_streaming.num_trees());
-        assert_eq!(standard_treeseq.nodes().num_rows(), standard_with_buffer.nodes().num_rows());
-        assert_eq!(standard_treeseq.nodes().num_rows(), standard_with_buffer_streaming.nodes().num_rows());
-        assert_eq!(standard_treeseq.edges().num_rows(), standard_with_buffer.edges().num_rows());
-        assert_eq!(standard_treeseq.edges().num_rows(), standard_with_buffer_streaming.edges().num_rows());
-
-        // cannot do KC distance b/c trees not fully coalesced.
-        let mut trees_standard = standard_treeseq.tree_iterator(0).unwrap();
-        let mut trees_with_buffer = standard_with_buffer.tree_iterator(0).unwrap();
-        let mut trees_with_buffer_streaming = standard_with_buffer_streaming.tree_iterator(0).unwrap();
-
-        while let Some(tree) = trees_standard.next() {
-            let tree_with_buffer = trees_with_buffer.next().unwrap();
-            let tree_with_buffer_streaming = trees_with_buffer_streaming.next().unwrap();
-            assert_eq!(tree.interval(), tree_with_buffer.interval());
-            assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
-            assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer.total_branch_length(true).unwrap());
-            assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
-            //assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer_streaming.total_branch_length(true).unwrap());
-        }
+        run_overlapping_generations_test(seed, pdeath, simplify_interval)
     }
 }
