@@ -244,12 +244,10 @@ where
             let parent2 = parents[parent_index];
             let child = recorder.add_node(0, birth_time as f64).unwrap();
             births.push(child);
-            let child2 = recorder.add_node(0, birth_time as f64).unwrap();
-            births.push(child2);
             let breakpoint = breakpoint_generator.sample(&mut rng);
-            recorder.start_recording(&[parent, parent2], &[child, child2]);
+            recorder.start_recording(&[parent, parent2], &[child]);
             recorder.add_edge(0., breakpoint, parent, child).unwrap();
-            recorder.add_edge(breakpoint, 1., parent, child2).unwrap();
+            recorder.add_edge(breakpoint, 1., parent2, child).unwrap();
             recorder.end_recording();
         }
         for (r, b) in replacements.iter().zip(births.iter()) {
@@ -297,6 +295,11 @@ fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i
 
     compare_treeseqs(&standard_treeseq, &standard_with_buffer);
     compare_treeseqs(&standard_treeseq, &standard_with_buffer_streaming);
+}
+
+#[test]
+fn failing_test_params() {
+    run_overlapping_generations_test(3491384373429438832, 0.49766542321295254, 1)
 }
 
 #[cfg(test)]
