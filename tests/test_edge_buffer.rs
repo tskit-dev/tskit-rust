@@ -299,7 +299,7 @@ fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i
 
 #[test]
 fn failing_test_params() {
-    run_overlapping_generations_test(3491384373429438832, 0.49766542321295254, 1)
+    run_overlapping_generations_test(3491384373429438832, 0.49766542321295254, 1);
 }
 
 #[cfg(test)]
