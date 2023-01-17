@@ -73,6 +73,7 @@ impl BufferedBirths {
     fn initialize(&mut self, parents: &[NodeId], children: &[NodeId]) -> Result<(), TskitError> {
         self.children = children.to_vec();
         self.children.sort();
+        self.children.dedup();
         self.segments.clear();
         // FIXME: don't do this work if the parent already exists
         for p in parents {
@@ -357,10 +358,7 @@ impl EdgeBuffer {
         let right = tables.edges().right_slice();
         let mut rv = 0;
         for pre in pre_existing_edges.iter() {
-            let mut uchild = child[pre.first..pre.last].to_owned();
-            uchild.sort();
-            uchild.dedup();
-            self.setup_births(&[parent[pre.first]], &uchild)?;
+            self.setup_births(&[parent[pre.first]], &child[pre.first..pre.last])?;
             for e in pre.first..pre.last {
                 assert_eq!(parent[e], parent[pre.first]);
                 self.record_birth(parent[e], child[e], left[e], right[e])?;
