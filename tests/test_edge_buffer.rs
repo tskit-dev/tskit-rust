@@ -24,7 +24,7 @@ trait Recording {
     ) -> Result<(), TskitError>;
 
     fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError>;
-    fn start_recording(&mut self, parents: &[NodeId], child: &[NodeId]) {}
+    fn start_recording(&mut self, _parents: &[NodeId], _child: &[NodeId]) {}
     fn end_recording(&mut self) {}
 }
 
@@ -99,6 +99,69 @@ impl StandardTableCollection {
     }
 }
 
+struct TableCollectionWithBufferForStreaming {
+    tables: TableCollection,
+    buffer: EdgeBuffer,
+    node_map: Vec<NodeId>,
+}
+
+impl TableCollectionWithBufferForStreaming {
+    fn new() -> Self {
+        Self {
+            tables: TableCollection::new(1.0).unwrap(),
+            buffer: EdgeBuffer::default(),
+            node_map: vec![],
+        }
+    }
+}
+
+impl Recording for TableCollectionWithBufferForStreaming {
+    fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError> {
+        self.tables.add_node(flags, time, -1, -1)
+    }
+    fn add_edge(
+        &mut self,
+        left: f64,
+        right: f64,
+        parent: NodeId,
+        child: NodeId,
+    ) -> Result<(), TskitError> {
+        self.buffer.buffer_birth(parent, child, left, right)
+    }
+
+    fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
+        self.node_map.resize(
+            self.tables.nodes().num_rows().as_usize(),
+            tskit::NodeId::NULL,
+        );
+        tskit::simplfify_from_buffer(
+            &samples,
+            tskit::SimplificationOptions::default(),
+            &mut self.tables,
+            &mut self.buffer,
+            Some(&mut self.node_map),
+        )
+        .unwrap();
+        for o in samples.iter_mut() {
+            assert!(o.as_usize() < self.node_map.len());
+            *o = self.node_map[usize::try_from(*o).unwrap()];
+            assert!(!o.is_null());
+        }
+        self.buffer
+            .post_simplification(&samples, &mut self.tables)
+            .unwrap();
+        Ok(())
+    }
+}
+
+impl From<TableCollectionWithBufferForStreaming> for TreeSequence {
+    fn from(value: TableCollectionWithBufferForStreaming) -> Self {
+        let mut value = value;
+        value.tables.build_index().unwrap();
+        value.tables.tree_sequence(0.into()).unwrap()
+    }
+}
+
 impl Recording for StandardTableCollection {
     fn add_node(&mut self, flags: u32, time: f64) -> Result<NodeId, TskitError> {
         self.0.add_node(flags, time, -1, -1)
@@ -133,7 +196,7 @@ impl Recording for StandardTableCollection {
 impl From<StandardTableCollection> for TreeSequence {
     fn from(value: StandardTableCollection) -> Self {
         let mut value = value;
-        value.0.build_index();
+        value.0.build_index().unwrap();
         value.0.tree_sequence(0.into()).unwrap()
     }
 }
@@ -265,8 +328,11 @@ proptest! {
         let standard_treeseq = overlapping_generations(seed, pdeath, simplify_interval, standard);
         let with_buffer = TableCollectionWithBuffer::new();
         let standard_with_buffer = overlapping_generations(seed, pdeath, simplify_interval, with_buffer);
+        let with_buffer_streaming = TableCollectionWithBufferForStreaming::new();
+        let standard_with_buffer_streaming = overlapping_generations(seed, pdeath, simplify_interval, with_buffer_streaming);
 
         assert_eq!(standard_treeseq.num_trees(), standard_with_buffer.num_trees());
+        assert_eq!(standard_treeseq.num_trees(), standard_with_buffer_streaming.num_trees());
     }
 }
 
