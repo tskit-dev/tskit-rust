@@ -347,6 +347,12 @@ impl EdgeBuffer {
     // we are buffering nodes with increasing node id
     // that are also more ancient. This is the opposite
     // order from what happens during a forward-time simulation.
+    // NOTE: the mechanics of this fn differ if we use
+    // "regular" simplification or streaming!
+    // For the former case, we have to do the setup/finalize
+    // business. For the latter, WE DO NOT.
+    // This differences suggests there are actually two types/impls
+    // being discussed here.
     fn buffer_existing_edges(
         &mut self,
         pre_existing_edges: Vec<PreExistingEdge>,
