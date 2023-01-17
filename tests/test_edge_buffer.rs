@@ -1,13 +1,10 @@
 #![cfg(feature = "edgebuffer")]
 
-use std::ops::Deref;
-
 use proptest::prelude::*;
 use rand::distributions::Distribution;
 use rand::SeedableRng;
 
 use tskit::EdgeBuffer;
-use tskit::EdgeId;
 use tskit::NodeId;
 use tskit::TableCollection;
 use tskit::TreeSequence;
@@ -24,6 +21,9 @@ trait Recording {
     ) -> Result<(), TskitError>;
 
     fn simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError>;
+    fn post_simplify(&mut self, _samples: &mut [NodeId]) -> Result<(), TskitError> {
+        Ok(())
+    }
     fn start_recording(&mut self, _parents: &[NodeId], _child: &[NodeId]) {}
     fn end_recording(&mut self) {}
 
@@ -75,14 +75,15 @@ impl Recording for TableCollectionWithBuffer {
                 for s in samples.iter_mut() {
                     *s = idmap[s.as_usize()];
                 }
-                self.buffer
-                    .post_simplification(samples, &mut self.tables)
-                    .unwrap();
                 Ok(())
             }
             Ok(None) => panic!(),
             Err(e) => Err(e),
         }
+    }
+
+    fn post_simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
+        self.buffer.post_simplification(samples, &mut self.tables)
     }
 
     fn num_edges(&self) -> tskit::SizeType {
@@ -92,7 +93,6 @@ impl Recording for TableCollectionWithBuffer {
 
 impl From<TableCollectionWithBuffer> for TreeSequence {
     fn from(value: TableCollectionWithBuffer) -> Self {
-        println!("buffer export {}", value.tables.edges().num_rows());
         value
             .tables
             .tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES)
@@ -158,10 +158,11 @@ impl Recording for TableCollectionWithBufferForStreaming {
             *o = self.node_map[usize::try_from(*o).unwrap()];
             assert!(!o.is_null());
         }
-        self.buffer
-            .post_simplification(&samples, &mut self.tables)
-            .unwrap();
         Ok(())
+    }
+
+    fn post_simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
+        self.buffer.post_simplification(samples, &mut self.tables)
     }
 
     fn num_edges(&self) -> tskit::SizeType {
@@ -263,12 +264,12 @@ where
             parents[*r] = *b;
         }
         if birth_time % simplify == 0 {
-            println!("before simplify: {} {}", birth_time, recorder.num_edges());
             recorder.simplify(&mut parents).unwrap();
-            println!("simplify: {} {}", birth_time, recorder.num_edges());
+            if birth_time > 0 {
+                recorder.post_simplify(&mut parents).unwrap();
+            }
         }
     }
-    println!("end {}", recorder.num_edges());
     recorder.into()
 }
 
@@ -323,7 +324,12 @@ fn run_overlapping_generations_test(seed: u64, pdeath: f64, simplify_interval: i
             tree_with_buffer.total_branch_length(true).unwrap()
         );
         assert_eq!(tree.interval(), tree_with_buffer_streaming.interval());
-        //assert_eq!(tree.total_branch_length(true).unwrap(), tree_with_buffer_streaming.total_branch_length(true).unwrap());
+        assert_eq!(
+            tree.total_branch_length(true).unwrap(),
+            tree_with_buffer_streaming
+                .total_branch_length(true)
+                .unwrap()
+        );
     }
 }
 
