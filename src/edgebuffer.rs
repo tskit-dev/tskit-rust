@@ -357,7 +357,10 @@ impl EdgeBuffer {
         let right = tables.edges().right_slice();
         let mut rv = 0;
         for pre in pre_existing_edges.iter() {
-            self.setup_births(&[parent[pre.first]], &child[pre.first..pre.last])?;
+            let mut uchild = child[pre.first..pre.last].to_owned();
+            uchild.sort();
+            uchild.dedup();
+            self.setup_births(&[parent[pre.first]], &uchild)?;
             for e in pre.first..pre.last {
                 assert_eq!(parent[e], parent[pre.first]);
                 self.record_birth(parent[e], child[e], left[e], right[e])?;
