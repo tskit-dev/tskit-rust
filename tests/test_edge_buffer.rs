@@ -203,7 +203,7 @@ impl Recording for StandardTableCollection {
                 }
                 Ok(())
             }
-            Ok(None) => Ok(()),
+            Ok(None) => panic!("need to remap input sample nodes"),
             Err(e) => Err(e),
         }
     }
