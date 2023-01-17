@@ -26,9 +26,6 @@ trait Recording {
     }
     fn start_recording(&mut self, _parents: &[NodeId], _child: &[NodeId]) {}
     fn end_recording(&mut self) {}
-
-    // sugar that we don't need later
-    fn num_edges(&self) -> tskit::SizeType;
 }
 
 struct TableCollectionWithBuffer {
@@ -84,10 +81,6 @@ impl Recording for TableCollectionWithBuffer {
 
     fn post_simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
         self.buffer.post_simplification(samples, &mut self.tables)
-    }
-
-    fn num_edges(&self) -> tskit::SizeType {
-        self.tables.edges().num_rows()
     }
 }
 
@@ -164,10 +157,6 @@ impl Recording for TableCollectionWithBufferForStreaming {
     fn post_simplify(&mut self, samples: &mut [NodeId]) -> Result<(), TskitError> {
         self.buffer.post_simplification(samples, &mut self.tables)
     }
-
-    fn num_edges(&self) -> tskit::SizeType {
-        self.tables.edges().num_rows()
-    }
 }
 
 impl From<TableCollectionWithBufferForStreaming> for TreeSequence {
@@ -207,9 +196,6 @@ impl Recording for StandardTableCollection {
             Ok(None) => panic!("need to remap input sample nodes"),
             Err(e) => Err(e),
         }
-    }
-    fn num_edges(&self) -> tskit::SizeType {
-        self.0.edges().num_rows()
     }
 }
 
