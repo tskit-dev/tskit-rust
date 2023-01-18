@@ -684,7 +684,12 @@ int tsk_streaming_simplifier_free(tsk_streaming_simplifier_t * self);
 int tsk_streaming_simplifier_add_edge(tsk_streaming_simplifier_t * self,
     double left, double right, tsk_id_t parent, tsk_id_t child);
 int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, tsk_id_t parent);
+
+// runs the simplifier, thus processing ancient edges
+// present in the input edge table.
 int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t *node_map);
+
+// None of this is needed anymore.
 const tsk_id_t * tsk_streaming_simplifier_get_input_parent(const tsk_streaming_simplifier_t * self);
 const tsk_id_t * tsk_streaming_simplifier_get_input_child(const tsk_streaming_simplifier_t * self);
 const double * tsk_streaming_simplifier_get_input_left(const tsk_streaming_simplifier_t * self);

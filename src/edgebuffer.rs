@@ -699,51 +699,51 @@ pub fn simplfify_from_buffer<O: Into<crate::SimplificationOptions>>(
     buffer.release_memory();
 
     // Simplify pre-existing edges.
-    let mut i = 0;
-    let num_input_edges = simplifier.input_num_edges();
-    while i < num_input_edges {
-        let p = simplifier.get_input_parent(i);
-        //let mut edge_check: Vec<(NodeId, Position)> = vec![];
-        while i < num_input_edges && simplifier.get_input_parent(i) == p {
-            //assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
-            simplifier.add_edge(
-                simplifier.get_input_left(i),
-                simplifier.get_input_right(i),
-                simplifier.get_input_parent(i),
-                simplifier.get_input_child(i),
-            )?;
-            //edge_check.push((child[i], left[i]));
-            i += 1;
-        }
-        simplifier.merge_ancestors(p)?;
-        // major stress-test -- delete later
-        //{
-        //    let l = tables.edges().left_slice();
-        //    let p = tables.edges().parent_slice();
-        //    let c = tables.edges().child_slice();
-        //    let mut i = 0;
-        //    while i < l.len() {
-        //        let pi = p[i];
-        //        while i < l.len() && p[i] == pi {
-        //            if i > 0 && c[i] == c[i - 1] {
-        //                assert_ne!(
-        //                    l[i],
-        //                    l[i - 1],
-        //                    "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
-        //                    p[i],
-        //                    p[i - 1],
-        //                    c[i],
-        //                    c[i - 1],
-        //                    l[i],
-        //                    l[i - 1],
-        //                    edge_check
-        //                );
-        //            }
-        //            i += 1;
-        //        }
-        //    }
-        //}
-    }
+    //let mut i = 0;
+    //let num_input_edges = simplifier.input_num_edges();
+    //while i < num_input_edges {
+    //    let p = simplifier.get_input_parent(i);
+    //    //let mut edge_check: Vec<(NodeId, Position)> = vec![];
+    //    while i < num_input_edges && simplifier.get_input_parent(i) == p {
+    //        //assert!(!edge_check.iter().any(|x| *x == (child[i], left[i])));
+    //        simplifier.add_edge(
+    //            simplifier.get_input_left(i),
+    //            simplifier.get_input_right(i),
+    //            simplifier.get_input_parent(i),
+    //            simplifier.get_input_child(i),
+    //        )?;
+    //        //edge_check.push((child[i], left[i]));
+    //        i += 1;
+    //    }
+    //    simplifier.merge_ancestors(p)?;
+    //    // major stress-test -- delete later
+    //    //{
+    //    //    let l = tables.edges().left_slice();
+    //    //    let p = tables.edges().parent_slice();
+    //    //    let c = tables.edges().child_slice();
+    //    //    let mut i = 0;
+    //    //    while i < l.len() {
+    //    //        let pi = p[i];
+    //    //        while i < l.len() && p[i] == pi {
+    //    //            if i > 0 && c[i] == c[i - 1] {
+    //    //                assert_ne!(
+    //    //                    l[i],
+    //    //                    l[i - 1],
+    //    //                    "{:?},{:?} | {:?},{:?} | {:?},{:?} => {:?}",
+    //    //                    p[i],
+    //    //                    p[i - 1],
+    //    //                    c[i],
+    //    //                    c[i - 1],
+    //    //                    l[i],
+    //    //                    l[i - 1],
+    //    //                    edge_check
+    //    //                );
+    //    //            }
+    //    //            i += 1;
+    //    //        }
+    //    //    }
+    //    //}
+    //}
 
     simplifier.finalise(node_map)?;
     Ok(())

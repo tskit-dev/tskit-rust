@@ -12912,33 +12912,34 @@ int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, 
 int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t * node_map) {
     int ret = 0;
     simplifier_t * simplifier = &self->pimpl->simplifier;
-    if (simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS) {
-        ret = simplifier_insert_input_roots(simplifier);
-        if (ret != 0) {
-            goto out;
-        }
-    }
-    ret = simplifier_output_sites(simplifier);
-    if (ret != 0) {
-        goto out;
-    }
-    ret = simplifier_finalise_references(simplifier);
-    if (ret != 0) {
-        goto out;
-    }
-    if (node_map != NULL) {
-        /* Finally, output the new IDs for the nodes, if required. */
-        tsk_memcpy(node_map, simplifier->node_id_map,
-            simplifier->input_tables.nodes.num_rows * sizeof(tsk_id_t));
-    }
-    if (simplifier->edge_sort_offset != TSK_NULL) {
-        tsk_bug_assert(simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS);
-        ret = simplifier_sort_edges(simplifier);
-        if (ret != 0) {
-            goto out;
-        }
-    }
-out:
+    ret = simplifier_run(simplifier, node_map);
+    //if (simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS) {
+    //    ret = simplifier_insert_input_roots(simplifier);
+    //    if (ret != 0) {
+    //        goto out;
+    //    }
+    //}
+    //ret = simplifier_output_sites(simplifier);
+    //if (ret != 0) {
+    //    goto out;
+    //}
+    //ret = simplifier_finalise_references(simplifier);
+    //if (ret != 0) {
+    //    goto out;
+    //}
+    //if (node_map != NULL) {
+    //    /* Finally, output the new IDs for the nodes, if required. */
+    //    tsk_memcpy(node_map, simplifier->node_id_map,
+    //        simplifier->input_tables.nodes.num_rows * sizeof(tsk_id_t));
+    //}
+    //if (simplifier->edge_sort_offset != TSK_NULL) {
+    //    tsk_bug_assert(simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS);
+    //    ret = simplifier_sort_edges(simplifier);
+    //    if (ret != 0) {
+    //        goto out;
+    //    }
+    //}
+//out:
     return ret;
 }
 
