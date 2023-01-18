@@ -424,7 +424,11 @@ impl EdgeBuffer {
     // 4. We are doing this in the wrong temporal order.
     //    We need to pre-process all existing edge intervals,
     //    cache them, then go backwards through them,
-    //    so that we buffer them present-to-past
+    //    so that we buffer them present-to-past.
+    //    DONE
+    // 5. This step should be EARLY in a recording epoch,
+    //    so that we avoid the gotcha of stealing edges
+    //    from the last generation of a simulation.
     pub fn post_simplification(
         &mut self,
         alive: &[NodeId],
