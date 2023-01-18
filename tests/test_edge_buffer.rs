@@ -214,13 +214,14 @@ where
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
 
     let popsize = 10;
+    let nsteps = 10;
 
     let mut parents = vec![];
 
     let mut recorder = recorder;
 
     for _ in 0..popsize {
-        let node = recorder.add_node(0, 10.0).unwrap();
+        let node = recorder.add_node(0, nsteps as f64).unwrap();
         parents.push(node);
     }
 
@@ -228,7 +229,7 @@ where
     let parent_picker = rand::distributions::Uniform::new(0, popsize);
     let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
 
-    for birth_time in (0..10).rev() {
+    for birth_time in (0..nsteps).rev() {
         let mut replacements = vec![];
         for i in 0..parents.len() {
             if death.sample(&mut rng) <= pdeath {
