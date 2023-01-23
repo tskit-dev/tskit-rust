@@ -48,6 +48,12 @@ use bindings::tsk_size_t;
 /// assert_eq!(interesting(x), x);
 /// ```
 ///
+/// The types implement `Default`, which returns `NULL` values:
+///
+/// ```
+/// assert_eq!(tskit::NodeId::default(), tskit::NodeId::NULL);
+/// ```
+///
 /// The types also implement `Display`:
 ///
 /// ```
@@ -71,6 +77,12 @@ pub struct NodeId(tsk_id_t);
 /// This is an integer referring to a row of an [``IndividualTable``](crate::IndividualTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(tskit::IndividualId::default(), tskit::IndividualId::NULL);
+/// ```
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct IndividualId(tsk_id_t);
@@ -80,6 +92,12 @@ pub struct IndividualId(tsk_id_t);
 /// This is an integer referring to a row of an [``PopulationTable``](crate::PopulationTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(tskit::PopulationId::default(), tskit::PopulationId::NULL);
+/// ```
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct PopulationId(tsk_id_t);
@@ -89,6 +107,12 @@ pub struct PopulationId(tsk_id_t);
 /// This is an integer referring to a row of an [``SiteTable``](crate::SiteTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(tskit::SiteId::default(), tskit::SiteId::NULL);
+/// ```
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct SiteId(tsk_id_t);
@@ -98,6 +122,12 @@ pub struct SiteId(tsk_id_t);
 /// This is an integer referring to a row of an [``MutationTable``](crate::MutationTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(tskit::MutationId::default(), tskit::MutationId::NULL);
+/// ```
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct MutationId(tsk_id_t);
@@ -107,6 +137,12 @@ pub struct MutationId(tsk_id_t);
 /// This is an integer referring to a row of an [``MigrationTable``](crate::MigrationTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(tskit::MigrationId::default(), tskit::MigrationId::NULL);
+/// ```
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct MigrationId(tsk_id_t);
@@ -116,6 +152,12 @@ pub struct MigrationId(tsk_id_t);
 /// This is an integer referring to a row of an [``EdgeTable``](crate::EdgeTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(tskit::SiteId::default(), tskit::SiteId::NULL);
+/// ```
 #[repr(transparent)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, std::hash::Hash)]
 pub struct EdgeId(tsk_id_t);
