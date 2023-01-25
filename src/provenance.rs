@@ -127,31 +127,56 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
     }
 }
 
-/// An immutable view of a provenance table.
-///
-/// These are not created directly.
-/// to get a reference to an existing provenance table;
+/// A provenance table.
 ///
 /// # Notes
 ///
 /// * The type is enabled by the `"provenance"` feature.
 ///
+/// # Examples
+///
+/// # Standalone tables
+///
+/// ```rust
+/// # #[cfg(feature = "provenance")]
+/// # #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+/// {
+/// use tskit::provenance::OwningProvenanceTable;
+/// let mut provenances = OwningProvenanceTable::default();
+/// let id = provenances.add_row("message").unwrap();
+/// assert_eq!(id, 0);
+/// assert_eq!(provenances.num_rows(), 1);
+/// # }
+/// ```
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct ProvenanceTable {
-    table_: sys::LLProvenanceTableRef,
+    table_: sys::LLProvenanceTable,
 }
 
 impl ProvenanceTable {
+    pub(crate) fn as_ptr(&self) -> *const ll_bindings::tsk_provenance_table_t {
+        self.table_.as_ptr()
+    }
+
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_provenance_table_t {
+        self.table_.as_mut_ptr()
+    }
+
     pub(crate) fn new_from_table(
         provenances: *mut ll_bindings::tsk_provenance_table_t,
     ) -> Result<Self, crate::TskitError> {
-        let table_ = sys::LLProvenanceTableRef::new_from_table(provenances)?;
+        let table_ = sys::LLProvenanceTable::new_non_owning(provenances)?;
         Ok(ProvenanceTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_provenance_table_t {
         self.table_.as_ref()
+    }
+
+    pub fn new() -> Result<Self, crate::TskitError> {
+        let table_ = sys::LLProvenanceTable::new_owning(0)?;
+        Ok(Self { table_ })
     }
 
     /// Return the number of rows
@@ -267,33 +292,21 @@ impl ProvenanceTable {
     pub fn lending_iter(&self) -> ProvenanceTableRowView {
         ProvenanceTableRowView::new(self)
     }
-}
 
-build_owned_table_type!(
-    /// A provenance table that owns its own data.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # #[cfg(feature = "provenance")]
-    /// # #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-    /// {
-    /// use tskit::provenance::OwningProvenanceTable;
-    /// let mut provenances = OwningProvenanceTable::default();
-    /// let id = provenances.add_row("message").unwrap();
-    /// assert_eq!(id, 0);
-    /// assert_eq!(provenances.num_rows(), 1);
-    /// # }
-    /// ```
-    => OwningProvenanceTable,
-    ProvenanceTable,
-    crate::sys::LLOwningProvenanceTable,
-    crate::bindings::tsk_provenance_table_t
-);
+    pub fn clear(&mut self) -> Result<(), crate::TskitError> {
+        self.table_.clear().map_err(|e| e.into())
+    }
 
-impl OwningProvenanceTable {
     provenance_table_add_row!(=> add_row, self, self.as_mut_ptr());
 }
+
+impl Default for ProvenanceTable {
+    fn default() -> Self {
+        Self::new().unwrap()
+    }
+}
+
+pub type OwningProvenanceTable = ProvenanceTable;
 
 #[cfg(test)]
 mod test_provenances {

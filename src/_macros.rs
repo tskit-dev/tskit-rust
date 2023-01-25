@@ -380,56 +380,6 @@ macro_rules! handle_metadata_return {
     };
 }
 
-macro_rules! build_owned_tables {
-    ($name: ty, $deref: ident, $lltype: ty, $tsktable: ty) => {
-        impl $name {
-            fn new() -> Self {
-                let table = <$lltype>::new();
-                Self { table }
-            }
-
-            /// Clear the table.
-            pub fn clear(&mut self) -> $crate::TskReturnValue {
-                self.table.clear().map_err(|e| e.into())
-            }
-        }
-
-        impl Default for $name {
-            fn default() -> Self {
-                Self::new()
-            }
-        }
-
-        impl std::ops::Deref for $name {
-            type Target = $deref;
-
-            fn deref(&self) -> &Self::Target {
-                // SAFETY: that T* and &T have same layout,
-                // and Target is repr(transparent).
-                unsafe { std::mem::transmute(&self.table) }
-            }
-        }
-
-        impl std::ops::DerefMut for $name {
-            fn deref_mut(&mut self) -> &mut Self::Target {
-                // SAFETY: that T* and &T have same layout,
-                // and Target is repr(transparent).
-                unsafe { std::mem::transmute(&mut self.table) }
-            }
-        }
-
-        impl $name {
-            pub fn as_ptr(&self) -> *const $tsktable {
-                self.table.as_ptr()
-            }
-
-            pub fn as_mut_ptr(&mut self) -> *mut $tsktable {
-                self.table.as_mut_ptr()
-            }
-        }
-    };
-}
-
 macro_rules! node_table_add_row_details {
     ($flags: ident,
      $time: ident,
@@ -926,25 +876,6 @@ macro_rules! provenance_table_add_row {
             };
             handle_tsk_return_value!(rv, rv.into())
         }
-    };
-}
-
-macro_rules! build_owned_table_type {
-    ($(#[$attr:meta])* => $name: ident,
-    $deref_type: ident,
-    $lltype: ty,
-    $tsktable: ty) => {
-        $(#[$attr])*
-        pub struct $name {
-            table: $lltype
-        }
-
-        build_owned_tables!(
-            $name,
-            $deref_type,
-            $lltype,
-            $tsktable
-        );
     };
 }
 

@@ -157,27 +157,82 @@ impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
     }
 }
 
-/// An immutable view of a migration table.
+/// An migration table.
 ///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
+/// # Examples
+///
+/// ## Standalone table
+///
+/// ```
+/// use tskit::MigrationTable;
+///
+/// let mut migrations = MigrationTable::default();
+/// let rowid = migrations.add_row((0., 1.), 1, (0, 1), 10.3).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(migrations.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::MigrationTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::MigrationMetadata)]
+/// #[serializer("serde_json")]
+/// struct MigrationMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = MigrationMetadata{value: 42};
+///
+/// let mut migrations = MigrationTable::default();
+///
+/// let rowid = migrations.add_row_with_metadata((0., 1.), 1, (0, 1), 10.3, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match migrations.metadata::<MigrationMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+///
+/// # }
+/// ```
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct MigrationTable {
-    table_: sys::LLMigrationTableRef,
+    table_: sys::LLMigrationTable,
 }
 
 impl MigrationTable {
+    pub(crate) fn as_ptr(&self) -> *const ll_bindings::tsk_migration_table_t {
+        self.table_.as_ptr()
+    }
+
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_migration_table_t {
+        self.table_.as_mut_ptr()
+    }
+
     pub(crate) fn new_from_table(
         migrations: *mut ll_bindings::tsk_migration_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLMigrationTableRef::new_from_table(migrations)?;
+        let table_ = sys::LLMigrationTable::new_non_owning(migrations)?;
         Ok(MigrationTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_migration_table_t {
         self.table_.as_ref()
+    }
+
+    pub fn new() -> Result<Self, TskitError> {
+        let table_ = sys::LLMigrationTable::new_owning(0)?;
+        Ok(Self { table_ })
     }
 
     /// Return the number of rows
@@ -333,6 +388,13 @@ impl MigrationTable {
         Some(view)
     }
 
+    pub fn clear(&mut self) -> Result<(), TskitError> {
+        self.table_.clear().map_err(|e| e.into())
+    }
+
+    migration_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+
     build_table_column_slice_getter!(
         /// Get the left column as a slice
         => left, left_slice, Position);
@@ -371,59 +433,12 @@ impl MigrationTable {
         => dest, dest_slice_raw, ll_bindings::tsk_id_t);
 }
 
-build_owned_table_type!(
-    /// A standalone migration table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningMigrationTable;
-    ///
-    /// let mut migrations = OwningMigrationTable::default();
-    /// let rowid = migrations.add_row((0., 1.), 1, (0, 1), 10.3).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(migrations.num_rows(), 1);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningMigrationTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::MigrationMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct MigrationMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = MigrationMetadata{value: 42};
-    ///
-    /// let mut migrations = OwningMigrationTable::default();
-    ///
-    /// let rowid = migrations.add_row_with_metadata((0., 1.), 1, (0, 1), 10.3, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match migrations.metadata::<MigrationMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    ///
-    /// # }
-    /// ```
-    => OwningMigrationTable,
-    MigrationTable,
-    crate::sys::LLOwningMigrationTable,
-    crate::bindings::tsk_migration_table_t
-);
-
-impl OwningMigrationTable {
-    migration_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+impl Default for MigrationTable {
+    fn default() -> Self {
+        Self::new().unwrap()
+    }
 }
+
+pub type OwningMigrationTable = MigrationTable;
+
+impl OwningMigrationTable {}

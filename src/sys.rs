@@ -1,5 +1,4 @@
 use std::ffi::CString;
-use std::ptr::NonNull;
 
 use mbox::MBox;
 use thiserror::Error;
@@ -16,36 +15,6 @@ use bindings::tsk_population_table_t;
 use bindings::tsk_provenance_table_t;
 use bindings::tsk_site_table_t;
 
-use bindings::tsk_edge_table_init;
-use bindings::tsk_individual_table_init;
-use bindings::tsk_migration_table_init;
-use bindings::tsk_mutation_table_init;
-use bindings::tsk_node_table_init;
-use bindings::tsk_population_table_init;
-#[cfg(feature = "provenance")]
-use bindings::tsk_provenance_table_init;
-use bindings::tsk_site_table_init;
-
-use bindings::tsk_edge_table_free;
-use bindings::tsk_individual_table_free;
-use bindings::tsk_migration_table_free;
-use bindings::tsk_mutation_table_free;
-use bindings::tsk_node_table_free;
-use bindings::tsk_population_table_free;
-#[cfg(feature = "provenance")]
-use bindings::tsk_provenance_table_free;
-use bindings::tsk_site_table_free;
-
-use bindings::tsk_edge_table_clear;
-use bindings::tsk_individual_table_clear;
-use bindings::tsk_migration_table_clear;
-use bindings::tsk_mutation_table_clear;
-use bindings::tsk_node_table_clear;
-use bindings::tsk_population_table_clear;
-#[cfg(feature = "provenance")]
-use bindings::tsk_provenance_table_clear;
-use bindings::tsk_site_table_clear;
-
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum Error {
@@ -53,155 +22,223 @@ pub enum Error {
     Message(String),
     #[error("{}", get_tskit_error_message(*.0))]
     Code(i32),
+    #[error("NULL pointer encountered")]
+    NullPointer,
 }
 
-macro_rules! basic_lltableref_impl {
-    ($lltable: ident, $tsktable: ident) => {
+#[derive(Debug)]
+pub struct LowLevelPointerManager<T> {
+    pointer: *mut T,
+    owned: bool,
+    tskfree: Option<fn(*mut T) -> i32>,
+}
+
+impl<T> LowLevelPointerManager<T> {
+    fn new_owning<I>(init: I, free: fn(*mut T) -> i32) -> Result<Self, Error>
+    where
+        I: Fn(*mut T) -> i32,
+    {
+        let pointer = unsafe { libc::malloc(std::mem::size_of::<T>()) as *mut T };
+        if pointer.is_null() {
+            Err(Error::Code(crate::bindings::TSK_ERR_NO_MEMORY))
+        } else {
+            // The call to setup will leak memory if we don't
+            // explicitly match the Ok/Err pathways.
+            // Instead, we use RAII via MBox to free our pointer
+            // in the case where setup errors.
+
+            // SAFETY: pointer not null
+            let mut pointer = unsafe { MBox::from_raw(pointer) };
+            Self::setup(pointer.as_mut(), init)?;
+            Ok(Self {
+                pointer: MBox::into_raw(pointer),
+                owned: true,
+                tskfree: Some(free),
+            })
+        }
+    }
+
+    fn new_non_owning(pointer: *mut T) -> Result<Self, Error> {
+        if pointer.is_null() {
+            Err(Error::NullPointer {})
+        } else {
+            Ok(Self {
+                pointer,
+                owned: false,
+                // In tskit-c, a non-owning pointer does not tear down
+                // its data. Doing so is the responsibility
+                // of the owning object.
+                tskfree: None,
+            })
+        }
+    }
+
+    fn setup<I>(pointer: *mut T, tskinit: I) -> Result<(), Error>
+    where
+        I: Fn(*mut T) -> i32,
+    {
+        assert!(!pointer.is_null());
+        match tskinit(pointer) {
+            code if code < 0 => Err(Error::Code(code)),
+            _ => Ok(()),
+        }
+    }
+
+    fn teardown(&mut self) -> Result<(), Error> {
+        assert!(!self.pointer.is_null());
+        self.tskfree.map_or_else(
+            || Ok(()),
+            |function| match function(self.pointer) {
+                code if code < 0 => Err(Error::Code(code)),
+                _ => Ok(()),
+            },
+        )
+    }
+
+    // NOTE: the stuff below is boiler-plate-y
+    // and we'll want to make that less painful later.
+
+    fn as_mut_ptr(&mut self) -> *mut T {
+        self.pointer
+    }
+
+    fn as_ptr(&self) -> *const T {
+        self.pointer
+    }
+
+    // fn as_mut(&mut self) -> &mut T {
+    //     assert!(self.pointer.is_null());
+    //     // SAFETY: pointer is not null
+    //     unsafe { &mut *self.pointer }
+    // }
+
+    fn as_ref(&self) -> &T {
+        assert!(!self.pointer.is_null());
+        // SAFETY: pointer is not null
+        unsafe { &*self.pointer }
+    }
+}
+
+impl<T> Drop for LowLevelPointerManager<T> {
+    fn drop(&mut self) {
+        // Will not
+        self.teardown().unwrap();
+        if self.owned {
+            assert!(!self.pointer.is_null());
+            // SAFETY: pointer is not null and we "own" it,
+            // meaning that we malloc'd it.
+            unsafe { libc::free(self.pointer.cast::<std::ffi::c_void>()) }
+        }
+    }
+}
+
+macro_rules! basic_lltable_impl {
+    ($lltable: ident, $tsktable: ident, $init: expr, $free: expr, $clear: expr) => {
         #[repr(transparent)]
         #[derive(Debug)]
-        pub struct $lltable(NonNull<bindings::$tsktable>);
+        pub struct $lltable(LowLevelPointerManager<$tsktable>);
 
         impl $lltable {
-            pub fn new_from_table(table: *mut $tsktable) -> Result<Self, Error> {
-                let internal = NonNull::new(table).ok_or_else(|| {
-                    let msg = format!("null pointer to {}", stringify!($tsktable));
-                    Error::Message(msg)
-                })?;
+            pub fn new_owning(flags: bindings::tsk_flags_t) -> Result<Self, Error> {
+                let internal = LowLevelPointerManager::<$tsktable>::new_owning(
+                    |x| {
+                        assert!(!x.is_null());
+                        // SAFETY: pointer is not NULL
+                        unsafe { $init(x, flags) }
+                    },
+                    |x| {
+                        assert!(!x.is_null());
+                        // SAFETY: pointer is not NULL
+                        unsafe { $free(x) }
+                    },
+                )?;
                 Ok(Self(internal))
             }
 
-            pub fn as_ref(&self) -> &$tsktable {
-                // SAFETY: we cannot get this far w/o
-                // going through new_from_table and that
-                // fn protects us from null ptrs
-                unsafe { self.0.as_ref() }
-            }
-        }
-    };
-}
-
-basic_lltableref_impl!(LLEdgeTableRef, tsk_edge_table_t);
-basic_lltableref_impl!(LLNodeTableRef, tsk_node_table_t);
-basic_lltableref_impl!(LLMutationTableRef, tsk_mutation_table_t);
-basic_lltableref_impl!(LLSiteTableRef, tsk_site_table_t);
-basic_lltableref_impl!(LLMigrationTableRef, tsk_migration_table_t);
-basic_lltableref_impl!(LLPopulationTableRef, tsk_population_table_t);
-basic_lltableref_impl!(LLIndividualTableRef, tsk_individual_table_t);
-
-#[cfg(feature = "provenance")]
-basic_lltableref_impl!(LLProvenanceTableRef, tsk_provenance_table_t);
-
-macro_rules! basic_llowningtable_impl {
-    ($llowningtable: ident, $tsktable: ident, $init: ident, $free: ident, $clear: ident) => {
-        #[repr(transparent)]
-        #[derive(Debug)]
-        pub struct $llowningtable(MBox<$tsktable>);
-
-        impl $llowningtable {
-            pub fn new() -> Self {
-                let temp =
-                    unsafe { libc::malloc(std::mem::size_of::<$tsktable>()) as *mut $tsktable };
-                let nonnull = match std::ptr::NonNull::<$tsktable>::new(temp) {
-                    Some(x) => x,
-                    None => panic!("out of memory"),
-                };
-                let mut table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
-                let rv = unsafe { $init(&mut (*table), 0) };
-                assert_eq!(rv, 0);
-                Self(table)
+            pub fn new_non_owning(table: *mut $tsktable) -> Result<Self, Error> {
+                let internal = LowLevelPointerManager::<$tsktable>::new_non_owning(table)?;
+                Ok(Self(internal))
             }
 
-            pub fn as_ptr(&self) -> *const $tsktable {
-                MBox::<$tsktable>::as_ptr(&self.0)
-            }
-
-            pub fn as_mut_ptr(&mut self) -> *mut $tsktable {
-                MBox::<$tsktable>::as_mut_ptr(&mut self.0)
-            }
-
-            fn free(&mut self) -> Result<(), Error> {
-                match unsafe { $free(self.as_mut_ptr()) } {
-                    code if code < 0 => Err(Error::Code(code)),
+            pub fn clear(&mut self) -> Result<(), Error> {
+                assert!(!self.0.pointer.is_null());
+                match unsafe { $clear(self.0.pointer) } {
+                    x if x < 0 => Err(Error::Code(x)),
                     _ => Ok(()),
                 }
             }
 
-            pub fn clear(&mut self) -> Result<i32, Error> {
-                match unsafe { $clear(self.as_mut_ptr()) } {
-                    code if code < 0 => Err(Error::Code(code)),
-                    code => Ok(code),
-                }
+            pub fn as_ref(&self) -> &$tsktable {
+                self.0.as_ref()
             }
-        }
 
-        impl Drop for $llowningtable {
-            fn drop(&mut self) {
-                match self.free() {
-                    Ok(_) => (),
-                    Err(e) => panic!("{}", e),
-                }
+            pub fn as_ptr(&self) -> *const $tsktable {
+                self.0.as_ptr()
+            }
+
+            pub fn as_mut_ptr(&mut self) -> *mut $tsktable {
+                self.0.as_mut_ptr()
             }
         }
     };
 }
 
-basic_llowningtable_impl!(
-    LLOwningEdgeTable,
+basic_lltable_impl!(
+    LLEdgeTable,
     tsk_edge_table_t,
-    tsk_edge_table_init,
-    tsk_edge_table_free,
-    tsk_edge_table_clear
+    bindings::tsk_edge_table_init,
+    bindings::tsk_edge_table_free,
+    bindings::tsk_edge_table_clear
 );
-basic_llowningtable_impl!(
-    LLOwningNodeTable,
+basic_lltable_impl!(
+    LLNodeTable,
     tsk_node_table_t,
-    tsk_node_table_init,
-    tsk_node_table_free,
-    tsk_node_table_clear
+    bindings::tsk_node_table_init,
+    bindings::tsk_node_table_free,
+    bindings::tsk_node_table_clear
 );
-basic_llowningtable_impl!(
-    LLOwningSiteTable,
+basic_lltable_impl!(
+    LLSiteTable,
     tsk_site_table_t,
-    tsk_site_table_init,
-    tsk_site_table_free,
-    tsk_site_table_clear
+    bindings::tsk_site_table_init,
+    bindings::tsk_site_table_free,
+    bindings::tsk_site_table_clear
 );
-basic_llowningtable_impl!(
-    LLOwningMutationTable,
+basic_lltable_impl!(
+    LLMutationTable,
     tsk_mutation_table_t,
-    tsk_mutation_table_init,
-    tsk_mutation_table_free,
-    tsk_mutation_table_clear
+    bindings::tsk_mutation_table_init,
+    bindings::tsk_mutation_table_free,
+    bindings::tsk_mutation_table_clear
 );
-basic_llowningtable_impl!(
-    LLOwningIndividualTable,
+basic_lltable_impl!(
+    LLIndividualTable,
     tsk_individual_table_t,
-    tsk_individual_table_init,
-    tsk_individual_table_free,
-    tsk_individual_table_clear
+    bindings::tsk_individual_table_init,
+    bindings::tsk_individual_table_free,
+    bindings::tsk_individual_table_clear
 );
-basic_llowningtable_impl!(
-    LLOwningMigrationTable,
-    tsk_migration_table_t,
-    tsk_migration_table_init,
-    tsk_migration_table_free,
-    tsk_migration_table_clear
-);
-basic_llowningtable_impl!(
-    LLOwningPopulationTable,
+basic_lltable_impl!(
+    LLPopulationTable,
     tsk_population_table_t,
-    tsk_population_table_init,
-    tsk_population_table_free,
-    tsk_population_table_clear
+    bindings::tsk_population_table_init,
+    bindings::tsk_population_table_free,
+    bindings::tsk_population_table_clear
 );
-
+basic_lltable_impl!(
+    LLMigrationTable,
+    tsk_migration_table_t,
+    bindings::tsk_migration_table_init,
+    bindings::tsk_migration_table_free,
+    bindings::tsk_migration_table_clear
+);
 #[cfg(feature = "provenance")]
-basic_llowningtable_impl!(
-    LLOwningProvenanceTable,
+basic_lltable_impl!(
+    LLProvenanceTable,
     tsk_provenance_table_t,
-    tsk_provenance_table_init,
-    tsk_provenance_table_free,
-    tsk_provenance_table_clear
+    bindings::tsk_provenance_table_init,
+    bindings::tsk_provenance_table_free,
+    bindings::tsk_provenance_table_clear
 );
 
 #[repr(transparent)]
@@ -458,4 +495,48 @@ fn test_error_code() {
         }
         _ => panic!("unexpected match"),
     }
+}
+
+// NOTE: these are design phase tests
+
+#[test]
+fn test_low_level_table_collection_pointer_manager_owning() {
+    let flags: bindings::tsk_flags_t = 0;
+    let mut x = LowLevelPointerManager::<bindings::tsk_table_collection_t>::new_owning(
+        |x| {
+            assert!(!x.is_null());
+            // SAFETY: pointer is not NULL
+            unsafe { bindings::tsk_table_collection_init(x, flags) }
+        },
+        |x| {
+            assert!(!x.is_null());
+            // SAFETY: pointer is not NULL
+            unsafe { bindings::tsk_table_collection_free(x) }
+        },
+    )
+    .unwrap();
+    assert!(x.owned);
+    assert!(!x.as_ptr().is_null());
+    assert!(!x.as_mut_ptr().is_null());
+}
+
+#[test]
+fn test_low_level_table_collection_pointer_manager_non_owning() {
+    let raw = unsafe {
+        libc::malloc(std::mem::size_of::<bindings::tsk_table_collection_t>())
+            as *mut bindings::tsk_table_collection_t
+    };
+    let mut x =
+        LowLevelPointerManager::<bindings::tsk_table_collection_t>::new_non_owning(raw).unwrap();
+    assert!(!x.owned);
+    assert!(!x.as_ptr().is_null());
+    assert!(!x.as_mut_ptr().is_null());
+    unsafe { libc::free(raw as *mut libc::c_void) };
+}
+
+// NOTE: design phase 2 tests
+
+#[test]
+fn test_lledgetable() {
+    let _ = LLEdgeTable::new_owning(0).unwrap();
 }
