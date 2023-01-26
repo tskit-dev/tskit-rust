@@ -1244,6 +1244,29 @@ impl TableCollection {
         to self.views {
             /// Get mutable reference to the [``NodeTable``](crate::NodeTable).
             pub fn nodes_mut(&mut self) -> &mut crate::NodeTable;
+
+            /// Get mutable reference to the [``EdgeTable``](crate::EdgeTable).
+            pub fn edges_mut(&mut self) -> &mut crate::EdgeTable;
+
+            /// Get mutable reference to the [``SiteTable``](crate::SiteTable).
+            pub fn sites_mut(&mut self) -> &mut crate::SiteTable;
+
+            /// Get mutable reference to the [``MutationTable``](crate::MutationTable).
+            pub fn mutations_mut(&mut self) -> &mut crate::MutationTable;
+
+            /// Get mutable reference to the [``IndividualTable``](crate::IndividualTable).
+            pub fn individuals_mut(&mut self) -> &mut crate::IndividualTable;
+
+            /// Get mutable reference to the [``PopulationTable``](crate::PopulationTable).
+            pub fn populations_mut(&mut self) -> &mut crate::PopulationTable;
+
+            /// Get mutable reference to the [``MigrationTable``](crate::PopulationTable).
+            pub fn migrations_mut(&mut self) -> &mut crate::MigrationTable;
+
+            #[cfg(feature="provenance")]
+            #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+            /// Get mutable reference to the [``ProvenanceTable``](crate::ProvenanceTable).
+            pub fn provenances_mut(&mut self) -> &mut crate::provenance::ProvenanceTable;
         }
     }
 
@@ -1258,4 +1281,18 @@ impl TableCollection {
     pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
         &mut *self.inner
     }
+}
+
+#[test]
+fn test_mutable_node_references() {
+    let mut tables = crate::TableCollection::new(10.0).unwrap();
+    let _nodes: &mut crate::NodeTable = tables.nodes_mut();
+    let _edges: &mut crate::EdgeTable = tables.edges_mut();
+    let _sites: &mut crate::SiteTable = tables.sites_mut();
+    let _mutations: &mut crate::MutationTable = tables.mutations_mut();
+    let _individuals: &mut crate::IndividualTable = tables.individuals_mut();
+    let _populations: &mut crate::PopulationTable = tables.populations_mut();
+    let _migrations: &mut crate::MigrationTable = tables.migrations_mut();
+    #[cfg(feature = "provenance")]
+    let _provenances: &mut crate::provenance::ProvenanceTable = tables.provenances_mut();
 }
