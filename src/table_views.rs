@@ -105,9 +105,19 @@ impl TableViews {
         &self.sites
     }
 
+    /// Get mutable reference to the [``SiteTable``](crate::SiteTable).
+    pub fn sites_mut(&mut self) -> &SiteTable {
+        &mut self.sites
+    }
+
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     pub fn mutations(&self) -> &MutationTable {
         &self.mutations
+    }
+
+    /// Get reference to the [``MutationTable``](crate::MutationTable).
+    pub fn mutations_mut(&mut self) -> &MutationTable {
+        &mut self.mutations
     }
 
     /// Get reference to the [``IndividualTable``](crate::IndividualTable).
@@ -115,9 +125,19 @@ impl TableViews {
         &self.individuals
     }
 
+    /// Get reference to the [``IndividualTable``](crate::IndividualTable).
+    pub fn individuals_mut(&mut self) -> &IndividualTable {
+        &mut self.individuals
+    }
+
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     pub fn populations(&self) -> &PopulationTable {
         &self.populations
+    }
+
+    /// Get reference to the [``PopulationTable``](crate::PopulationTable).
+    pub fn populations_mut(&mut self) -> &PopulationTable {
+        &mut self.populations
     }
 
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).
@@ -125,11 +145,23 @@ impl TableViews {
         &self.migrations
     }
 
+    /// Get reference to the [``MigrationTable``](crate::MigrationTable).
+    pub fn migrations_mut(&mut self) -> &MigrationTable {
+        &mut self.migrations
+    }
+
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
     pub fn provenances(&self) -> &ProvenanceTable {
         &self.provenances
+    }
+
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
+    pub fn provenances_mut(&mut self) -> &ProvenanceTable {
+        &mut self.provenances
     }
 
     /// Return an iterator over the edges.
