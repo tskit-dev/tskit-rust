@@ -448,8 +448,77 @@ impl NodeTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    node_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    fn add_row_details<F, T, P, I>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+        metadata: *const i8,
+        metadata_len: u64,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<crate::NodeFlags>,
+        T: Into<crate::Time>,
+        P: Into<crate::PopulationId>,
+        I: Into<crate::IndividualId>,
+    {
+        let rv = unsafe {
+            crate::bindings::tsk_node_table_add_row(
+                self.as_mut_ptr(),
+                flags.into().bits(),
+                time.into().into(),
+                population.into().into(),
+                individual.into().into(),
+                metadata,
+                metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row<F, T, P, I>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<crate::NodeFlags>,
+        T: Into<crate::Time>,
+        P: Into<crate::PopulationId>,
+        I: Into<crate::IndividualId>,
+    {
+        self.add_row_details(flags, time, population, individual, std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<F, T, P, I, M>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+        metadata: &M,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<crate::NodeFlags>,
+        T: Into<crate::Time>,
+        P: Into<crate::PopulationId>,
+        I: Into<crate::IndividualId>,
+        M: crate::metadata::NodeMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let mdlen = md.len()?;
+        self.add_row_details(
+            flags,
+            time,
+            population,
+            individual,
+            md.as_ptr(),
+            mdlen.into(),
+        )
+    }
 
     build_table_column_slice_getter!(
         /// Get the time column as a slice
