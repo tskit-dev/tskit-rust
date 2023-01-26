@@ -344,8 +344,70 @@ impl EdgeTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    edge_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    fn add_row_details<L, R, P, C>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+        metadata: *const i8,
+        metadata_len: u64,
+    ) -> Result<crate::EdgeId, crate::TskitError>
+    where
+        L: Into<crate::Position>,
+        R: Into<crate::Position>,
+        P: Into<crate::NodeId>,
+        C: Into<crate::NodeId>,
+    {
+        let rv = unsafe {
+            crate::bindings::tsk_edge_table_add_row(
+                self.as_mut_ptr(),
+                left.into().into(),
+                right.into().into(),
+                parent.into().into(),
+                child.into().into(),
+                metadata,
+                metadata_len,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row<L, R, P, C>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+    ) -> Result<crate::EdgeId, crate::TskitError>
+    where
+        L: Into<crate::Position>,
+        R: Into<crate::Position>,
+        P: Into<crate::NodeId>,
+        C: Into<crate::NodeId>,
+    {
+        self.add_row_details(left, right, parent, child, std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<L, R, P, C, M>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+        metadata: &M,
+    ) -> Result<crate::EdgeId, crate::TskitError>
+    where
+        L: Into<crate::Position>,
+        R: Into<crate::Position>,
+        P: Into<crate::NodeId>,
+        C: Into<crate::NodeId>,
+        M: crate::metadata::EdgeMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let mdlen = md.len()?;
+        self.add_row_details(left, right, parent, child, md.as_ptr(), mdlen.into())
+    }
 
     build_table_column_slice_getter!(
         /// Get the left column as a slice
