@@ -40,8 +40,11 @@ pub enum TskitError {
 impl From<crate::sys::Error> for TskitError {
     fn from(error: sys::Error) -> Self {
         match error {
-            sys::Error::Message(msg) => TskitError::LibraryError(msg),
             sys::Error::Code(code) => TskitError::ErrorCode { code },
+            sys::Error::Message(msg) => TskitError::LibraryError(msg),
+            sys::Error::NullPointer => {
+                TskitError::LibraryError("null pointer encountered".to_owned())
+            }
         }
     }
 }

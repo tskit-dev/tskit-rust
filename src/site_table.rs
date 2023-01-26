@@ -124,27 +124,81 @@ impl<'a> streaming_iterator::StreamingIterator for SiteTableRowView<'a> {
     }
 }
 
-/// An immutable view of site table.
+/// A site table.
 ///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
+/// # Examples
+///
+/// # Standalone tables
+///
+/// ```
+/// use tskit::SiteTable;
+///
+/// let mut sites = SiteTable::default();
+/// let rowid = sites.add_row(1., None).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(sites.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::SiteTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::SiteMetadata)]
+/// #[serializer("serde_json")]
+/// struct SiteMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = SiteMetadata{value: 42};
+///
+/// let mut sites = SiteTable::default();
+///
+/// let rowid = sites.add_row_with_metadata(0., None, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match sites.metadata::<SiteMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+/// # }
+/// ```
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct SiteTable {
-    table_: sys::LLSiteTableRef,
+    table_: sys::LLSiteTable,
 }
 
 impl SiteTable {
+    pub(crate) fn as_ptr(&self) -> *const ll_bindings::tsk_site_table_t {
+        self.table_.as_ptr()
+    }
+
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_site_table_t {
+        self.table_.as_mut_ptr()
+    }
+
     pub(crate) fn new_from_table(
         sites: *mut ll_bindings::tsk_site_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLSiteTableRef::new_from_table(sites)?;
+        let table_ = sys::LLSiteTable::new_non_owning(sites)?;
         Ok(SiteTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_site_table_t {
         self.table_.as_ref()
+    }
+
+    pub fn new() -> Result<Self, TskitError> {
+        let table_ = sys::LLSiteTable::new_owning(0)?;
+        Ok(Self { table_ })
     }
 
     raw_metadata_getter_for_tables!(SiteId);
@@ -254,6 +308,13 @@ impl SiteTable {
         Some(view)
     }
 
+    pub fn clear(&mut self) -> Result<(), TskitError> {
+        self.table_.clear().map_err(|e| e.into())
+    }
+
+    site_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    site_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+
     build_table_column_slice_getter!(
         /// Get the position column as a slice
         => position, position_slice, Position);
@@ -262,58 +323,10 @@ impl SiteTable {
         => position, position_slice_raw, f64);
 }
 
-build_owned_table_type!(
-    /// A standalone site table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningSiteTable;
-    ///
-    /// let mut sites = OwningSiteTable::default();
-    /// let rowid = sites.add_row(1., None).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(sites.num_rows(), 1);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningSiteTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::SiteMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct SiteMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = SiteMetadata{value: 42};
-    ///
-    /// let mut sites = OwningSiteTable::default();
-    ///
-    /// let rowid = sites.add_row_with_metadata(0., None, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match sites.metadata::<SiteMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    /// # }
-    /// ```
-    => OwningSiteTable,
-    SiteTable,
-    crate::sys::LLOwningSiteTable,
-    crate::bindings::tsk_site_table_t
-);
-
-impl OwningSiteTable {
-    site_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    site_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+impl Default for SiteTable {
+    fn default() -> Self {
+        Self::new().unwrap()
+    }
 }
+
+pub type OwningSiteTable = SiteTable;

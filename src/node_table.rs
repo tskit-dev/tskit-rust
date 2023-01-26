@@ -138,27 +138,80 @@ impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
     }
 }
 
-/// An immtable view of a node table.
+/// A node table.
 ///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
+/// # Examples
+///
+/// ```
+/// use tskit::NodeTable;
+///
+/// let mut nodes = NodeTable::default();
+/// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(nodes.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::NodeTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::NodeMetadata)]
+/// #[serializer("serde_json")]
+/// struct NodeMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = NodeMetadata{value: 42};
+///
+/// let mut nodes = NodeTable::default();
+///
+/// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match nodes.metadata::<NodeMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+///
+/// # }
+/// ```
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct NodeTable {
-    table_: sys::LLNodeTableRef,
+    table_: sys::LLNodeTable,
 }
 
 impl NodeTable {
+    pub(crate) fn as_ptr(&self) -> *const ll_bindings::tsk_node_table_t {
+        self.table_.as_ptr()
+    }
+
+    pub(crate) fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_node_table_t {
+        self.table_.as_mut_ptr()
+    }
+
     pub(crate) fn new_from_table(
         nodes: *mut ll_bindings::tsk_node_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLNodeTableRef::new_from_table(nodes)?;
+        let table_ = sys::LLNodeTable::new_non_owning(nodes)?;
         Ok(NodeTable { table_ })
     }
 
     pub(crate) fn as_ref(&self) -> &ll_bindings::tsk_node_table_t {
         self.table_.as_ref()
+    }
+
+    pub fn new() -> Result<Self, TskitError> {
+        let table_ = sys::LLNodeTable::new_owning(0)?;
+        Ok(Self { table_ })
     }
 
     /// Return the number of rows
@@ -391,6 +444,13 @@ impl NodeTable {
             .collect::<Vec<_>>()
     }
 
+    pub fn clear(&mut self) -> Result<(), TskitError> {
+        self.table_.clear().map_err(|e| e.into())
+    }
+
+    node_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+
     build_table_column_slice_getter!(
         /// Get the time column as a slice
         => time, time_slice, Time);
@@ -535,61 +595,12 @@ impl NodeTable {
         => population, population_slice_raw, crate::tsk_id_t);
 }
 
-build_owned_table_type!(
-    /// A standalone node table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningNodeTable;
-    ///
-    /// let mut nodes = OwningNodeTable::default();
-    /// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(nodes.num_rows(), 1);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningNodeTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::NodeMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct NodeMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = NodeMetadata{value: 42};
-    ///
-    /// let mut nodes = OwningNodeTable::default();
-    ///
-    /// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match nodes.metadata::<NodeMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    ///
-    /// # }
-    /// ```
-    => OwningNodeTable,
-    NodeTable,
-    crate::sys::LLOwningNodeTable,
-    crate::bindings::tsk_node_table_t
-);
+pub type OwningNodeTable = NodeTable;
 
-impl OwningNodeTable {
-    node_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+impl Default for NodeTable {
+    fn default() -> Self {
+        Self::new().unwrap()
+    }
 }
 
 #[cfg(test)]
