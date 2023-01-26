@@ -166,7 +166,7 @@ impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
 /// assert_eq!(treeseq.edges().num_rows(), 2);
 /// ```
 ///
-/// This type does not [`std::ops::DerefMut`] to [`crate::table_views::TableViews`]:
+/// This type does not delegate to mutable [`crate::table_views::TableViews`]:
 ///
 /// ```compile_fail
 /// # let mut tables = tskit::TableCollection::new(1000.).unwrap();
