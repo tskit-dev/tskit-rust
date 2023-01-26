@@ -90,6 +90,11 @@ impl TableViews {
         &self.edges
     }
 
+    /// Get mutable reference to the [``EdgeTable``](crate::EdgeTable).
+    pub fn edges_mut(&mut self) -> &mut EdgeTable {
+        &mut self.edges
+    }
+
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     pub fn nodes(&self) -> &NodeTable {
         &self.nodes
@@ -105,9 +110,19 @@ impl TableViews {
         &self.sites
     }
 
+    /// Get mutable reference to the [``SiteTable``](crate::SiteTable).
+    pub fn sites_mut(&mut self) -> &mut SiteTable {
+        &mut self.sites
+    }
+
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     pub fn mutations(&self) -> &MutationTable {
         &self.mutations
+    }
+
+    /// Get mutable reference to the [``MutationTable``](crate::MutationTable).
+    pub fn mutations_mut(&mut self) -> &mut MutationTable {
+        &mut self.mutations
     }
 
     /// Get reference to the [``IndividualTable``](crate::IndividualTable).
@@ -115,9 +130,19 @@ impl TableViews {
         &self.individuals
     }
 
+    /// Get mutable reference to the [``IndividualTable``](crate::IndividualTable).
+    pub fn individuals_mut(&mut self) -> &mut IndividualTable {
+        &mut self.individuals
+    }
+
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     pub fn populations(&self) -> &PopulationTable {
         &self.populations
+    }
+
+    /// Get mutable reference to the [``PopulationTable``](crate::PopulationTable).
+    pub fn populations_mut(&mut self) -> &mut PopulationTable {
+        &mut self.populations
     }
 
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).
@@ -125,11 +150,23 @@ impl TableViews {
         &self.migrations
     }
 
+    /// Get mutable reference to the [``MigrationTable``](crate::MigrationTable).
+    pub fn migrations_mut(&mut self) -> &mut MigrationTable {
+        &mut self.migrations
+    }
+
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
     pub fn provenances(&self) -> &ProvenanceTable {
         &self.provenances
+    }
+
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// Get mutable reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
+    pub fn provenances_mut(&mut self) -> &mut ProvenanceTable {
+        &mut self.provenances
     }
 
     /// Return an iterator over the edges.
