@@ -403,7 +403,6 @@ impl TableCollection {
             .add_row_with_metadata(flags, location, parents, metadata)
     }
 
-    migration_table_add_row!(
     /// Add a row to the migration table
     ///
     /// # Warnings
@@ -419,9 +418,24 @@ impl TableCollection {
     ///                              (0, 1),
     ///                              53.5).is_ok());
     /// ```
-    => add_migration, self, &mut (*self.as_mut_ptr()).migrations);
+    pub fn add_migration<L, R, N, S, D, T>(
+        &mut self,
+        span: (L, R),
+        node: N,
+        source_dest: (S, D),
+        time: T,
+    ) -> Result<crate::MigrationId, TskitError>
+    where
+        L: Into<Position>,
+        R: Into<Position>,
+        N: Into<NodeId>,
+        S: Into<crate::PopulationId>,
+        D: Into<crate::PopulationId>,
+        T: Into<crate::Time>,
+    {
+        self.migrations_mut().add_row(span, node, source_dest, time)
+    }
 
-    migration_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the migration table
     ///
     /// # Examples
@@ -451,7 +465,26 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    => add_migration_with_metadata, self, &mut (*self.as_mut_ptr()).migrations);
+    pub fn add_migration_with_metadata<L, R, N, S, D, T, M>(
+        &mut self,
+        span: (L, R),
+        node: N,
+        source_dest: (S, D),
+        time: T,
+        metadata: &M,
+    ) -> Result<crate::MigrationId, TskitError>
+    where
+        L: Into<Position>,
+        R: Into<Position>,
+        N: Into<NodeId>,
+        S: Into<crate::PopulationId>,
+        D: Into<crate::PopulationId>,
+        T: Into<crate::Time>,
+        M: crate::metadata::MigrationMetadata,
+    {
+        self.migrations_mut()
+            .add_row_with_metadata(span, node, source_dest, time, metadata)
+    }
 
     /// Add a row to the node table
     pub fn add_node<F, T, P, I>(
