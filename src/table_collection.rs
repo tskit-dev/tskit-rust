@@ -541,11 +541,25 @@ impl TableCollection {
     /// ```
     => add_site_with_metadata, self, &mut (*self.as_mut_ptr()).sites);
 
-    mutation_table_add_row!(
     /// Add a row to the mutation table.
-    => add_mutation, self, &mut (*self.as_mut_ptr()).mutations);
+    pub fn add_mutation<S, N, P, T>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+    ) -> Result<crate::MutationId, crate::TskitError>
+    where
+        S: Into<crate::SiteId>,
+        N: Into<crate::NodeId>,
+        P: Into<crate::MutationId>,
+        T: Into<crate::Time>,
+    {
+        self.mutations_mut()
+            .add_row(site, node, parent, time, derived_state)
+    }
 
-    mutation_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the mutation table.
     ///
     /// # Examples
@@ -567,7 +581,31 @@ impl TableCollection {
     ///                                           &metadata).is_ok());
     /// # }
     /// ```
-    => add_mutation_with_metadata, self, &mut (*self.as_mut_ptr()).mutations);
+    pub fn add_mutation_with_metadata<S, N, P, T, M>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<crate::MutationId, crate::TskitError>
+    where
+        S: Into<crate::SiteId>,
+        N: Into<crate::NodeId>,
+        P: Into<crate::MutationId>,
+        T: Into<crate::Time>,
+        M: crate::metadata::MutationMetadata,
+    {
+        self.mutations_mut().add_row_with_metadata(
+            site,
+            node,
+            parent,
+            time,
+            derived_state,
+            metadata,
+        )
+    }
 
     /// Add a row to the population_table
     ///
