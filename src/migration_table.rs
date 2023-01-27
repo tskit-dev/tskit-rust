@@ -392,8 +392,78 @@ impl MigrationTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    migration_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    fn add_row_details<L, R, N, S, D, T>(
+        &mut self,
+        span: (L, R),
+        node: N,
+        source_dest: (S, D),
+        time: T,
+        metadata: *const i8,
+        metadata_length: u64,
+    ) -> Result<MigrationId, TskitError>
+    where
+        L: Into<Position>,
+        R: Into<Position>,
+        N: Into<NodeId>,
+        S: Into<PopulationId>,
+        D: Into<PopulationId>,
+        T: Into<Time>,
+    {
+        let rv = unsafe {
+            ll_bindings::tsk_migration_table_add_row(
+                self.as_mut_ptr(),
+                span.0.into().into(),
+                span.1.into().into(),
+                node.into().into(),
+                source_dest.0.into().into(),
+                source_dest.1.into().into(),
+                time.into().into(),
+                metadata,
+                metadata_length,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row<L, R, N, S, D, T>(
+        &mut self,
+        span: (L, R),
+        node: N,
+        source_dest: (S, D),
+        time: T,
+    ) -> Result<MigrationId, TskitError>
+    where
+        L: Into<Position>,
+        R: Into<Position>,
+        N: Into<NodeId>,
+        S: Into<PopulationId>,
+        D: Into<PopulationId>,
+        T: Into<Time>,
+    {
+        self.add_row_details(span, node, source_dest, time, std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<L, R, N, S, D, T, M>(
+        &mut self,
+        span: (L, R),
+        node: N,
+        source_dest: (S, D),
+        time: T,
+        metadata: &M,
+    ) -> Result<MigrationId, TskitError>
+    where
+        L: Into<Position>,
+        R: Into<Position>,
+        N: Into<NodeId>,
+        S: Into<PopulationId>,
+        D: Into<PopulationId>,
+        T: Into<Time>,
+        M: crate::metadata::MigrationMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let mdlen = md.len()?;
+        self.add_row_details(span, node, source_dest, time, md.as_ptr(), mdlen.into())
+    }
 
     build_table_column_slice_getter!(
         /// Get the left column as a slice
