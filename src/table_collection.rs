@@ -1031,9 +1031,6 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    #[cfg(feature = "provenance")]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-    provenance_table_add_row!(
     /// Add provenance record with a time stamp.
     ///
     /// All implementation of this trait provided by `tskit` use
@@ -1050,7 +1047,7 @@ impl TableCollection {
     ///
     /// # Examples
     /// ```
-    /// 
+    ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// # #[cfg(feature = "provenance")] {
     /// tables.add_provenance(&String::from("Some provenance")).unwrap();
@@ -1082,7 +1079,11 @@ impl TableCollection {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
     /// # }
     /// ```
-    => add_provenance, self, &mut (*self.as_mut_ptr()).provenances);
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
+        self.provenances_mut().add_row(record)
+    }
 
     /// Set the edge table from an [`OwningEdgeTable`](`crate::OwningEdgeTable`)
     ///
