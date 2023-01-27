@@ -216,7 +216,6 @@ impl TableCollection {
         unsafe { (*self.as_ptr()).sequence_length }.into()
     }
 
-    edge_table_add_row!(
     /// Add a row to the edge table
     ///
     /// # Examples
@@ -259,9 +258,22 @@ impl TableCollection {
     ///
     /// See [`TableCollection::check_integrity`] for how to catch these data model
     /// violations.
-    => add_edge, self, &mut(*self.as_mut_ptr()).edges);
+    pub fn add_edge<L, R, P, C>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+    ) -> Result<crate::EdgeId, crate::TskitError>
+    where
+        L: Into<crate::Position>,
+        R: Into<crate::Position>,
+        P: Into<crate::NodeId>,
+        C: Into<crate::NodeId>,
+    {
+        self.edges_mut().add_row(left, right, parent, child)
+    }
 
-    edge_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the edge table
     ///
     /// # Examples
@@ -282,7 +294,24 @@ impl TableCollection {
     /// assert!(tables.add_edge_with_metadata(0., 53., 1, 11, &metadata).is_ok());
     /// # }
     /// ```
-    => add_edge_with_metadata, self, &mut(*self.as_mut_ptr()).edges);
+    pub fn add_edge_with_metadata<L, R, P, C, M>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+        metadata: &M,
+    ) -> Result<crate::EdgeId, crate::TskitError>
+    where
+        L: Into<crate::Position>,
+        R: Into<crate::Position>,
+        P: Into<crate::NodeId>,
+        C: Into<crate::NodeId>,
+        M: crate::metadata::EdgeMetadata,
+    {
+        self.edges_mut()
+            .add_row_with_metadata(left, right, parent, child, metadata)
+    }
 
     individual_table_add_row!(
     /// Add a row to the individual table
