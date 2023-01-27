@@ -491,8 +491,68 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
         self.table_.clear().map_err(|e| e.into())
     }
 
-    individual_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    individual_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    fn add_row_details<F, L, P>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+        metadata: *const i8,
+        metadata_length: u64,
+    ) -> Result<crate::IndividualId, crate::TskitError>
+    where
+        F: Into<crate::IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+    {
+        let rv = unsafe {
+            crate::bindings::tsk_individual_table_add_row(
+                self.as_mut_ptr(),
+                flags.into().bits(),
+                location.get_slice().as_ptr().cast::<f64>(),
+                location.get_slice().len() as crate::bindings::tsk_size_t,
+                parents
+                    .get_slice()
+                    .as_ptr()
+                    .cast::<crate::bindings::tsk_id_t>(),
+                parents.get_slice().len() as crate::bindings::tsk_size_t,
+                metadata,
+                metadata_length,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row<F, L, P>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+    ) -> Result<crate::IndividualId, crate::TskitError>
+    where
+        F: Into<crate::IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+    {
+        self.add_row_details(flags, location, parents, std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<F, L, P, M>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+        metadata: &M,
+    ) -> Result<crate::IndividualId, crate::TskitError>
+    where
+        F: Into<crate::IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+        M: crate::metadata::IndividualMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let mdlen = md.len()?;
+        self.add_row_details(flags, location, parents, md.as_ptr(), mdlen.into())
+    }
 
     build_table_column_slice_getter!(
         /// Get the flags column as a slice

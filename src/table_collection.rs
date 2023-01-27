@@ -313,7 +313,6 @@ impl TableCollection {
             .add_row_with_metadata(left, right, parent, child, metadata)
     }
 
-    individual_table_add_row!(
     /// Add a row to the individual table
     ///
     /// # Examples
@@ -321,7 +320,7 @@ impl TableCollection {
     /// ## No flags, location, nor parents
     ///
     /// ```
-    /// # 
+    /// #
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, None, None).unwrap();
     /// # assert!(tables.individuals().location(0).is_none());
@@ -331,7 +330,7 @@ impl TableCollection {
     /// ## No flags, a 3d location, no parents
     ///
     /// ```
-    /// # 
+    /// #
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
     /// tables.add_individual(0, &[-0.5, 0.3, 10.0], None).unwrap();
     /// # match tables.individuals().location(0) {
@@ -343,16 +342,27 @@ impl TableCollection {
     /// ## No flags, no location, two parents
     /// ```
     /// # let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// # 
+    /// #
     /// tables.add_individual(0, None, &[1, 11]);
     /// # match tables.individuals().parents(0) {
     /// #     Some(parents) => parents.iter().zip([1, 11].iter()).for_each(|(a,b)| assert_eq!(a, b)),
     /// #     None => panic!("expected parents"),
     /// # }
     /// ```
-    => add_individual, self, &mut (*self.as_mut_ptr()).individuals);
+    pub fn add_individual<F, L, P>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+    ) -> Result<crate::IndividualId, crate::TskitError>
+    where
+        F: Into<crate::IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+    {
+        self.individuals_mut().add_row(flags, location, parents)
+    }
 
-    individual_table_add_row_with_metadata!(
     /// Add a row with metadata to the individual table
     ///
     /// # Examples
@@ -363,7 +373,7 @@ impl TableCollection {
     ///
     /// ```
     /// # #[cfg(feature = "derive")] {
-    /// 
+    ///
     /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
     /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
     /// # #[serializer("serde_json")]
@@ -376,7 +386,22 @@ impl TableCollection {
     /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
     /// # assert_eq!(decoded.x, 1);
     /// # }
-    => add_individual_with_metadata, self, &mut (*self.as_mut_ptr()).individuals);
+    pub fn add_individual_with_metadata<F, L, P, M>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+        metadata: &M,
+    ) -> Result<crate::IndividualId, crate::TskitError>
+    where
+        F: Into<crate::IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+        M: crate::metadata::IndividualMetadata,
+    {
+        self.individuals_mut()
+            .add_row_with_metadata(flags, location, parents, metadata)
+    }
 
     migration_table_add_row!(
     /// Add a row to the migration table
