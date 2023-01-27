@@ -544,7 +544,6 @@ impl TableCollection {
     /// ```
     => add_mutation_with_metadata, self, &mut (*self.as_mut_ptr()).mutations);
 
-    population_table_add_row!(
     /// Add a row to the population_table
     ///
     /// # Examples
@@ -553,9 +552,10 @@ impl TableCollection {
     /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
     /// tables.add_population().unwrap();
     /// ```
-    => add_population, self, &mut (*self.as_mut_ptr()).populations);
+    pub fn add_population(&mut self) -> Result<crate::PopulationId, crate::TskitError> {
+        self.populations_mut().add_row()
+    }
 
-    population_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the population_table
     ///
     /// # Examples
@@ -575,7 +575,15 @@ impl TableCollection {
     /// let metadata = PopulationMetadata{x: 1};
     /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
     /// # }
-    => add_population_with_metadata, self, &mut (*self.as_mut_ptr()).populations);
+    pub fn add_population_with_metadata<M>(
+        &mut self,
+        metadata: &M,
+    ) -> Result<crate::PopulationId, crate::TskitError>
+    where
+        M: crate::metadata::PopulationMetadata,
+    {
+        self.populations_mut().add_row_with_metadata(metadata)
+    }
 
     /// Build the "input" and "output"
     /// indexes for the edge table.

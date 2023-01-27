@@ -380,35 +380,6 @@ macro_rules! handle_metadata_return {
     };
 }
 
-macro_rules! population_table_add_row_details {
-    ($metadata: expr, $metadata_len: expr, $table: expr) => {{
-        let rv = unsafe {
-            $crate::bindings::tsk_population_table_add_row($table, $metadata, $metadata_len)
-        };
-        handle_tsk_return_value!(rv, rv.into())
-    }};
-}
-
-macro_rules! population_table_add_row {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name(&mut $self) -> Result<$crate::PopulationId, $crate::TskitError> {
-            population_table_add_row_details!(std::ptr::null(), 0, $table)
-        }
-    };
-}
-
-macro_rules! population_table_add_row_with_metadata {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name<M>(&mut $self, metadata: &M) -> Result<$crate::PopulationId, $crate::TskitError>
-        where M: $crate::metadata::PopulationMetadata {
-            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
-            population_table_add_row_details!(md.as_ptr(), md.len()?.into(), $table)
-        }
-    };
-}
-
 macro_rules! individual_table_add_row_details {
     ($flags: ident,
      $location: ident,
