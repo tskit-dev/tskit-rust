@@ -267,8 +267,31 @@ impl PopulationTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    population_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    population_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    fn add_row_details(
+        &mut self,
+        metadata: *const i8,
+        metadata_len: crate::bindings::tsk_size_t,
+    ) -> Result<PopulationId, TskitError> {
+        let rv = unsafe {
+            crate::bindings::tsk_population_table_add_row(self.as_mut_ptr(), metadata, metadata_len)
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row(&mut self) -> Result<crate::PopulationId, crate::TskitError> {
+        self.add_row_details(std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<M>(
+        &mut self,
+        metadata: &M,
+    ) -> Result<crate::PopulationId, crate::TskitError>
+    where
+        M: crate::metadata::PopulationMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        self.add_row_details(md.as_ptr(), md.len()?.into())
+    }
 }
 
 impl Default for PopulationTable {
