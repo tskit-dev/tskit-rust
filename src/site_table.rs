@@ -312,8 +312,55 @@ impl SiteTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    site_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    site_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    fn add_row_details<P>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+        metadata: *const i8,
+        metadata_length: u64,
+    ) -> Result<SiteId, TskitError>
+    where
+        P: Into<Position>,
+    {
+        let astate = process_state_input!(ancestral_state);
+        let rv = unsafe {
+            ll_bindings::tsk_site_table_add_row(
+                self.as_mut_ptr(),
+                position.into().into(),
+                astate.0,
+                astate.1,
+                metadata,
+                metadata_length,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row<P>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+    ) -> Result<SiteId, TskitError>
+    where
+        P: Into<Position>,
+    {
+        self.add_row_details(position, ancestral_state, std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<P, M>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<SiteId, TskitError>
+    where
+        P: Into<Position>,
+        M: crate::metadata::SiteMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let mdlen = md.len()?;
+        self.add_row_details(position, ancestral_state, md.as_ptr(), mdlen.into())
+    }
 
     build_table_column_slice_getter!(
         /// Get the position column as a slice

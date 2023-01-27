@@ -380,62 +380,6 @@ macro_rules! handle_metadata_return {
     };
 }
 
-macro_rules! site_table_add_row_details {
-    ($position: ident,
-     $ancestral_state: ident,
-     $metadata: expr,
-     $metadata_len: expr,
-     $table: expr) => {{
-        let astate = process_state_input!($ancestral_state);
-        let rv = unsafe {
-            $crate::bindings::tsk_site_table_add_row(
-                $table,
-                $position.into().into(),
-                astate.0,
-                astate.1,
-                $metadata,
-                $metadata_len,
-            )
-        };
-        handle_tsk_return_value!(rv, rv.into())
-    }};
-}
-
-macro_rules! site_table_add_row {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name<P>(&mut $self,
-                     position: P,
-                     ancestral_state: Option<&[u8]>) -> Result<$crate::SiteId, $crate::TskitError>
-        where
-            P: Into<$crate::Position>,
-        {
-            site_table_add_row_details!(position, ancestral_state,
-                                        std::ptr::null(), 0, $table)
-        }
-    };
-}
-
-macro_rules! site_table_add_row_with_metadata {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name<P, M>(&mut $self,
-                        position: P,
-                        ancestral_state: Option<&[u8]>,
-                        metadata: &M) -> Result<$crate::SiteId, $crate::TskitError>
-        where
-            P: Into<$crate::Position>,
-            M: $crate::metadata::SiteMetadata
-        {
-            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
-            site_table_add_row_details!(position, ancestral_state,
-                                        md.as_ptr(),
-                                        md.len()?.into(),
-                                        $table)
-        }
-    };
-}
-
 macro_rules! migration_table_add_row_details {
     ($span: ident,
      $node: ident,

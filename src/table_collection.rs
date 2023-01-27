@@ -512,11 +512,18 @@ impl TableCollection {
             .add_row_with_metadata(flags, time, population, individual, metadata)
     }
 
-    site_table_add_row!(
     /// Add a row to the site table
-    => add_site, self, &mut (*self.as_mut_ptr()).sites);
+    pub fn add_site<P>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+    ) -> Result<crate::SiteId, TskitError>
+    where
+        P: Into<Position>,
+    {
+        self.sites_mut().add_row(position, ancestral_state)
+    }
 
-    site_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the site table
     ///
     /// # Examples
@@ -539,7 +546,19 @@ impl TableCollection {
     ///                                       &metadata).is_ok());
     /// # }
     /// ```
-    => add_site_with_metadata, self, &mut (*self.as_mut_ptr()).sites);
+    pub fn add_site_with_metadata<P, M>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<crate::SiteId, TskitError>
+    where
+        P: Into<Position>,
+        M: crate::metadata::SiteMetadata,
+    {
+        self.sites_mut()
+            .add_row_with_metadata(position, ancestral_state, metadata)
+    }
 
     /// Add a row to the mutation table.
     pub fn add_mutation<S, N, P, T>(
