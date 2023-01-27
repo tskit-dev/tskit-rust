@@ -378,8 +378,84 @@ impl MutationTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    mutation_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    #[allow(clippy::too_many_arguments)]
+    fn add_row_details<S, N, P, T>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+        metadata: *const i8,
+        metadata_length: u64,
+    ) -> Result<crate::MutationId, crate::TskitError>
+    where
+        S: Into<crate::SiteId>,
+        N: Into<crate::NodeId>,
+        P: Into<crate::MutationId>,
+        T: Into<crate::Time>,
+    {
+        let dstate = process_state_input!(derived_state);
+        let rv = unsafe {
+            ll_bindings::tsk_mutation_table_add_row(
+                self.as_mut_ptr(),
+                site.into().into(),
+                node.into().into(),
+                parent.into().into(),
+                time.into().into(),
+                dstate.0,
+                dstate.1,
+                metadata,
+                metadata_length,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row<S, N, P, T>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+    ) -> Result<crate::MutationId, crate::TskitError>
+    where
+        S: Into<crate::SiteId>,
+        N: Into<crate::NodeId>,
+        P: Into<crate::MutationId>,
+        T: Into<crate::Time>,
+    {
+        self.add_row_details(site, node, parent, time, derived_state, std::ptr::null(), 0)
+    }
+
+    pub fn add_row_with_metadata<S, N, P, T, M>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<crate::MutationId, crate::TskitError>
+    where
+        S: Into<crate::SiteId>,
+        N: Into<crate::NodeId>,
+        P: Into<crate::MutationId>,
+        T: Into<crate::Time>,
+        M: crate::metadata::MutationMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        self.add_row_details(
+            site,
+            node,
+            parent,
+            time,
+            derived_state,
+            md.as_ptr(),
+            md.len()?.into(),
+        )
+    }
 
     build_table_column_slice_getter!(
         /// Get the node column as a slice
