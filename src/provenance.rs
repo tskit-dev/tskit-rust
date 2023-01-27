@@ -297,7 +297,25 @@ impl ProvenanceTable {
         self.table_.clear().map_err(|e| e.into())
     }
 
-    provenance_table_add_row!(=> add_row, self, self.as_mut_ptr());
+    pub fn add_row(&mut self, record: &str) -> Result<crate::ProvenanceId, crate::TskitError> {
+        if record.is_empty() {
+            return Err(crate::TskitError::ValueError {
+                got: "empty string".to_string(),
+                expected: "provenance record".to_string(),
+            });
+        }
+        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
+        let rv = unsafe {
+            crate::bindings::tsk_provenance_table_add_row(
+                self.as_mut_ptr(),
+                timestamp.as_ptr() as *mut i8,
+                timestamp.len() as tsk_size_t,
+                record.as_ptr() as *mut i8,
+                record.len() as tsk_size_t,
+            )
+        };
+        handle_tsk_return_value!(rv, rv.into())
+    }
 }
 
 impl Default for ProvenanceTable {

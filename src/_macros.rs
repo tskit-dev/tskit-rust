@@ -380,30 +380,6 @@ macro_rules! handle_metadata_return {
     };
 }
 
-#[cfg(feature = "provenance")]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-macro_rules! provenance_table_add_row {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name(&mut $self, record: &str) -> Result<$crate::ProvenanceId, $crate::TskitError> {
-            if record.is_empty() {
-                return Err($crate::TskitError::ValueError{got: "empty string".to_string(), expected: "provenance record".to_string()})
-            }
-            let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
-            let rv = unsafe {
-                $crate::bindings::tsk_provenance_table_add_row(
-                    $table,
-                    timestamp.as_ptr() as *mut i8,
-                    timestamp.len() as tsk_size_t,
-                    record.as_ptr() as *mut i8,
-                    record.len() as tsk_size_t,
-                )
-            };
-            handle_tsk_return_value!(rv, rv.into())
-        }
-    };
-}
-
 macro_rules! raw_metadata_getter_for_tables {
     ($idtype: ty) => {
         fn raw_metadata<I: Into<$idtype>>(&self, row: I) -> Option<&[u8]> {
