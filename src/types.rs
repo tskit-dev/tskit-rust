@@ -12,13 +12,31 @@ use crate::bindings as ll_bindings;
 /// the first row from which to begin.
 /// The names of the fields are the same
 /// names as tables in a TableCollection.
+///
+/// # Examples
+///
+/// ```
+/// // All values initialized to zero
+/// let mut bookmark = tskit::types::Bookmark::default();
+/// assert_eq!(bookmark.edges(), 0);
+/// // Equivalent to `100 as tskit::bindings::tsk_size_t`:
+/// bookmark.set_edges(100_u64);
+/// assert_eq!(bookmark.edges(), 100);
+/// ```
 pub struct Bookmark {
     pub offsets: ll_bindings::tsk_bookmark_t,
 }
 
 macro_rules! bookmark_getter {
-    ($name: ident) => {
+    ($(#[$attr:meta])* => $name: ident) => {
         /// Get the current value
+        ///
+        /// # Examples
+        /// ```
+        /// // All values initialized to zero
+        /// let mut bookmark = tskit::types::Bookmark::default();
+        $(#[$attr])*
+        /// ```
         pub fn $name(&self) -> $crate::SizeType {
             self.offsets.$name.into()
         }
@@ -26,8 +44,17 @@ macro_rules! bookmark_getter {
 }
 
 macro_rules! bookmark_setter {
-    ($name: ident, $field: ident) => {
+    ($(#[$attr:meta])* => $name: ident, $field: ident) => {
         /// Set the current value
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// # let mut bookmark = tskit::types::Bookmark::default();
+        /// # assert_eq!(bookmark.edges(), 0);
+        /// // Equivalent to `100 as tskit::bindings::tsk_size_t`:
+        $(#[$attr])*
+        /// ```
         pub fn $name<I: Into<$crate::bindings::tsk_size_t>>(&mut self, value: I) {
             self.offsets.$field = value.into();
         }
@@ -50,22 +77,76 @@ impl Bookmark {
         }
     }
 
-    bookmark_getter!(individuals);
-    bookmark_getter!(nodes);
-    bookmark_getter!(edges);
-    bookmark_getter!(migrations);
-    bookmark_getter!(sites);
-    bookmark_getter!(mutations);
-    bookmark_getter!(populations);
-    bookmark_getter!(provenances);
-    bookmark_setter!(set_individuals, individuals);
-    bookmark_setter!(set_nodes, nodes);
-    bookmark_setter!(set_edges, edges);
-    bookmark_setter!(set_migrations, migrations);
-    bookmark_setter!(set_sites, sites);
-    bookmark_setter!(set_mutations, mutations);
-    bookmark_setter!(set_populations, populations);
-    bookmark_setter!(set_provenances, provenances);
+    bookmark_getter!(
+        ///assert_eq!(bookmark.edges(), 0);
+        => individuals
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.nodes(), 0);
+        => nodes
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.edges(), 0);
+        => edges
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.migrations(), 0);
+        => migrations
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.sites(), 0);
+        => sites
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.mutations(), 0);
+        => mutations
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.populations(), 0);
+        => populations
+    );
+    bookmark_getter!(
+        ///assert_eq!(bookmark.provenances(), 0);
+        => provenances
+    );
+    bookmark_setter!(
+        ///bookmark.set_individuals(100_u64);
+        ///assert_eq!(bookmark.individuals(), 100);
+        => set_individuals, individuals);
+    bookmark_setter!(
+        ///bookmark.set_nodes(100_u64);
+        ///assert_eq!(bookmark.nodes(), 100);
+        => set_nodes, nodes);
+    bookmark_setter!(
+        ///bookmark.set_edges(100_u64);
+        ///assert_eq!(bookmark.edges(), 100);
+        => set_edges, edges);
+    bookmark_setter!(
+        ///bookmark.set_migrations(100_u64);
+        ///assert_eq!(bookmark.migrations(), 100);
+        => set_migrations, migrations);
+    bookmark_setter!(
+        ///bookmark.set_sites(100_u64);
+        ///assert_eq!(bookmark.sites(), 100);
+        => set_sites, sites);
+    bookmark_setter!(
+        ///bookmark.set_mutations(100_u64);
+        ///assert_eq!(bookmark.mutations(), 100);
+        => set_mutations, mutations);
+    bookmark_setter!(
+        ///bookmark.set_populations(100_u64);
+        ///assert_eq!(bookmark.populations(), 100);
+        => set_populations, populations);
+    bookmark_setter!(
+        ///bookmark.set_provenances(100_u64);
+        ///assert_eq!(bookmark.provenances(), 100);
+        => set_provenances, provenances);
+}
+
+impl Default for Bookmark {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]
