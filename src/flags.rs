@@ -2,6 +2,15 @@ use crate::bindings as ll_bindings;
 use crate::RawFlags;
 use bitflags::bitflags;
 
+macro_rules! flag_builder_api {
+    ($(#[$attr:meta])* => $name: ident, $flag: ident) => {
+        $(#[$attr])*
+        pub fn $name(self) -> Self {
+            self | Self::$flag
+        }
+    };
+}
+
 bitflags! {
     /// Control the behavior of [`crate::TableCollection::simplify`]
     /// and [`crate::TreeSequence::simplify`]
@@ -17,26 +26,21 @@ bitflags! {
     ///
     /// ## Building up flags
     ///
+    /// ### Default flags
+    ///
     /// ```
-    /// // Initial flags set to 0:
-    /// let mut flags = tskit::SimplificationOptions::default();
+    /// let flags = tskit::SimplificationOptions::default();
+    /// assert_eq!(flags, tskit::SimplificationOptions::NONE);
+    /// ```
     ///
-    /// // Add some options:
-    /// flags.insert(tskit::SimplificationOptions::KEEP_UNARY);
-    /// flags.insert(tskit::SimplificationOptions::FILTER_POPULATIONS);
+    /// ### Using a "builder" API
     ///
+    /// ```
+    /// let flags =
+    /// tskit::SimplificationOptions::default().keep_unary().filter_populations().filter_sites();
     /// assert!(flags.contains(tskit::SimplificationOptions::KEEP_UNARY));
     /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_POPULATIONS));
-    /// ```
-    ///
-    /// ## All-in-one initialization
-    ///
-    /// ```
-    /// use tskit::SimplificationOptions as SO;
-    /// let flags = SO::FILTER_SITES | SO::KEEP_UNARY;
-    /// assert!(flags.contains(SO::FILTER_SITES));
-    /// assert!(flags.contains(SO::KEEP_UNARY));
-    /// assert!(!flags.contains(SO::FILTER_POPULATIONS));
+    /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_SITES));
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -68,21 +72,189 @@ bitflags! {
     }
 }
 
+impl SimplificationOptions {
+    flag_builder_api!(
+    /// Update to set [`KEEP_INPUT_ROOTS`](crate::SimplificationOptions::KEEP_INPUT_ROOTS).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().keep_input_roots();
+    /// assert!(f.contains(tskit::SimplificationOptions::KEEP_INPUT_ROOTS));
+    /// ```
+    => keep_input_roots, KEEP_INPUT_ROOTS);
+
+    flag_builder_api!(
+    /// Update to set [`KEEP_UNARY`](crate::SimplificationOptions::KEEP_UNARY).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().keep_unary();
+    /// assert!(f.contains(tskit::SimplificationOptions::KEEP_UNARY));
+    /// ```
+    => keep_unary, KEEP_UNARY);
+
+    flag_builder_api!(
+    /// Update to set [`KEEP_UNARY_IN_INDIVIDUALS`](crate::SimplificationOptions::KEEP_UNARY_IN_INDIVIDUALS).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().keep_unary_in_individuals();
+    /// assert!(f.contains(tskit::SimplificationOptions::KEEP_UNARY_IN_INDIVIDUALS));
+    /// ```
+    => keep_unary_in_individuals, KEEP_UNARY_IN_INDIVIDUALS);
+
+    flag_builder_api!(
+    /// Update to set [`FILTER_POPULATIONS`](crate::SimplificationOptions::FILTER_POPULATIONS).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().filter_populations();
+    /// assert!(f.contains(tskit::SimplificationOptions::FILTER_POPULATIONS));
+    /// ```
+    => filter_populations, FILTER_POPULATIONS);
+
+    flag_builder_api!(
+    /// Update to set [`FILTER_SITES`](crate::SimplificationOptions::FILTER_SITES).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().filter_sites();
+    /// assert!(f.contains(tskit::SimplificationOptions::FILTER_SITES));
+    /// ```
+    => filter_sites, FILTER_SITES);
+
+    flag_builder_api!(
+    /// Update to set [`REDUCE_TO_SITE_TOPOLOGY`](crate::SimplificationOptions::REDUCE_TO_SITE_TOPOLOGY).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().reduce_to_site_topology();
+    /// assert!(f.contains(tskit::SimplificationOptions::REDUCE_TO_SITE_TOPOLOGY));
+    /// ```
+    => reduce_to_site_topology, REDUCE_TO_SITE_TOPOLOGY);
+
+    flag_builder_api!(
+    /// Update to set [`FILTER_INDIVIDUALS`](crate::SimplificationOptions::FILTER_INDIVIDUALS).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let f = tskit::SimplificationOptions::default().filter_individuals();
+    /// assert!(f.contains(tskit::SimplificationOptions::FILTER_INDIVIDUALS));
+    /// ```
+    => filter_individuals, FILTER_INDIVIDUALS);
+}
+
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::clear`].
+    ///
+    /// # Examples
+    ///
+    /// ## Set default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TableClearOptions::default();
+    /// assert_eq!(f, tskit::TableClearOptions::NONE);
+    /// ```
+    ///
+    /// ## Builder API
+    ///
+    /// ```
+    /// let f = tskit::TableClearOptions::default().clear_metadata_schema();
+    /// assert_eq!(f, tskit::TableClearOptions::CLEAR_METADATA_SCHEMAS);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableClearOptions::default().clear_ts_metadata_and_schema();
+    /// assert_eq!(f, tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableClearOptions::default().clear_provenance();
+    /// assert_eq!(f, tskit::TableClearOptions::CLEAR_PROVENANCE);
+    ///
+    /// ```
+    /// let f = tskit::TableClearOptions::default().clear_metadata_schema().clear_ts_metadata_and_schema();
+    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_METADATA_SCHEMAS));
+    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
+    /// let f = f.clear();
+    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_METADATA_SCHEMAS));
+    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
+    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_PROVENANCE);
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
     pub struct TableClearOptions : RawFlags {
         /// Default behavior.
         const NONE = 0;
         const CLEAR_METADATA_SCHEMAS = ll_bindings::TSK_CLEAR_METADATA_SCHEMAS;
-        const CLEAR_TS_METADATA_SCHEMAS = ll_bindings::TSK_CLEAR_TS_METADATA_AND_SCHEMA;
+        const CLEAR_TS_METADATA_SCHEMA = ll_bindings::TSK_CLEAR_TS_METADATA_AND_SCHEMA;
         const CLEAR_PROVENANCE = ll_bindings::TSK_CLEAR_PROVENANCE;
     }
 }
 
+impl TableClearOptions {
+    flag_builder_api!(
+        /// Set [`CLEAR_METADATA_SCHEMAS`](crate::TableClearOptions::CLEAR_METADATA_SCHEMAS)
+        => clear_metadata_schema, CLEAR_METADATA_SCHEMAS);
+    flag_builder_api!(
+        /// Set [`CLEAR_TS_METADATA_SCHEMA`](crate::TableClearOptions::CLEAR_TS_METADATA_SCHEMA)
+        => clear_ts_metadata_and_schema, CLEAR_TS_METADATA_SCHEMA);
+    flag_builder_api!(
+        /// Set [`CLEAR_PROVENANCE`](crate::TableClearOptions::CLEAR_PROVENANCE)
+        => clear_provenance, CLEAR_PROVENANCE);
+}
+
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::equals`].
+    ///
+    /// # Examples
+    ///
+    /// ## Set default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TableEqualityOptions::default();
+    /// assert_eq!(f, tskit::TableEqualityOptions::NONE);
+    /// ```
+    ///
+    /// ## Builder API
+    ///
+    /// ```
+    /// let f = tskit::TableEqualityOptions::default().ignore_metadata();
+    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_METADATA);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableEqualityOptions::default().ignore_ts_metadata();
+    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_TS_METADATA);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableEqualityOptions::default().ignore_timestamps();
+    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_TIMESTAMPS);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableEqualityOptions::default().ignore_provenance();
+    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_PROVENANCE);
+    /// let f = f.ignore_metadata();
+    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_PROVENANCE));
+    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_METADATA));
+    /// ```
+    ///
+    /// ### Method chaining
+    ///
+    /// ```
+    /// let f = tskit::TableEqualityOptions::default().ignore_provenance().ignore_metadata();
+    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_PROVENANCE));
+    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_METADATA));
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
     pub struct TableEqualityOptions : RawFlags {
@@ -95,8 +267,41 @@ bitflags! {
     }
 }
 
+impl TableEqualityOptions {
+    flag_builder_api!(
+        /// Set [`IGNORE_METADATA`](crate::TableEqualityOptions::IGNORE_METADATA)
+        => ignore_metadata, IGNORE_METADATA);
+    flag_builder_api!(
+        /// Set [`IGNORE_TS_METADATA`](crate::TableEqualityOptions::IGNORE_TS_METADATA)
+        => ignore_ts_metadata, IGNORE_TS_METADATA);
+    flag_builder_api!(
+        /// Set [:IGNORE_PROVENANCE`](crate::TableEqualityOptions::IGNORE_PROVENANCE)
+        => ignore_provenance, IGNORE_PROVENANCE);
+    flag_builder_api!(
+        /// Set [`IGNORE_TIMESTAMPS`](crate::TableEqualityOptions::IGNORE_TIMESTAMPS)
+        => ignore_timestamps, IGNORE_TIMESTAMPS);
+}
+
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::sort`].
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TableSortOptions::default();
+    /// assert_eq!(f, tskit::TableSortOptions::NONE);
+    /// ```
+    ///
+    /// ## Builder API
+    ///
+    /// These methods can all be chained.
+    ///
+    /// ```
+    /// let f = tskit::TableSortOptions::default().no_check_integrity();
+    /// assert_eq!(f, tskit::TableSortOptions::NO_CHECK_INTEGRITY);
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
     pub struct TableSortOptions : RawFlags {
@@ -107,8 +312,23 @@ bitflags! {
     }
 }
 
+impl TableSortOptions {
+    flag_builder_api!(
+        /// Set [`NO_CHECK_INTEGRITY`](crate::TableSortOptions::NO_CHECK_INTEGRITY)
+        => no_check_integrity, NO_CHECK_INTEGRITY);
+}
+
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::sort_individuals`].
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::IndividualTableSortOptions::default();
+    /// assert_eq!(f, tskit::IndividualTableSortOptions::NONE);
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
     pub struct IndividualTableSortOptions : RawFlags {
@@ -120,6 +340,29 @@ bitflags! {
 bitflags! {
     /// Specify the behavior of iterating over [`Tree`] objects.
     /// See [`TreeSequence::tree_iterator`].
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TreeFlags::default();
+    /// assert_eq!(f, tskit::TreeFlags::NONE);
+    /// ```
+    ///
+    /// ## Builder API
+    ///
+    /// These methods can be chained.
+    ///
+    /// ```
+    /// let f = tskit::TreeFlags::default().sample_lists();
+    /// assert_eq!(f, tskit::TreeFlags::SAMPLE_LISTS);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TreeFlags::default().no_sample_counts();
+    /// assert_eq!(f, tskit::TreeFlags::NO_SAMPLE_COUNTS);
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
     pub struct TreeFlags: RawFlags {
@@ -134,8 +377,26 @@ bitflags! {
     }
 }
 
+impl TreeFlags {
+    flag_builder_api!(
+        /// Set [`SAMPLE_LISTS`](crate::TreeFlags::SAMPLE_LISTS)
+        => sample_lists, SAMPLE_LISTS);
+    flag_builder_api!(
+        /// Set [`NO_SAMPLE_COUNTS`](crate::TreeFlags::NO_SAMPLE_COUNTS)
+        => no_sample_counts, NO_SAMPLE_COUNTS);
+}
+
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::dump`].
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TableOutputOptions::default();
+    /// assert_eq!(f, tskit::TableOutputOptions::NONE);
+    /// ```
     ///
     /// # Note
     ///
@@ -155,6 +416,25 @@ bitflags! {
 bitflags! {
     /// Modify behavior of [`crate::TableCollection::tree_sequence`]
     /// and [`crate::TreeSequence::new`].
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TreeSequenceFlags::default();
+    /// assert_eq!(f, tskit::TreeSequenceFlags::NONE);
+    /// ```
+    ///
+    /// ## Builder API
+    ///
+    /// These methods may be chained.
+    ///
+    /// ```
+    /// let f = tskit::TreeSequenceFlags::default().build_indexes();
+    /// assert_eq!(f, tskit::TreeSequenceFlags::BUILD_INDEXES);
+    /// ```
+    ///
     #[derive(Default)]
     #[repr(transparent)]
     pub struct TreeSequenceFlags: RawFlags {
@@ -165,7 +445,68 @@ bitflags! {
     }
 }
 
+impl TreeSequenceFlags {
+    flag_builder_api!(
+        /// Set [`BUILD_INDEXES`](crate::TreeSequenceFlags::BUILD_INDEXES)
+        => build_indexes, BUILD_INDEXES);
+}
+
 bitflags! {
+    /// Flags to affect the behavior of
+    /// [`TableCollection::check_integrity`](crate::TableCollection::check_integrity).
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::NONE);
+    /// ```
+    ///
+    /// ## Builder API
+    ///
+    /// These methods may be chained.
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_edge_ordering();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_EDGE_ORDERING);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_site_ordering();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_SITE_ORDERING);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_site_duplicates();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_SITE_DUPLICATES);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_mutation_ordering();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_MUTATION_ORDERING);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_individual_ordering();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_migration_ordering();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_MIGRATION_ORDERING);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_indexes();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_INDEXES);
+    /// ```
+    ///
+    /// ```
+    /// let f = tskit::TableIntegrityCheckFlags::default().check_trees();
+    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_TREES);
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
     pub struct TableIntegrityCheckFlags: RawFlags {
@@ -190,15 +531,99 @@ bitflags! {
     }
 }
 
+impl TableIntegrityCheckFlags {
+    flag_builder_api!(
+        /// Set [`CHECK_EDGE_ORDERING`](crate::TableIntegrityCheckFlags::CHECK_EDGE_ORDERING)
+        => check_edge_ordering, CHECK_EDGE_ORDERING);
+    flag_builder_api!(
+        /// Set [`CHECK_SITE_ORDERING`](crate::TableIntegrityCheckFlags::CHECK_SITE_ORDERING)
+        => check_site_ordering, CHECK_SITE_ORDERING);
+    flag_builder_api!(
+        /// Set [`CHECK_INDIVIDUAL_ORDERING`](crate::TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING)
+        => check_individual_ordering, CHECK_INDIVIDUAL_ORDERING);
+    flag_builder_api!(
+        /// Set [`CHECK_MUTATION_ORDERING`](crate::TableIntegrityCheckFlags::CHECK_MUTATION_ORDERING)
+        => check_mutation_ordering, CHECK_MUTATION_ORDERING);
+    flag_builder_api!(
+        /// Set [`CHECK_MIGRATION_ORDERING`](crate::TableIntegrityCheckFlags::CHECK_MIGRATION_ORDERING)
+        => check_migration_ordering, CHECK_MIGRATION_ORDERING);
+    flag_builder_api!(
+        /// Set [`CHECK_SITE_DUPLICATES`](crate::TableIntegrityCheckFlags::CHECK_SITE_DUPLICATES)
+        => check_site_duplicates, CHECK_SITE_DUPLICATES);
+    flag_builder_api!(
+        /// Set [`CHECK_INDEXES`](crate::TableIntegrityCheckFlags::CHECK_INDEXES)
+        => check_indexes, CHECK_INDEXES);
+    flag_builder_api!(
+        /// Set [`CHECK_TREES`](crate::TableIntegrityCheckFlags::CHECK_TREES)
+        => check_trees, CHECK_TREES);
+}
+
 bitflags! {
+    /// Node flags
+    ///
+    /// # Examples
+    ///
+    /// ## Default (empty) flags
+    ///
+    /// ```
+    /// let f = tskit::NodeFlags::default();
+    /// assert_eq!(f, tskit::NodeFlags::NONE);
+    /// ```
+    ///
+    /// ## Create a sample node
+    ///
+    /// Creating a sample node is such a common task that it is supported
+    /// via a constructor:
+    ///
+    /// ```
+    /// let f = tskit::NodeFlags::new_sample();
+    /// assert_eq!(f, tskit::NodeFlags::IS_SAMPLE);
+    /// ```
+    ///
+    /// ## Buider API
+    ///
+    /// These methods can be chained.
+    ///
+    /// ```
+    /// let f = tskit::NodeFlags::default().mark_sample();
+    /// assert_eq!(f, tskit::NodeFlags::IS_SAMPLE);
+    /// ```
     #[derive(Default)]
     #[repr(transparent)]
-    /// Node flags
     pub struct NodeFlags : RawFlags {
         /// Default (empty)
         const NONE = 0;
         /// Node is a sample
         const IS_SAMPLE = ll_bindings::TSK_NODE_IS_SAMPLE;
+    }
+}
+
+impl NodeFlags {
+    /// Create a new flags instance with `IS_SAMPLE` set.
+    pub fn new_sample() -> Self {
+        Self::default().mark_sample()
+    }
+
+    flag_builder_api!(
+        /// Set [`IS_SAMPLE`](crate::NodeFlags::IS_SAMPLE)
+        ///
+        /// # Note
+        ///
+        /// This function is called `mark_sample` to not conflict
+        /// with [`NodeFlags::is_sample`], which predates it.
+        => mark_sample, IS_SAMPLE);
+
+    /// We do not enforce valid flags in the library.
+    /// This function will return `true` if any bits
+    /// are set that do not correspond to allowed flags.
+    pub fn is_valid(&self) -> bool {
+        true
+    }
+
+    /// Returns `true` if flags contains `IS_SAMPLE`,
+    /// and `false` otherwise.
+    pub fn is_sample(&self) -> bool {
+        self.contains(NodeFlags::IS_SAMPLE)
     }
 }
 
@@ -209,6 +634,15 @@ bitflags! {
     pub struct IndividualFlags : RawFlags {
         /// Default (empty)
         const NONE = 0;
+    }
+}
+
+impl IndividualFlags {
+    /// We do not enforce valid flags in the library.
+    /// This function will return `true` if any bits
+    /// are set that do not correspond to allowed flags.
+    pub fn is_valid(&self) -> bool {
+        true
     }
 }
 
@@ -247,35 +681,6 @@ impl From<RawFlags> for IndividualFlags {
         // It is an error on the user's part to define flags
         // in the first 16 bits, as per the C API docs.
         unsafe { Self::from_bits_unchecked(flags) }
-    }
-}
-
-impl NodeFlags {
-    /// Create a new flags instance with `IS_SAMPLE` set.
-    pub fn new_sample() -> Self {
-        Self::IS_SAMPLE
-    }
-
-    /// We do not enforce valid flags in the library.
-    /// This function will return `true` if any bits
-    /// are set that do not correspond to allowed flags.
-    pub fn is_valid(&self) -> bool {
-        true
-    }
-
-    /// Returns `true` if flags contains `IS_SAMPLE`,
-    /// and `false` otherwise.
-    pub fn is_sample(&self) -> bool {
-        self.contains(NodeFlags::IS_SAMPLE)
-    }
-}
-
-impl IndividualFlags {
-    /// We do not enforce valid flags in the library.
-    /// This function will return `true` if any bits
-    /// are set that do not correspond to allowed flags.
-    pub fn is_valid(&self) -> bool {
-        true
     }
 }
 
