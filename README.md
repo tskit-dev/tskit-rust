@@ -72,5 +72,5 @@ See [here](https://github.com/tskit-dev/tskit-rust/blob/main/CHANGELOG.md).
 Example: 
 
 ```sh
-git cliff -u --tag v0.11.0 --date-order -p CHANGELOG.md
+git cliff -u --tag v0.11.0 -p CHANGELOG.md
 ```
