@@ -947,9 +947,9 @@ impl TableCollection {
     ///   in length to the input node table.  For each input node,
     ///   this vector either contains the node's new index or [`NodeId::NULL`]
     ///   if the input node is not part of the simplified history.
-    pub fn simplify<N: Into<NodeId>, O: Into<SimplificationOptions>>(
+    pub fn simplify<O: Into<SimplificationOptions>>(
         &mut self,
-        samples: &[N],
+        samples: &[NodeId],
         options: O,
         idmap: bool,
     ) -> Result<Option<&[NodeId]>, TskitError> {
