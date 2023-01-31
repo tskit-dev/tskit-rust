@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0] - 2023-01-31
+
+### Documentation
+
+- Fix docs in tree.rs re: DerefMut vs delegating. ([#452](https://github.com/tskit-dev/tskit-rust/pull/452))
+
+### Features
+
+- Use Bookmark in haploid_wright_fisher example. ([#441](https://github.com/tskit-dev/tskit-rust/pull/441))
+- Impl Default for row id newtypes ([#447](https://github.com/tskit-dev/tskit-rust/pull/447))
+- TableViews can now lend &mut for all table types. ([#455](https://github.com/tskit-dev/tskit-rust/pull/455))
+- Impl Default for Bookmark ([#463](https://github.com/tskit-dev/tskit-rust/pull/463))
+- Implement builder API for flags types ([#464](https://github.com/tskit-dev/tskit-rust/pull/464))
+
+### Refactor
+
+- Use sys::LowLevelPointerManager to manage ownership of C API types. ([#448](https://github.com/tskit-dev/tskit-rust/pull/448))
+- Remove impl Deref/DerefMut for LLEdgeDifferencesIterator ([#451](https://github.com/tskit-dev/tskit-rust/pull/451))
+- Remove code duplication for adding rows to NodeTable. ([#453](https://github.com/tskit-dev/tskit-rust/pull/453))
+- Remove code duplication for adding edge table rows ([#456](https://github.com/tskit-dev/tskit-rust/pull/456))
+- Remove code duplication when adding population table rows. ([#457](https://github.com/tskit-dev/tskit-rust/pull/457))
+- Reduce code duplication adding individual table rows ([#458](https://github.com/tskit-dev/tskit-rust/pull/458))
+- Remove code duplication for adding mutation table rows. ([#459](https://github.com/tskit-dev/tskit-rust/pull/459))
+- Remove code duplication for adding site table rows ([#460](https://github.com/tskit-dev/tskit-rust/pull/460))
+- Remove code duplication when adding migration table rows ([#461](https://github.com/tskit-dev/tskit-rust/pull/461))
+- Remove code duplication for adding provenance table rows ([#462](https://github.com/tskit-dev/tskit-rust/pull/462))
+- [**breaking**] Remove generic from TableCollection::simplify ([#465](https://github.com/tskit-dev/tskit-rust/pull/465))
+
 ## [0.12.0] - 2022-12-23
 
 ### Documentation
