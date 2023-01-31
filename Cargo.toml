@@ -1,6 +1,6 @@
 [package]
 name = "tskit"
-version = "0.13.0"
+version = "0.13.1-alpha.0"
 authors = ["tskit developers <admin@tskit.dev>"]
 build = "build.rs"
 edition = "2021"
