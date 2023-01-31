@@ -154,6 +154,7 @@ The code is a reimplementation of an example program distributed with <code>tski
     popsize: usize,
     num_generations: i32,
     simplify_interval: i32,
+    update_bookmark: bool,
 ) -&gt; Result&lt;tskit::TreeSequence&gt; {
     if popsize == 0 {
         return Err(anyhow::Error::msg(&quot;popsize must be &gt; 0&quot;));
@@ -186,6 +187,7 @@ The code is a reimplementation of an example program distributed with <code>tski
     let parent_picker = rand::distributions::Uniform::new(0, popsize);
     let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let mut bookmark = tskit::types::Bookmark::new();
 
     for birth_time in (0..num_generations).rev() {
         for c in children.iter_mut() {
@@ -204,7 +206,10 @@ The code is a reimplementation of an example program distributed with <code>tski
         }
 
         if birth_time % simplify_interval == 0 {
-            tables.full_sort(tskit::TableSortOptions::default())?;
+            tables.sort(&amp;bookmark, tskit::TableSortOptions::default())?;
+            if update_bookmark {
+                rotate_edges(&amp;bookmark, &amp;mut tables);
+            }
             if let Some(idmap) =
                 tables.simplify(children, tskit::SimplificationOptions::default(), true)?
             {
@@ -212,6 +217,9 @@ The code is a reimplementation of an example program distributed with <code>tski
                 for o in children.iter_mut() {
                     *o = idmap[usize::try_from(*o)?];
                 }
+            }
+            if update_bookmark {
+                bookmark.set_edges(tables.edges().num_rows());
             }
         }
         std::mem::swap(&amp;mut parents, &amp;mut children);

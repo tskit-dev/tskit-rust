@@ -765,6 +765,7 @@ The code is a reimplementation of an example program distributed with <code>tski
     popsize: usize,
     num_generations: i32,
     simplify_interval: i32,
+    update_bookmark: bool,
 ) -&gt; Result&lt;tskit::TreeSequence&gt; {
     if popsize == 0 {
         return Err(anyhow::Error::msg(&quot;popsize must be &gt; 0&quot;));
@@ -797,6 +798,7 @@ The code is a reimplementation of an example program distributed with <code>tski
     let parent_picker = rand::distributions::Uniform::new(0, popsize);
     let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+    let mut bookmark = tskit::types::Bookmark::new();
 
     for birth_time in (0..num_generations).rev() {
         for c in children.iter_mut() {
@@ -815,7 +817,10 @@ The code is a reimplementation of an example program distributed with <code>tski
         }
 
         if birth_time % simplify_interval == 0 {
-            tables.full_sort(tskit::TableSortOptions::default())?;
+            tables.sort(&amp;bookmark, tskit::TableSortOptions::default())?;
+            if update_bookmark {
+                rotate_edges(&amp;bookmark, &amp;mut tables);
+            }
             if let Some(idmap) =
                 tables.simplify(children, tskit::SimplificationOptions::default(), true)?
             {
@@ -823,6 +828,9 @@ The code is a reimplementation of an example program distributed with <code>tski
                 for o in children.iter_mut() {
                     *o = idmap[usize::try_from(*o)?];
                 }
+            }
+            if update_bookmark {
+                bookmark.set_edges(tables.edges().num_rows());
             }
         }
         std::mem::swap(&amp;mut parents, &amp;mut children);
@@ -848,14 +856,41 @@ pub use {
 };</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="changelog"><a class="header" href="#changelog">Changelog</a></h1>
 <p>All notable changes to this project will be documented in this file.</p>
-<h2 id="0120---2022-12-23"><a class="header" href="#0120---2022-12-23">[0.12.0] - 2022-12-23</a></h2>
+<h2 id="0130---2023-01-31"><a class="header" href="#0130---2023-01-31">[0.13.0] - 2023-01-31</a></h2>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
+<ul>
+<li>Fix docs in tree.rs re: DerefMut vs delegating. (<a href="https://github.com/tskit-dev/tskit-rust/pull/452">#452</a>)</li>
+</ul>
+<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<ul>
+<li>Use Bookmark in haploid_wright_fisher example. (<a href="https://github.com/tskit-dev/tskit-rust/pull/441">#441</a>)</li>
+<li>Impl Default for row id newtypes (<a href="https://github.com/tskit-dev/tskit-rust/pull/447">#447</a>)</li>
+<li>TableViews can now lend &amp;mut for all table types. (<a href="https://github.com/tskit-dev/tskit-rust/pull/455">#455</a>)</li>
+<li>Impl Default for Bookmark (<a href="https://github.com/tskit-dev/tskit-rust/pull/463">#463</a>)</li>
+<li>Implement builder API for flags types (<a href="https://github.com/tskit-dev/tskit-rust/pull/464">#464</a>)</li>
+</ul>
+<h3 id="refactor"><a class="header" href="#refactor">Refactor</a></h3>
+<ul>
+<li>Use sys::LowLevelPointerManager to manage ownership of C API types. (<a href="https://github.com/tskit-dev/tskit-rust/pull/448">#448</a>)</li>
+<li>Remove impl Deref/DerefMut for LLEdgeDifferencesIterator (<a href="https://github.com/tskit-dev/tskit-rust/pull/451">#451</a>)</li>
+<li>Remove code duplication for adding rows to NodeTable. (<a href="https://github.com/tskit-dev/tskit-rust/pull/453">#453</a>)</li>
+<li>Remove code duplication for adding edge table rows (<a href="https://github.com/tskit-dev/tskit-rust/pull/456">#456</a>)</li>
+<li>Remove code duplication when adding population table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/457">#457</a>)</li>
+<li>Reduce code duplication adding individual table rows (<a href="https://github.com/tskit-dev/tskit-rust/pull/458">#458</a>)</li>
+<li>Remove code duplication for adding mutation table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/459">#459</a>)</li>
+<li>Remove code duplication for adding site table rows (<a href="https://github.com/tskit-dev/tskit-rust/pull/460">#460</a>)</li>
+<li>Remove code duplication when adding migration table rows (<a href="https://github.com/tskit-dev/tskit-rust/pull/461">#461</a>)</li>
+<li>Remove code duplication for adding provenance table rows (<a href="https://github.com/tskit-dev/tskit-rust/pull/462">#462</a>)</li>
+<li>[<strong>breaking</strong>] Remove generic from TableCollection::simplify (<a href="https://github.com/tskit-dev/tskit-rust/pull/465">#465</a>)</li>
+</ul>
+<h2 id="0120---2022-12-23"><a class="header" href="#0120---2022-12-23">[0.12.0] - 2022-12-23</a></h2>
+<h3 id="documentation-1"><a class="header" href="#documentation-1">Documentation</a></h3>
 <ul>
 <li>Book section on lending row iterators (<a href="https://github.com/tskit-dev/tskit-rust/pull/406">#406</a>)</li>
 <li>Advanced metadata topics in book (<a href="https://github.com/tskit-dev/tskit-rust/pull/407">#407</a>)</li>
 <li>Book chapter on edge differences (<a href="https://github.com/tskit-dev/tskit-rust/pull/417">#417</a>)</li>
 </ul>
-<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
 <ul>
 <li>TreeSequence::edge_differences_iter (<a href="https://github.com/tskit-dev/tskit-rust/pull/410">#410</a>)</li>
 <li>Add convience functions to get usize from row ids. (<a href="https://github.com/tskit-dev/tskit-rust/pull/413">#413</a>)</li>
@@ -866,7 +901,7 @@ pub use {
 <ul>
 <li>Update bindgen requirement from 0.61.0 to 0.63.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/415">#415</a>)</li>
 </ul>
-<h3 id="refactor"><a class="header" href="#refactor">Refactor</a></h3>
+<h3 id="refactor-1"><a class="header" href="#refactor-1">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Replace Deref with delegation of TableViews API (<a href="https://github.com/tskit-dev/tskit-rust/pull/409">#409</a>)</li>
 <li>[<strong>breaking</strong>] Remove TskitTypeAccess trait (<a href="https://github.com/tskit-dev/tskit-rust/pull/411">#411</a>)</li>
@@ -896,11 +931,11 @@ pub use {
 <ul>
 <li>[<strong>breaking</strong>] MetadataError::RoundtripError now requires Send + Sync (<a href="https://github.com/tskit-dev/tskit-rust/pull/396">#396</a>)</li>
 </ul>
-<h3 id="documentation-1"><a class="header" href="#documentation-1">Documentation</a></h3>
+<h3 id="documentation-2"><a class="header" href="#documentation-2">Documentation</a></h3>
 <ul>
 <li>Add haploid WF example to book (<a href="https://github.com/tskit-dev/tskit-rust/pull/397">#397</a>)</li>
 </ul>
-<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
+<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
 <ul>
 <li>Add examples/haploid_wright_fisher.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/394">#394</a>)</li>
 <li>Add lending iterators over table row &quot;views&quot; (<a href="https://github.com/tskit-dev/tskit-rust/pull/398">#398</a>)</li>
@@ -910,13 +945,13 @@ pub use {
 <li>Add row_view() for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/402">#402</a>)</li>
 <li>Column slice getters for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/404">#404</a>)</li>
 </ul>
-<h3 id="refactor-1"><a class="header" href="#refactor-1">Refactor</a></h3>
+<h3 id="refactor-2"><a class="header" href="#refactor-2">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Return &amp;str from provenance table getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/403">#403</a>)</li>
 <li>Deprecate NodeTable::flags_array_mut and NodeTable::time_array_mut (<a href="https://github.com/tskit-dev/tskit-rust/pull/405">#405</a>)</li>
 </ul>
 <h2 id="0120-alpha0---2022-11-06"><a class="header" href="#0120-alpha0---2022-11-06">[0.12.0-alpha.0] - 2022-11-06</a></h2>
-<h3 id="documentation-2"><a class="header" href="#documentation-2">Documentation</a></h3>
+<h3 id="documentation-3"><a class="header" href="#documentation-3">Documentation</a></h3>
 <ul>
 <li>Add book sections on table data access (<a href="https://github.com/tskit-dev/tskit-rust/pull/379">#379</a>)</li>
 <li>Remove chapter number from book intro (<a href="https://github.com/tskit-dev/tskit-rust/pull/380">#380</a>)</li>
@@ -929,17 +964,17 @@ pub use {
 <li>Book sections on metadata (<a href="https://github.com/tskit-dev/tskit-rust/pull/391">#391</a>)</li>
 <li>Book section on error handling (<a href="https://github.com/tskit-dev/tskit-rust/pull/393">#393</a>)</li>
 </ul>
-<h3 id="refactor-2"><a class="header" href="#refactor-2">Refactor</a></h3>
+<h3 id="refactor-3"><a class="header" href="#refactor-3">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Improve Tree iterator ergonomics (<a href="https://github.com/tskit-dev/tskit-rust/pull/384">#384</a>)</li>
 <li>[<strong>breaking</strong>] Improve Tree interface ergonomics (<a href="https://github.com/tskit-dev/tskit-rust/pull/388">#388</a>)</li>
 </ul>
 <h2 id="0111---2022-11-04"><a class="header" href="#0111---2022-11-04">[0.11.1] - 2022-11-04</a></h2>
-<h3 id="documentation-3"><a class="header" href="#documentation-3">Documentation</a></h3>
+<h3 id="documentation-4"><a class="header" href="#documentation-4">Documentation</a></h3>
 <ul>
 <li>Add mdbook (<a href="https://github.com/tskit-dev/tskit-rust/pull/378">#378</a>)</li>
 </ul>
-<h3 id="refactor-3"><a class="header" href="#refactor-3">Refactor</a></h3>
+<h3 id="refactor-4"><a class="header" href="#refactor-4">Refactor</a></h3>
 <ul>
 <li>Apply functional style for NodeTable fns (<a href="https://github.com/tskit-dev/tskit-rust/pull/377">#377</a>)</li>
 </ul>
@@ -950,15 +985,15 @@ pub use {
 <li>[<strong>breaking</strong>] Update generic bounds on metadata getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/370">#370</a>)</li>
 <li>Impl DerefMut for &quot;owned&quot; tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/371">#371</a>)</li>
 </ul>
-<h3 id="documentation-4"><a class="header" href="#documentation-4">Documentation</a></h3>
+<h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
 <ul>
 <li>Add migration guide (<a href="https://github.com/tskit-dev/tskit-rust/pull/376">#376</a>)</li>
 </ul>
-<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
+<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Add TskitError::LibraryError (<a href="https://github.com/tskit-dev/tskit-rust/pull/342">#342</a>)</li>
 </ul>
-<h3 id="refactor-4"><a class="header" href="#refactor-4">Refactor</a></h3>
+<h3 id="refactor-5"><a class="header" href="#refactor-5">Refactor</a></h3>
 <ul>
 <li>Streamline code for generating table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/340">#340</a>)</li>
 <li>Replace unwrap with expect in _macros.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/341">#341</a>)</li>
@@ -987,7 +1022,7 @@ pub use {
 <li>Add doc tests for node table (<a href="https://github.com/tskit-dev/tskit-rust/pull/359">#359</a>)</li>
 </ul>
 <h2 id="0100---2022-10-28"><a class="header" href="#0100---2022-10-28">[0.10.0] - 2022-10-28</a></h2>
-<h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
+<h3 id="documentation-6"><a class="header" href="#documentation-6">Documentation</a></h3>
 <ul>
 <li>Display feature flags in docs.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/338">#338</a>)</li>
 </ul>
@@ -1004,7 +1039,7 @@ pub use {
 <ul>
 <li>Use Bookmark in forward simulation example (<a href="https://github.com/tskit-dev/tskit-rust/pull/318">#318</a>)</li>
 </ul>
-<h3 id="refactor-5"><a class="header" href="#refactor-5">Refactor</a></h3>
+<h3 id="refactor-6"><a class="header" href="#refactor-6">Refactor</a></h3>
 <ul>
 <li>Streamline internal macros for adding nodes (<a href="https://github.com/tskit-dev/tskit-rust/pull/309">#309</a>)</li>
 <li>Remove internal ffi module (<a href="https://github.com/tskit-dev/tskit-rust/pull/310">#310</a>)</li>
@@ -1031,7 +1066,7 @@ pub use {
 <ul>
 <li>Replace crate with $crate in macros (<a href="https://github.com/tskit-dev/tskit-rust/pull/287">#287</a>)</li>
 </ul>
-<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
+<h3 id="features-4"><a class="header" href="#features-4">Features</a></h3>
 <ul>
 <li>Add tskit::OwnedMutationTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/281">#281</a>)</li>
 <li>Add tskit::OwnedSiteTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/283">#283</a>)</li>
@@ -1050,7 +1085,7 @@ pub use {
 <li>[<strong>breaking</strong>] Implement slice access to individual data (<a href="https://github.com/tskit-dev/tskit-rust/pull/292">#292</a>)</li>
 <li>[<strong>breaking</strong>] Eliminate several copies from C to rust (<a href="https://github.com/tskit-dev/tskit-rust/pull/293">#293</a>)</li>
 </ul>
-<h3 id="refactor-6"><a class="header" href="#refactor-6">Refactor</a></h3>
+<h3 id="refactor-7"><a class="header" href="#refactor-7">Refactor</a></h3>
 <ul>
 <li>Deduplicate code for adding node table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/278">#278</a>)</li>
 <li>Use macros to implement adding table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/279">#279</a>)</li>
@@ -1067,11 +1102,11 @@ pub use {
 <li>Fix leak in TableCollection::deepcopy (<a href="https://github.com/tskit-dev/tskit-rust/pull/275">#275</a>)</li>
 <li>Fix leak in TreeSequence::dump_tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/276">#276</a>)</li>
 </ul>
-<h3 id="documentation-6"><a class="header" href="#documentation-6">Documentation</a></h3>
+<h3 id="documentation-7"><a class="header" href="#documentation-7">Documentation</a></h3>
 <ul>
 <li>Fix warnings from &quot;cargo doc&quot; (<a href="https://github.com/tskit-dev/tskit-rust/pull/255">#255</a>)</li>
 </ul>
-<h3 id="features-4"><a class="header" href="#features-4">Features</a></h3>
+<h3 id="features-5"><a class="header" href="#features-5">Features</a></h3>
 <ul>
 <li>Make load from file generic over AsRef<str> (<a href="https://github.com/tskit-dev/tskit-rust/pull/254">#254</a>)</li>
 <li>Add tskit::OwnedPopulationTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/267">#267</a>)</li>
@@ -1085,7 +1120,7 @@ pub use {
 <li>Use cargo-hack to streamline CI. (<a href="https://github.com/tskit-dev/tskit-rust/pull/259">#259</a>)</li>
 <li>Add cargo-valgrind CI workflow (<a href="https://github.com/tskit-dev/tskit-rust/pull/277">#277</a>)</li>
 </ul>
-<h3 id="refactor-7"><a class="header" href="#refactor-7">Refactor</a></h3>
+<h3 id="refactor-8"><a class="header" href="#refactor-8">Refactor</a></h3>
 <ul>
 <li>Macro metadata_to_vector intputs changed. (<a href="https://github.com/tskit-dev/tskit-rust/pull/263">#263</a>)</li>
 <li>Add macros to implement owned tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/269">#269</a>)</li>
