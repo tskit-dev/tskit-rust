@@ -141,8 +141,8 @@ impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
 /// # #[cfg(feature = "provenance")]
 /// # #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
 /// {
-/// use tskit::provenance::OwningProvenanceTable;
-/// let mut provenances = OwningProvenanceTable::default();
+/// use tskit::provenance::ProvenanceTable;
+/// let mut provenances = ProvenanceTable::default();
 /// let id = provenances.add_row("message").unwrap();
 /// assert_eq!(id, 0);
 /// assert_eq!(provenances.num_rows(), 1);

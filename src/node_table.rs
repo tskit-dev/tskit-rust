@@ -619,13 +619,13 @@ impl NodeTable {
     /// # assert!(flags.iter().all(|f| f.is_sample()));
     /// ```
     ///
-    /// ## Owning tables
+    /// ## Standalone tables
     ///
     /// The ownership semantics differ when tables are not part of a
     /// table collection:
     ///
     /// ```
-    /// let mut nodes = tskit::OwningNodeTable::default();
+    /// let mut nodes = tskit::NodeTable::default();
     /// assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
     /// # assert_eq!(nodes.num_rows(), 1);
     /// let flags = nodes.flags_slice_mut();
@@ -678,7 +678,7 @@ mod test_owned_node_table {
 
     #[test]
     fn test_add_row() {
-        let mut nodes = OwningNodeTable::default();
+        let mut nodes = NodeTable::default();
         let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
         assert_eq!(rowid, 0);
         assert_eq!(nodes.num_rows(), 1);
