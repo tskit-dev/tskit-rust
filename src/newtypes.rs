@@ -391,7 +391,7 @@ impl_time_position_arithmetic!(Position, Time);
 #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
 /// A provenance ID
 ///
-/// This is an integer referring to a row of a [``provenance::ProvenanceTable``].
+/// This is an integer referring to a row of a [`ProvenanceTable`](crate::provenance::ProvenanceTable).
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
 #[repr(transparent)]

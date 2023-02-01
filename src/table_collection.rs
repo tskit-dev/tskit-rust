@@ -1418,7 +1418,7 @@ impl TableCollection {
 
             #[cfg(feature="provenance")]
             #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-            /// Get mutable reference to the [``ProvenanceTable``](crate::ProvenanceTable).
+            /// Get mutable reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable).
             pub fn provenances_mut(&mut self) -> &mut crate::provenance::ProvenanceTable;
         }
     }
