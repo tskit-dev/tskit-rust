@@ -441,4 +441,5 @@ impl Default for EdgeTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use EdgeTable instead")]
 pub type OwningEdgeTable = EdgeTable;

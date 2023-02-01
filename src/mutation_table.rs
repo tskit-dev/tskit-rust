@@ -489,4 +489,5 @@ impl Default for MutationTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use MutationTable instead")]
 pub type OwningMutationTable = MutationTable;

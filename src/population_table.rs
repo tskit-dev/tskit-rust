@@ -300,4 +300,5 @@ impl Default for PopulationTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use PopulationTable instead")]
 pub type OwningPopulationTable = PopulationTable;

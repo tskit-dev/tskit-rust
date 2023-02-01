@@ -971,6 +971,7 @@ impl NodeTable {
         => population, population_slice_raw, crate::tsk_id_t);
 }
 
+#[deprecated(since = "0.13.2", note = "use NodeTable instead")]
 pub type OwningNodeTable = NodeTable;
 
 impl Default for NodeTable {

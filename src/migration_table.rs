@@ -509,4 +509,5 @@ impl Default for MigrationTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use MigrationTable instead")]
 pub type OwningMigrationTable = MigrationTable;

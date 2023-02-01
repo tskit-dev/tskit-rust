@@ -119,18 +119,30 @@ use bindings::tsk_size_t;
 pub(crate) const TSK_NULL: tsk_id_t = -1;
 
 pub use edge_differences::*;
-pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
+#[allow(deprecated)]
+pub use edge_table::OwningEdgeTable;
+pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
 pub use flags::*;
-pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividualTable};
-pub use migration_table::{MigrationTable, MigrationTableRow, OwningMigrationTable};
-pub use mutation_table::{MutationTable, MutationTableRow, OwningMutationTable};
+#[allow(deprecated)]
+pub use individual_table::OwningIndividualTable;
+pub use individual_table::{IndividualTable, IndividualTableRow};
+#[allow(deprecated)]
+pub use migration_table::OwningMigrationTable;
+pub use migration_table::{MigrationTable, MigrationTableRow};
+#[allow(deprecated)]
+pub use mutation_table::OwningMutationTable;
+pub use mutation_table::{MutationTable, MutationTableRow};
 pub use newtypes::*;
-pub use node_table::{
-    NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTableRow, OwningNodeTable,
-};
-pub use population_table::{OwningPopulationTable, PopulationTable, PopulationTableRow};
-pub use site_table::{OwningSiteTable, SiteTable, SiteTableRow};
+#[allow(deprecated)]
+pub use node_table::OwningNodeTable;
+pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTableRow};
+#[allow(deprecated)]
+pub use population_table::OwningPopulationTable;
+pub use population_table::{PopulationTable, PopulationTableRow};
+#[allow(deprecated)]
+pub use site_table::OwningSiteTable;
+pub use site_table::{SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;

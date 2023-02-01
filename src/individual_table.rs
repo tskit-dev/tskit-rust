@@ -568,4 +568,5 @@ impl Default for IndividualTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use IndividualTable instead")]
 pub type OwningIndividualTable = IndividualTable;
