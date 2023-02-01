@@ -376,4 +376,5 @@ impl Default for SiteTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use SiteTable instead")]
 pub type OwningSiteTable = SiteTable;

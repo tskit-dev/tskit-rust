@@ -324,6 +324,7 @@ impl Default for ProvenanceTable {
     }
 }
 
+#[deprecated(since = "0.13.2", note = "use ProvenanceTable instead")]
 pub type OwningProvenanceTable = ProvenanceTable;
 
 #[cfg(test)]
