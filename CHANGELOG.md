@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.1] - 2023-02-01
+
+### Documentation
+
+- Update git cliff command in README
+- Fix links to provenance table in docs ([#471](https://github.com/tskit-dev/tskit-rust/pull/471))
+- Remove references to "Owning" table types. ([#472](https://github.com/tskit-dev/tskit-rust/pull/472))
+
+### Miscellaneous Tasks
+
+- Update delegate requirement from 0.8.0 to 0.9.0 ([#469](https://github.com/tskit-dev/tskit-rust/pull/469))
+
+### Testing
+
+- Use cargo semver-checks during CI ([#470](https://github.com/tskit-dev/tskit-rust/pull/470))
+
 ## [0.13.0] - 2023-01-31
 
 ### Documentation
