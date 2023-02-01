@@ -3,6 +3,7 @@ use std::vec;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
+use crate::node_table::DefaultNodeData;
 use crate::types::Bookmark;
 use crate::IndividualTableSortOptions;
 use crate::Position;
@@ -543,6 +544,17 @@ impl TableCollection {
         self.views
             .nodes_mut()
             .add_row_with_metadata(flags, time, population, individual, metadata)
+    }
+
+    /// Add a node using defaults.
+    ///
+    /// See [`crate::NodeTable::add_row_with_defaults`] for details.
+    pub fn add_node_with_defaults<T: Into<crate::Time>, D: DefaultNodeData>(
+        &mut self,
+        time: T,
+        defaults: &D,
+    ) -> Result<NodeId, TskitError> {
+        self.nodes_mut().add_row_with_defaults(time, defaults)
     }
 
     /// Add a row to the site table

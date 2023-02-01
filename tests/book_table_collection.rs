@@ -165,3 +165,145 @@ fn get_data_from_edge_table() {
         .check_integrity(tskit::TableIntegrityCheckFlags::default())
         .is_ok());
 }
+
+#[test]
+fn test_adding_node_table_row_with_defaults() {
+    let mut tables = tskit::TableCollection::new(10.).unwrap();
+    let defaults = tskit::NodeDefaults::default();
+    let node = tables.add_node_with_defaults(0.0, &defaults).unwrap();
+    assert_eq!(node, 0);
+    let node = tables
+        .add_node_with_defaults(
+            0.0,
+            // Create a new, temporary defaults instance
+            &tskit::NodeDefaults {
+                // Mark the new node as a sample
+                flags: tskit::NodeFlags::new_sample(),
+                // Use remaining values from our current defaults
+                ..defaults
+            },
+        )
+        .unwrap();
+    assert!(tables.nodes().flags(node).unwrap().is_sample());
+}
+
+macro_rules! impl_node_metadata_traits {
+    () => {
+        impl tskit::metadata::MetadataRoundtrip for NodeMetadata {
+            fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+                match serde_json::to_string(self) {
+                    Ok(x) => Ok(x.as_bytes().to_vec()),
+                    Err(e) => {
+                        Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                    }
+                }
+            }
+            fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError>
+            where
+                Self: Sized,
+            {
+                match serde_json::from_slice(md) {
+                    Ok(v) => Ok(v),
+                    Err(e) => {
+                        Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                    }
+                }
+            }
+        }
+        impl tskit::metadata::NodeMetadata for NodeMetadata {}
+    };
+}
+
+mod node_metadata {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    pub struct NodeMetadata {
+        pub value: i32,
+    }
+    impl_node_metadata_traits!();
+}
+
+mod node_metadata_clone {
+    #[derive(Clone, serde::Serialize, serde::Deserialize)]
+    pub struct NodeMetadata {
+        pub value: i32,
+    }
+    impl_node_metadata_traits!();
+}
+
+#[test]
+fn test_adding_node_table_row_with_defaults_and_metadata() {
+    use node_metadata::NodeMetadata;
+    let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata<NodeMetadata>;
+    let defaults = DefaultsWithMetadata::default();
+    let _ = tables.add_node_with_defaults(0.0, &defaults).unwrap();
+    let _ = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                population: 3.into(),
+                metadata: Some(NodeMetadata { value: 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+    let _ = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                population: 3.into(),
+                metadata: Some(NodeMetadata { value: 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+}
+
+#[test]
+fn test_adding_node_table_row_with_defaults_and_metadata_requiring_clone() {
+    use node_metadata_clone::NodeMetadata;
+    let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata<NodeMetadata>;
+    // What if there is default metadata for all rows?
+    let defaults = DefaultsWithMetadata {
+        metadata: Some(NodeMetadata { value: 42 }),
+        ..Default::default()
+    };
+
+    // We can scoop all non-metadata fields even though
+    // type is not Copy/Clone
+    let _ = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                metadata: Some(NodeMetadata { value: 2 * 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+
+    // But now, we start to cause a problem:
+    // If we don't clone here, our metadata type moves,
+    // so our defaults are moved.
+    let _ = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                population: 6.into(),
+                ..defaults.clone()
+            },
+        )
+        .unwrap();
+
+    // Now, we have a use-after-move error
+    // if we hadn't cloned in the last step.
+    let _ = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                individual: 7.into(),
+                ..defaults
+            },
+        )
+        .unwrap();
+}

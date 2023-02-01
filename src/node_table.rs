@@ -138,6 +138,248 @@ impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
     }
 }
 
+/// Defaults for node table rows without metadata
+///
+/// # Examples
+///
+/// ```
+/// let d = tskit::NodeDefaults::default();
+/// assert_eq!(d.flags, tskit::NodeFlags::default());
+/// assert_eq!(d.population, tskit::PopulationId::NULL);
+/// assert_eq!(d.individual, tskit::IndividualId::NULL);
+/// ```
+///
+/// [Struct update syntax](https://doc.rust-lang.org/book/ch05-01-defining-structs.html)
+/// is your friend here:
+///
+/// ```
+/// let d = tskit::NodeDefaults{population: 0.into(), ..Default::default()};
+/// assert_eq!(d.flags, tskit::NodeFlags::default());
+/// assert_eq!(d.population, 0);
+/// assert_eq!(d.individual, tskit::IndividualId::NULL);
+/// let d2 = tskit::NodeDefaults{flags: tskit::NodeFlags::default().mark_sample(),
+///                             // update remaining values from d
+///                             ..d};
+/// assert!(d2.flags.is_sample());
+/// assert_eq!(d2.population, 0);
+/// assert_eq!(d2.individual, tskit::IndividualId::NULL);
+/// ```
+#[derive(Copy, Clone, Default, Eq, PartialEq, Debug)]
+pub struct NodeDefaults {
+    pub flags: NodeFlags,
+    pub population: PopulationId,
+    pub individual: IndividualId,
+}
+
+/// Defaults for node table rows with metadata
+///
+/// # Notes
+///
+/// This struct derives `Debug` and `Clone`.   
+/// However, neither is a trait bound on `M`.
+/// Therefore, use of `Debug` and/or `Clone` will fail unless `M`
+/// also implements the relevant trait.
+///
+/// See [the book](https://tskit-dev.github.io/tskit-rust/)
+/// for details.
+#[derive(Debug, Clone)]
+pub struct NodeDefaultsWithMetadata<M>
+where
+    M: crate::metadata::NodeMetadata,
+{
+    pub flags: NodeFlags,
+    pub population: PopulationId,
+    pub individual: IndividualId,
+    pub metadata: Option<M>,
+}
+
+/// This is a doctest hack as described in the rust book.
+/// We do this b/c the specific error messages can change
+/// across rust versions, making crates like trybuild
+/// less useful.
+///
+/// ```compile_fail
+/// #[derive(serde::Serialize, serde::Deserialize)]
+/// struct NodeMetadata {
+///     value: i32,
+/// }
+///
+/// impl tskit::metadata::MetadataRoundtrip for NodeMetadata {
+///     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+///         match serde_json::to_string(self) {
+///             Ok(x) => Ok(x.as_bytes().to_vec()),
+///             Err(e) => Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+///         }
+///     }
+///     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError>
+///     where
+///         Self: Sized,
+///     {
+///         match serde_json::from_slice(md) {
+///             Ok(v) => Ok(v),
+///             Err(e) => Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+///         }
+///     }
+/// }
+///
+/// impl tskit::metadata::NodeMetadata for NodeMetadata {}
+///
+/// type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata<NodeMetadata>;
+/// let defaults = DefaultsWithMetadata {
+///     metadata: Some(NodeMetadata { value: 42 }),
+///     ..Default::default()
+/// };
+///
+/// // Fails because metadata type is not Debug
+/// println!("{:?}", defaults);
+/// ```
+///
+/// ```compile_fail
+/// #[derive(serde::Serialize, serde::Deserialize)]
+/// struct NodeMetadata {
+///     value: i32,
+/// }
+///
+/// impl tskit::metadata::MetadataRoundtrip for NodeMetadata {
+///     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+///         match serde_json::to_string(self) {
+///             Ok(x) => Ok(x.as_bytes().to_vec()),
+///             Err(e) => Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+///         }
+///     }
+///     fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError>
+///     where
+///         Self: Sized,
+///     {
+///         match serde_json::from_slice(md) {
+///             Ok(v) => Ok(v),
+///             Err(e) => Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
+///         }
+///     }
+/// }
+///
+/// impl tskit::metadata::NodeMetadata for NodeMetadata {}
+///
+/// let mut tables = tskit::TableCollection::new(10.0).unwrap();
+/// type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata<NodeMetadata>;
+/// // What if there is default metadata for all rows?
+/// let defaults = DefaultsWithMetadata {
+///     metadata: Some(NodeMetadata { value: 42 }),
+///     ..Default::default()
+/// };
+/// // We can scoop all non-metadata fields even though
+/// // type is not Copy/Clone
+/// let _ = tables
+///     .add_node_with_defaults(
+///         0.0,
+///         &DefaultsWithMetadata {
+///             metadata: Some(NodeMetadata { value: 2 * 42 }),
+///             ..defaults
+///         },
+///     )
+///     .unwrap();
+/// // But now, we start to cause a problem:
+/// // If we don't clone here, our metadata type moves,
+/// // so our defaults are moved.
+/// let _ = tables
+///     .add_node_with_defaults(
+///         0.0,
+///         &DefaultsWithMetadata {
+///             population: 6.into(),
+///             ..defaults
+///         },
+///     )
+///     .unwrap();
+/// // Now, we have a use-after-move error
+/// // if we hadn't cloned in the last step.
+/// let _ = tables
+///     .add_node_with_defaults(
+///         0.0,
+///         &DefaultsWithMetadata {
+///             individual: 7.into(),
+///             ..defaults
+///         },
+///     )
+///     .unwrap();
+/// ```
+#[cfg(doctest)]
+struct NodeDefaultsWithMetadataNotCloneNotDebug;
+
+// Manual implementation required so that
+// we do not force client code to impl Default
+// for metadata types.
+impl<M> Default for NodeDefaultsWithMetadata<M>
+where
+    M: crate::metadata::NodeMetadata,
+{
+    fn default() -> Self {
+        Self {
+            flags: NodeFlags::default(),
+            population: PopulationId::default(),
+            individual: IndividualId::default(),
+            metadata: None,
+        }
+    }
+}
+
+mod private {
+    pub trait DefaultNodeDataMarker {}
+
+    impl DefaultNodeDataMarker for super::NodeDefaults {}
+
+    impl<M> DefaultNodeDataMarker for super::NodeDefaultsWithMetadata<M> where
+        M: crate::metadata::NodeMetadata
+    {
+    }
+}
+
+/// This trait is sealed.
+pub trait DefaultNodeData: private::DefaultNodeDataMarker {
+    fn flags(&self) -> NodeFlags;
+    fn population(&self) -> PopulationId;
+    fn individual(&self) -> IndividualId;
+    fn metadata(&self) -> Result<Option<Vec<u8>>, TskitError>;
+}
+
+impl DefaultNodeData for NodeDefaults {
+    fn flags(&self) -> NodeFlags {
+        self.flags
+    }
+    fn population(&self) -> PopulationId {
+        self.population
+    }
+    fn individual(&self) -> IndividualId {
+        self.individual
+    }
+    fn metadata(&self) -> Result<Option<Vec<u8>>, TskitError> {
+        Ok(None)
+    }
+}
+
+impl<M> DefaultNodeData for NodeDefaultsWithMetadata<M>
+where
+    M: crate::metadata::NodeMetadata,
+{
+    fn flags(&self) -> NodeFlags {
+        self.flags
+    }
+    fn population(&self) -> PopulationId {
+        self.population
+    }
+    fn individual(&self) -> IndividualId {
+        self.individual
+    }
+    fn metadata(&self) -> Result<Option<Vec<u8>>, TskitError> {
+        self.metadata.as_ref().map_or_else(
+            || Ok(None),
+            |v| match v.encode() {
+                Ok(x) => Ok(Some(x)),
+                Err(e) => Err(e.into()),
+            },
+        )
+    }
+}
+
 /// A node table.
 ///
 /// # Examples
@@ -516,6 +758,71 @@ impl NodeTable {
             population,
             individual,
             md.as_ptr(),
+            mdlen.into(),
+        )
+    }
+
+    /// Add a row with default values.
+    ///
+    /// # Parameters
+    ///
+    /// * `time`, the birth time of the node
+    /// * `defaults`, the default values for remaining fields.
+    ///
+    /// ## Notes on parameters
+    ///
+    /// The type of `defaults` must be one of:
+    ///
+    /// * [`NodeDefaults`]
+    /// * [`NodeDefaultsWithMetadata`]
+    ///
+    /// # Examples
+    ///
+    /// ## Without metadata
+    ///
+    /// ```
+    /// let mut nodes = tskit::NodeTable::default();
+    /// let defaults = tskit::NodeDefaults::default();
+    /// let id = nodes.add_row_with_defaults(0.0, &defaults).unwrap();
+    /// assert_eq!(id, 0);
+    /// assert_eq!(nodes.individual(id), Some(tskit::IndividualId::NULL));
+    /// assert_eq!(nodes.population(id), Some(tskit::PopulationId::NULL));
+    /// ```
+    ///
+    /// Use [struct update syntax](https://doc.rust-lang.org/book/ch05-01-defining-structs.html)
+    /// to customize defaults:
+    ///
+    /// ```
+    /// # let mut nodes = tskit::NodeTable::default();
+    /// let defaults = tskit::NodeDefaults {
+    ///     population: 3.into(),
+    ///     ..Default::default()
+    /// };
+    /// let id = nodes.add_row_with_defaults(0.0, &defaults).unwrap();
+    /// # assert_eq!(id, 0);
+    /// # assert_eq!(nodes.individual(id), Some(tskit::IndividualId::NULL));
+    /// assert_eq!(nodes.population(id), Some(tskit::PopulationId::from(3)));
+    /// ```
+    ///
+    /// ## With metadata
+    ///
+    /// See the [book](https://tskit-dev.github.io/tskit-rust) for examples.
+    pub fn add_row_with_defaults<T: Into<Time>, D: DefaultNodeData>(
+        &mut self,
+        time: T,
+        defaults: &D,
+    ) -> Result<NodeId, TskitError> {
+        let md = defaults.metadata()?;
+        let (ptr, mdlen) = match &md {
+            Some(value) => (value.as_ptr(), SizeType::try_from(value.len())?),
+            None => (std::ptr::null(), 0.into()),
+        };
+        self.add_row_details(
+            defaults.flags(),
+            time,
+            defaults.population(),
+            defaults.individual(),
+            ptr.cast::<i8>(),
             mdlen.into(),
         )
     }

@@ -126,7 +126,9 @@ pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividual
 pub use migration_table::{MigrationTable, MigrationTableRow, OwningMigrationTable};
 pub use mutation_table::{MutationTable, MutationTableRow, OwningMutationTable};
 pub use newtypes::*;
-pub use node_table::{NodeTable, NodeTableRow, OwningNodeTable};
+pub use node_table::{
+    NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTableRow, OwningNodeTable,
+};
 pub use population_table::{OwningPopulationTable, PopulationTable, PopulationTableRow};
 pub use site_table::{OwningSiteTable, SiteTable, SiteTableRow};
 pub use table_collection::TableCollection;
