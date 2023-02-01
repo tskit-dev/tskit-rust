@@ -510,5 +510,3 @@ impl Default for MigrationTable {
 }
 
 pub type OwningMigrationTable = MigrationTable;
-
-impl OwningMigrationTable {}
