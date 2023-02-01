@@ -143,8 +143,23 @@
                     <main>
                         <h1 id="changelog"><a class="header" href="#changelog">Changelog</a></h1>
 <p>All notable changes to this project will be documented in this file.</p>
-<h2 id="0130---2023-01-31"><a class="header" href="#0130---2023-01-31">[0.13.0] - 2023-01-31</a></h2>
+<h2 id="0131---2023-02-01"><a class="header" href="#0131---2023-02-01">[0.13.1] - 2023-02-01</a></h2>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
+<ul>
+<li>Update git cliff command in README</li>
+<li>Fix links to provenance table in docs (<a href="https://github.com/tskit-dev/tskit-rust/pull/471">#471</a>)</li>
+<li>Remove references to &quot;Owning&quot; table types. (<a href="https://github.com/tskit-dev/tskit-rust/pull/472">#472</a>)</li>
+</ul>
+<h3 id="miscellaneous-tasks"><a class="header" href="#miscellaneous-tasks">Miscellaneous Tasks</a></h3>
+<ul>
+<li>Update delegate requirement from 0.8.0 to 0.9.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/469">#469</a>)</li>
+</ul>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<ul>
+<li>Use cargo semver-checks during CI (<a href="https://github.com/tskit-dev/tskit-rust/pull/470">#470</a>)</li>
+</ul>
+<h2 id="0130---2023-01-31"><a class="header" href="#0130---2023-01-31">[0.13.0] - 2023-01-31</a></h2>
+<h3 id="documentation-1"><a class="header" href="#documentation-1">Documentation</a></h3>
 <ul>
 <li>Fix docs in tree.rs re: DerefMut vs delegating. (<a href="https://github.com/tskit-dev/tskit-rust/pull/452">#452</a>)</li>
 </ul>
@@ -171,7 +186,7 @@
 <li>[<strong>breaking</strong>] Remove generic from TableCollection::simplify (<a href="https://github.com/tskit-dev/tskit-rust/pull/465">#465</a>)</li>
 </ul>
 <h2 id="0120---2022-12-23"><a class="header" href="#0120---2022-12-23">[0.12.0] - 2022-12-23</a></h2>
-<h3 id="documentation-1"><a class="header" href="#documentation-1">Documentation</a></h3>
+<h3 id="documentation-2"><a class="header" href="#documentation-2">Documentation</a></h3>
 <ul>
 <li>Book section on lending row iterators (<a href="https://github.com/tskit-dev/tskit-rust/pull/406">#406</a>)</li>
 <li>Advanced metadata topics in book (<a href="https://github.com/tskit-dev/tskit-rust/pull/407">#407</a>)</li>
@@ -184,7 +199,7 @@
 <li>Tree::total_branch_length now works. (<a href="https://github.com/tskit-dev/tskit-rust/pull/429">#429</a>)</li>
 <li>Add getters/setters for Bookmark. (<a href="https://github.com/tskit-dev/tskit-rust/pull/437">#437</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks"><a class="header" href="#miscellaneous-tasks">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-1"><a class="header" href="#miscellaneous-tasks-1">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Update bindgen requirement from 0.61.0 to 0.63.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/415">#415</a>)</li>
 </ul>
@@ -218,7 +233,7 @@
 <ul>
 <li>[<strong>breaking</strong>] MetadataError::RoundtripError now requires Send + Sync (<a href="https://github.com/tskit-dev/tskit-rust/pull/396">#396</a>)</li>
 </ul>
-<h3 id="documentation-2"><a class="header" href="#documentation-2">Documentation</a></h3>
+<h3 id="documentation-3"><a class="header" href="#documentation-3">Documentation</a></h3>
 <ul>
 <li>Add haploid WF example to book (<a href="https://github.com/tskit-dev/tskit-rust/pull/397">#397</a>)</li>
 </ul>
@@ -238,7 +253,7 @@
 <li>Deprecate NodeTable::flags_array_mut and NodeTable::time_array_mut (<a href="https://github.com/tskit-dev/tskit-rust/pull/405">#405</a>)</li>
 </ul>
 <h2 id="0120-alpha0---2022-11-06"><a class="header" href="#0120-alpha0---2022-11-06">[0.12.0-alpha.0] - 2022-11-06</a></h2>
-<h3 id="documentation-3"><a class="header" href="#documentation-3">Documentation</a></h3>
+<h3 id="documentation-4"><a class="header" href="#documentation-4">Documentation</a></h3>
 <ul>
 <li>Add book sections on table data access (<a href="https://github.com/tskit-dev/tskit-rust/pull/379">#379</a>)</li>
 <li>Remove chapter number from book intro (<a href="https://github.com/tskit-dev/tskit-rust/pull/380">#380</a>)</li>
@@ -257,7 +272,7 @@
 <li>[<strong>breaking</strong>] Improve Tree interface ergonomics (<a href="https://github.com/tskit-dev/tskit-rust/pull/388">#388</a>)</li>
 </ul>
 <h2 id="0111---2022-11-04"><a class="header" href="#0111---2022-11-04">[0.11.1] - 2022-11-04</a></h2>
-<h3 id="documentation-4"><a class="header" href="#documentation-4">Documentation</a></h3>
+<h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
 <ul>
 <li>Add mdbook (<a href="https://github.com/tskit-dev/tskit-rust/pull/378">#378</a>)</li>
 </ul>
@@ -272,7 +287,7 @@
 <li>[<strong>breaking</strong>] Update generic bounds on metadata getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/370">#370</a>)</li>
 <li>Impl DerefMut for &quot;owned&quot; tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/371">#371</a>)</li>
 </ul>
-<h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
+<h3 id="documentation-6"><a class="header" href="#documentation-6">Documentation</a></h3>
 <ul>
 <li>Add migration guide (<a href="https://github.com/tskit-dev/tskit-rust/pull/376">#376</a>)</li>
 </ul>
@@ -303,17 +318,17 @@
 <li>Fix lints from rust 1.65.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/374">#374</a>)</li>
 <li>Fix lints from nightly (<a href="https://github.com/tskit-dev/tskit-rust/pull/375">#375</a>)</li>
 </ul>
-<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<h3 id="testing-1"><a class="header" href="#testing-1">Testing</a></h3>
 <ul>
 <li>Rewrite table API tests (<a href="https://github.com/tskit-dev/tskit-rust/pull/356">#356</a>)</li>
 <li>Add doc tests for node table (<a href="https://github.com/tskit-dev/tskit-rust/pull/359">#359</a>)</li>
 </ul>
 <h2 id="0100---2022-10-28"><a class="header" href="#0100---2022-10-28">[0.10.0] - 2022-10-28</a></h2>
-<h3 id="documentation-6"><a class="header" href="#documentation-6">Documentation</a></h3>
+<h3 id="documentation-7"><a class="header" href="#documentation-7">Documentation</a></h3>
 <ul>
 <li>Display feature flags in docs.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/338">#338</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-1"><a class="header" href="#miscellaneous-tasks-1">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-2"><a class="header" href="#miscellaneous-tasks-2">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Set msrv to 1.57.0 (result of cargo msrv) (<a href="https://github.com/tskit-dev/tskit-rust/pull/322">#322</a>)</li>
 <li>Fix tag_pattern in cliff.toml (<a href="https://github.com/tskit-dev/tskit-rust/pull/330">#330</a>)</li>
@@ -344,7 +359,7 @@
 <li>Use auto-deref for pointer deref. (<a href="https://github.com/tskit-dev/tskit-rust/pull/325">#325</a>)</li>
 <li>Fix +nightly clippy lints for all targets/features. (<a href="https://github.com/tskit-dev/tskit-rust/pull/326">#326</a>)</li>
 </ul>
-<h3 id="testing-1"><a class="header" href="#testing-1">Testing</a></h3>
+<h3 id="testing-2"><a class="header" href="#testing-2">Testing</a></h3>
 <ul>
 <li>Improve test work flow (<a href="https://github.com/tskit-dev/tskit-rust/pull/331">#331</a>)</li>
 </ul>
@@ -363,7 +378,7 @@
 <li>Set tables in collection from owned tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/288">#288</a>)</li>
 <li>[<strong>breaking</strong>] Impl Send/Sync for TreeSequence (<a href="https://github.com/tskit-dev/tskit-rust/pull/297">#297</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-2"><a class="header" href="#miscellaneous-tasks-2">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-3"><a class="header" href="#miscellaneous-tasks-3">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Update to C API 1.1.1 (<a href="https://github.com/tskit-dev/tskit-rust/pull/304">#304</a>)</li>
 </ul>
@@ -389,7 +404,7 @@
 <li>Fix leak in TableCollection::deepcopy (<a href="https://github.com/tskit-dev/tskit-rust/pull/275">#275</a>)</li>
 <li>Fix leak in TreeSequence::dump_tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/276">#276</a>)</li>
 </ul>
-<h3 id="documentation-7"><a class="header" href="#documentation-7">Documentation</a></h3>
+<h3 id="documentation-8"><a class="header" href="#documentation-8">Documentation</a></h3>
 <ul>
 <li>Fix warnings from &quot;cargo doc&quot; (<a href="https://github.com/tskit-dev/tskit-rust/pull/255">#255</a>)</li>
 </ul>
@@ -400,7 +415,7 @@
 <li>Add tskit::OwnedEdgeTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/268">#268</a>)</li>
 <li>Add tskit::OwnedNodeTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/273">#273</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-3"><a class="header" href="#miscellaneous-tasks-3">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-4"><a class="header" href="#miscellaneous-tasks-4">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Add cliff.toml (config file for git-cliff) (<a href="https://github.com/tskit-dev/tskit-rust/pull/257">#257</a>)</li>
 <li>Prefix &quot;chore: &quot; to dependabot.yml (<a href="https://github.com/tskit-dev/tskit-rust/pull/258">#258</a>)</li>
@@ -412,7 +427,7 @@
 <li>Macro metadata_to_vector intputs changed. (<a href="https://github.com/tskit-dev/tskit-rust/pull/263">#263</a>)</li>
 <li>Add macros to implement owned tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/269">#269</a>)</li>
 </ul>
-<h3 id="testing-2"><a class="header" href="#testing-2">Testing</a></h3>
+<h3 id="testing-3"><a class="header" href="#testing-3">Testing</a></h3>
 <ul>
 <li>Add another experimental trait idea for metadata. (<a href="https://github.com/tskit-dev/tskit-rust/pull/261">#261</a>)</li>
 <li>Redo doctest: TableCollection::new_from_file (<a href="https://github.com/tskit-dev/tskit-rust/pull/272">#272</a>)</li>
