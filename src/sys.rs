@@ -552,8 +552,20 @@ mod soundness_tests {
         let mut n = unsafe { LLNodeTable::new_non_owning(&mut (*x.as_mut_ptr()).nodes).unwrap() };
         let rv = unsafe { bindings::tsk_table_collection_free(x.as_mut_ptr()) };
         assert_eq!(rv, 0);
-        drop(x);
-        unsafe { libc::free(raw as *mut libc::c_void) };
+        //drop(x);
+        //unsafe { libc::free(raw as *mut libc::c_void) };
+        let rv = unsafe {
+            bindings::tsk_node_table_add_row(
+                n.as_mut_ptr(),
+                0,
+                0.0,
+                -1,
+                -1,
+                std::ptr::null(),
+                0,
+            )
+        };
+        assert_eq!(rv, 0);
         assert!(raw.is_null());
         assert!(n.as_ptr().is_null());
         n.as_ref();
