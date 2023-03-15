@@ -8,7 +8,7 @@ description = "rust interface to tskit"
 license = "MIT"
 homepage = "https://github.com/tskit-dev/tskit-rust"
 repository = "https://github.com/tskit-dev/tskit-rust"
-rust-version = "1.57.0"
+rust-version = "1.60.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
