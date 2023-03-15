@@ -128,6 +128,7 @@ impl<T> Drop for LowLevelPointerManager<T> {
             // SAFETY: pointer is not null and we "own" it,
             // meaning that we malloc'd it.
             unsafe { libc::free(self.pointer.cast::<std::ffi::c_void>()) }
+            self.pointer = std::ptr::null_mut();
         }
     }
 }
@@ -532,6 +533,31 @@ fn test_low_level_table_collection_pointer_manager_non_owning() {
     assert!(!x.as_ptr().is_null());
     assert!(!x.as_mut_ptr().is_null());
     unsafe { libc::free(raw as *mut libc::c_void) };
+}
+
+#[cfg(test)]
+mod soundness_tests {
+    use super::*;
+
+    #[test]
+    fn test_non_owning_table_runtime_soundness() {
+        let raw = unsafe {
+            libc::malloc(std::mem::size_of::<bindings::tsk_table_collection_t>())
+                as *mut bindings::tsk_table_collection_t
+        };
+        let mut x = LowLevelPointerManager::<bindings::tsk_table_collection_t>::new_non_owning(raw)
+            .unwrap();
+        let rv = unsafe { bindings::tsk_table_collection_init(x.as_mut_ptr(), 0) };
+        assert_eq!(rv, 0);
+        let mut n = unsafe { LLNodeTable::new_non_owning(&mut (*x.as_mut_ptr()).nodes).unwrap() };
+        let rv = unsafe { bindings::tsk_table_collection_free(x.as_mut_ptr()) };
+        assert_eq!(rv, 0);
+        drop(x);
+        unsafe { libc::free(raw as *mut libc::c_void) };
+        assert!(raw.is_null());
+        assert!(n.as_ptr().is_null());
+        n.as_ref();
+    }
 }
 
 // NOTE: design phase 2 tests
