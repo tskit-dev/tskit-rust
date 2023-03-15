@@ -23,6 +23,7 @@
  * SOFTWARE.
  */
 
+#include "tables.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -12867,6 +12868,109 @@ tsk_squash_edges(tsk_edge_t *edges, tsk_size_t num_edges, tsk_size_t *num_output
 
     *num_output_edges = (tsk_size_t) l + 1;
 
+out:
+    return ret;
+}
+
+// KRT's latest madness
+
+typedef struct __tsk_streaming_simplifier_impl_t {
+    simplifier_t simplifier;
+} tsk_streaming_simplifier_impl_t;
+
+int tsk_streaming_simplifier_init(tsk_streaming_simplifier_t * self,
+    tsk_table_collection_t *tables, const tsk_id_t *samples,
+    tsk_size_t num_samples, tsk_flags_t options) {
+    int ret = 0;
+    self->pimpl = tsk_malloc(sizeof(tsk_streaming_simplifier_impl_t));
+    if (self->pimpl == NULL) {
+        ret = TSK_ERR_NO_MEMORY;
+        goto out;
+    }
+    ret = simplifier_init(&self->pimpl->simplifier, samples, num_samples, tables, options);
+    if (ret != 0) {
+        goto out;
+    }
+
+out:
+    return ret;
+}
+
+// FIXME: parent not used
+int tsk_streaming_simplifier_add_edge(tsk_streaming_simplifier_t * self,
+    double left, double right, tsk_id_t parent, tsk_id_t child) {
+    int ret = simplifier_extract_ancestry(&self->pimpl->simplifier, left, right, child); 
+    return ret;
+}
+
+int tsk_streaming_simplifier_merge_ancestors(tsk_streaming_simplifier_t * self, tsk_id_t parent) {
+    int ret = simplifier_merge_ancestors(&self->pimpl->simplifier, parent);
+    self->pimpl->simplifier.segment_queue_size = 0;
+    return ret;
+}
+
+int tsk_streaming_simplifier_finalise(tsk_streaming_simplifier_t * self, tsk_id_t * node_map) {
+    int ret = 0;
+    simplifier_t * simplifier = &self->pimpl->simplifier;
+    ret = simplifier_run(simplifier, node_map);
+    //if (simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS) {
+    //    ret = simplifier_insert_input_roots(simplifier);
+    //    if (ret != 0) {
+    //        goto out;
+    //    }
+    //}
+    //ret = simplifier_output_sites(simplifier);
+    //if (ret != 0) {
+    //    goto out;
+    //}
+    //ret = simplifier_finalise_references(simplifier);
+    //if (ret != 0) {
+    //    goto out;
+    //}
+    //if (node_map != NULL) {
+    //    /* Finally, output the new IDs for the nodes, if required. */
+    //    tsk_memcpy(node_map, simplifier->node_id_map,
+    //        simplifier->input_tables.nodes.num_rows * sizeof(tsk_id_t));
+    //}
+    //if (simplifier->edge_sort_offset != TSK_NULL) {
+    //    tsk_bug_assert(simplifier->options & TSK_SIMPLIFY_KEEP_INPUT_ROOTS);
+    //    ret = simplifier_sort_edges(simplifier);
+    //    if (ret != 0) {
+    //        goto out;
+    //    }
+    //}
+//out:
+    return ret;
+}
+
+const tsk_id_t * tsk_streaming_simplifier_get_input_parent(const tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.parent;
+}
+const tsk_id_t * tsk_streaming_simplifier_get_input_child(const tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.child;
+}
+const double * tsk_streaming_simplifier_get_input_left(const tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.left;
+}
+const double * tsk_streaming_simplifier_get_input_right(const tsk_streaming_simplifier_t * self)
+{
+    return self->pimpl->simplifier.input_tables.edges.right;
+}
+
+tsk_size_t tsk_streaming_simplifier_get_num_input_edges(const tsk_streaming_simplifier_t * self) {
+    return self->pimpl->simplifier.input_tables.edges.num_rows;
+}
+
+int tsk_streaming_simplifier_free(tsk_streaming_simplifier_t * self) {
+    int ret = 0;
+    ret = simplifier_free(&self->pimpl->simplifier);
+    if (ret != 0) {
+        goto out;
+    }
+    tsk_safe_free(self->pimpl);
 out:
     return ret;
 }
