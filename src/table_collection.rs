@@ -418,6 +418,28 @@ impl TableCollection {
         })
     }
 
+    /// Add a node using default values
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # let mut tables = tskit::TableCollection::new(1.).unwrap();
+    /// let node_defaults = tskit::NodeDefaults::default();
+    /// let rv = tables.add_node_with_defaults(1.0, &node_defaults).unwrap();
+    /// assert_eq!(rv, 0);
+    /// let rv = tables.add_node_with_defaults(2.0, &node_defaults).unwrap();
+    /// assert_eq!(rv, 1);
+    /// ```
+    pub fn add_node_with_defaults<T: Into<crate::Time>, D: crate::node_table::DefaultNodeData>(
+        &mut self,
+        time: T,
+        defaults: &D,
+    ) -> Result<NodeId, TskitError> {
+        crate::node_table::add_row_with_defaults(time, defaults, unsafe {
+            &mut (*self.as_mut_ptr()).nodes
+        })
+    }
+
     /// Add a row with optional metadata to the node table
     ///
     /// # Examples
