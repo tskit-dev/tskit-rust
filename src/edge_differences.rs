@@ -7,20 +7,6 @@ use crate::bindings;
 #[repr(transparent)]
 struct LLEdgeDifferenceIterator(bindings::tsk_diff_iter_t);
 
-impl std::ops::Deref for LLEdgeDifferenceIterator {
-    type Target = bindings::tsk_diff_iter_t;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for LLEdgeDifferenceIterator {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 impl Drop for LLEdgeDifferenceIterator {
     fn drop(&mut self) {
         unsafe { bindings::tsk_diff_iter_free(&mut self.0) };
