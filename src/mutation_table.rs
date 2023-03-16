@@ -155,10 +155,6 @@ impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
 }
 
 /// An immutable view of site table.
-///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct MutationTable {
