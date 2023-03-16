@@ -17,6 +17,9 @@ use bindings::tsk_size_t;
 /// use tskit::NodeId;
 /// use tskit::bindings::tsk_id_t;
 ///
+/// // The default value is null:
+/// assert_eq!(tskit::NodeId::default(), tskit::NodeId::NULL);
+///
 /// let x: tsk_id_t = 1;
 /// let y: NodeId = NodeId::from(x);
 /// assert_eq!(x, y);

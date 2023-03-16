@@ -173,6 +173,12 @@ macro_rules! impl_id_traits {
                 self.partial_cmp(&other.0)
             }
         }
+
+        impl Default for $idtype {
+            fn default() -> Self {
+                Self::NULL
+            }
+        }
     };
 }
 
