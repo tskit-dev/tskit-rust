@@ -399,11 +399,25 @@ impl TableCollection {
     /// by tree sequence simplification.
     => add_migration_with_metadata, self, &mut (*self.as_mut_ptr()).migrations);
 
-    node_table_add_row!(
     /// Add a row to the node table
-    => add_node, self, &mut (*self.as_mut_ptr()).nodes);
+    pub fn add_node<F, T, P, I>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<crate::NodeFlags>,
+        T: Into<crate::Time>,
+        P: Into<crate::PopulationId>,
+        I: Into<crate::IndividualId>,
+    {
+        crate::node_table::add_row(flags, time, population, individual, unsafe {
+            &mut (*self.as_mut_ptr()).nodes
+        })
+    }
 
-    node_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the node table
     ///
     /// # Examples
@@ -424,7 +438,30 @@ impl TableCollection {
     /// assert!(tables.add_node_with_metadata(0, 0.0, -1, -1, &metadata).is_ok());
     /// # }
     /// ```
-    => add_node_with_metadata, self, &mut (*self.as_mut_ptr()).nodes);
+    pub fn add_node_with_metadata<F, T, P, I, N>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+        metadata: &N,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<crate::NodeFlags>,
+        T: Into<crate::Time>,
+        P: Into<crate::PopulationId>,
+        I: Into<crate::IndividualId>,
+        N: crate::metadata::NodeMetadata,
+    {
+        crate::node_table::add_row_with_metadata(
+            flags,
+            time,
+            population,
+            individual,
+            metadata,
+            unsafe { &mut (*self.as_mut_ptr()).nodes },
+        )
+    }
 
     site_table_add_row!(
     /// Add a row to the site table
