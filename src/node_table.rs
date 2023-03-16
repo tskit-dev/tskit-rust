@@ -1,11 +1,87 @@
 use crate::bindings as ll_bindings;
 use crate::metadata;
+use crate::metadata::NodeMetadata;
 use crate::sys;
 use crate::NodeFlags;
 use crate::SizeType;
 use crate::Time;
 use crate::{tsk_id_t, TskitError};
 use crate::{IndividualId, NodeId, PopulationId};
+
+pub(crate) fn add_row_details(
+    flags: ll_bindings::tsk_flags_t,
+    time: f64,
+    population: ll_bindings::tsk_id_t,
+    individual: ll_bindings::tsk_id_t,
+    metadata: *const std::os::raw::c_char,
+    metadata_length: ll_bindings::tsk_size_t,
+    table: *mut ll_bindings::tsk_node_table_t,
+) -> Result<NodeId, TskitError> {
+    let rv = unsafe {
+        ll_bindings::tsk_node_table_add_row(
+            table,
+            flags,
+            time,
+            population,
+            individual,
+            metadata,
+            metadata_length,
+        )
+    };
+    handle_tsk_return_value!(rv, rv.into())
+}
+
+pub(crate) fn add_row<F, T, P, I>(
+    flags: F,
+    time: T,
+    population: P,
+    individual: I,
+    table: *mut ll_bindings::tsk_node_table_t,
+) -> Result<NodeId, TskitError>
+where
+    F: Into<NodeFlags>,
+    T: Into<Time>,
+    P: Into<PopulationId>,
+    I: Into<IndividualId>,
+{
+    add_row_details(
+        flags.into().bits(),
+        time.into().into(),
+        population.into().into(),
+        individual.into().into(),
+        std::ptr::null(),
+        0,
+        table,
+    )
+}
+
+pub(crate) fn add_row_with_metadata<F, T, P, I, N>(
+    flags: F,
+    time: T,
+    population: P,
+    individual: I,
+    metadata: &N,
+    table: *mut ll_bindings::tsk_node_table_t,
+) -> Result<NodeId, TskitError>
+where
+    F: Into<NodeFlags>,
+    T: Into<Time>,
+    P: Into<PopulationId>,
+    I: Into<IndividualId>,
+    N: NodeMetadata,
+{
+    let md = crate::metadata::EncodedMetadata::new(metadata)?;
+    let mdlen = md.len()?;
+    add_row_details(
+        flags.into().bits(),
+        time.into().into(),
+        population.into().into(),
+        individual.into().into(),
+        md.as_ptr(),
+        mdlen.into(),
+        table,
+    )
+}
 
 /// Row of a [`NodeTable`]
 #[derive(Debug)]
@@ -584,8 +660,46 @@ build_owned_table_type!(
 );
 
 impl OwningNodeTable {
-    node_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    node_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    pub fn add_row<F, T, P, I>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<NodeFlags>,
+        T: Into<Time>,
+        P: Into<PopulationId>,
+        I: Into<IndividualId>,
+    {
+        add_row(flags, time, population, individual, self.as_mut_ptr())
+    }
+
+    pub fn add_row_with_metadata<F, T, P, I, N>(
+        &mut self,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+        metadata: &N,
+    ) -> Result<NodeId, TskitError>
+    where
+        F: Into<NodeFlags>,
+        T: Into<Time>,
+        P: Into<PopulationId>,
+        I: Into<IndividualId>,
+        N: NodeMetadata,
+    {
+        add_row_with_metadata(
+            flags,
+            time,
+            population,
+            individual,
+            metadata,
+            self.as_mut_ptr(),
+        )
+    }
 }
 
 #[cfg(test)]
