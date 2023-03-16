@@ -282,7 +282,7 @@ pub struct NodeDefaults {
 ///
 /// See [the book](https://tskit-dev.github.io/tskit-rust/)
 /// for details.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct NodeDefaultsWithMetadata<M>
 where
     M: crate::metadata::NodeMetadata,
@@ -291,6 +291,23 @@ where
     pub population: PopulationId,
     pub individual: IndividualId,
     pub metadata: Option<M>,
+}
+
+// Manual implementation required so that
+// we do not force client code to impl Default
+// for metadata types.
+impl<M> Default for NodeDefaultsWithMetadata<M>
+where
+    M: crate::metadata::NodeMetadata,
+{
+    fn default() -> Self {
+        Self {
+            flags: NodeFlags::default(),
+            population: PopulationId::default(),
+            individual: IndividualId::default(),
+            metadata: None,
+        }
+    }
 }
 
 mod private {
@@ -362,12 +379,6 @@ where
 ///     value: i32,
 /// }
 ///
-/// impl Default for NodeMetadata {
-///     fn default() -> Self {
-///         Self{value: 0}
-///     }
-/// }
-///
 /// impl tskit::metadata::MetadataRoundtrip for NodeMetadata {
 ///     fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
 ///         match serde_json::to_string(self) {
@@ -402,12 +413,6 @@ where
 /// #[derive(serde::Serialize, serde::Deserialize)]
 /// struct NodeMetadata {
 ///     value: i32,
-/// }
-///
-/// impl Default for NodeMetadata {
-///     fn default() -> Self {
-///         Self{value: 0}
-///     }
 /// }
 ///
 /// impl tskit::metadata::MetadataRoundtrip for NodeMetadata {
