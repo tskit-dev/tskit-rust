@@ -138,10 +138,6 @@ impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
 }
 
 /// An immutable view of an edge table.
-///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct EdgeTable {

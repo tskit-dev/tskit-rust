@@ -95,7 +95,7 @@ mod site_table;
 mod sys;
 mod table_collection;
 mod table_iterator;
-pub mod table_views;
+mod table_views;
 mod traits;
 mod tree_interface;
 mod trees;

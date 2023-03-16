@@ -158,10 +158,6 @@ impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
 }
 
 /// An immutable view of a migration table.
-///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct MigrationTable {

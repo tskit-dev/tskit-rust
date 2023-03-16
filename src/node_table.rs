@@ -139,10 +139,6 @@ impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
 }
 
 /// An immtable view of a node table.
-///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct NodeTable {

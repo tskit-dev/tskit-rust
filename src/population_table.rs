@@ -107,10 +107,6 @@ impl<'a> streaming_iterator::StreamingIterator for PopulationTableRowView<'a> {
 }
 
 /// An immutable view of site table.
-///
-/// These are not created directly but are accessed
-/// by types implementing [`std::ops::Deref`] to
-/// [`crate::table_views::TableViews`]
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct PopulationTable {
