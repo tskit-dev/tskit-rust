@@ -165,3 +165,213 @@ fn get_data_from_edge_table() {
         .check_integrity(tskit::TableIntegrityCheckFlags::default())
         .is_ok());
 }
+
+#[test]
+fn test_adding_node_table_row_with_defaults() {
+    let mut tables = tskit::TableCollection::new(10.).unwrap();
+    // ANCHOR: node_defaults
+    let defaults = tskit::NodeDefaults::default();
+    // ANCHOR_END: node_defaults
+    // ANCHOR: add_node_defaults
+    let node = tables.add_node_with_defaults(0.0, &defaults).unwrap();
+    // ANCHOR_END: add_node_defaults
+    assert_eq!(node, 0);
+
+    // ANCHOR: add_node_defaults_sample
+    let node = tables
+        .add_node_with_defaults(
+            0.0,
+            // Create a new, temporary defaults instance
+            &tskit::NodeDefaults {
+                // Mark the new node as a sample
+                flags: tskit::NodeFlags::new_sample(),
+                // Use remaining values from our current defaults
+                ..defaults
+            },
+        )
+        .unwrap();
+    // ANCHOR_END: add_node_defaults_sample
+    assert!(tables.nodes().flags(node).unwrap().is_sample());
+}
+
+macro_rules! impl_node_metadata_traits {
+    () => {
+        impl tskit::metadata::MetadataRoundtrip for NodeMetadata {
+            fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+                match serde_json::to_string(self) {
+                    Ok(x) => Ok(x.as_bytes().to_vec()),
+                    Err(e) => {
+                        Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                    }
+                }
+            }
+            fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError>
+            where
+                Self: Sized,
+            {
+                match serde_json::from_slice(md) {
+                    Ok(v) => Ok(v),
+                    Err(e) => {
+                        Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) })
+                    }
+                }
+            }
+        }
+        impl tskit::metadata::NodeMetadata for NodeMetadata {}
+    };
+}
+
+mod node_metadata {
+    #[derive(Debug, serde::Serialize, serde::Deserialize, Eq, PartialEq)]
+    // ANCHOR: node_metadata
+    pub struct NodeMetadata {
+        pub value: i32,
+    }
+    // ANCHOR_END: node_metadata
+    impl_node_metadata_traits!();
+}
+
+mod node_metadata_clone {
+    #[derive(Debug, Eq, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+    pub struct NodeMetadata {
+        pub value: i32,
+    }
+    impl_node_metadata_traits!();
+}
+
+#[test]
+fn test_adding_node_table_row_with_defaults_and_metadata() {
+    use node_metadata::NodeMetadata;
+    let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    // ANCHOR: node_defaults_with_metadata
+
+    // Create a type alias for brevity
+    type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata<NodeMetadata>;
+    // Default metadata is None
+    let defaults = DefaultsWithMetadata::default();
+
+    // A row with no metadata
+    let n0 = tables.add_node_with_defaults(0.0, &defaults).unwrap();
+
+    // A row with metadata
+    let n1 = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                population: 3.into(),
+                metadata: Some(NodeMetadata { value: 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+
+    // Another row with metadata, different from the last.
+    let n2 = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                population: 1.into(),
+                metadata: Some(NodeMetadata { value: 1234 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+    // ANCHOR_END: node_defaults_with_metadata
+    assert!(tables.nodes().metadata::<NodeMetadata>(n0).is_none());
+    assert_eq!(
+        tables
+            .nodes()
+            .metadata::<NodeMetadata>(n1)
+            .unwrap()
+            .unwrap(),
+        NodeMetadata { value: 42 }
+    );
+    assert_eq!(
+        tables
+            .nodes()
+            .metadata::<NodeMetadata>(n2)
+            .unwrap()
+            .unwrap(),
+        NodeMetadata { value: 1234 }
+    );
+}
+
+#[test]
+fn test_adding_node_table_row_with_defaults_and_metadata_requiring_clone() {
+    use node_metadata_clone::NodeMetadata;
+    let mut tables = tskit::TableCollection::new(10.0).unwrap();
+    type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata<NodeMetadata>;
+
+    // ANCHOR: node_defaults_with_some_metadata_default
+    // What if there is default metadata for all rows?
+    let defaults = DefaultsWithMetadata {
+        metadata: Some(NodeMetadata { value: 42 }),
+        ..Default::default()
+    };
+    // ANCHOR_END: node_defaults_with_some_metadata_default
+
+    // ANCHOR: node_defaults_with_some_metadata_default_add_first_row
+    let n0 = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                metadata: Some(NodeMetadata { value: 2 * 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+    // ANCHOR_END: node_defaults_with_some_metadata_default_add_first_row
+    assert_eq!(
+        tables
+            .nodes()
+            .metadata::<NodeMetadata>(n0)
+            .unwrap()
+            .unwrap(),
+        NodeMetadata { value: 2 * 42 }
+    );
+
+    // But now, we start to cause a problem:
+    // If we don't clone here, our metadata type moves,
+    // so our defaults are moved.
+    // ANCHOR: node_defaults_with_some_metadata_default_add_second_row
+    let n1 = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                population: 6.into(),
+                ..defaults.clone()
+            },
+        )
+        .unwrap();
+    // ANCHOR_END: node_defaults_with_some_metadata_default_add_second_row
+    assert_eq!(
+        tables
+            .nodes()
+            .metadata::<NodeMetadata>(n1)
+            .unwrap()
+            .unwrap(),
+        NodeMetadata { value: 42 }
+    );
+
+    // Now, we have a use-after-move error
+    // if we hadn't cloned in the last step.
+    // ANCHOR: node_defaults_with_some_metadata_default_add_third_row
+    let n2 = tables
+        .add_node_with_defaults(
+            0.0,
+            &DefaultsWithMetadata {
+                individual: 7.into(),
+                ..defaults
+            },
+        )
+        .unwrap();
+    // ANCHOR_END: node_defaults_with_some_metadata_default_add_third_row
+    assert_eq!(
+        tables
+            .nodes()
+            .metadata::<NodeMetadata>(n2)
+            .unwrap()
+            .unwrap(),
+        NodeMetadata { value: 42 }
+    );
+}
