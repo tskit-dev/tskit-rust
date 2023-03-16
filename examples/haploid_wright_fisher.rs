@@ -64,7 +64,7 @@ fn simulate(
     let parent_picker = rand::distributions::Uniform::new(0, popsize);
     let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let mut bookmark = tskit::types::Bookmark::new();
+    let mut bookmark = tskit::types::Bookmark::default();
 
     for birth_time in (0..num_generations).rev() {
         for c in children.iter_mut() {

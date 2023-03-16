@@ -68,6 +68,12 @@ impl Bookmark {
     bookmark_setter!(set_provenances, provenances);
 }
 
+impl Default for Bookmark {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod test {
 
@@ -82,7 +88,7 @@ mod test {
 
     #[test]
     fn test_bookmark_mutability() {
-        let mut b = Bookmark::new();
+        let mut b = Bookmark::default();
         assert_eq!(b.offsets.nodes, 0);
         assert_eq!(b.offsets.edges, 0);
         assert_eq!(b.offsets.individuals, 0);
