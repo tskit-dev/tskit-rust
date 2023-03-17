@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2023-03-17
+
+### Documentation
+
+- Book section on node defaults ([#491](https://github.com/tskit-dev/tskit-rust/pull/491))
+
+### Features
+
+- Allow use of bookmark in examples/haploid_wright_fisher ([#479](https://github.com/tskit-dev/tskit-rust/pull/479))
+- Impl Default for row id types ([#484](https://github.com/tskit-dev/tskit-rust/pull/484))
+- Impl Default for Bookmark ([#486](https://github.com/tskit-dev/tskit-rust/pull/486))
+- Implement Builder pattern for flags ([#487](https://github.com/tskit-dev/tskit-rust/pull/487))
+- Support adding nodes with defaults ([#488](https://github.com/tskit-dev/tskit-rust/pull/488))
+
+### Miscellaneous Tasks
+
+- [**breaking**] Bump MSRV to 1.60.0 ([#478](https://github.com/tskit-dev/tskit-rust/pull/478))
+
+### Refactor
+
+- Remove internal impl Deref/DerefMut for edge diff iterator. ([#482](https://github.com/tskit-dev/tskit-rust/pull/482))
+- Mod table_view is no longer pub ([#483](https://github.com/tskit-dev/tskit-rust/pull/483))
+- [**breaking**] TableCollection::simplify now takes &[NodeId] ([#485](https://github.com/tskit-dev/tskit-rust/pull/485))
+- Replace macros with fn for adding node table rows ([#489](https://github.com/tskit-dev/tskit-rust/pull/489))
+- Manually impl Default for NodeDefaultsWithMetadata ([#490](https://github.com/tskit-dev/tskit-rust/pull/490))
+
+## [0.14.0] - 2023-03-16
+
+### Documentation
+
+- Book section on node defaults ([#491](https://github.com/tskit-dev/tskit-rust/pull/491))
+
+### Features
+
+- Allow use of bookmark in examples/haploid_wright_fisher ([#479](https://github.com/tskit-dev/tskit-rust/pull/479))
+- Impl Default for row id types ([#484](https://github.com/tskit-dev/tskit-rust/pull/484))
+- Impl Default for Bookmark ([#486](https://github.com/tskit-dev/tskit-rust/pull/486))
+- Implement Builder pattern for flags ([#487](https://github.com/tskit-dev/tskit-rust/pull/487))
+- Support adding nodes with defaults ([#488](https://github.com/tskit-dev/tskit-rust/pull/488))
+
+### Miscellaneous Tasks
+
+- [**breaking**] Bump MSRV to 1.60.0 ([#478](https://github.com/tskit-dev/tskit-rust/pull/478))
+
+### Refactor
+
+- Remove internal impl Deref/DerefMut for edge diff iterator. ([#482](https://github.com/tskit-dev/tskit-rust/pull/482))
+- Mod table_view is no longer pub ([#483](https://github.com/tskit-dev/tskit-rust/pull/483))
+- [**breaking**] TableCollection::simplify now takes &[NodeId] ([#485](https://github.com/tskit-dev/tskit-rust/pull/485))
+- Replace macros with fn for adding node table rows ([#489](https://github.com/tskit-dev/tskit-rust/pull/489))
+- Manually impl Default for NodeDefaultsWithMetadata ([#490](https://github.com/tskit-dev/tskit-rust/pull/490))
+
 ## [0.12.0] - 2022-12-23
 
 ### Documentation
