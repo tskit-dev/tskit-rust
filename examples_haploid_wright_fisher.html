@@ -32,6 +32,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -69,10 +70,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -187,7 +190,7 @@ The code is a reimplementation of an example program distributed with <code>tski
     let parent_picker = rand::distributions::Uniform::new(0, popsize);
     let breakpoint_generator = rand::distributions::Uniform::new(0.0, 1.0);
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    let mut bookmark = tskit::types::Bookmark::new();
+    let mut bookmark = tskit::types::Bookmark::default();
 
     for birth_time in (0..num_generations).rev() {
         for c in children.iter_mut() {
@@ -279,5 +282,6 @@ The code is a reimplementation of an example program distributed with <code>tski
         <!-- Custom JS scripts -->
 
 
+    </div>
     </body>
 </html>

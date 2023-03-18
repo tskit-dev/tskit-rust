@@ -32,6 +32,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -69,10 +70,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -165,6 +168,124 @@ To catch such errors, we must explicitly check table integrity (see <a href="tab
 <p>Again, we can take advantage of being able to pass in any type that is <code>Into&lt;_&gt;</code> the required newtype:</p>
 <pre><code class="language-rust  noplaygound  ignore">        let node_id = tables.add_node(0, 0.0, -1, -1).unwrap();</code></pre>
 <p>See the <a href="https://docs.rs/tskit">API docs</a> for more details and examples.</p>
+<h3 id="adding-nodes-using-default-values"><a class="header" href="#adding-nodes-using-default-values">Adding nodes using default values</a></h3>
+<p>This section is more advanced and may be skipped during a first read.</p>
+<p>For some tables it may be common to input the same values over and over for some fields when adding rows.
+Let's take a look at how to use default values when adding rows to a node table.</p>
+<p>Default instances of <code>NodeDefaults</code> contain default values for the <code>flags</code>, <code>individual</code>, and <code>population</code> fields:</p>
+<pre><code class="language-rust  noplaygound  ignore">    let defaults = tskit::NodeDefaults::default();</code></pre>
+<p>Add a node with these values and a given birth time:</p>
+<pre><code class="language-rust  noplaygound  ignore">    let node = tables.add_node_with_defaults(0.0, &amp;defaults).unwrap();</code></pre>
+<p>We can use struct update syntax to create a new node marked as a sample while re-using our other defaults:</p>
+<pre><code class="language-rust  noplaygound  ignore">    let node = tables
+        .add_node_with_defaults(
+            0.0,
+            // Create a new, temporary defaults instance
+            &amp;tskit::NodeDefaults {
+                // Mark the new node as a sample
+                flags: tskit::NodeFlags::new_sample(),
+                // Use remaining values from our current defaults
+                ..defaults
+            },
+        )
+        .unwrap();</code></pre>
+<p>See the <a href="https://docs.rs/tskit/latest/tskit/struct.NodeDefaults.html"><code>NodeDefaults</code></a> section of the API reference for more.</p>
+<h4 id="metadata"><a class="header" href="#metadata">Metadata</a></h4>
+<p><a href="metadata.html#Metadata">Metadata</a> can complicate the picture a bit:</p>
+<ul>
+<li>Metadata types are defined by the client and are thus a generic in the <code>tskit</code> API.</li>
+<li>We do not want to impose too many trait bounds on the client-defined types.</li>
+<li>Metadata is optional on a per-row basis for any given table.</li>
+</ul>
+<p><a href="https://docs.rs/tskit/latest/tskit/struct.NodeDefaultsWithMetadata.html"><code>NodeDefaultsWithMetadata</code></a> handles the case where rows may or may not have metadata.
+The metadata type is generic with trait bound <a href="https://docs.rs/tskit/latest/tskit/metadata/trait.NodeMetadata.html"><code>tskit::NodeMetadata</code></a>.
+Because metadata are optional per-row, any metadata defaults are stored as an <a href="https://doc.rust-lang.org/std/option/"><code>Option</code></a>.</p>
+<p>For the following examples, this will be our metadata type:</p>
+<pre><code class="language-rust  noplaygound  ignore">    pub struct NodeMetadata {
+        pub value: i32,
+    }</code></pre>
+<h5 id="case-1-no-default-metadata"><a class="header" href="#case-1-no-default-metadata">Case 1: no default metadata</a></h5>
+<p>A common use case is that the metadata differs for every row.
+For this case, it makes sense for the default value to be the <code>None</code> variant of the <code>Option</code>. </p>
+<p>This case is straightforward:</p>
+<pre><code class="language-rust  noplaygound  ignore">
+    // Create a type alias for brevity
+    type DefaultsWithMetadata = tskit::NodeDefaultsWithMetadata&lt;NodeMetadata&gt;;
+    // Default metadata is None
+    let defaults = DefaultsWithMetadata::default();
+
+    // A row with no metadata
+    let n0 = tables.add_node_with_defaults(0.0, &amp;defaults).unwrap();
+
+    // A row with metadata
+    let n1 = tables
+        .add_node_with_defaults(
+            0.0,
+            &amp;DefaultsWithMetadata {
+                population: 3.into(),
+                metadata: Some(NodeMetadata { value: 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();
+
+    // Another row with metadata, different from the last.
+    let n2 = tables
+        .add_node_with_defaults(
+            0.0,
+            &amp;DefaultsWithMetadata {
+                population: 1.into(),
+                metadata: Some(NodeMetadata { value: 1234 }),
+                ..defaults
+            },
+        )
+        .unwrap();</code></pre>
+<h5 id="case-2-default-metadata"><a class="header" href="#case-2-default-metadata">Case 2: default metadata</a></h5>
+<p>TL;DR:</p>
+<ul>
+<li>If table row defaults <em>include</em> metadata, you can run into use-after-move issues.
+Fortunately, the compiler will catch this as an error.</li>
+<li>The solution is for your metadata type to implement <code>Clone</code>.</li>
+</ul>
+<p>Consider the following case:</p>
+<pre><code class="language-rust  noplaygound  ignore">    // What if there is default metadata for all rows?
+    let defaults = DefaultsWithMetadata {
+        metadata: Some(NodeMetadata { value: 42 }),
+        ..Default::default()
+    };</code></pre>
+<p>Imagine that the first row we add uses different metadata but all the other default values:</p>
+<pre><code class="language-rust  noplaygound  ignore">    let n0 = tables
+        .add_node_with_defaults(
+            0.0,
+            &amp;DefaultsWithMetadata {
+                metadata: Some(NodeMetadata { value: 2 * 42 }),
+                ..defaults
+            },
+        )
+        .unwrap();</code></pre>
+<p>Nothing interesting has happened.
+However, let's take a look at what we need to do if our next row uses a non-default <code>population</code> field and the default metadata:</p>
+<pre><code class="language-rust  noplaygound  ignore">    let n1 = tables
+        .add_node_with_defaults(
+            0.0,
+            &amp;DefaultsWithMetadata {
+                population: 6.into(),
+                ..defaults.clone()
+            },
+        )
+        .unwrap();</code></pre>
+<p>Note the call to <code>..defaults.clone()</code>.
+(For that call to compile, <code>NodeMetadata</code> must implement <code>Clone</code>!.) 
+Without that, our <code>defaults</code> instance would have <em>moved</em>, leading to a move-after-use compiler error when we add a third row:</p>
+<pre><code class="language-rust  noplaygound  ignore">    let n2 = tables
+        .add_node_with_defaults(
+            0.0,
+            &amp;DefaultsWithMetadata {
+                individual: 7.into(),
+                ..defaults
+            },
+        )
+        .unwrap();</code></pre>
 
                     </main>
 
@@ -214,5 +335,6 @@ To catch such errors, we must explicitly check table integrity (see <a href="tab
         <!-- Custom JS scripts -->
 
 
+    </div>
     </body>
 </html>
