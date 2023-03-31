@@ -1,0 +1,27 @@
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+name: semver-checks
+
+jobs:
+  semver:
+    name: Run cargo-semver-checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+      - name: Install cargo-semver-checks
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-semver-checks
+      - name: run check-release
+        run: cargo semver-checks check-release
