@@ -42,7 +42,7 @@ bitflags! {
     /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_POPULATIONS));
     /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_SITES));
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct SimplificationOptions: RawFlags {
         /// Default behavior
@@ -188,7 +188,7 @@ bitflags! {
     /// assert!(f.contains(tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
     /// assert!(f.contains(tskit::TableClearOptions::CLEAR_PROVENANCE);
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TableClearOptions : RawFlags {
         /// Default behavior.
@@ -255,7 +255,7 @@ bitflags! {
     /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_PROVENANCE));
     /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_METADATA));
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TableEqualityOptions : RawFlags {
         /// Default behavior.
@@ -302,7 +302,7 @@ bitflags! {
     /// let f = tskit::TableSortOptions::default().no_check_integrity();
     /// assert_eq!(f, tskit::TableSortOptions::NO_CHECK_INTEGRITY);
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TableSortOptions : RawFlags {
         /// Default behavior.
@@ -329,7 +329,7 @@ bitflags! {
     /// let f = tskit::IndividualTableSortOptions::default();
     /// assert_eq!(f, tskit::IndividualTableSortOptions::NONE);
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct IndividualTableSortOptions : RawFlags {
         /// Default behavior.
@@ -363,7 +363,7 @@ bitflags! {
     /// let f = tskit::TreeFlags::default().no_sample_counts();
     /// assert_eq!(f, tskit::TreeFlags::NO_SAMPLE_COUNTS);
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TreeFlags: RawFlags {
         /// Default behavior.
@@ -406,7 +406,7 @@ bitflags! {
     /// when outputting a [`crate::TableCollection`], then
     /// call [`crate::TableCollection::build_index`] prior to calling
     /// [`crate::TableCollection::dump`].
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TableOutputOptions : RawFlags {
         const NONE = 0;
@@ -435,7 +435,7 @@ bitflags! {
     /// assert_eq!(f, tskit::TreeSequenceFlags::BUILD_INDEXES);
     /// ```
     ///
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TreeSequenceFlags: RawFlags {
         /// Default behavior
@@ -507,7 +507,7 @@ bitflags! {
     /// let f = tskit::TableIntegrityCheckFlags::default().check_trees();
     /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_TREES);
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct TableIntegrityCheckFlags: RawFlags {
         /// Default behavior is a set of basic checks
@@ -588,7 +588,7 @@ bitflags! {
     /// let f = tskit::NodeFlags::default().mark_sample();
     /// assert_eq!(f, tskit::NodeFlags::IS_SAMPLE);
     /// ```
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     pub struct NodeFlags : RawFlags {
         /// Default (empty)
@@ -628,7 +628,7 @@ impl NodeFlags {
 }
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
     #[repr(transparent)]
     /// Individual flags
     pub struct IndividualFlags : RawFlags {
@@ -671,7 +671,7 @@ impl From<RawFlags> for NodeFlags {
         // Safety: node flags can contain user-defined values.
         // It is an error on the user's part to define flags
         // in the first 16 bits, as per the C API docs.
-        unsafe { Self::from_bits_unchecked(flags) }
+        Self::from_bits_retain(flags)
     }
 }
 
@@ -680,7 +680,7 @@ impl From<RawFlags> for IndividualFlags {
         // Safety: node flags can contain user-defined values.
         // It is an error on the user's part to define flags
         // in the first 16 bits, as per the C API docs.
-        unsafe { Self::from_bits_unchecked(flags) }
+        Self::from_bits_retain(flags)
     }
 }
 
