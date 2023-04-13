@@ -19,14 +19,20 @@ use std::ptr::NonNull;
 /// A Tree.
 ///
 /// Wrapper around `tsk_tree_t`.
-pub struct Tree {
+pub struct Tree<'treeseq> {
     pub(crate) inner: mbox::MBox<ll_bindings::tsk_tree_t>,
+    // NOTE: this reference exists becaust tsk_tree_t
+    // contains a NON-OWNING pointer to tsk_treeseq_t.
+    // Thus, we could theoretically cause UB without
+    // tying the rust-side object liftimes together.
+    #[allow(dead_code)]
+    treeseq: &'treeseq TreeSequence,
     api: TreeInterface,
     current_tree: i32,
     advanced: bool,
 }
 
-impl Drop for Tree {
+impl<'treeseq> Drop for Tree<'treeseq> {
     fn drop(&mut self) {
         // SAFETY: Mbox<_> cannot hold a NULL ptr
         let rv = unsafe { tsk_tree_free(self.inner.as_mut()) };
@@ -34,21 +40,21 @@ impl Drop for Tree {
     }
 }
 
-impl Deref for Tree {
+impl<'treeseq> Deref for Tree<'treeseq> {
     type Target = TreeInterface;
     fn deref(&self) -> &Self::Target {
         &self.api
     }
 }
 
-impl DerefMut for Tree {
+impl<'treeseq> DerefMut for Tree<'treeseq> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.api
     }
 }
 
-impl Tree {
-    fn new<F: Into<TreeFlags>>(ts: &TreeSequence, flags: F) -> Result<Self, TskitError> {
+impl<'treeseq> Tree<'treeseq> {
+    fn new<F: Into<TreeFlags>>(ts: &'treeseq TreeSequence, flags: F) -> Result<Self, TskitError> {
         let flags = flags.into();
 
         // SAFETY: this is the type we want :)
@@ -86,6 +92,7 @@ impl Tree {
             rv,
             Tree {
                 inner: tree,
+                treeseq: ts,
                 current_tree: 0,
                 advanced: false,
                 api
@@ -94,8 +101,8 @@ impl Tree {
     }
 }
 
-impl streaming_iterator::StreamingIterator for Tree {
-    type Item = Tree;
+impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
+    type Item = Tree<'ts>;
     fn advance(&mut self) {
         let rv = if self.current_tree == 0 {
             unsafe { ll_bindings::tsk_tree_first(self.as_mut_ptr()) }
@@ -113,7 +120,7 @@ impl streaming_iterator::StreamingIterator for Tree {
         }
     }
 
-    fn get(&self) -> Option<&Tree> {
+    fn get(&self) -> Option<&Self::Item> {
         match self.advanced {
             true => Some(self),
             false => None,
@@ -121,7 +128,7 @@ impl streaming_iterator::StreamingIterator for Tree {
     }
 }
 
-impl streaming_iterator::DoubleEndedStreamingIterator for Tree {
+impl<'ts> streaming_iterator::DoubleEndedStreamingIterator for Tree<'ts> {
     fn advance_back(&mut self) {
         let rv = if self.current_tree == 0 {
             unsafe { ll_bindings::tsk_tree_last(self.as_mut_ptr()) }
@@ -334,6 +341,21 @@ impl TreeSequence {
     /// }
     /// ```
     ///
+    /// ## Coupled liftimes
+    ///
+    /// A `Tree`'s lifetime is tied to that of its tree sequence:
+    ///
+    /// ```{compile_fail}
+    /// # use streaming_iterator::StreamingIterator;
+    /// # use streaming_iterator::DoubleEndedStreamingIterator;
+    /// # let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// # tables.build_index();
+    /// let tree_sequence = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
+    /// let mut tree_iterator = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// drop(tree_sequence);
+    /// while let Some(tree) = tree_iterator.next() { // compile fail.
+    /// }
+    /// ```
     /// # Warning
     ///
     /// The following code results in an infinite loop.

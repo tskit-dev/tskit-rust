@@ -161,7 +161,7 @@ proptest! {
                     assert!(b2 >= 0, "{}", b2);
                     assert!(f64::from(b) - x <= 1e-8);
                 }
-            }
+            };
         }
     }
 }
