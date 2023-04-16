@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.1] - 2023-04-16
+
+### Bug Fixes
+
+- Tree now tied to TreeSequence lifetime ([#497](https://github.com/tskit-dev/tskit-rust/pull/497))
+
+### Miscellaneous Tasks
+
+- Update delegate requirement from 0.8.0 to 0.9.0 ([#494](https://github.com/tskit-dev/tskit-rust/pull/494))
+
 ## [0.14.0] - 2023-03-17
 
 ### Documentation
