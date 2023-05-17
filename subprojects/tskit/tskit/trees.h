@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019-2022 Tskit Developers
+ * Copyright (c) 2019-2023 Tskit Developers
  * Copyright (c) 2015-2018 University of Oxford
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -59,9 +59,6 @@ extern "C" {
 #define TSK_DIR_FORWARD 1
 #define TSK_DIR_REVERSE -1
 
-/* For the edge diff iterator */
-#define TSK_INCLUDE_TERMINAL        (1 << 0)
-
 /**
 @defgroup API_FLAGS_TS_INIT_GROUP :c:func:`tsk_treeseq_init` specific flags.
 @{
@@ -89,6 +86,9 @@ typedef struct {
     bool discrete_genome;
     /* Are all time values discrete? */
     bool discrete_time;
+    /* Min and max time in node table and mutation table */
+    double min_time;
+    double max_time;
     /* Breakpoints along the sequence, including 0 and L. */
     double *breakpoints;
     /* If a node is a sample, map to its index in the samples list */
@@ -257,30 +257,6 @@ typedef struct {
     tsk_id_t left_index;
     tsk_id_t right_index;
 } tsk_tree_t;
-
-/* Diff iterator. */
-typedef struct _tsk_edge_list_node_t {
-    tsk_edge_t edge;
-    struct _tsk_edge_list_node_t *next;
-    struct _tsk_edge_list_node_t *prev;
-} tsk_edge_list_node_t;
-
-typedef struct {
-    tsk_edge_list_node_t *head;
-    tsk_edge_list_node_t *tail;
-} tsk_edge_list_t;
-
-typedef struct {
-    tsk_size_t num_nodes;
-    tsk_size_t num_edges;
-    double tree_left;
-    const tsk_treeseq_t *tree_sequence;
-    tsk_id_t insertion_index;
-    tsk_id_t removal_index;
-    tsk_id_t tree_index;
-    tsk_id_t last_index;
-    tsk_edge_list_node_t *edge_list_nodes;
-} tsk_diff_iter_t;
 
 /****************************************************************************/
 /* Tree sequence.*/
@@ -749,6 +725,30 @@ then this flag will be true
 bool tsk_treeseq_get_discrete_time(const tsk_treeseq_t *self);
 
 /**
+@brief Get the min time in node table and mutation table
+
+@rst
+The times stored in both the node and mutation tables are considered.
+@endrst
+
+@param self A pointer to a tsk_treeseq_t object.
+@return Returns the min time of all nodes and mutations.
+*/
+double tsk_treeseq_get_min_time(const tsk_treeseq_t *self);
+
+/**
+@brief Get the max time in node table and mutation table
+
+@rst
+The times stored in both the node and mutation tables are considered.
+@endrst
+
+@param self A pointer to a tsk_treeseq_t object.
+@return Returns the max time of all nodes and mutations.
+*/
+double tsk_treeseq_get_max_time(const tsk_treeseq_t *self);
+
+/**
 @brief Get a node by its index
 
 @rst
@@ -1087,10 +1087,6 @@ int tsk_tree_copy(const tsk_tree_t *self, tsk_tree_t *dest, tsk_flags_t options)
 @{
 */
 
-/** @brief Value returned by seeking methods when they have successfully
-    seeked to a non-null tree. */
-#define TSK_TREE_OK 1
-
 /**
 @brief Seek to the first tree in the sequence.
 
@@ -1196,12 +1192,6 @@ we will have ``position < tree.interval.right``.
 
 Seeking to a position currently covered by the tree is
 a constant time operation.
-
-.. warning::
-   The current implementation of ``seek`` does **not** provide efficient
-   random access to arbitrary positions along the genome. However,
-   sequentially seeking in either direction is as efficient as calling
-   :c:func:`tsk_tree_next` or :c:func:`tsk_tree_prev` directly.
 @endrst
 
 @param self A pointer to an initialised tsk_tree_t object.
@@ -1211,6 +1201,22 @@ a constant time operation.
 @return Return 0 on success or a negative value on failure.
 */
 int tsk_tree_seek(tsk_tree_t *self, double position, tsk_flags_t options);
+
+/**
+@brief Seek to a specific tree in a tree sequence.
+
+@rst
+Set the state of this tree to reflect the tree in parent
+tree sequence whose index is ``0 <= tree < num_trees``.
+@endrst
+
+@param self A pointer to an initialised tsk_tree_t object.
+@param tree The target tree index.
+@param options Seek options. Currently unused. Set to 0 for compatibility
+    with future versions of tskit.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_tree_seek_index(tsk_tree_t *self, tsk_id_t tree, tsk_flags_t options);
 
 /** @} */
 
@@ -1715,16 +1721,8 @@ bool tsk_tree_is_sample(const tsk_tree_t *self, tsk_id_t u);
  */
 bool tsk_tree_equals(const tsk_tree_t *self, const tsk_tree_t *other);
 
-/****************************************************************************/
-/* Diff iterator */
-/****************************************************************************/
-
-int tsk_diff_iter_init(
+int tsk_diff_iter_init_from_ts(
     tsk_diff_iter_t *self, const tsk_treeseq_t *tree_sequence, tsk_flags_t options);
-int tsk_diff_iter_free(tsk_diff_iter_t *self);
-int tsk_diff_iter_next(tsk_diff_iter_t *self, double *left, double *right,
-    tsk_edge_list_t *edges_out, tsk_edge_list_t *edges_in);
-void tsk_diff_iter_print_state(const tsk_diff_iter_t *self, FILE *out);
 
 #ifdef __cplusplus
 }

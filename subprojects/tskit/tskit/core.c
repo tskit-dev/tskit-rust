@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019-2022 Tskit Developers
+ * Copyright (c) 2019-2023 Tskit Developers
  * Copyright (c) 2015-2018 University of Oxford
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -222,6 +222,10 @@ tsk_strerror_internal(int err)
         case TSK_ERR_SEEK_OUT_OF_BOUNDS:
             ret = "Tree seek position out of bounds. (TSK_ERR_SEEK_OUT_OF_BOUNDS)";
             break;
+        case TSK_ERR_KEEP_ROWS_MAP_TO_DELETED:
+            ret = "One of the kept rows in the table refers to a deleted row. "
+                  "(TSK_ERR_KEEP_ROWS_MAP_TO_DELETED)";
+            break;
 
         /* Edge errors */
         case TSK_ERR_NULL_PARENT:
@@ -356,7 +360,8 @@ tsk_strerror_internal(int err)
                   "(TSK_ERR_TABLES_BAD_INDEXES)";
             break;
         case TSK_ERR_TABLE_OVERFLOW:
-            ret = "Table too large; cannot allocate more than 2**31 rows. "
+            ret = "Table too large; cannot allocate more than 2**31 rows. This error "
+                  "is often caused by a lack of simplification when simulating. "
                   "(TSK_ERR_TABLE_OVERFLOW)";
             break;
         case TSK_ERR_COLUMN_OVERFLOW:
