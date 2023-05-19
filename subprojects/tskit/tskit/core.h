@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019-2022 Tskit Developers
+ * Copyright (c) 2019-2023 Tskit Developers
  * Copyright (c) 2015-2018 University of Oxford
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -123,6 +123,15 @@ specify options to API functions.
 typedef uint32_t tsk_flags_t;
 #define TSK_FLAGS_STORAGE_TYPE KAS_UINT32
 
+/**
+@brief Boolean type.
+
+@rst
+Fixed-size (1 byte) boolean values.
+@endrst
+*/
+typedef uint8_t tsk_bool_t;
+
 // clang-format off
 /**
 @defgroup API_VERSION_GROUP API version macros.
@@ -143,7 +152,7 @@ to the API or ABI are introduced, i.e., the addition of a new function.
 The library patch version. Incremented when any changes not relevant to the
 to the API or ABI are introduced, i.e., internal refactors of bugfixes.
 */
-#define TSK_VERSION_PATCH   1
+#define TSK_VERSION_PATCH   2
 /** @} */
 
 /*
@@ -356,6 +365,12 @@ A time value was non-finite (NaN counts as finite)
 A genomic position was non-finite
 */
 #define TSK_ERR_GENOME_COORDS_NONFINITE                             -211
+/**
+One of the rows in the retained table refers to a row that has been
+deleted.
+*/
+#define TSK_ERR_KEEP_ROWS_MAP_TO_DELETED                            -212
+
 /** @} */
 
 /**

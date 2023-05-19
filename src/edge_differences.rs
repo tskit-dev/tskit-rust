@@ -19,8 +19,19 @@ impl LLEdgeDifferenceIterator {
         flags: bindings::tsk_flags_t,
     ) -> Result<Self, crate::TskitError> {
         let mut inner = std::mem::MaybeUninit::<bindings::tsk_diff_iter_t>::uninit();
-        let code =
-            unsafe { bindings::tsk_diff_iter_init(inner.as_mut_ptr(), treeseq.as_ptr(), flags) };
+        let treeseq_ptr = treeseq.as_ptr();
+        assert!(!treeseq_ptr.is_null());
+        // SAFETY: treeseq_ptr is not null
+        let tables_ptr =
+            unsafe { (*treeseq_ptr).tables } as *const bindings::tsk_table_collection_t;
+        assert!(!tables_ptr.is_null());
+        // SAFETY: tables_ptr is not null,
+        // init of inner will be handled by tsk_diff_iter_init
+        let num_trees: i32 = treeseq.num_trees().try_into()?;
+        let code = unsafe {
+            bindings::tsk_diff_iter_init(inner.as_mut_ptr(), tables_ptr, num_trees, flags)
+        };
+        // SAFETY: tsk_diff_iter_init has initialized our object
         handle_tsk_return_value!(code, Self(unsafe { inner.assume_init() }))
     }
 }
