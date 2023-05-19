@@ -102,12 +102,6 @@ mod util;
 
 use bindings::tsk_id_t;
 
-// tskit defines this via a type cast
-// in a macro. bindgen thus misses it.
-// See bindgen issue 316.
-/// "Null" identifier value.
-pub(crate) const TSK_NULL: tsk_id_t = -1;
-
 pub use edge_differences::*;
 pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
 pub use error::TskitError;
