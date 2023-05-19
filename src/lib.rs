@@ -74,9 +74,7 @@
 #![allow(non_snake_case)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 
-#[allow(deref_nullptr)]
-#[allow(rustdoc::broken_intra_doc_links)]
-pub mod bindings;
+pub use sys::bindings;
 
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_differences;

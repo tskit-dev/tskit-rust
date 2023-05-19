@@ -4,7 +4,7 @@ use std::ptr::NonNull;
 use mbox::MBox;
 use thiserror::Error;
 
-use crate::bindings;
+pub mod bindings;
 
 use bindings::tsk_edge_table_t;
 use bindings::tsk_individual_table_t;
