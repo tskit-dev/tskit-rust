@@ -81,7 +81,7 @@ macro_rules! impl_id_traits {
     ($idtype: ty) => {
         impl $idtype {
             /// NULL value for this type.
-            pub const NULL: $idtype = Self($crate::TSK_NULL);
+            pub const NULL: $idtype = Self($crate::sys::TSK_NULL);
 
             /// Return `true` is `self == Self::NULL`
             pub fn is_null(&self) -> bool {

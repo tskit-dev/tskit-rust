@@ -6,6 +6,12 @@ use thiserror::Error;
 
 pub mod bindings;
 
+// tskit defines this via a type cast
+// in a macro. bindgen thus misses it.
+// See bindgen issue 316.
+/// "Null" identifier value.
+pub(crate) const TSK_NULL: bindings::tsk_id_t = -1;
+
 use bindings::tsk_edge_table_t;
 use bindings::tsk_individual_table_t;
 use bindings::tsk_migration_table_t;
