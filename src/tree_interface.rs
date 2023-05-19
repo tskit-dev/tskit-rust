@@ -1,13 +1,13 @@
 use crate::bindings as ll_bindings;
 use crate::sys;
 use crate::tsk_id_t;
-use crate::tsk_size_t;
 use crate::NodeId;
 use crate::Position;
 use crate::SizeType;
 use crate::Time;
 use crate::TreeFlags;
 use crate::TskitError;
+use ll_bindings::tsk_size_t;
 use std::ptr::NonNull;
 
 pub struct TreeInterface {

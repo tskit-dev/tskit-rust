@@ -104,7 +104,6 @@ mod util;
 pub use bindings::tsk_flags_t;
 
 use bindings::tsk_id_t;
-use bindings::tsk_size_t;
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.

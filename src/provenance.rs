@@ -13,7 +13,8 @@
 use crate::bindings as ll_bindings;
 use crate::sys;
 use crate::SizeType;
-use crate::{tsk_id_t, tsk_size_t, ProvenanceId};
+use crate::{tsk_id_t, ProvenanceId};
+use ll_bindings::tsk_size_t;
 
 #[derive(Eq, Debug)]
 /// Row of a [`ProvenanceTable`].
