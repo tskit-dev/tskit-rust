@@ -146,9 +146,15 @@ mod test_adding_rows_without_metadata {
     #[test]
     fn test_adding_node() {
         {
-            let tables =
-                add_row_without_metadata!(nodes, add_node, tskit::TSK_NODE_IS_SAMPLE, 0.1, -1, -1); // flags, time, population,
-                                                                                                    // individual
+            let tables = add_row_without_metadata!(
+                nodes,
+                add_node,
+                tskit::NodeFlags::new_sample(),
+                0.1,
+                -1,
+                -1
+            ); // flags, time, population,
+               // individual
             assert!(tables
                 .nodes()
                 .flags_slice()

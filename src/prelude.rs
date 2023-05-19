@@ -1,7 +1,6 @@
 //! Export commonly-use types and traits
 
 pub use crate::tsk_flags_t;
-pub use crate::TSK_NODE_IS_SAMPLE;
 pub use streaming_iterator::DoubleEndedStreamingIterator;
 pub use streaming_iterator::StreamingIterator;
 pub use {

@@ -100,10 +100,6 @@ mod trees;
 pub mod types;
 mod util;
 
-// re-export fundamental constants that
-// we can't live without
-pub use bindings::TSK_NODE_IS_SAMPLE;
-
 // re-export types, too
 pub use bindings::tsk_flags_t;
 

@@ -543,7 +543,7 @@ impl NodeTable {
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// if let Some(flags) = tables.nodes().flags(0) {
     /// // then node id 0 is a valid row id
     /// # assert!(flags.is_sample());
@@ -714,10 +714,10 @@ impl NodeTable {
         Some(view)
     }
     /// Obtain a vector containing the indexes ("ids")
-    /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
+    /// of all nodes for which [`crate::NodeFlags::is_sample`]
     /// is `true`.
     pub fn samples_as_vector(&self) -> Vec<NodeId> {
-        self.create_node_id_vector(|row| row.flags.contains(NodeFlags::IS_SAMPLE))
+        self.create_node_id_vector(|row| row.flags.contains(NodeFlags::new_sample()))
     }
 
     /// Obtain a vector containing the indexes ("ids") of all nodes
@@ -746,7 +746,7 @@ impl NodeTable {
     /// ```compile_fail
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// let time = tables.nodes().time_slice_mut();
     /// println!("{}", time.len()); // ERROR: the temporary node table is dropped by now
     /// ```
@@ -756,7 +756,7 @@ impl NodeTable {
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// for time in tables.nodes_mut().time_slice_mut() {
     ///     *time = 55.0.into(); // change each node's time value
     /// }
@@ -787,7 +787,7 @@ impl NodeTable {
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// let flags = tables.nodes_mut().flags_slice_mut();
     /// for flag in flags {
     /// // Can do something...
@@ -798,7 +798,7 @@ impl NodeTable {
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// for flag in  tables.nodes_mut().flags_slice_mut() {
     /// # assert!(flag.is_sample());
     /// }
@@ -812,9 +812,9 @@ impl NodeTable {
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// for flag in tables.nodes_mut().flags_slice_mut() {
-    ///     flag.remove(tskit::NodeFlags::IS_SAMPLE);
+    ///     flag.remove(tskit::NodeFlags::new_sample());
     /// }
     /// assert!(!tables.nodes_mut().flags_slice_mut().iter().any(|f| f.is_sample()));
     /// assert!(tables.nodes().samples_as_vector().is_empty());
@@ -823,7 +823,7 @@ impl NodeTable {
     /// ```
     /// # use tskit::prelude::*;
     /// # let mut tables = tskit::TableCollection::new(10.).unwrap();
-    /// # tables.add_node(tskit::NodeFlags::IS_SAMPLE, 10.0, -1, -1).unwrap();
+    /// # tables.add_node(tskit::NodeFlags::new_sample(), 10.0, -1, -1).unwrap();
     /// let flags = tables.nodes_mut().flags_slice_mut().to_vec();
     /// # assert!(flags.iter().all(|f| f.is_sample()));
     /// ```
@@ -835,7 +835,7 @@ impl NodeTable {
     ///
     /// ```
     /// let mut nodes = tskit::OwningNodeTable::default();
-    /// assert!(nodes.add_row(tskit::NodeFlags::IS_SAMPLE, 10., -1, -1).is_ok());
+    /// assert!(nodes.add_row(tskit::NodeFlags::new_sample(), 10., -1, -1).is_ok());
     /// # assert_eq!(nodes.num_rows(), 1);
     /// let flags = nodes.flags_slice_mut();
     /// # assert_eq!(flags.len(), 1);

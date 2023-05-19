@@ -16,7 +16,7 @@ fn initialize_from_table_collection() {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -24,7 +24,7 @@ fn initialize_from_table_collection() {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -32,7 +32,7 @@ fn initialize_from_table_collection() {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -40,7 +40,7 @@ fn initialize_from_table_collection() {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
