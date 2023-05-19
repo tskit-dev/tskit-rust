@@ -137,9 +137,9 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "bindings"))]
 proptest! {
-#[test]
+    #[test]
     fn test_simulate_proptest(seed in any::<u64>(),
                               num_generations in 50..100i32,
                               simplify_interval in 1..100i32,

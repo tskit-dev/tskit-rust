@@ -1,4 +1,3 @@
-use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
 use crate::Position;
@@ -7,6 +6,7 @@ use crate::Time;
 use crate::TskitError;
 use crate::{MigrationId, NodeId, PopulationId};
 use ll_bindings::tsk_id_t;
+use sys::bindings as ll_bindings;
 
 /// Row of a [`MigrationTable`]
 #[derive(Debug)]
@@ -417,7 +417,7 @@ build_owned_table_type!(
     => OwningMigrationTable,
     MigrationTable,
     crate::sys::LLOwningMigrationTable,
-    crate::bindings::tsk_migration_table_t
+    crate::sys::bindings::tsk_migration_table_t
 );
 
 impl OwningMigrationTable {

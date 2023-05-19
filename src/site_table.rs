@@ -1,6 +1,6 @@
-use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
+use crate::sys::bindings as ll_bindings;
 use crate::Position;
 use crate::SiteId;
 use crate::SizeType;
@@ -306,7 +306,7 @@ build_owned_table_type!(
     => OwningSiteTable,
     SiteTable,
     crate::sys::LLOwningSiteTable,
-    crate::bindings::tsk_site_table_t
+    crate::sys::bindings::tsk_site_table_t
 );
 
 impl OwningSiteTable {

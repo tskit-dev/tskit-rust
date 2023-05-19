@@ -10,12 +10,12 @@
 //!   [`ProvenanceTable::iter`].
 //!
 
-use crate::bindings as ll_bindings;
 use crate::sys;
 use crate::ProvenanceId;
 use crate::SizeType;
 use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_size_t;
+use sys::bindings as ll_bindings;
 
 #[derive(Eq, Debug)]
 /// Row of a [`ProvenanceTable`].
@@ -290,7 +290,7 @@ build_owned_table_type!(
     => OwningProvenanceTable,
     ProvenanceTable,
     crate::sys::LLOwningProvenanceTable,
-    crate::bindings::tsk_provenance_table_t
+    crate::sys::bindings::tsk_provenance_table_t
 );
 
 impl OwningProvenanceTable {

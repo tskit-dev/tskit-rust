@@ -1,7 +1,6 @@
 use std::ops::Deref;
 use std::ops::DerefMut;
 
-use crate::bindings as ll_bindings;
 use crate::error::TskitError;
 use crate::sys;
 use crate::NodeId;
@@ -16,6 +15,7 @@ use crate::TskReturnValue;
 use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_tree_free;
 use std::ptr::NonNull;
+use sys::bindings as ll_bindings;
 
 /// A Tree.
 ///

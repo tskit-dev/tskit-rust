@@ -4,6 +4,9 @@ use std::ptr::NonNull;
 use mbox::MBox;
 use thiserror::Error;
 
+#[allow(dead_code)]
+#[allow(deref_nullptr)]
+#[allow(rustdoc::broken_intra_doc_links)]
 pub mod bindings;
 
 // tskit defines this via a type cast
@@ -424,7 +427,7 @@ pub fn generate_slice_mut<'a, L: Into<bindings::tsk_size_t>, I, O>(
 }
 
 pub fn get_tskit_error_message(code: i32) -> String {
-    let c_str = unsafe { std::ffi::CStr::from_ptr(crate::bindings::tsk_strerror(code)) };
+    let c_str = unsafe { std::ffi::CStr::from_ptr(crate::sys::bindings::tsk_strerror(code)) };
     c_str
         .to_str()
         .expect("failed to convert c_str to &str")

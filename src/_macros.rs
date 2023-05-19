@@ -19,7 +19,8 @@ macro_rules! handle_tsk_return_value {
 macro_rules! panic_on_tskit_error {
     ($code: expr) => {
         if $code < 0 {
-            let c_str = unsafe { std::ffi::CStr::from_ptr($crate::bindings::tsk_strerror($code)) };
+            let c_str =
+                unsafe { std::ffi::CStr::from_ptr($crate::sys::bindings::tsk_strerror($code)) };
             let str_slice: &str = c_str.to_str().expect("failed to obtain &str from c_str");
             let message: String = str_slice.to_owned();
             panic!("{}", message);
@@ -38,7 +39,7 @@ macro_rules! process_state_input {
         match $state {
             Some(x) => (
                 x.as_ptr() as *const libc::c_char,
-                x.len() as $crate::bindings::tsk_size_t,
+                x.len() as $crate::sys::bindings::tsk_size_t,
                 $state,
             ),
             None => (std::ptr::null(), 0, $state),
@@ -189,26 +190,26 @@ macro_rules! impl_size_type_comparisons_for_row_ids {
     ($idtype: ty) => {
         impl PartialEq<$idtype> for $crate::SizeType {
             fn eq(&self, other: &$idtype) -> bool {
-                self.0 == other.0 as $crate::bindings::tsk_size_t
+                self.0 == other.0 as $crate::sys::bindings::tsk_size_t
             }
         }
 
         impl PartialEq<$crate::SizeType> for $idtype {
             fn eq(&self, other: &$crate::SizeType) -> bool {
-                (self.0 as $crate::bindings::tsk_size_t) == other.0
+                (self.0 as $crate::sys::bindings::tsk_size_t) == other.0
             }
         }
 
         impl PartialOrd<$idtype> for $crate::SizeType {
             fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
                 self.0
-                    .partial_cmp(&(other.0 as $crate::bindings::tsk_size_t))
+                    .partial_cmp(&(other.0 as $crate::sys::bindings::tsk_size_t))
             }
         }
 
         impl PartialOrd<$crate::SizeType> for $idtype {
             fn partial_cmp(&self, other: &$crate::SizeType) -> Option<std::cmp::Ordering> {
-                (self.0 as $crate::bindings::tsk_size_t).partial_cmp(&other.0)
+                (self.0 as $crate::sys::bindings::tsk_size_t).partial_cmp(&other.0)
             }
         }
     };
@@ -442,7 +443,7 @@ macro_rules! edge_table_add_row_details {
      $metadata_len: expr,
      $table: expr) => {{
         let rv = unsafe {
-            $crate::bindings::tsk_edge_table_add_row(
+            $crate::sys::bindings::tsk_edge_table_add_row(
                 $table,
                 $left.into().into(),
                 $right.into().into(),
@@ -516,7 +517,7 @@ macro_rules! edge_table_add_row_with_metadata {
 macro_rules! population_table_add_row_details {
     ($metadata: expr, $metadata_len: expr, $table: expr) => {{
         let rv = unsafe {
-            $crate::bindings::tsk_population_table_add_row($table, $metadata, $metadata_len)
+            $crate::sys::bindings::tsk_population_table_add_row($table, $metadata, $metadata_len)
         };
         handle_tsk_return_value!(rv, rv.into())
     }};
@@ -550,16 +551,16 @@ macro_rules! individual_table_add_row_details {
      $metadata_len: expr,
      $table: expr) => {{
         let rv = unsafe {
-            $crate::bindings::tsk_individual_table_add_row(
+            $crate::sys::bindings::tsk_individual_table_add_row(
                 $table,
                 $flags.into().bits(),
                 $location.get_slice().as_ptr().cast::<f64>(),
-                $location.get_slice().len() as $crate::bindings::tsk_size_t,
+                $location.get_slice().len() as $crate::sys::bindings::tsk_size_t,
                 $parents
                     .get_slice()
                     .as_ptr()
                     .cast::<$crate::sys::bindings::tsk_id_t>(),
-                $parents.get_slice().len() as $crate::bindings::tsk_size_t,
+                $parents.get_slice().len() as $crate::sys::bindings::tsk_size_t,
                 $metadata,
                 $metadata_len,
             )
@@ -625,7 +626,7 @@ macro_rules! mutation_table_add_row_details {
      $table: expr) => {{
         let dstate = process_state_input!($derived_state);
         let rv = unsafe {
-            $crate::bindings::tsk_mutation_table_add_row(
+            $crate::sys::bindings::tsk_mutation_table_add_row(
                 $table,
                 $site.into().into(),
                 $node.into().into(),
@@ -706,7 +707,7 @@ macro_rules! site_table_add_row_details {
      $table: expr) => {{
         let astate = process_state_input!($ancestral_state);
         let rv = unsafe {
-            $crate::bindings::tsk_site_table_add_row(
+            $crate::sys::bindings::tsk_site_table_add_row(
                 $table,
                 $position.into().into(),
                 astate.0,
@@ -763,7 +764,7 @@ macro_rules! migration_table_add_row_details {
      $metadata_len: expr,
      $table: expr) => {{
         let rv = unsafe {
-            $crate::bindings::tsk_migration_table_add_row(
+            $crate::sys::bindings::tsk_migration_table_add_row(
                 $table,
                 $span.0.into().into(),
                 $span.1.into().into(),
@@ -838,7 +839,7 @@ macro_rules! provenance_table_add_row {
             }
             let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
             let rv = unsafe {
-                $crate::bindings::tsk_provenance_table_add_row(
+                $crate::sys::bindings::tsk_provenance_table_add_row(
                     $table,
                     timestamp.as_ptr() as *mut i8,
                     timestamp.len() as tsk_size_t,

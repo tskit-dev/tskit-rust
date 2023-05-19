@@ -94,20 +94,28 @@ impl_individual_parents!(
 impl_individual_parents!(&[crate::IndividualId], self, self);
 impl_individual_parents!(&Vec<crate::IndividualId>, self, self.as_slice());
 impl_individual_parents!(Vec<crate::IndividualId>, self, self.as_slice());
-impl_individual_parents!(&[crate::bindings::tsk_id_t], self, unsafe {
+impl_individual_parents!(&[crate::sys::bindings::tsk_id_t], self, unsafe {
     std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
 });
-impl_individual_parents!(&Vec<crate::bindings::tsk_id_t>, self, unsafe {
+impl_individual_parents!(&Vec<crate::sys::bindings::tsk_id_t>, self, unsafe {
     std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
 });
-impl_individual_parents!(Vec<crate::bindings::tsk_id_t>, self, unsafe {
+impl_individual_parents!(Vec<crate::sys::bindings::tsk_id_t>, self, unsafe {
     std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
 });
-impl_individual_parents!(N, usize, &[crate::bindings::tsk_id_t; N], self, unsafe {
-    std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
-});
-impl_individual_parents!(N, usize, [crate::bindings::tsk_id_t; N], self, unsafe {
-    std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len())
-});
+impl_individual_parents!(
+    N,
+    usize,
+    &[crate::sys::bindings::tsk_id_t; N],
+    self,
+    unsafe { std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len()) }
+);
+impl_individual_parents!(
+    N,
+    usize,
+    [crate::sys::bindings::tsk_id_t; N],
+    self,
+    unsafe { std::slice::from_raw_parts(self.as_ptr() as *const crate::IndividualId, self.len()) }
+);
 impl_individual_parents!(N, usize, &[crate::IndividualId; N], self, self.as_slice());
 impl_individual_parents!(N, usize, [crate::IndividualId; N], self, self.as_slice());

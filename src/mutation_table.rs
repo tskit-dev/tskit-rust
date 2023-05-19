@@ -1,4 +1,3 @@
-use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
 use crate::SizeType;
@@ -6,6 +5,7 @@ use crate::Time;
 use crate::TskitError;
 use crate::{MutationId, NodeId, SiteId};
 use ll_bindings::tsk_id_t;
+use sys::bindings as ll_bindings;
 
 /// Row of a [`MutationTable`]
 #[derive(Debug)]
@@ -392,7 +392,7 @@ build_owned_table_type!(
     => OwningMutationTable,
     MutationTable,
     crate::sys::LLOwningMutationTable,
-    crate::bindings::tsk_mutation_table_t
+    crate::sys::bindings::tsk_mutation_table_t
 );
 
 impl OwningMutationTable {

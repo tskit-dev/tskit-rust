@@ -74,6 +74,7 @@
 #![allow(non_snake_case)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 
+#[cfg(feature = "bindings")]
 pub use sys::bindings;
 
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
@@ -131,7 +132,7 @@ pub mod provenance;
 pub type TskReturnValue = Result<i32, TskitError>;
 
 /// Alias for tsk_flags_t
-pub type RawFlags = crate::bindings::tsk_flags_t;
+pub type RawFlags = crate::sys::bindings::tsk_flags_t;
 
 /// Version of the rust crate.
 ///
@@ -145,17 +146,17 @@ pub fn version() -> &'static str {
 
 /// C API major version
 pub fn c_api_major_version() -> u32 {
-    bindings::TSK_VERSION_MAJOR
+    sys::bindings::TSK_VERSION_MAJOR
 }
 
 /// C API minor version
 pub fn c_api_minor_version() -> u32 {
-    bindings::TSK_VERSION_MINOR
+    sys::bindings::TSK_VERSION_MINOR
 }
 
 /// C API patch version
 pub fn c_api_patch_version() -> u32 {
-    bindings::TSK_VERSION_PATCH
+    sys::bindings::TSK_VERSION_PATCH
 }
 
 /// The C API version in MAJOR.MINOR.PATCH format
@@ -181,4 +182,3 @@ mod tests {
 // Testing modules
 mod test_fixtures;
 mod test_simplification;
-mod test_tsk_variables;
