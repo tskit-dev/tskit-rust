@@ -979,7 +979,7 @@ macro_rules! delegate_table_view_api {
                 pub fn provenances_iter(&self,) -> impl Iterator<Item = crate::provenance::ProvenanceTableRow> + '_;
 
                 /// Obtain a vector containing the indexes ("ids")
-                /// of all nodes for which [`crate::TSK_NODE_IS_SAMPLE`]
+                /// of all nodes for which [`crate::NodeFlags::is_sample`]
                 /// is `true`.
                 ///
                 /// The provided implementation dispatches to
@@ -1006,11 +1006,11 @@ macro_rules! delegate_table_view_api {
                 /// ```
                 /// let mut tables = tskit::TableCollection::new(100.).unwrap();
                 /// tables
-                ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 0.0, tskit::PopulationId::NULL,
+                ///     .add_node(tskit::NodeFlags::new_sample(), 0.0, tskit::PopulationId::NULL,
                 ///     tskit::IndividualId::NULL)
                 ///     .unwrap();
                 /// tables
-                ///     .add_node(tskit::TSK_NODE_IS_SAMPLE, 1.0, tskit::PopulationId::NULL,
+                ///     .add_node(tskit::NodeFlags::new_sample(), 1.0, tskit::PopulationId::NULL,
                 ///     tskit::IndividualId::NULL)
                 ///     .unwrap();
                 /// let samples = tables.create_node_id_vector(

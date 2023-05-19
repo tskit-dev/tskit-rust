@@ -54,7 +54,7 @@ pub fn make_small_table_collection() -> TableCollection {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -62,7 +62,7 @@ pub fn make_small_table_collection() -> TableCollection {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -104,7 +104,7 @@ pub fn make_small_table_collection_two_trees() -> TableCollection {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -112,7 +112,7 @@ pub fn make_small_table_collection_two_trees() -> TableCollection {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -120,7 +120,7 @@ pub fn make_small_table_collection_two_trees() -> TableCollection {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -128,7 +128,7 @@ pub fn make_small_table_collection_two_trees() -> TableCollection {
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
