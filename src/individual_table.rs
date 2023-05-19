@@ -4,7 +4,8 @@ use crate::sys;
 use crate::IndividualFlags;
 use crate::IndividualId;
 use crate::Location;
-use crate::{tsk_id_t, TskitError};
+use crate::TskitError;
+use ll_bindings::tsk_id_t;
 
 /// Row of a [`IndividualTable`]
 #[derive(Debug)]

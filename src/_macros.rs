@@ -117,8 +117,8 @@ macro_rules! impl_id_traits {
             }
         }
 
-        impl From<$crate::tsk_id_t> for $idtype {
-            fn from(value: $crate::tsk_id_t) -> Self {
+        impl From<$crate::sys::bindings::tsk_id_t> for $idtype {
+            fn from(value: $crate::sys::bindings::tsk_id_t) -> Self {
                 Self(value)
             }
         }
@@ -136,7 +136,7 @@ macro_rules! impl_id_traits {
             }
         }
 
-        impl From<$idtype> for $crate::tsk_id_t {
+        impl From<$idtype> for $crate::sys::bindings::tsk_id_t {
             fn from(value: $idtype) -> Self {
                 value.0
             }
@@ -150,25 +150,28 @@ macro_rules! impl_id_traits {
             }
         }
 
-        impl PartialEq<$crate::tsk_id_t> for $idtype {
-            fn eq(&self, other: &$crate::tsk_id_t) -> bool {
+        impl PartialEq<$crate::sys::bindings::tsk_id_t> for $idtype {
+            fn eq(&self, other: &$crate::sys::bindings::tsk_id_t) -> bool {
                 self.0 == *other
             }
         }
 
-        impl PartialEq<$idtype> for $crate::tsk_id_t {
+        impl PartialEq<$idtype> for $crate::sys::bindings::tsk_id_t {
             fn eq(&self, other: &$idtype) -> bool {
                 *self == other.0
             }
         }
 
-        impl PartialOrd<$crate::tsk_id_t> for $idtype {
-            fn partial_cmp(&self, other: &$crate::tsk_id_t) -> Option<std::cmp::Ordering> {
+        impl PartialOrd<$crate::sys::bindings::tsk_id_t> for $idtype {
+            fn partial_cmp(
+                &self,
+                other: &$crate::sys::bindings::tsk_id_t,
+            ) -> Option<std::cmp::Ordering> {
                 self.0.partial_cmp(other)
             }
         }
 
-        impl PartialOrd<$idtype> for $crate::tsk_id_t {
+        impl PartialOrd<$idtype> for $crate::sys::bindings::tsk_id_t {
             fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
                 self.partial_cmp(&other.0)
             }
@@ -555,7 +558,7 @@ macro_rules! individual_table_add_row_details {
                 $parents
                     .get_slice()
                     .as_ptr()
-                    .cast::<$crate::bindings::tsk_id_t>(),
+                    .cast::<$crate::sys::bindings::tsk_id_t>(),
                 $parents.get_slice().len() as $crate::bindings::tsk_size_t,
                 $metadata,
                 $metadata_len,

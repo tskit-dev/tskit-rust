@@ -2,8 +2,9 @@ use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
 use crate::Position;
-use crate::{tsk_id_t, TskitError};
+use crate::TskitError;
 use crate::{EdgeId, NodeId};
+use ll_bindings::tsk_id_t;
 
 /// Row of an [`EdgeTable`]
 #[derive(Debug)]

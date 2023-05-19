@@ -7,12 +7,13 @@ use crate::sys;
 use crate::NodeId;
 use crate::SimplificationOptions;
 use crate::SizeType;
+use crate::TableCollection;
 use crate::TableOutputOptions;
 use crate::TreeFlags;
 use crate::TreeInterface;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
-use crate::{tsk_id_t, TableCollection};
+use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_tree_free;
 use std::ptr::NonNull;
 

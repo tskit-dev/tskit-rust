@@ -1,12 +1,12 @@
 use crate::bindings as ll_bindings;
 use crate::sys;
-use crate::tsk_id_t;
 use crate::NodeId;
 use crate::Position;
 use crate::SizeType;
 use crate::Time;
 use crate::TreeFlags;
 use crate::TskitError;
+use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_size_t;
 use std::ptr::NonNull;
 
@@ -857,7 +857,7 @@ impl NodeIterator for SamplesIterator<'_> {
         self.current_node = match self.next_sample_index {
             NodeId::NULL => None,
             r => {
-                let raw = crate::tsk_id_t::from(r);
+                let raw = crate::sys::bindings::tsk_id_t::from(r);
                 if r == self.last_sample_index {
                     let cr =
                         Some(unsafe { *(*self.tree.as_ptr()).samples.offset(raw as isize) }.into());

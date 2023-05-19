@@ -3,7 +3,6 @@ use std::vec;
 
 use crate::bindings as ll_bindings;
 use crate::error::TskitError;
-use crate::tsk_id_t;
 use crate::types::Bookmark;
 use crate::IndividualTableSortOptions;
 use crate::Position;
@@ -16,6 +15,7 @@ use crate::TableSortOptions;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::{EdgeId, NodeId};
+use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_size_t;
 use ll_bindings::tsk_table_collection_free;
 use mbox::MBox;

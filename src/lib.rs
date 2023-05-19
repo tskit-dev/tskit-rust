@@ -100,8 +100,6 @@ mod trees;
 pub mod types;
 mod util;
 
-use bindings::tsk_id_t;
-
 pub use edge_differences::*;
 pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
 pub use error::TskitError;
