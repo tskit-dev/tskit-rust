@@ -4,8 +4,9 @@ use crate::sys;
 use crate::Position;
 use crate::SizeType;
 use crate::Time;
-use crate::{tsk_id_t, TskitError};
+use crate::TskitError;
 use crate::{MigrationId, NodeId, PopulationId};
+use ll_bindings::tsk_id_t;
 
 /// Row of a [`MigrationTable`]
 #[derive(Debug)]

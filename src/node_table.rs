@@ -5,8 +5,9 @@ use crate::sys;
 use crate::NodeFlags;
 use crate::SizeType;
 use crate::Time;
-use crate::{tsk_id_t, TskitError};
+use crate::TskitError;
 use crate::{IndividualId, NodeId, PopulationId};
+use ll_bindings::tsk_id_t;
 
 pub(crate) fn add_row_details(
     flags: ll_bindings::tsk_flags_t,
@@ -864,13 +865,13 @@ impl NodeTable {
         => individual, individual_slice, IndividualId);
     build_table_column_slice_getter!(
         /// Get the individual column as a slice
-        => individual, individual_slice_raw, crate::tsk_id_t);
+        => individual, individual_slice_raw, crate::sys::bindings::tsk_id_t);
     build_table_column_slice_getter!(
         /// Get the population column as a slice
         => population, population_slice, PopulationId);
     build_table_column_slice_getter!(
         /// Get the population column as a slice
-        => population, population_slice_raw, crate::tsk_id_t);
+        => population, population_slice_raw, crate::sys::bindings::tsk_id_t);
 }
 
 build_owned_table_type!(

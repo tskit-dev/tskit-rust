@@ -12,8 +12,9 @@
 
 use crate::bindings as ll_bindings;
 use crate::sys;
+use crate::ProvenanceId;
 use crate::SizeType;
-use crate::{tsk_id_t, ProvenanceId};
+use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_size_t;
 
 #[derive(Eq, Debug)]
@@ -321,7 +322,7 @@ mod test_provenances {
         let mut tables = crate::TableCollection::new(10.).unwrap();
         for (i, r) in records.iter().enumerate() {
             let row_id = tables.add_provenance(r).unwrap();
-            assert!(row_id == i as crate::tsk_id_t);
+            assert!(row_id == i as crate::sys::bindings::tsk_id_t);
             assert_eq!(tables.provenances().record(row_id).unwrap(), *r);
         }
         assert_eq!(

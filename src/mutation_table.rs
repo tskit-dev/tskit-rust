@@ -3,8 +3,9 @@ use crate::metadata;
 use crate::sys;
 use crate::SizeType;
 use crate::Time;
-use crate::{tsk_id_t, TskitError};
+use crate::TskitError;
 use crate::{MutationId, NodeId, SiteId};
+use ll_bindings::tsk_id_t;
 
 /// Row of a [`MutationTable`]
 #[derive(Debug)]
@@ -322,13 +323,13 @@ impl MutationTable {
         => node, node_slice, NodeId);
     build_table_column_slice_getter!(
         /// Get the node column as a slice
-        => node, node_slice_raw, crate::tsk_id_t);
+        => node, node_slice_raw, crate::sys::bindings::tsk_id_t);
     build_table_column_slice_getter!(
         /// Get the site column as a slice
         => site, site_slice, SiteId);
     build_table_column_slice_getter!(
         /// Get the site column as a slice
-        => site, site_slice_raw, crate::tsk_id_t);
+        => site, site_slice_raw, crate::sys::bindings::tsk_id_t);
     build_table_column_slice_getter!(
         /// Get the time column as a slice
         => time, time_slice, Time);
@@ -340,7 +341,7 @@ impl MutationTable {
         => parent, parent_slice, MutationId);
     build_table_column_slice_getter!(
         /// Get the parent column as a slice
-        => parent, parent_slice_raw, crate::tsk_id_t);
+        => parent, parent_slice_raw, crate::sys::bindings::tsk_id_t);
 }
 
 build_owned_table_type!(
