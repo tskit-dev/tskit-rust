@@ -319,7 +319,7 @@ fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_s
 ) -> Option<T> {
     let row = row.into();
     let column_length = column_length.into();
-    if row < 0 || (row as crate::tsk_size_t) >= column_length {
+    if row < 0 || (row as crate::sys::bindings::tsk_size_t) >= column_length {
         None
     } else {
         assert!(!column.is_null());
