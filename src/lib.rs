@@ -100,9 +100,6 @@ mod trees;
 pub mod types;
 mod util;
 
-// re-export types, too
-pub use bindings::tsk_flags_t;
-
 use bindings::tsk_id_t;
 use bindings::tsk_size_t;
 
