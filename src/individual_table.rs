@@ -1,4 +1,3 @@
-use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
 use crate::IndividualFlags;
@@ -6,6 +5,7 @@ use crate::IndividualId;
 use crate::Location;
 use crate::TskitError;
 use ll_bindings::tsk_id_t;
+use sys::bindings as ll_bindings;
 
 /// Row of a [`IndividualTable`]
 #[derive(Debug)]
@@ -486,7 +486,7 @@ build_owned_table_type!(
     => OwningIndividualTable,
     IndividualTable,
     crate::sys::LLOwningIndividualTable,
-    crate::bindings::tsk_individual_table_t
+    crate::sys::bindings::tsk_individual_table_t
 );
 
 impl OwningIndividualTable {

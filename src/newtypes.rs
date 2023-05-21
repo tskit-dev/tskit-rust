@@ -1,4 +1,4 @@
-use crate::bindings;
+use crate::sys::bindings;
 use crate::TskitError;
 
 use bindings::tsk_id_t;
@@ -7,7 +7,6 @@ use bindings::tsk_size_t;
 /// A node ID
 ///
 /// This is an integer referring to a row of a [``NodeTable``](crate::NodeTable).
-/// The underlying type is [``tsk_id_t``].
 ///
 /// # Examples
 ///
@@ -15,22 +14,20 @@ use bindings::tsk_size_t;
 ///
 /// ```
 /// use tskit::NodeId;
-/// use tskit::bindings::tsk_id_t;
 ///
 /// // The default value is null:
 /// assert_eq!(tskit::NodeId::default(), tskit::NodeId::NULL);
 ///
-/// let x: tsk_id_t = 1;
-/// let y: NodeId = NodeId::from(x);
-/// assert_eq!(x, y);
-/// assert_eq!(y, x);
+/// let y: NodeId = NodeId::from(1);
+/// assert_eq!(1, y);
+/// assert_eq!(y, 1);
 ///
-/// assert!(y < x + 1);
-/// assert!(y <= x);
-/// assert!(x + 1 > y);
-/// assert!(x + 1 >= y);
+/// assert!(y < 2);
+/// assert!(y <= 1);
+/// assert!(2 > y);
+/// assert!(1 + 1 >= y);
 ///
-/// let z: NodeId = NodeId::from(x);
+/// let z: NodeId = NodeId::from(1);
 /// assert_eq!(y, z);
 /// ```
 ///
@@ -39,13 +36,12 @@ use bindings::tsk_size_t;
 ///
 /// ```
 /// use tskit::NodeId;
-/// use tskit::bindings::tsk_id_t;
 ///
 /// fn interesting<N: Into<NodeId>>(x: N) -> NodeId {
 ///     x.into()
 /// }
 ///
-/// let x: tsk_id_t = 0;
+/// let x = 1;
 /// assert_eq!(interesting(x), x);
 /// let x: NodeId = NodeId::from(0);
 /// assert_eq!(interesting(x), x);
@@ -145,7 +141,9 @@ impl_size_type_comparisons_for_row_ids!(MigrationId);
 /// # Examples
 ///
 /// ```
-/// let s = tskit::SizeType::from(1 as tskit::bindings::tsk_size_t);
+/// # #[cfg(feature = "bindings")]
+/// # {
+/// let s = tskit::SizeType::from(1);
 /// let mut t: tskit::bindings::tsk_size_t = s.into();
 /// assert!(t == s);
 /// assert!(t == 1);
@@ -154,6 +152,7 @@ impl_size_type_comparisons_for_row_ids!(MigrationId);
 /// t += 1;
 /// assert!(t > s);
 /// assert!(s < t);
+/// # }
 /// ```
 ///
 /// #[repr(transparent)]

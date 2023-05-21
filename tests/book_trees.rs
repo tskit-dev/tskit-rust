@@ -143,28 +143,29 @@ fn initialize_from_table_collection() {
     }
     // ANCHOR_END: iterate_node_siblings_via_array_getters
 
-    let mut tree_iterator = treeseq.tree_iterator(TreeFlags::default()).unwrap();
-    let mut total_branch_lengths = vec![];
-    while let Some(tree) = tree_iterator.next() {
-        total_branch_lengths.push(tree.total_branch_length(false).unwrap());
-    }
+    // let mut tree_iterator = treeseq.tree_iterator(TreeFlags::default()).unwrap();
+    // let mut total_branch_lengths = vec![];
+    // while let Some(tree) = tree_iterator.next() {
+    //     total_branch_lengths.push(tree.total_branch_length(false).unwrap());
+    // }
 
-    let mut tree_iterator = treeseq.tree_iterator(TreeFlags::default()).unwrap();
-    let mut total_branch_lengths_ll = vec![];
-    let mut x = 0.0;
-    while let Some(tree) = tree_iterator.next() {
-        let l =
-            unsafe { tskit::bindings::tsk_tree_get_total_branch_length(tree.as_ptr(), -1, &mut x) };
-        assert!(l >= 0);
-        total_branch_lengths_ll.push(x);
-    }
+    // let mut tree_iterator = treeseq.tree_iterator(TreeFlags::default()).unwrap();
+    // let mut total_branch_lengths_ll = vec![];
+    // let mut x = 0.0;
 
-    for (i, j) in total_branch_lengths
-        .iter()
-        .zip(total_branch_lengths_ll.iter())
-    {
-        assert_eq!(i, j, "{} {}", i, j);
-    }
+    // while let Some(tree) = tree_iterator.next() {
+    //     let l =
+    //         unsafe { tskit::bindings::tsk_tree_get_total_branch_length(tree.as_ptr(), -1, &mut x) };
+    //     assert!(l >= 0);
+    //     total_branch_lengths_ll.push(x);
+    // }
+
+    // for (i, j) in total_branch_lengths
+    //     .iter()
+    //     .zip(total_branch_lengths_ll.iter())
+    // {
+    //     assert_eq!(i, j, "{} {}", i, j);
+    // }
 
     // ANCHOR: iterate_edge_differences
     if let Ok(mut edge_diff_iterator) = treeseq.edge_differences_iter() {

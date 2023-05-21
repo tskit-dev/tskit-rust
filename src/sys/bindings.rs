@@ -10,6 +10,8 @@
 //! into allowing uninitialized variables:
 //!
 //! ```
+//! # #[cfg(feature="bindings")]
+//! # {
 //! use std::mem::MaybeUninit;
 //! let mut edges: MaybeUninit<tskit::bindings::tsk_edge_table_t> = MaybeUninit::uninit();
 //! unsafe {
@@ -18,6 +20,7 @@
 //!     assert_eq!((*edges.as_ptr()).num_rows, 1);
 //!     tskit::bindings::tsk_edge_table_free(edges.as_mut_ptr());
 //! }
+//! # }
 //! ```
 //!
 //! The best source for documentation will be the [tskit docs](https://tskit.readthedocs.io).

@@ -1,8 +1,8 @@
 use delegate::delegate;
 use std::vec;
 
-use crate::bindings as ll_bindings;
 use crate::error::TskitError;
+use crate::sys::bindings as ll_bindings;
 use crate::types::Bookmark;
 use crate::IndividualTableSortOptions;
 use crate::Position;
@@ -22,8 +22,8 @@ use mbox::MBox;
 
 /// A table collection.
 ///
-/// This is a thin wrapper around the C type
-/// [`tsk_table_collection_t`](crate::bindings::tsk_table_collection_t).
+/// This is a thin wrapper around the C type defining
+/// a table collection.
 ///
 /// # See also
 ///

@@ -1,10 +1,10 @@
-use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::sys;
 use crate::Position;
 use crate::TskitError;
 use crate::{EdgeId, NodeId};
 use ll_bindings::tsk_id_t;
+use sys::bindings as ll_bindings;
 
 /// Row of an [`EdgeTable`]
 #[derive(Debug)]
@@ -296,13 +296,13 @@ impl EdgeTable {
         /// Get the parent column as a slice
         => parent, parent_slice, NodeId);
     build_table_column_slice_getter!(
-        /// Get the parent column as a slice of [`crate::bindings::tsk_id_t`]
+        /// Get the parent column as a slice of the underlying integer type
         => parent, parent_slice_raw, ll_bindings::tsk_id_t);
     build_table_column_slice_getter!(
         /// Get the child column as a slice
         => child, child_slice, NodeId);
     build_table_column_slice_getter!(
-        /// Get the child column as a slice of [`crate::bindings::tsk_id_t`]
+        /// Get the child column as a slice of the underlying integer type
         => child, child_slice_raw, ll_bindings::tsk_id_t);
 }
 
@@ -357,7 +357,7 @@ build_owned_table_type!(
     => OwningEdgeTable,
     EdgeTable,
     crate::sys::LLOwningEdgeTable,
-    crate::bindings::tsk_edge_table_t
+    crate::sys::bindings::tsk_edge_table_t
 );
 
 impl OwningEdgeTable {

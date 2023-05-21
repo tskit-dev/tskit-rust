@@ -1,7 +1,7 @@
-use crate::bindings as ll_bindings;
 use crate::metadata;
 use crate::metadata::NodeMetadata;
 use crate::sys;
+use crate::sys::bindings as ll_bindings;
 use crate::NodeFlags;
 use crate::SizeType;
 use crate::Time;
@@ -923,7 +923,7 @@ build_owned_table_type!(
     => OwningNodeTable,
     NodeTable,
     crate::sys::LLOwningNodeTable,
-    crate::bindings::tsk_node_table_t
+    crate::sys::bindings::tsk_node_table_t
 );
 
 impl OwningNodeTable {

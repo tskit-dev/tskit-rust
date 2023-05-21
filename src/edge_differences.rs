@@ -2,7 +2,7 @@ use crate::NodeId;
 use crate::Position;
 use crate::TreeSequence;
 
-use crate::bindings;
+use crate::sys::bindings;
 
 #[repr(transparent)]
 struct LLEdgeDifferenceIterator(bindings::tsk_diff_iter_t);

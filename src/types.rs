@@ -1,6 +1,6 @@
 //! "Other" tskit types live here.
 
-use crate::bindings as ll_bindings;
+use crate::sys::bindings as ll_bindings;
 
 /// A "bookmark" is used to adjust
 /// the ranges over which some table algorithms
@@ -28,7 +28,7 @@ macro_rules! bookmark_getter {
 macro_rules! bookmark_setter {
     ($name: ident, $field: ident) => {
         /// Set the current value
-        pub fn $name<I: Into<$crate::bindings::tsk_size_t>>(&mut self, value: I) {
+        pub fn $name<I: Into<$crate::sys::bindings::tsk_size_t>>(&mut self, value: I) {
             self.offsets.$field = value.into();
         }
     };

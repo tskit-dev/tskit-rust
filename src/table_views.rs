@@ -1,8 +1,8 @@
 use std::ptr::NonNull;
 
-use crate::bindings as ll_bindings;
 #[cfg(feature = "provenance")]
 use crate::provenance::ProvenanceTable;
+use crate::sys::bindings as ll_bindings;
 use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;

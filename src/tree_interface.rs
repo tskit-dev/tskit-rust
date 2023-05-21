@@ -1,4 +1,3 @@
-use crate::bindings as ll_bindings;
 use crate::sys;
 use crate::NodeId;
 use crate::Position;
@@ -9,6 +8,7 @@ use crate::TskitError;
 use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_size_t;
 use std::ptr::NonNull;
+use sys::bindings as ll_bindings;
 
 pub struct TreeInterface {
     non_owned_pointer: NonNull<ll_bindings::tsk_tree_t>,
