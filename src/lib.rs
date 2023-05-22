@@ -81,7 +81,6 @@ mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_differences;
 mod edge_table;
 pub mod error;
-mod flags;
 mod individual_table;
 pub mod metadata;
 mod migration_table;
@@ -104,7 +103,6 @@ mod util;
 pub use edge_differences::*;
 pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
 pub use error::TskitError;
-pub use flags::*;
 pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividualTable};
 pub use migration_table::{MigrationTable, MigrationTableRow, OwningMigrationTable};
 pub use mutation_table::{MutationTable, MutationTableRow, OwningMutationTable};
@@ -114,6 +112,7 @@ pub use node_table::{
 };
 pub use population_table::{OwningPopulationTable, PopulationTable, PopulationTableRow};
 pub use site_table::{OwningSiteTable, SiteTable, SiteTableRow};
+pub use sys::flags::*;
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;

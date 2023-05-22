@@ -349,29 +349,6 @@ macro_rules! impl_time_position_arithmetic {
     };
 }
 
-macro_rules! impl_from_for_flag_types {
-    ($flagstype: ty) => {
-        impl From<$crate::RawFlags> for $flagstype {
-            fn from(value: $crate::RawFlags) -> Self {
-                <$flagstype>::from_bits_truncate(value)
-            }
-        }
-    };
-}
-
-macro_rules! impl_flags {
-    ($flagstype: ty) => {
-        impl $flagstype {
-            /// We do not enforce valid flags in the library.
-            /// This function will return `true` if any bits
-            /// are set that do not correspond to allowed flags.
-            pub fn is_valid(&self) -> bool {
-                Self::from_bits(self.bits()).is_some()
-            }
-        }
-    };
-}
-
 /// Convenience macro to handle implementing
 /// [`crate::metadata::MetadataRoundtrip`]
 #[macro_export]
