@@ -9,11 +9,10 @@ pub struct LLTreeSeq(bindings::tsk_treeseq_t);
 impl LLTreeSeq {
     pub fn new(
         tables: *mut bindings::tsk_table_collection_t,
-        flags: bindings::tsk_flags_t,
+        flags: super::flags::TreeSequenceFlags,
     ) -> Result<Self, Error> {
         let mut inner = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
-        let mut flags = flags;
-        flags |= bindings::TSK_TAKE_OWNERSHIP;
+        let flags = flags.bits() | bindings::TSK_TAKE_OWNERSHIP;
         match unsafe { bindings::tsk_treeseq_init(inner.as_mut_ptr(), tables, flags) } {
             code if code < 0 => Err(Error::Code(code)),
             _ => Ok(Self(unsafe { inner.assume_init() })),
@@ -35,7 +34,7 @@ impl LLTreeSeq {
     pub fn simplify(
         &self,
         samples: &[bindings::tsk_id_t],
-        options: bindings::tsk_flags_t,
+        options: super::flags::SimplificationOptions,
         idmap: *mut bindings::tsk_id_t,
     ) -> Result<Self, Error> {
         // The output is an UNINITIALIZED treeseq,
@@ -48,7 +47,7 @@ impl LLTreeSeq {
                 self.as_ptr(),
                 samples.as_ptr(),
                 samples.len() as bindings::tsk_size_t,
-                options,
+                options.bits(),
                 ts.as_mut_ptr(),
                 idmap,
             )
