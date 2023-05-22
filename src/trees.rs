@@ -248,7 +248,7 @@ impl TreeSequence {
         flags: F,
     ) -> Result<Self, TskitError> {
         let raw_tables_ptr = tables.into_raw()?;
-        let mut inner = sys::LLTreeSeq::new(raw_tables_ptr, flags.into().bits())?;
+        let mut inner = sys::LLTreeSeq::new(raw_tables_ptr, flags.into())?;
         let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut_ptr())?;
         Ok(Self { inner, views })
     }
@@ -460,7 +460,7 @@ impl TreeSequence {
         };
         let mut inner = self.inner.simplify(
             llsamples,
-            options.into().bits(),
+            options.into(),
             match idmap {
                 true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
                 false => std::ptr::null_mut(),
