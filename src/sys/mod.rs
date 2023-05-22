@@ -5,6 +5,7 @@ use thiserror::Error;
 #[allow(rustdoc::broken_intra_doc_links)]
 pub mod bindings;
 
+pub mod flags;
 mod tables;
 mod treeseq;
 
