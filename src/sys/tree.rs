@@ -6,6 +6,7 @@ use super::bindings::tsk_tree_t;
 use super::flags::TreeFlags;
 use super::Error;
 use super::LLTreeSeq;
+use super::TreeInterface;
 
 pub struct LLTree<'treeseq> {
     inner: MBox<tsk_tree_t>,
@@ -15,6 +16,7 @@ pub struct LLTree<'treeseq> {
     // tying the rust-side object liftimes together.
     #[allow(dead_code)]
     treeseq: &'treeseq LLTreeSeq,
+    interface: super::TreeInterface,
 }
 
 impl<'treeseq> LLTree<'treeseq> {
@@ -51,7 +53,13 @@ impl<'treeseq> LLTree<'treeseq> {
                 return Err(Error::Code(rv));
             }
         }
-        Ok(Self { inner, treeseq })
+        let interface =
+            unsafe { TreeInterface::new_from_initialized_tree(inner.as_mut()) }.unwrap();
+        Ok(Self {
+            inner,
+            treeseq,
+            interface,
+        })
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut tsk_tree_t {
