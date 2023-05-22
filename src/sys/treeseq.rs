@@ -77,6 +77,13 @@ impl LLTreeSeq {
         unsafe { bindings::tsk_treeseq_get_num_trees(self.as_ptr()) }
     }
 
+    pub fn num_nodes_raw(&self) -> bindings::tsk_size_t {
+        assert!(!self.as_ptr().is_null());
+        assert!(!unsafe { *self.as_ptr() }.tables.is_null());
+        // SAFETY: none of the pointers are null
+        unsafe { (*(*self.as_ptr()).tables).nodes.num_rows }
+    }
+
     pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, Error> {
         let mut kc: f64 = f64::NAN;
         let kcp: *mut f64 = &mut kc;
