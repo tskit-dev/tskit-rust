@@ -237,7 +237,7 @@ impl TreeSequence {
     /// }
     /// ```
     pub fn tree_iterator<F: Into<TreeFlags>>(&self, flags: F) -> Result<Tree, TskitError> {
-        let tree = Tree::new(self, flags)?;
+        let tree = Tree::new(&self.inner, flags)?;
 
         Ok(tree)
     }

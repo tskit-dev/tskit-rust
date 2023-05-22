@@ -7,6 +7,7 @@ pub mod bindings;
 
 pub mod flags;
 mod tables;
+mod tree;
 mod treeseq;
 
 // tskit defines this via a type cast
@@ -16,6 +17,7 @@ mod treeseq;
 pub(crate) const TSK_NULL: bindings::tsk_id_t = -1;
 
 pub use tables::*;
+pub use tree::LLTree;
 pub use treeseq::LLTreeSeq;
 
 #[non_exhaustive]
