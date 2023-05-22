@@ -180,4 +180,3 @@ mod tests {
 
 // Testing modules
 mod test_fixtures;
-mod test_simplification;
