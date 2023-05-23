@@ -737,7 +737,7 @@ impl TableCollection {
     /// A panic will occur if the system runs out of memory.
     pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).map_err(|_| {
-            TskitError::LibraryError("call to ffi::CString::new failed".to_string())
+            TskitError::from(crate::error::TskitErrorEnum::LibraryError("call to ffi::CString::new failed".to_string()))
         })?;
         let rv = unsafe {
             ll_bindings::tsk_table_collection_dump(

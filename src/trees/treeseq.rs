@@ -1,4 +1,4 @@
-use crate::error::TskitError;
+use crate::error::{TskitError, TskitErrorEnum};
 use crate::sys;
 use crate::NodeId;
 use crate::SimplificationOptions;
@@ -146,7 +146,9 @@ impl TreeSequence {
     /// A panic will occur if the system runs out of memory.
     pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).map_err(|_| {
-            TskitError::LibraryError("call to ffi::Cstring::new failed".to_string())
+            TskitError::from(TskitErrorEnum::LibraryError(
+                "call to ffi::Cstring::new failed".to_string(),
+            ))
         })?;
         self.inner
             .dump(c_str, options.into().bits())
@@ -379,10 +381,10 @@ impl TreeSequence {
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
         if record.is_empty() {
-            return Err(TskitError::ValueError {
+            return Err(TskitError::from(TskitErrorEnum::ValueError {
                 got: "empty string".to_string(),
                 expected: "provenance record".to_string(),
-            });
+            }));
         }
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {

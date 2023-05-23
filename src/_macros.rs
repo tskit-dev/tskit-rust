@@ -4,13 +4,13 @@
 macro_rules! handle_tsk_return_value {
     ($code: expr) => {{
         if $code < 0 {
-            return Err($crate::error::TskitError::ErrorCode { code: $code });
+            return Err($crate::error::TskitError::from($crate::error::TskitErrorEnum::ErrorCode { code: $code }));
         }
         Ok($code)
     }};
     ($code: expr, $return_value: expr) => {{
         if $code < 0 {
-            return Err($crate::error::TskitError::ErrorCode { code: $code });
+            return Err($crate::error::TskitError::from($crate::error::TskitErrorEnum::ErrorCode { code: $code }));
         }
         Ok($return_value)
     }};
@@ -50,7 +50,9 @@ macro_rules! process_state_input {
 macro_rules! err_if_not_tracking_samples {
     ($flags: expr, $rv: expr) => {
         match $flags.contains($crate::TreeFlags::SAMPLE_LISTS) {
-            false => Err(TskitError::NotTrackingSamples),
+            false => Err($crate::TskitError::from(
+                $crate::error::TskitErrorEnum::NotTrackingSamples,
+            )),
             true => Ok($rv),
         }
     };

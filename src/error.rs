@@ -60,9 +60,16 @@ impl std::fmt::Display for TskitError {
     }
 }
 
-impl TskitError {
-    pub(crate) fn new_from_enum(variant: TskitErrorEnum) -> Self {
-        Self { variant }
+impl From<TskitErrorEnum> for TskitError {
+    fn from(variant: TskitErrorEnum) -> Self {
+        Self{variant}
+    }
+}
+
+impl From<sys::Error> for TskitError {
+    fn from(value: sys::Error) -> Self {
+        let variant = TskitErrorEnum::from(value);
+        Self{variant}
     }
 }
 
