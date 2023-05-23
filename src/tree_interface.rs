@@ -516,7 +516,7 @@ impl TreeInterface {
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self
                 .parent(n)
-                .ok_or(TskitError::from(TskitErrorEnum::IndexError {}))?;
+                .ok_or_else(|| TskitError::from(TskitErrorEnum::IndexError {}))?;
             if p != NodeId::NULL {
                 b += time[p.as_usize()] - time[n.as_usize()]
             }
