@@ -820,7 +820,7 @@ macro_rules! provenance_table_add_row {
         $(#[$attr])*
         pub fn $name(&mut $self, record: &str) -> Result<$crate::ProvenanceId, $crate::TskitError> {
             if record.is_empty() {
-                return Err($crate::TskitError::ValueError{got: "empty string".to_string(), expected: "provenance record".to_string()})
+                return Err($crate::TskitError::from($crate::error::TskitErrorEnum::ValueError{got: "empty string".to_string(), expected: "provenance record".to_string()}))
             }
             let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
             let rv = unsafe {
