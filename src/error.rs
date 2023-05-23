@@ -2,38 +2,29 @@
 
 use crate::sys;
 use crate::TskReturnValue;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub(crate) enum TskitErrorEnum {
     /// Returned when conversion attempts fail
-    #[error("range error: {}", *.0)]
     RangeError(String),
     /// Used when bad input is encountered.
-    #[error("we received {} but expected {}",*got, *expected)]
     ValueError { got: String, expected: String },
     /// Used when array access is out of range.
     /// Typically, this is used when accessing
     /// arrays allocated on the C side.
-    #[error("Invalid index")]
     IndexError,
     /// Raised when samples are requested from
     /// [`crate::Tree`] objects, but sample lists are
     /// not being updated.
-    #[error("Not tracking samples in Trees")]
     NotTrackingSamples,
     /// Wrapper around tskit C API error codes.
-    #[error("{}", get_tskit_error_message(*code))]
     ErrorCode { code: i32 },
     /// A redirection of [``crate::metadata::MetadataError``]
-    #[error("{value:?}")]
     MetadataError {
         /// The redirected error
-        #[from]
         value: crate::metadata::MetadataError,
     },
     /// General error variant
-    #[error("{}", *.0)]
     LibraryError(String),
 }
 
@@ -43,6 +34,12 @@ impl From<crate::sys::Error> for TskitErrorEnum {
             sys::Error::Message(msg) => TskitErrorEnum::LibraryError(msg),
             sys::Error::Code(code) => TskitErrorEnum::ErrorCode { code },
         }
+    }
+}
+
+impl From<crate::metadata::MetadataError> for TskitErrorEnum {
+    fn from(value: crate::metadata::MetadataError) -> Self {
+        Self::MetadataError { value }
     }
 }
 
