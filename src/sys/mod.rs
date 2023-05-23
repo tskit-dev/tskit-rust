@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 #[allow(dead_code)]
 #[allow(deref_nullptr)]
 #[allow(rustdoc::broken_intra_doc_links)]
@@ -20,13 +18,19 @@ pub use tables::*;
 pub use tree::LLTree;
 pub use treeseq::LLTreeSeq;
 
-#[non_exhaustive]
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum Error {
-    #[error("{}", *.0)]
     Message(String),
-    #[error("{}", get_tskit_error_message(*.0))]
     Code(i32),
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            Error::Message(m) => write!(f, "{}", m),
+            Error::Code(c) => write!(f, "{}", get_tskit_error_message(*c)),
+        }
+    }
 }
 
 fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_size_t>, T: Copy>(

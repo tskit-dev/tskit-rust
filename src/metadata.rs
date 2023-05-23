@@ -164,7 +164,6 @@
 //!   into `Python` via the `tskit` `Python API`.
 
 use crate::SizeType;
-use thiserror::Error;
 
 #[cfg(feature = "derive")]
 #[doc(hidden)]
@@ -238,16 +237,24 @@ impl EncodedMetadata {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum MetadataError {
     /// Error related to types implementing
     /// [``MetadataRoundtrip``]
-    #[error("{}", *value)]
     RoundtripError {
-        #[from]
         value: Box<dyn std::error::Error + Send + Sync>,
     },
 }
+
+impl std::fmt::Display for MetadataError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            MetadataError::RoundtripError { value } => write!(f, "{:?}", value),
+        }
+    }
+}
+
+impl std::error::Error for MetadataError {}
 
 #[cfg(test)]
 mod tests {
