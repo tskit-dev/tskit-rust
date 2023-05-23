@@ -62,14 +62,21 @@ impl std::fmt::Display for TskitError {
 
 impl From<TskitErrorEnum> for TskitError {
     fn from(variant: TskitErrorEnum) -> Self {
-        Self{variant}
+        Self { variant }
     }
 }
 
 impl From<sys::Error> for TskitError {
     fn from(value: sys::Error) -> Self {
         let variant = TskitErrorEnum::from(value);
-        Self{variant}
+        Self { variant }
+    }
+}
+
+impl From<crate::metadata::MetadataError> for TskitError {
+    fn from(value: crate::metadata::MetadataError) -> Self {
+        let variant = TskitErrorEnum::from(value);
+        Self { variant }
     }
 }
 
@@ -135,7 +142,7 @@ pub fn get_tskit_error_message(code: i32) -> String {
 /// Given an instance of [``TskReturnValue``](crate::TskReturnValue),
 /// obtain the tskit error message if there is indeed an error.
 pub fn extract_error_message(x: TskReturnValue) -> Option<String> {
-    x.map_or_else(|e: TskitErrorEnum| Some(format!("{}", e)), |_| None)
+    x.map_or_else(|e: TskitError| Some(format!("{}", e)), |_| None)
 }
 
 #[cfg(test)]
@@ -161,7 +168,7 @@ mod test {
     fn test_error_formatting() {
         let x = mock_error();
         let mut s: String = "nope!".to_string();
-        x.map_or_else(|e: TskitErrorEnum| s = format!("{}", e), |_| ());
+        x.map_or_else(|e: TskitError| s = format!("{}", e), |_| ());
         assert!(s.contains("Individual out of bounds"));
     }
 

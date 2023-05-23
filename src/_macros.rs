@@ -135,10 +135,12 @@ macro_rules! impl_id_traits {
             fn try_from(value: $idtype) -> Result<Self, Self::Error> {
                 match value.0.try_into() {
                     Ok(value) => Ok(value),
-                    Err(_) => Err(crate::TskitError::RangeError(format!(
-                        "could not convert {:?} to usize",
-                        value
-                    ))),
+                    Err(_) => Err(crate::TskitError::from(
+                        $crate::error::TskitErrorEnum::RangeError(format!(
+                            "could not convert {:?} to usize",
+                            value
+                        )),
+                    )),
                 }
             }
         }
