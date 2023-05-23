@@ -195,7 +195,9 @@ impl TableCollection {
         };
 
         let c_str = std::ffi::CString::new(filename.as_ref()).map_err(|_| {
-            TskitError::from(crate::error::TskitErrorEnum::LibraryError("call to ffi::CString::new failed".to_string()))
+            TskitError::from(crate::error::TskitErrorEnum::LibraryError(
+                "call to ffi::CString::new failed".to_string(),
+            ))
         })?;
         let rv = unsafe {
             ll_bindings::tsk_table_collection_load(
