@@ -96,7 +96,7 @@ impl TableCollection {
     pub fn new<P: Into<Position>>(sequence_length: P) -> Result<Self, TskitError> {
         let sequence_length = sequence_length.into();
         if sequence_length <= 0. {
-            return Err(TskitError::from(crate::error::TskitErrorEnum::ValueError {
+            return Err(TskitError::from(crate::error::TskitErrorData::ValueError {
                 got: f64::from(sequence_length).to_string(),
                 expected: "sequence_length >= 0.0".to_string(),
             }));
@@ -105,7 +105,7 @@ impl TableCollection {
         let rv = unsafe { ll_bindings::tsk_table_collection_init(&mut *mbox, 0) };
         if rv < 0 {
             return Err(crate::error::TskitError::from(
-                crate::error::TskitErrorEnum::ErrorCode { code: rv },
+                crate::error::TskitErrorData::ErrorCode { code: rv },
             ));
         }
         let views = crate::table_views::TableViews::new_from_mbox_table_collection(&mut mbox)?;
@@ -195,7 +195,7 @@ impl TableCollection {
         };
 
         let c_str = std::ffi::CString::new(filename.as_ref()).map_err(|_| {
-            TskitError::from(crate::error::TskitErrorEnum::LibraryError(
+            TskitError::from(crate::error::TskitErrorData::LibraryError(
                 "call to ffi::CString::new failed".to_string(),
             ))
         })?;
@@ -741,7 +741,7 @@ impl TableCollection {
     /// A panic will occur if the system runs out of memory.
     pub fn dump<O: Into<TableOutputOptions>>(&self, filename: &str, options: O) -> TskReturnValue {
         let c_str = std::ffi::CString::new(filename).map_err(|_| {
-            TskitError::from(crate::error::TskitErrorEnum::LibraryError(
+            TskitError::from(crate::error::TskitErrorData::LibraryError(
                 "call to ffi::CString::new failed".to_string(),
             ))
         })?;

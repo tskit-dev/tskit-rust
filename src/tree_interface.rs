@@ -1,4 +1,4 @@
-use crate::error::TskitErrorEnum;
+use crate::error::TskitErrorData;
 use crate::sys;
 use crate::NodeId;
 use crate::Position;
@@ -516,7 +516,7 @@ impl TreeInterface {
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self
                 .parent(n)
-                .ok_or_else(|| TskitError::from(TskitErrorEnum::IndexError {}))?;
+                .ok_or_else(|| TskitError::from(TskitErrorData::IndexError {}))?;
             if p != NodeId::NULL {
                 b += time[p.as_usize()] - time[n.as_usize()]
             }
@@ -834,7 +834,7 @@ struct SamplesIterator<'a> {
 impl<'a> SamplesIterator<'a> {
     fn new(tree: &'a TreeInterface, u: NodeId) -> Result<Self, TskitError> {
         match tree.flags.contains(TreeFlags::SAMPLE_LISTS) {
-            false => Err(TskitError::from(TskitErrorEnum::NotTrackingSamples {})),
+            false => Err(TskitError::from(TskitErrorData::NotTrackingSamples {})),
             true => {
                 let next_sample_index = match tree.left_sample(u) {
                     Some(x) => x,

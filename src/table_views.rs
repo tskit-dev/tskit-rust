@@ -74,13 +74,13 @@ impl TableViews {
     ) -> Result<Self, TskitError> {
         if treeseq.is_null() {
             return Err(TskitError::from(
-                crate::error::TskitErrorEnum::LibraryError(
+                crate::error::TskitErrorData::LibraryError(
                     "tree sequence pointer is null".to_string(),
                 ),
             ));
         }
         let mut n = NonNull::new(unsafe { *treeseq }.tables).ok_or_else(|| {
-            TskitError::from(crate::error::TskitErrorEnum::LibraryError(
+            TskitError::from(crate::error::TskitErrorData::LibraryError(
                 "tree sequence contains NULL pointer to table collection".to_string(),
             ))
         })?;

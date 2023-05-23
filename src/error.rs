@@ -4,7 +4,7 @@ use crate::sys;
 use crate::TskReturnValue;
 
 #[derive(Debug)]
-pub(crate) enum TskitErrorEnum {
+pub(crate) enum TskitErrorData {
     /// Returned when conversion attempts fail
     RangeError(String),
     /// Used when bad input is encountered.
@@ -28,16 +28,16 @@ pub(crate) enum TskitErrorEnum {
     LibraryError(String),
 }
 
-impl From<crate::sys::Error> for TskitErrorEnum {
+impl From<crate::sys::Error> for TskitErrorData {
     fn from(error: sys::Error) -> Self {
         match error {
-            sys::Error::Message(msg) => TskitErrorEnum::LibraryError(msg),
-            sys::Error::Code(code) => TskitErrorEnum::ErrorCode { code },
+            sys::Error::Message(msg) => TskitErrorData::LibraryError(msg),
+            sys::Error::Code(code) => TskitErrorData::ErrorCode { code },
         }
     }
 }
 
-impl From<crate::metadata::MetadataError> for TskitErrorEnum {
+impl From<crate::metadata::MetadataError> for TskitErrorData {
     fn from(value: crate::metadata::MetadataError) -> Self {
         Self::MetadataError { value }
     }
@@ -45,42 +45,42 @@ impl From<crate::metadata::MetadataError> for TskitErrorEnum {
 
 #[derive(Debug)]
 pub struct TskitError {
-    variant: TskitErrorEnum,
+    variant: TskitErrorData,
 }
 
 impl std::fmt::Display for TskitError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match &self.variant {
-            TskitErrorEnum::ErrorCode { code: x } => write!(f, "{}", get_tskit_error_message(*x)),
-            TskitErrorEnum::RangeError(e) => write!(f, "{}", e),
-            TskitErrorEnum::ValueError {
+            TskitErrorData::ErrorCode { code: x } => write!(f, "{}", get_tskit_error_message(*x)),
+            TskitErrorData::RangeError(e) => write!(f, "{}", e),
+            TskitErrorData::ValueError {
                 got: g,
                 expected: e,
             } => write!(f, "got {}, expected {}", g, e),
-            TskitErrorEnum::IndexError => write!(f, "index error"),
-            TskitErrorEnum::NotTrackingSamples => write!(f, "not tracking samples"),
-            TskitErrorEnum::MetadataError { value: v } => write!(f, "{:?}", v),
-            TskitErrorEnum::LibraryError(e) => write!(f, "{}", e),
+            TskitErrorData::IndexError => write!(f, "index error"),
+            TskitErrorData::NotTrackingSamples => write!(f, "not tracking samples"),
+            TskitErrorData::MetadataError { value: v } => write!(f, "{:?}", v),
+            TskitErrorData::LibraryError(e) => write!(f, "{}", e),
         }
     }
 }
 
-impl From<TskitErrorEnum> for TskitError {
-    fn from(variant: TskitErrorEnum) -> Self {
+impl From<TskitErrorData> for TskitError {
+    fn from(variant: TskitErrorData) -> Self {
         Self { variant }
     }
 }
 
 impl From<sys::Error> for TskitError {
     fn from(value: sys::Error) -> Self {
-        let variant = TskitErrorEnum::from(value);
+        let variant = TskitErrorData::from(value);
         Self { variant }
     }
 }
 
 impl From<crate::metadata::MetadataError> for TskitError {
     fn from(value: crate::metadata::MetadataError) -> Self {
-        let variant = TskitErrorEnum::from(value);
+        let variant = TskitErrorData::from(value);
         Self { variant }
     }
 }

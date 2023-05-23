@@ -206,7 +206,7 @@ impl TryFrom<SizeType> for usize {
     fn try_from(value: SizeType) -> Result<Self, Self::Error> {
         match usize::try_from(value.0) {
             Ok(x) => Ok(x),
-            Err(_) => Err(TskitError::from(crate::error::TskitErrorEnum::RangeError(
+            Err(_) => Err(TskitError::from(crate::error::TskitErrorData::RangeError(
                 format!("could not convert {} to usize", value),
             ))),
         }
@@ -219,7 +219,7 @@ impl TryFrom<usize> for SizeType {
     fn try_from(value: usize) -> Result<Self, Self::Error> {
         match tsk_size_t::try_from(value) {
             Ok(x) => Ok(Self(x)),
-            Err(_) => Err(TskitError::from(crate::error::TskitErrorEnum::RangeError(
+            Err(_) => Err(TskitError::from(crate::error::TskitErrorData::RangeError(
                 format!("could not convert usize {} to SizeType", value),
             ))),
         }
@@ -233,7 +233,7 @@ impl TryFrom<tsk_id_t> for SizeType {
         match tsk_size_t::try_from(value) {
             Ok(v) => Ok(Self(v)),
             Err(_) => Err(crate::TskitError::from(
-                crate::error::TskitErrorEnum::RangeError(stringify!(value.0).to_string()),
+                crate::error::TskitErrorData::RangeError(stringify!(value.0).to_string()),
             )),
         }
     }
@@ -245,7 +245,7 @@ impl TryFrom<SizeType> for tsk_id_t {
     fn try_from(value: SizeType) -> Result<Self, Self::Error> {
         match tsk_id_t::try_from(value.0) {
             Ok(v) => Ok(v),
-            Err(_) => Err(TskitError::from(crate::error::TskitErrorEnum::RangeError(
+            Err(_) => Err(TskitError::from(crate::error::TskitErrorData::RangeError(
                 stringify!(value.0).to_string(),
             ))),
         }
