@@ -5,7 +5,7 @@ macro_rules! handle_tsk_return_value {
     ($code: expr) => {{
         if $code < 0 {
             return Err($crate::error::TskitError::from(
-                $crate::error::TskitErrorEnum::ErrorCode { code: $code },
+                $crate::error::TskitErrorData::ErrorCode { code: $code },
             ));
         }
         Ok($code)
@@ -13,7 +13,7 @@ macro_rules! handle_tsk_return_value {
     ($code: expr, $return_value: expr) => {{
         if $code < 0 {
             return Err($crate::error::TskitError::from(
-                $crate::error::TskitErrorEnum::ErrorCode { code: $code },
+                $crate::error::TskitErrorData::ErrorCode { code: $code },
             ));
         }
         Ok($return_value)
@@ -55,7 +55,7 @@ macro_rules! err_if_not_tracking_samples {
     ($flags: expr, $rv: expr) => {
         match $flags.contains($crate::TreeFlags::SAMPLE_LISTS) {
             false => Err($crate::TskitError::from(
-                $crate::error::TskitErrorEnum::NotTrackingSamples,
+                $crate::error::TskitErrorData::NotTrackingSamples,
             )),
             true => Ok($rv),
         }
@@ -136,7 +136,7 @@ macro_rules! impl_id_traits {
                 match value.0.try_into() {
                     Ok(value) => Ok(value),
                     Err(_) => Err(crate::TskitError::from(
-                        $crate::error::TskitErrorEnum::RangeError(format!(
+                        $crate::error::TskitErrorData::RangeError(format!(
                             "could not convert {:?} to usize",
                             value
                         )),
@@ -487,7 +487,7 @@ macro_rules! edge_table_add_row_with_metadata {
             C: Into<$crate::NodeId>,
             M: $crate::metadata::EdgeMetadata
         {
-            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorEnum::from(e)))?;
+            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorData::from(e)))?;
             edge_table_add_row_details!(left,
                                         right,
                                         parent,
@@ -522,7 +522,7 @@ macro_rules! population_table_add_row_with_metadata {
         $(#[$attr])*
         pub fn $name<M>(&mut $self, metadata: &M) -> Result<$crate::PopulationId, $crate::TskitError>
         where M: $crate::metadata::PopulationMetadata {
-            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorEnum::from(e)))?;
+            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorData::from(e)))?;
             population_table_add_row_details!(md.as_ptr(), md.len()?.into(), $table)
         }
     };
@@ -592,7 +592,7 @@ macro_rules! individual_table_add_row_with_metadata {
                 P: $crate::IndividualParents,
                 M: $crate::metadata::IndividualMetadata
             {
-                let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorEnum::from(e)))?;
+                let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorData::from(e)))?;
                 individual_table_add_row_details!(flags,
                                                   location,
                                                   parents,
@@ -671,7 +671,7 @@ macro_rules! mutation_table_add_row_with_metadata {
                 T: Into<$crate::Time>,
                 M: $crate::metadata::MutationMetadata
         {
-            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorEnum::from(e)))?;
+            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorData::from(e)))?;
             mutation_table_add_row_details!(site,
                                             node,
                                             parent,
@@ -731,7 +731,7 @@ macro_rules! site_table_add_row_with_metadata {
             P: Into<$crate::Position>,
             M: $crate::metadata::SiteMetadata
         {
-            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorEnum::from(e)))?;
+            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorData::from(e)))?;
             site_table_add_row_details!(position, ancestral_state,
                                         md.as_ptr(),
                                         md.len()?.into(),
@@ -806,7 +806,7 @@ macro_rules! migration_table_add_row_with_metadata {
             T: Into<$crate::Time>,
             M: $crate::metadata::MigrationMetadata
         {
-            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorEnum::from(e)))?;
+            let md = $crate::metadata::EncodedMetadata::new(metadata).map_err(|e| $crate::TskitError::from($crate::error::TskitErrorData::from(e)))?;
             migration_table_add_row_details!(span, node, source_dest, time,
                                              md.as_ptr(), md.len()?.into(), $table)
         }
@@ -820,7 +820,7 @@ macro_rules! provenance_table_add_row {
         $(#[$attr])*
         pub fn $name(&mut $self, record: &str) -> Result<$crate::ProvenanceId, $crate::TskitError> {
             if record.is_empty() {
-                return Err($crate::TskitError::from($crate::error::TskitErrorEnum::ValueError{got: "empty string".to_string(), expected: "provenance record".to_string()}))
+                return Err($crate::TskitError::from($crate::error::TskitErrorData::ValueError{got: "empty string".to_string(), expected: "provenance record".to_string()}))
             }
             let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
             let rv = unsafe {
