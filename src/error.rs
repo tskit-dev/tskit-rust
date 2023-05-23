@@ -5,7 +5,7 @@ use crate::TskReturnValue;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum TskitError {
+pub enum TskitErrorEnum {
     /// Returned when conversion attempts fail
     #[error("range error: {}", *.0)]
     RangeError(String),
@@ -37,14 +37,36 @@ pub enum TskitError {
     LibraryError(String),
 }
 
-impl From<crate::sys::Error> for TskitError {
+impl From<crate::sys::Error> for TskitErrorEnum {
     fn from(error: sys::Error) -> Self {
         match error {
-            sys::Error::Message(msg) => TskitError::LibraryError(msg),
-            sys::Error::Code(code) => TskitError::ErrorCode { code },
+            sys::Error::Message(msg) => TskitErrorEnum::LibraryError(msg),
+            sys::Error::Code(code) => TskitErrorEnum::ErrorCode { code },
         }
     }
 }
+
+#[derive(Debug)]
+pub struct TskitError {
+    variant: TskitErrorEnum,
+}
+
+impl std::fmt::Display for TskitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self.variant {
+            TskitErrorEnum::ErrorCode { code: x } => write!(f, "{}", get_tskit_error_message(x)),
+            _ => write!(f, "other error variant"),
+        }
+    }
+}
+
+impl TskitError {
+    pub(crate) fn new_from_enum(variant: TskitErrorEnum) -> Self {
+        Self { variant }
+    }
+}
+
+impl std::error::Error for TskitError {}
 
 /// Takes the return code from a tskit
 /// function and panics if the code indicates
@@ -106,7 +128,7 @@ pub fn get_tskit_error_message(code: i32) -> String {
 /// Given an instance of [``TskReturnValue``](crate::TskReturnValue),
 /// obtain the tskit error message if there is indeed an error.
 pub fn extract_error_message(x: TskReturnValue) -> Option<String> {
-    x.map_or_else(|e: TskitError| Some(format!("{}", e)), |_| None)
+    x.map_or_else(|e: TskitErrorEnum| Some(format!("{}", e)), |_| None)
 }
 
 #[cfg(test)]
@@ -132,7 +154,7 @@ mod test {
     fn test_error_formatting() {
         let x = mock_error();
         let mut s: String = "nope!".to_string();
-        x.map_or_else(|e: TskitError| s = format!("{}", e), |_| ());
+        x.map_or_else(|e: TskitErrorEnum| s = format!("{}", e), |_| ());
         assert!(s.contains("Individual out of bounds"));
     }
 
