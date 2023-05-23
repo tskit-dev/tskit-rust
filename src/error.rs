@@ -50,9 +50,17 @@ pub struct TskitError {
 
 impl std::fmt::Display for TskitError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        match self.variant {
-            TskitErrorEnum::ErrorCode { code: x } => write!(f, "{}", get_tskit_error_message(x)),
-            _ => write!(f, "other error variant"),
+        match &self.variant {
+            TskitErrorEnum::ErrorCode { code: x } => write!(f, "{}", get_tskit_error_message(*x)),
+            TskitErrorEnum::RangeError(e) => write!(f, "{}", e),
+            TskitErrorEnum::ValueError {
+                got: g,
+                expected: e,
+            } => write!(f, "got {}, expected {}", g, e),
+            TskitErrorEnum::IndexError => write!(f, "index error"),
+            TskitErrorEnum::NotTrackingSamples => write!(f, "not tracking samples"),
+            TskitErrorEnum::MetadataError { value: v } => write!(f, "{:?}", v),
+            TskitErrorEnum::LibraryError(e) => write!(f, "{}", e),
         }
     }
 }
