@@ -239,6 +239,7 @@ impl EncodedMetadata {
 }
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum MetadataError {
     /// Error related to types implementing
     /// [``MetadataRoundtrip``]
