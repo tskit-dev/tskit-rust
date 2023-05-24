@@ -5,6 +5,7 @@ use crate::TskReturnValue;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum TskitError {
     /// Returned when conversion attempts fail
     #[error("range error: {}", *.0)]

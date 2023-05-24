@@ -571,6 +571,7 @@ impl TreeInterface {
 
 /// Specify the traversal order used by
 /// [`TreeInterface::traverse_nodes`].
+#[non_exhaustive]
 pub enum NodeTraversalOrder {
     ///Preorder traversal, starting at the root(s) of a [`TreeInterface`].
     ///For trees with multiple roots, start at the left root,
