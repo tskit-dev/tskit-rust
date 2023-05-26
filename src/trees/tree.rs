@@ -13,7 +13,6 @@ use crate::TskitError;
 pub struct Tree<'treeseq> {
     pub(crate) inner: LLTree<'treeseq>,
     api: TreeInterface,
-    current_tree: i32,
     advanced: bool,
 }
 
@@ -42,7 +41,6 @@ impl<'treeseq> Tree<'treeseq> {
         let api = TreeInterface::new(nonnull, num_nodes, num_nodes + 1, flags);
         Ok(Self {
             inner,
-            current_tree: 0,
             advanced: false,
             api,
         })
@@ -52,18 +50,17 @@ impl<'treeseq> Tree<'treeseq> {
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
     type Item = Tree<'ts>;
     fn advance(&mut self) {
-        let rv = if self.current_tree == 0 {
+        assert!(!self.as_ptr().is_null());
+        // SAFETY: pointer is not null.
+        // We also know it is initialized b/c
+        // it comes from LLTree
+        let rv = if unsafe { *self.as_ptr() }.index == -1 {
             unsafe { ll_bindings::tsk_tree_first(self.inner.as_mut_ptr()) }
         } else {
             unsafe { ll_bindings::tsk_tree_next(self.inner.as_mut_ptr()) }
         };
-        if rv == 0 {
-            self.advanced = false;
-            self.current_tree += 1;
-        } else if rv == 1 {
-            self.advanced = true;
-            self.current_tree += 1;
-        } else if rv < 0 {
+        self.advanced = rv == 1;
+        if rv < 0 {
             panic_on_tskit_error!(rv);
         }
     }
@@ -78,18 +75,17 @@ impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
 
 impl<'ts> streaming_iterator::DoubleEndedStreamingIterator for Tree<'ts> {
     fn advance_back(&mut self) {
-        let rv = if self.current_tree == 0 {
+        assert!(!self.as_ptr().is_null());
+        // SAFETY: pointer is not null.
+        // We also know it is initialized b/c
+        // it comes from LLTree
+        let rv = if unsafe { *self.as_ptr() }.index == -1 {
             unsafe { ll_bindings::tsk_tree_last(self.as_mut_ptr()) }
         } else {
             unsafe { ll_bindings::tsk_tree_prev(self.as_mut_ptr()) }
         };
-        if rv == 0 {
-            self.advanced = false;
-            self.current_tree -= 1;
-        } else if rv == 1 {
-            self.advanced = true;
-            self.current_tree -= 1;
-        } else if rv < 0 {
+        self.advanced = rv == 1;
+        if rv < 0 {
             panic_on_tskit_error!(rv);
         }
     }
