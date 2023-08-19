@@ -20,4 +20,6 @@ To filter out rows without metadata:
 {{#include ../../tests/book_metadata.rs:metadata_bulk_decode_lending_iter_with_filter}}
 ```
 
-The first method gives `Vec<Option<M
+The first method gives `Vec<Option<MutationMetadata>>`.
+The second gives `Vec<(MutationId, MutationMetadata)>`.
+
