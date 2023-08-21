@@ -712,6 +712,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn default_looks_like_zero() {
+        let n = NodeFlags::default();
+        assert_eq!(n.bits(), 0);
+        assert!(n.contains(NodeFlags::NONE));
+        let s = SimplificationOptions::default();
+        assert_eq!(s.bits(), 0);
+        assert!(s.contains(SimplificationOptions::NONE));
+    }
+
+    #[test]
     fn node_is_not_sample() {
         let n = NodeFlags::default();
         assert!(!n.is_sample());
