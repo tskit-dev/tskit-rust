@@ -3,10 +3,11 @@ on:
     branches: [main, dev]
   pull_request:
 
-name: 64-bit CI
+name: 64 bit CI
 
 jobs:
-  run-tests:
+  test-64bit:
+    name: Run tests (64 bit)
     runs-on: ${{ matrix.os }}
     #container:
     #  image: ubuntu:20.10
