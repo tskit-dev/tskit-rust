@@ -281,7 +281,7 @@ fn test_iterate_samples_two_trees() {
     let treeseq = treeseq_from_small_table_collection_two_trees();
     assert_eq!(treeseq.num_trees(), 2);
     let mut tree_iter = treeseq.tree_iterator(TreeFlags::SAMPLE_LISTS).unwrap();
-    let expected_number_of_roots = vec![2, 1];
+    let expected_number_of_roots = [2, 1];
     let mut expected_root_ids = vec![
         vec![NodeId::from(0)],
         vec![NodeId::from(1), NodeId::from(0)],
