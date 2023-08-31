@@ -1,7 +1,5 @@
 use std::ptr::NonNull;
 
-use mbox::MBox;
-
 use super::Error;
 
 macro_rules! basic_lltableref_impl {
@@ -44,52 +42,29 @@ macro_rules! basic_llowningtable_impl {
     ($llowningtable: ident, $tsktable: ident, $init: ident, $free: ident, $clear: ident) => {
         #[repr(transparent)]
         #[derive(Debug)]
-        pub struct $llowningtable(MBox<super::bindings::$tsktable>);
+        pub struct $llowningtable(super::tskbox::TskBox<super::bindings::$tsktable>);
 
         impl $llowningtable {
             pub fn new() -> Self {
-                let temp = unsafe {
-                    libc::malloc(std::mem::size_of::<super::bindings::$tsktable>())
-                        as *mut super::bindings::$tsktable
-                };
-                let nonnull = match std::ptr::NonNull::<super::bindings::$tsktable>::new(temp) {
-                    Some(x) => x,
-                    None => panic!("out of memory"),
-                };
-                let mut table = unsafe { mbox::MBox::from_non_null_raw(nonnull) };
-                let rv = unsafe { super::bindings::$init(&mut (*table), 0) };
-                assert_eq!(rv, 0);
+                let table = super::tskbox::TskBox::new(
+                    |x: *mut super::bindings::$tsktable| unsafe { super::bindings::$init(x, 0) },
+                    super::bindings::$free,
+                );
                 Self(table)
             }
 
             pub fn as_ptr(&self) -> *const super::bindings::$tsktable {
-                MBox::<super::bindings::$tsktable>::as_ptr(&self.0)
+                self.0.as_ptr()
             }
 
             pub fn as_mut_ptr(&mut self) -> *mut super::bindings::$tsktable {
-                MBox::<super::bindings::$tsktable>::as_mut_ptr(&mut self.0)
-            }
-
-            fn free(&mut self) -> Result<(), Error> {
-                match unsafe { super::bindings::$free(self.as_mut_ptr()) } {
-                    code if code < 0 => Err(Error::Code(code)),
-                    _ => Ok(()),
-                }
+                self.0.as_mut_ptr()
             }
 
             pub fn clear(&mut self) -> Result<i32, Error> {
                 match unsafe { super::bindings::$clear(self.as_mut_ptr()) } {
                     code if code < 0 => Err(Error::Code(code)),
                     code => Ok(code),
-                }
-            }
-        }
-
-        impl Drop for $llowningtable {
-            fn drop(&mut self) {
-                match self.free() {
-                    Ok(_) => (),
-                    Err(e) => panic!("{}", e),
                 }
             }
         }
