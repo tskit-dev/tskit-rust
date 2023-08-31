@@ -1,3 +1,8 @@
+// This allows us to pass lints with 1.72.0
+// until we bump bitflags to 2.x.
+// (See GH issue #496)
+#![allow(clippy::bad_bit_mask)]
+
 use crate::sys::bindings as ll_bindings;
 use crate::RawFlags;
 use bitflags::bitflags;
