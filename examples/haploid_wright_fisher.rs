@@ -4,8 +4,8 @@
 use anyhow::Result;
 use clap::Parser;
 #[cfg(test)]
-use proptest::prelude::*;
 use rand::distributions::Distribution;
+use rand::prelude::*;
 use rand::SeedableRng;
 
 fn rotate_edges(bookmark: &tskit::types::Bookmark, tables: &mut tskit::TableCollection) {
@@ -138,12 +138,19 @@ fn main() -> Result<()> {
 }
 
 #[cfg(all(test, feature = "bindings"))]
-proptest! {
-    #[test]
-    fn test_simulate_proptest(seed in any::<u64>(),
-                              num_generations in 50..100i32,
-                              simplify_interval in 1..100i32,
-                              bookmark in proptest::bool::ANY) {
+#[test]
+fn stress_test_total_branch_length() {
+    let mut rng = rand::rngs::StdRng::from_entropy();
+    let make_num_generations = rand::distributions::Uniform::new(50, 100);
+    let make_num_simplify_interval = rand::distributions::Uniform::new(1, 100);
+    let make_use_bookmark = rand::distributions::Uniform::new(0, 2);
+    let make_seed = rand::distributions::Uniform::new(0, u64::MAX);
+    for _ in 0..10 {
+        let num_generations = rng.sample(make_num_generations);
+        let simplify_interval = rng.sample(make_num_simplify_interval);
+        let bookmark = rng.sample(make_use_bookmark) == 0;
+        let seed = rng.sample(make_seed);
+        println!("{seed} {num_generations} {simplify_interval} {bookmark}");
         let ts = simulate(seed, 100, num_generations, simplify_interval, bookmark).unwrap();
 
         // stress test the branch length fn b/c it is not a trivial
