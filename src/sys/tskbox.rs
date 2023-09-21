@@ -20,8 +20,18 @@ impl<T> TskBox<T> {
         init: F,
         teardown: unsafe extern "C" fn(*mut T) -> i32,
     ) -> Self {
+        // SAFETY: we will initialize it next
+        let mut uninit = unsafe { Self::new_uninit(teardown) };
+        let _ = init(uninit.as_mut());
+        uninit
+    }
+
+    // # Safety
+    //
+    // The returned value is uninitialized.
+    // Using the object prior to initilization is likely to trigger UB.
+    pub unsafe fn new_uninit(teardown: unsafe extern "C" fn(*mut T) -> i32) -> Self {
         let x = unsafe { libc::malloc(std::mem::size_of::<T>()) as *mut T };
-        let _ = init(x);
         let tsk = NonNull::new(x).unwrap();
         Self {
             tsk,

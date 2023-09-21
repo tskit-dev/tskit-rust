@@ -170,15 +170,18 @@ impl TreeSequence {
     ///
     /// [`TskitError`] will be raised if the underlying C library returns an error code.
     pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
-        let mut inner = crate::table_collection::uninit_table_collection();
+        // SAFETY: the C api requires the destination of a copy to be uninitialized.
+        // The copying, which comes next, will initialized it
+        let mut inner = unsafe { crate::sys::TableCollection::new_uninit() };
 
+        // SAFETY: self.as_ptr is not null and inner is not initialized.
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, &mut *inner, 0)
+            ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, inner.as_mut_ptr(), 0)
         };
 
         // SAFETY: we just initialized it.
         // The C API doesn't free NULL pointers.
-        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_mbox(inner)? })
+        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_ll(inner)? })
     }
 
     /// Create an iterator over trees.
