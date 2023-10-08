@@ -710,7 +710,6 @@ name = "tskit-derive"
 version = "0.2.0"
 dependencies = [
  "proc-macro-error",
- "proc-macro2",
  "quote",
  "syn 1.0.109",
 ]
