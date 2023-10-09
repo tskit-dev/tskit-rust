@@ -78,3 +78,23 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - name: clippy (all targets, feature powerset)
         run: cargo hack clippy --all-targets --feature-powerset -- -D warnings
+
+  msrv:
+    name: Verify MSRV
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: Install cargo-msrv
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-msrv
+      - uses: taiki-e/install-action@cargo-hack
+      - name: verify msrv
+        run: cargo msrv verify -- cargo hack --feature-powerset
