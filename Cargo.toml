@@ -31,7 +31,7 @@ delegate = "0.10.0"
 
 [dev-dependencies]
 anyhow = {version = "1.0.66"}
-clap = {version = "~3.2.8", features = ["derive"]}
+clap = {features = ["derive"]}
 serde = {version = "1.0.188", features = ["derive"]}
 serde-pickle = "1.1.0"
 serde_json = {version = "1.0.107"}
