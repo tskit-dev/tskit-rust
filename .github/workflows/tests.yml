@@ -83,16 +83,12 @@ jobs:
     strategy:
       matrix:
         rust:
-          - stable
+          - 1.71.0
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-      - name: Install cargo-msrv
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: cargo-msrv
       - uses: taiki-e/install-action@cargo-hack
-      - name: verify msrv
-        run: cargo msrv verify -- cargo hack --feature-powerset
+      - name: cargo check msrv
+        run: cargo hack check --feature-powerset 
