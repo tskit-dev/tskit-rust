@@ -38,6 +38,16 @@ impl<T> TskBox<T> {
     // then UB may occur if the object is accessed.
     //
     // If the pointer is null, None will be returned.
+    //
+    // Cloning the pointer elides the tied lifetimes of owner
+    // and the new instance.
+    //
+    // Therefore, the only sound use of this type involves
+    // encapsulation in such a way that its lifetime is bound
+    // to the owner.
+    //
+    // For example, instances should only be publicly exposed
+    // via reference types.
     pub unsafe fn new_non_owning_from_ptr(ptr: *mut T) -> Option<Self> {
         let tsk = NonNull::new(ptr)?;
         Some(Self {
