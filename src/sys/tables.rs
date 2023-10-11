@@ -1,19 +1,19 @@
-use std::ptr::NonNull;
-
+use super::tskbox::TskBox;
 use super::Error;
 
 macro_rules! basic_lltableref_impl {
     ($lltable: ident, $tsktable: ident) => {
         #[repr(transparent)]
         #[derive(Debug)]
-        pub struct $lltable(NonNull<super::bindings::$tsktable>);
+        pub struct $lltable(TskBox<super::bindings::$tsktable>);
 
         impl $lltable {
             pub fn new_from_table(table: *mut super::bindings::$tsktable) -> Result<Self, Error> {
-                let internal = NonNull::new(table).ok_or_else(|| {
-                    let msg = format!("null pointer to {}", stringify!($tsktable));
-                    Error::Message(msg)
-                })?;
+                let internal =
+                    unsafe { TskBox::new_non_owning_from_ptr(table) }.ok_or_else(|| {
+                        let msg = format!("null pointer to {}", stringify!($tsktable));
+                        Error::Message(msg)
+                    })?;
                 Ok(Self(internal))
             }
 
@@ -21,7 +21,7 @@ macro_rules! basic_lltableref_impl {
                 // SAFETY: we cannot get this far w/o
                 // going through new_from_table and that
                 // fn protects us from null ptrs
-                unsafe { self.0.as_ref() }
+                self.0.as_ref()
             }
         }
     };

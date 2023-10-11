@@ -34,6 +34,21 @@ impl<T> TskBox<T> {
 
     // # Safety
     //
+    // If the pointer does not point to an initialized object,
+    // then UB may occur if the object is accessed.
+    //
+    // If the pointer is null, None will be returned.
+    pub unsafe fn new_non_owning_from_ptr(ptr: *mut T) -> Option<Self> {
+        let tsk = NonNull::new(ptr)?;
+        Some(Self {
+            tsk,
+            teardown: None,
+            owning: false,
+        })
+    }
+
+    // # Safety
+    //
     // The returned value is uninitialized.
     // Using the object prior to initilization is likely to trigger UB.
     pub unsafe fn new_uninit(teardown: unsafe extern "C" fn(*mut T) -> i32) -> Self {
