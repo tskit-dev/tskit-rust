@@ -80,7 +80,7 @@ impl TableCollection {
                 expected: "sequence_length >= 0.0".to_string(),
             });
         }
-        let mut inner = LLTableCollection::new(sequence_length.into());
+        let mut inner = LLTableCollection::new(sequence_length.into())?;
         let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
         Ok(Self {
             inner,
@@ -101,7 +101,7 @@ impl TableCollection {
 
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
         let mut tables = self;
-        let mut temp = crate::sys::TableCollection::new(1.);
+        let mut temp = crate::sys::TableCollection::new(1.)?;
         std::mem::swap(&mut temp, &mut tables.inner);
         let ptr = temp.as_mut_ptr();
         std::mem::forget(temp);

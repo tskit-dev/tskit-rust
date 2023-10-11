@@ -1,5 +1,7 @@
 use std::ptr::NonNull;
 
+use super::Error;
+
 #[derive(Debug)]
 pub struct TskBox<T> {
     tsk: NonNull<T>,
@@ -19,11 +21,15 @@ impl<T> TskBox<T> {
     pub fn new<F: Fn(*mut T) -> i32>(
         init: F,
         teardown: unsafe extern "C" fn(*mut T) -> i32,
-    ) -> Self {
+    ) -> Result<Self, Error> {
         // SAFETY: we will initialize it next
         let mut uninit = unsafe { Self::new_uninit(teardown) };
-        let _ = init(uninit.as_mut());
-        uninit
+        let rv = init(uninit.as_mut());
+        if rv < 0 {
+            Err(Error::Code(rv))
+        } else {
+            Ok(uninit)
+        }
     }
 
     // # Safety
@@ -136,7 +142,8 @@ fn test_miri() {
             0
         },
         teardown_x,
-    );
+    )
+    .unwrap();
 
     let _ = unsafe { TskBox::new_borrowed(&b) };
 
@@ -161,7 +168,8 @@ fn test_into_raw_miri() {
             0
         },
         teardown_x,
-    );
+    )
+    .unwrap();
 
     let p = unsafe { b.into_raw() };
 
@@ -187,6 +195,7 @@ fn test_table_collection_tskbox_shared_ptr() {
             super::bindings::tsk_table_collection_init(t, flags)
         },
         super::bindings::tsk_table_collection_free,
-    );
+    )
+    .unwrap();
     let _ = unsafe { TskBox::new_borrowed(&tables) };
 }

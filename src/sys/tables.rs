@@ -49,7 +49,8 @@ macro_rules! basic_llowningtable_impl {
                 let table = super::tskbox::TskBox::new(
                     |x: *mut super::bindings::$tsktable| unsafe { super::bindings::$init(x, 0) },
                     super::bindings::$free,
-                );
+                )
+                .unwrap();
                 Self(table)
             }
 
