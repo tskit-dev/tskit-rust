@@ -21,7 +21,7 @@ impl<'treeseq> LLTree<'treeseq> {
                 super::bindings::tsk_tree_init(x, treeseq.as_ref(), flags.bits())
             },
             super::bindings::tsk_tree_free,
-        );
+        )?;
         // Gotta ask Jerome about this one--why isn't this handled in tsk_tree_init??
         if !flags.contains(TreeFlags::NO_SAMPLE_COUNTS) {
             // SAFETY: nobody is null here.
