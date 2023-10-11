@@ -3,6 +3,7 @@ use std::vec;
 
 use crate::error::TskitError;
 use crate::sys::bindings as ll_bindings;
+use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
 use crate::IndividualTableSortOptions;
 use crate::Position;
@@ -17,8 +18,6 @@ use crate::TskReturnValue;
 use crate::{EdgeId, NodeId};
 use ll_bindings::tsk_id_t;
 use ll_bindings::tsk_size_t;
-use ll_bindings::tsk_table_collection_free;
-use mbox::MBox;
 
 /// A table collection.
 ///
@@ -54,29 +53,9 @@ use mbox::MBox;
 /// ```
 ///
 pub struct TableCollection {
-    inner: MBox<ll_bindings::tsk_table_collection_t>,
+    inner: LLTableCollection,
     idmap: Vec<NodeId>,
     views: crate::table_views::TableViews,
-}
-
-impl Drop for TableCollection {
-    fn drop(&mut self) {
-        let rv = unsafe { tsk_table_collection_free(self.as_mut_ptr()) };
-        assert_eq!(rv, 0);
-    }
-}
-
-/// Returns a pointer to an uninitialized tsk_table_collection_t
-pub(crate) fn uninit_table_collection() -> MBox<ll_bindings::tsk_table_collection_t> {
-    let temp = unsafe {
-        libc::malloc(std::mem::size_of::<ll_bindings::tsk_table_collection_t>())
-            as *mut ll_bindings::tsk_table_collection_t
-    };
-    let nonnull = match std::ptr::NonNull::<ll_bindings::tsk_table_collection_t>::new(temp) {
-        Some(x) => x,
-        None => panic!("out of memory"),
-    };
-    unsafe { MBox::from_non_null_raw(nonnull) }
 }
 
 impl TableCollection {
@@ -101,26 +80,13 @@ impl TableCollection {
                 expected: "sequence_length >= 0.0".to_string(),
             });
         }
-        let mut mbox = uninit_table_collection();
-        let rv = unsafe { ll_bindings::tsk_table_collection_init(&mut *mbox, 0) };
-        if rv < 0 {
-            return Err(crate::error::TskitError::ErrorCode { code: rv });
-        }
-        let views = crate::table_views::TableViews::new_from_mbox_table_collection(&mut mbox)?;
-        // AHA?
-        assert!(std::ptr::eq(
-            &mbox.as_ref().edges as *const ll_bindings::tsk_edge_table_t,
-            views.edges().as_ref() as *const ll_bindings::tsk_edge_table_t
-        ));
-        let mut tables = Self {
-            inner: mbox,
+        let mut inner = LLTableCollection::new(sequence_length.into());
+        let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
+        Ok(Self {
+            inner,
             idmap: vec![],
             views,
-        };
-        unsafe {
-            (*tables.as_mut_ptr()).sequence_length = f64::from(sequence_length);
-        }
-        Ok(tables)
+        })
     }
 
     /// # Safety
@@ -130,13 +96,11 @@ impl TableCollection {
     /// Or, it may be initialized and about to be used in a part of the C API
     /// requiring an uninitialized table collection.
     /// Consult the C API docs before using!
-    pub(crate) unsafe fn new_from_mbox(
-        mbox: MBox<ll_bindings::tsk_table_collection_t>,
-    ) -> Result<Self, TskitError> {
-        let mut mbox = mbox;
-        let views = crate::table_views::TableViews::new_from_mbox_table_collection(&mut mbox)?;
+    pub(crate) unsafe fn new_from_ll(lltables: LLTableCollection) -> Result<Self, TskitError> {
+        let mut inner = lltables;
+        let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
         Ok(Self {
-            inner: mbox,
+            inner,
             idmap: vec![],
             views,
         })
@@ -144,17 +108,11 @@ impl TableCollection {
 
     pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
         let mut tables = self;
-        // rust won't let use move inner out b/c this type implements Drop.
-        // So we have to replace the existing pointer with a new one.
-        let table_ptr = unsafe {
-            libc::malloc(std::mem::size_of::<ll_bindings::tsk_table_collection_t>())
-                as *mut ll_bindings::tsk_table_collection_t
-        };
-        let rv = unsafe { ll_bindings::tsk_table_collection_init(table_ptr, 0) };
-
-        let mut temp = unsafe { MBox::from_raw(table_ptr) };
+        let mut temp = crate::sys::TableCollection::new(1.);
         std::mem::swap(&mut temp, &mut tables.inner);
-        handle_tsk_return_value!(rv, MBox::into_raw(temp))
+        let ptr = temp.as_mut_ptr();
+        std::mem::forget(temp);
+        handle_tsk_return_value!(0, ptr)
     }
 
     /// Load a table collection from a file.
@@ -214,7 +172,7 @@ impl TableCollection {
     /// assert_eq!(tables.sequence_length(), 100.0);
     /// ```
     pub fn sequence_length(&self) -> Position {
-        unsafe { (*self.as_ptr()).sequence_length }.into()
+        self.inner.sequence_length().into()
     }
 
     edge_table_add_row!(
@@ -789,15 +747,12 @@ impl TableCollection {
 
     /// Return a "deep" copy of the tables.
     pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
-        // The output is UNINITIALIZED tables,
-        // else we leak memory
-        let mut inner = uninit_table_collection();
-
-        let rv = unsafe { ll_bindings::tsk_table_collection_copy(self.as_ptr(), &mut *inner, 0) };
+        let (rv, inner) = self.inner.copy();
 
         // SAFETY: we just initialized it.
         // The C API doesn't free NULL pointers.
-        handle_tsk_return_value!(rv, unsafe { Self::new_from_mbox(inner)? })
+        let tables = unsafe { TableCollection::new_from_ll(inner) }?;
+        handle_tsk_return_value!(rv, tables)
     }
 
     /// Return a [`crate::TreeSequence`] based on the tables.
@@ -984,7 +939,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_edge_table_set_columns(
-                &mut self.inner.edges,
+                self.inner.edges_mut(),
                 (*edges.as_ptr()).num_rows,
                 (*edges.as_ptr()).left,
                 (*edges.as_ptr()).right,
@@ -1021,7 +976,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_node_table_set_columns(
-                &mut self.inner.nodes,
+                self.inner.nodes_mut(),
                 (*nodes.as_ptr()).num_rows,
                 (*nodes.as_ptr()).flags,
                 (*nodes.as_ptr()).time,
@@ -1058,7 +1013,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_site_table_set_columns(
-                &mut self.inner.sites,
+                self.inner.sites_mut(),
                 (*sites.as_ptr()).num_rows,
                 (*sites.as_ptr()).position,
                 (*sites.as_ptr()).ancestral_state,
@@ -1094,7 +1049,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_set_columns(
-                &mut self.inner.mutations,
+                self.inner.mutations_mut(),
                 (*mutations.as_ptr()).num_rows,
                 (*mutations.as_ptr()).site,
                 (*mutations.as_ptr()).node,
@@ -1137,7 +1092,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_individual_table_set_columns(
-                &mut self.inner.individuals,
+                self.inner.individuals_mut(),
                 (*individuals.as_ptr()).num_rows,
                 (*individuals.as_ptr()).flags,
                 (*individuals.as_ptr()).location,
@@ -1175,7 +1130,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_migration_table_set_columns(
-                &mut self.inner.migrations,
+                self.inner.migrations_mut(),
                 (*migrations.as_ptr()).num_rows,
                 (*migrations.as_ptr()).left,
                 (*migrations.as_ptr()).right,
@@ -1216,7 +1171,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_population_table_set_columns(
-                &mut self.inner.populations,
+                self.inner.populations_mut(),
                 (*populations.as_ptr()).num_rows,
                 (*populations.as_ptr()).metadata,
                 (*populations.as_ptr()).metadata_offset,
@@ -1257,7 +1212,7 @@ impl TableCollection {
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_set_columns(
-                &mut self.inner.provenances,
+                self.inner.provenances_mut(),
                 (*provenances.as_ptr()).num_rows,
                 (*provenances.as_ptr()).timestamp,
                 (*provenances.as_ptr()).timestamp_offset,
@@ -1279,11 +1234,11 @@ impl TableCollection {
 
     /// Pointer to the low-level C type.
     pub fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
-        &*self.inner
+        self.inner.as_ptr()
     }
 
     /// Mutable pointer to the low-level C type.
     pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
-        &mut *self.inner
+        self.inner.as_mut_ptr()
     }
 }

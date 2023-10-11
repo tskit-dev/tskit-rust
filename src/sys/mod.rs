@@ -6,6 +6,7 @@ use thiserror::Error;
 pub mod bindings;
 
 pub mod flags;
+mod table_collection;
 mod tables;
 mod tree;
 mod treeseq;
@@ -16,6 +17,7 @@ mod treeseq;
 /// "Null" identifier value.
 pub(crate) const TSK_NULL: bindings::tsk_id_t = -1;
 
+pub use table_collection::*;
 pub use tables::*;
 pub use tree::LLTree;
 pub use treeseq::LLTreeSeq;

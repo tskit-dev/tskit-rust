@@ -25,20 +25,20 @@ pub struct TableViews {
 }
 
 impl TableViews {
-    pub(crate) fn new_from_mbox_table_collection(
-        tables: &mut mbox::MBox<ll_bindings::tsk_table_collection_t>,
+    pub(crate) fn new_from_ll_table_collection(
+        tables: &mut crate::sys::TableCollection,
     ) -> Result<Self, TskitError> {
         Ok(Self {
-            edges: crate::EdgeTable::new_from_table(&mut tables.as_mut().edges)?,
-            nodes: crate::NodeTable::new_from_table(&mut tables.as_mut().nodes)?,
-            sites: crate::SiteTable::new_from_table(&mut tables.as_mut().sites)?,
-            mutations: crate::MutationTable::new_from_table(&mut tables.as_mut().mutations)?,
-            individuals: crate::IndividualTable::new_from_table(&mut tables.as_mut().individuals)?,
-            populations: crate::PopulationTable::new_from_table(&mut tables.as_mut().populations)?,
-            migrations: crate::MigrationTable::new_from_table(&mut tables.as_mut().migrations)?,
+            edges: crate::EdgeTable::new_from_table(tables.edges_mut())?,
+            nodes: crate::NodeTable::new_from_table(tables.nodes_mut())?,
+            sites: crate::SiteTable::new_from_table(tables.sites_mut())?,
+            mutations: crate::MutationTable::new_from_table(tables.mutations_mut())?,
+            individuals: crate::IndividualTable::new_from_table(tables.individuals_mut())?,
+            populations: crate::PopulationTable::new_from_table(tables.populations_mut())?,
+            migrations: crate::MigrationTable::new_from_table(tables.migrations_mut())?,
             #[cfg(feature = "provenance")]
             provenances: crate::provenance::ProvenanceTable::new_from_table(
-                &mut tables.as_mut().provenances,
+                tables.provenances_mut(),
             )?,
         })
     }
