@@ -89,14 +89,7 @@ impl TableCollection {
         })
     }
 
-    /// # Safety
-    ///
-    /// It is possible that the mbox's inner pointer has not be run through
-    /// tsk_table_collection_init, meaning that it is in an uninitialized state.
-    /// Or, it may be initialized and about to be used in a part of the C API
-    /// requiring an uninitialized table collection.
-    /// Consult the C API docs before using!
-    pub(crate) unsafe fn new_from_ll(lltables: LLTableCollection) -> Result<Self, TskitError> {
+    pub(crate) fn new_from_ll(lltables: LLTableCollection) -> Result<Self, TskitError> {
         let mut inner = lltables;
         let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
         Ok(Self {
@@ -748,10 +741,7 @@ impl TableCollection {
     /// Return a "deep" copy of the tables.
     pub fn deepcopy(&self) -> Result<TableCollection, TskitError> {
         let (rv, inner) = self.inner.copy();
-
-        // SAFETY: we just initialized it.
-        // The C API doesn't free NULL pointers.
-        let tables = unsafe { TableCollection::new_from_ll(inner) }?;
+        let tables = TableCollection::new_from_ll(inner)?;
         handle_tsk_return_value!(rv, tables)
     }
 
