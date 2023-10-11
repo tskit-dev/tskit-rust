@@ -26,7 +26,6 @@ serde = {version = "1.0.188", features = ["derive"], optional = true}
 serde_json = {version = "1.0.107", optional = true}
 bincode = {version = "1.3.1", optional = true}
 tskit-derive = {version = "0.2.0", path = "tskit-derive", optional = true}
-mbox = "0.6.0"
 delegate = "0.10.0"
 
 [dev-dependencies]
