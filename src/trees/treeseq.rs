@@ -179,9 +179,7 @@ impl TreeSequence {
             ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, inner.as_mut_ptr(), 0)
         };
 
-        // SAFETY: we just initialized it.
-        // The C API doesn't free NULL pointers.
-        handle_tsk_return_value!(rv, unsafe { TableCollection::new_from_ll(inner)? })
+        handle_tsk_return_value!(rv, TableCollection::new_from_ll(inner)?)
     }
 
     /// Create an iterator over trees.
