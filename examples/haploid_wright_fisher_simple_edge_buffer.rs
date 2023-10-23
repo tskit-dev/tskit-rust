@@ -34,8 +34,6 @@ impl EdgeBuffer {
         child: tskit::NodeId,
     ) -> Result<()> {
         if let Some(last) = self.last.get_mut(&parent) {
-            let pchild = self.edges[*last].child;
-            assert!(child >= pchild);
             self.edges.push(Edge {
                 left,
                 right,
