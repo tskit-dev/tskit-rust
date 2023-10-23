@@ -33,24 +33,20 @@ impl EdgeBuffer {
         parent: tskit::NodeId,
         child: tskit::NodeId,
     ) {
+        let mut previous = None;
         if let Some(last) = self.last.get_mut(&parent) {
-            self.edges.push(Edge {
-                left,
-                right,
-                child,
-                previous: Some(*last),
-            });
-            *last = self.edges.len() - 1;
+            previous = Some(*last);
+            *last = self.edges.len();
         } else {
-            self.edges.push(Edge {
-                left,
-                right,
-                child,
-                previous: None,
-            });
-            self.last.insert(parent, self.edges.len() - 1);
+            self.last.insert(parent, self.edges.len());
             self.parent.push(parent);
         }
+        self.edges.push(Edge {
+            left,
+            right,
+            child,
+            previous,
+        });
     }
 
     fn clear(&mut self) {
