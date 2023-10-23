@@ -9609,7 +9609,7 @@ simplifier_init(simplifier_t *self, const tsk_id_t *samples, tsk_size_t num_samp
      * tests to ensure we're doing sensible things with duplicate sites.
      * (Particularly, re TSK_SIMPLIFY_REDUCE_TO_SITE_TOPOLOGY.) */
     ret_id = tsk_table_collection_check_integrity(tables,
-        TSK_CHECK_EDGE_ORDERING | TSK_CHECK_SITE_ORDERING | TSK_CHECK_SITE_DUPLICATES);
+        TSK_CHECK_SITE_ORDERING | TSK_CHECK_SITE_DUPLICATES);
     if (ret_id != 0) {
         ret = (int) ret_id;
         goto out;
