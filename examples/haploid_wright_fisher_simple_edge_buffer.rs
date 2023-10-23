@@ -62,7 +62,7 @@ fn liftover_buffered_edges(
     tables: &mut tskit::TableCollection,
 ) -> Result<()> {
     for &parent in buffer.parent.iter().rev() {
-        let mut last = buffer.last.get(&parent.into()).cloned();
+        let mut last = buffer.last.get(&parent).cloned();
         while let Some(previous) = last {
             let edge = &buffer.edges[previous];
             tables.add_edge(edge.left, edge.right, parent, edge.child)?;
