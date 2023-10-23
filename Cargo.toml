@@ -58,3 +58,6 @@ rustdoc-args = ["--cfg", "doc_cfg"]
 # Not run during tests
 [[example]]
 name = "tree_traversals"
+
+[[example]]
+name = "haploid_wright_fisher_simple_edge_buffer"
