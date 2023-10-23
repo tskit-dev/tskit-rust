@@ -56,6 +56,24 @@ impl EdgeBuffer {
     }
 }
 
+fn liftover_buffered_edges(
+    bookmark: &tskit::types::Bookmark,
+    buffer: &mut EdgeBuffer,
+    tables: &mut tskit::TableCollection,
+) -> Result<()> {
+    for &parent in buffer.parent.iter().rev() {
+        let mut last = buffer.last.get(&parent.into()).cloned();
+        while let Some(previous) = last {
+            let edge = &buffer.edges[previous];
+            tables.add_edge(edge.left, edge.right, parent, edge.child)?;
+            last = edge.previous;
+        }
+    }
+    buffer.clear();
+    rotate_edges(bookmark, tables);
+    Ok(())
+}
+
 fn rotate_edges(bookmark: &tskit::types::Bookmark, tables: &mut tskit::TableCollection) {
     let num_edges = tables.edges().num_rows().as_usize();
     let left =
@@ -131,16 +149,7 @@ fn simulate(
         }
 
         if birth_time % simplify_interval == 0 {
-            for &parent in buffer.parent.iter().rev() {
-                let mut last = buffer.last.get(&parent).cloned();
-                while let Some(previous) = last {
-                    let edge = &buffer.edges[previous];
-                    tables.add_edge(edge.left, edge.right, parent, edge.child)?;
-                    last = edge.previous;
-                }
-            }
-            buffer.clear();
-            rotate_edges(&bookmark, &mut tables);
+            liftover_buffered_edges(&bookmark, &mut buffer, &mut tables)?;
             if let Some(idmap) =
                 tables.simplify(children, tskit::SimplificationOptions::default(), true)?
             {
