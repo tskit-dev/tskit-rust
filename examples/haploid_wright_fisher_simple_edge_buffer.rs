@@ -32,7 +32,7 @@ impl EdgeBuffer {
         right: tskit::Position,
         parent: tskit::NodeId,
         child: tskit::NodeId,
-    ) -> Result<()> {
+    ) {
         if let Some(last) = self.last.get_mut(&parent) {
             self.edges.push(Edge {
                 left,
@@ -51,7 +51,6 @@ impl EdgeBuffer {
             self.last.insert(parent, self.edges.len() - 1);
             self.parent.push(parent);
         }
-        Ok(())
     }
 
     fn clear(&mut self) {
@@ -130,8 +129,8 @@ fn simulate(
                 .get(parent_picker.sample(&mut rng))
                 .ok_or_else(|| anyhow::Error::msg("invalid right_parent index"))?;
             let breakpoint = breakpoint_generator.sample(&mut rng);
-            buffer.buffer_edge(0_f64.into(), breakpoint.into(), *left_parent, child)?;
-            buffer.buffer_edge(breakpoint.into(), 1_f64.into(), *right_parent, child)?;
+            buffer.buffer_edge(0_f64.into(), breakpoint.into(), *left_parent, child);
+            buffer.buffer_edge(breakpoint.into(), 1_f64.into(), *right_parent, child);
             *c = child;
         }
 
