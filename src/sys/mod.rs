@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+mod macros;
+
 #[allow(dead_code)]
 #[allow(deref_nullptr)]
 #[allow(rustdoc::broken_intra_doc_links)]
@@ -8,8 +10,11 @@ pub mod bindings;
 pub mod flags;
 mod table_collection;
 mod tables;
+mod trait_impls;
+mod traits;
 mod tree;
 mod treeseq;
+mod tskbox;
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
@@ -22,7 +27,7 @@ pub use tables::*;
 pub use tree::LLTree;
 pub use treeseq::LLTreeSeq;
 
-mod tskbox;
+use traits::TskTeardown;
 
 #[non_exhaustive]
 #[derive(Error, Debug)]

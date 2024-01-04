@@ -7,7 +7,6 @@ use super::bindings::tsk_population_table_t;
 #[cfg(feature = "provenance")]
 use super::bindings::tsk_provenance_table_t;
 use super::bindings::tsk_site_table_t;
-use super::bindings::tsk_table_collection_free;
 use super::bindings::tsk_table_collection_init;
 use super::bindings::tsk_table_collection_t;
 use super::tskbox::TskBox;
@@ -17,10 +16,9 @@ pub struct TableCollection(TskBox<tsk_table_collection_t>);
 
 impl TableCollection {
     pub fn new(sequence_length: f64) -> Result<Self, Error> {
-        let mut tsk = TskBox::new(
-            |tc: *mut tsk_table_collection_t| unsafe { tsk_table_collection_init(tc, 0) },
-            tsk_table_collection_free,
-        )?;
+        let mut tsk = TskBox::new(|tc: *mut tsk_table_collection_t| unsafe {
+            tsk_table_collection_init(tc, 0)
+        })?;
         tsk.as_mut().sequence_length = sequence_length;
         Ok(Self(tsk))
     }
@@ -30,14 +28,14 @@ impl TableCollection {
     // The returned value is uninitialized.
     // Using the object prior to initilization is likely to trigger UB.
     pub unsafe fn new_uninit() -> Self {
-        let tsk = unsafe { TskBox::new_uninit(tsk_table_collection_free) };
+        let tsk = unsafe { TskBox::new_uninit() };
         Self(tsk)
     }
 
     pub fn copy(&self) -> (i32, TableCollection) {
         // SAFETY: the C API requires that the destiniation of a copy be uninitalized.
         // Copying into it will initialize the object.
-        let mut dest = unsafe { TskBox::new_uninit(tsk_table_collection_free) };
+        let mut dest = unsafe { TskBox::new_uninit() };
         // SAFETY: self.as_ptr() is not null and dest matches the input
         // expectations of the C API.
         let rv = unsafe {
