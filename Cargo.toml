@@ -29,7 +29,7 @@ tskit-derive = {version = "0.2.0", path = "tskit-derive", optional = true}
 delegate = "0.10.0"
 
 [dev-dependencies]
-anyhow = {version = "1.0.66"}
+anyhow = {version = "1.0.79"}
 clap = {version = "4.4.6", features = ["derive"]}
 serde = {version = "1.0.193", features = ["derive"]}
 serde-pickle = "1.1.0"
