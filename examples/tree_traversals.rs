@@ -16,7 +16,7 @@ fn traverse_upwards_with_iterator(tree: &tskit::Tree) {
     for &s in tree.sample_nodes() {
         // _steps_to_root counts the number of steps,
         // including the starting node s.
-        for (_steps_to_root, _) in tree.parents(s).enumerate() {}
+        let _steps_to_root = tree.parents(s).count();
     }
 }
 
