@@ -16,12 +16,9 @@ pub struct LLTree<'treeseq> {
 
 impl<'treeseq> LLTree<'treeseq> {
     pub fn new(treeseq: &'treeseq LLTreeSeq, flags: TreeFlags) -> Result<Self, Error> {
-        let mut inner = TskBox::new(
-            |x: *mut super::bindings::tsk_tree_t| unsafe {
-                super::bindings::tsk_tree_init(x, treeseq.as_ref(), flags.bits())
-            },
-            super::bindings::tsk_tree_free,
-        )?;
+        let mut inner = TskBox::new(|x: *mut super::bindings::tsk_tree_t| unsafe {
+            super::bindings::tsk_tree_init(x, treeseq.as_ref(), flags.bits())
+        })?;
         // Gotta ask Jerome about this one--why isn't this handled in tsk_tree_init??
         if !flags.contains(TreeFlags::NO_SAMPLE_COUNTS) {
             // SAFETY: nobody is null here.

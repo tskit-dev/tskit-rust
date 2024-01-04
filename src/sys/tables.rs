@@ -39,18 +39,18 @@ basic_lltableref_impl!(LLIndividualTableRef, tsk_individual_table_t);
 basic_lltableref_impl!(LLProvenanceTableRef, tsk_provenance_table_t);
 
 macro_rules! basic_llowningtable_impl {
-    ($llowningtable: ident, $tsktable: ident, $init: ident, $free: ident, $clear: ident) => {
+    ($llowningtable: ident, $tsktable: ident, $init: ident, $clear: ident) => {
         #[repr(transparent)]
         #[derive(Debug)]
         pub struct $llowningtable(super::tskbox::TskBox<super::bindings::$tsktable>);
 
         impl $llowningtable {
             pub fn new() -> Self {
-                let table = super::tskbox::TskBox::new(
-                    |x: *mut super::bindings::$tsktable| unsafe { super::bindings::$init(x, 0) },
-                    super::bindings::$free,
-                )
-                .unwrap();
+                let table =
+                    super::tskbox::TskBox::new(|x: *mut super::bindings::$tsktable| unsafe {
+                        super::bindings::$init(x, 0)
+                    })
+                    .unwrap();
                 Self(table)
             }
 
@@ -76,49 +76,42 @@ basic_llowningtable_impl!(
     LLOwningEdgeTable,
     tsk_edge_table_t,
     tsk_edge_table_init,
-    tsk_edge_table_free,
     tsk_edge_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningNodeTable,
     tsk_node_table_t,
     tsk_node_table_init,
-    tsk_node_table_free,
     tsk_node_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningSiteTable,
     tsk_site_table_t,
     tsk_site_table_init,
-    tsk_site_table_free,
     tsk_site_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningMutationTable,
     tsk_mutation_table_t,
     tsk_mutation_table_init,
-    tsk_mutation_table_free,
     tsk_mutation_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningIndividualTable,
     tsk_individual_table_t,
     tsk_individual_table_init,
-    tsk_individual_table_free,
     tsk_individual_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningMigrationTable,
     tsk_migration_table_t,
     tsk_migration_table_init,
-    tsk_migration_table_free,
     tsk_migration_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningPopulationTable,
     tsk_population_table_t,
     tsk_population_table_init,
-    tsk_population_table_free,
     tsk_population_table_clear
 );
 
@@ -127,6 +120,5 @@ basic_llowningtable_impl!(
     LLOwningProvenanceTable,
     tsk_provenance_table_t,
     tsk_provenance_table_init,
-    tsk_provenance_table_free,
     tsk_provenance_table_clear
 );

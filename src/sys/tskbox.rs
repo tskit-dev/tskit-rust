@@ -1,29 +1,29 @@
 use std::ptr::NonNull;
 
 use super::Error;
+use super::TskTeardown;
 
 #[derive(Debug)]
-pub struct TskBox<T> {
+pub struct TskBox<T: TskTeardown> {
     tsk: NonNull<T>,
-    teardown: Option<unsafe extern "C" fn(*mut T) -> i32>,
     owning: bool,
 }
 
 // SAFETY: these must be encapsulated in types that work
 // via shared/immutable reference AND/OR use data protection methods.
-unsafe impl<T> Send for TskBox<T> {}
+unsafe impl<T> Send for TskBox<T> where T: TskTeardown {}
 
 // SAFETY: these must be encapsulated in types that work
 // via shared/immutable reference AND/OR use data protection methods.
-unsafe impl<T> Sync for TskBox<T> {}
+unsafe impl<T> Sync for TskBox<T> where T: TskTeardown {}
 
-impl<T> TskBox<T> {
-    pub fn new<F: Fn(*mut T) -> i32>(
-        init: F,
-        teardown: unsafe extern "C" fn(*mut T) -> i32,
-    ) -> Result<Self, Error> {
+impl<T> TskBox<T>
+where
+    T: TskTeardown,
+{
+    pub fn new<F: Fn(*mut T) -> i32>(init: F) -> Result<Self, Error> {
         // SAFETY: we will initialize it next
-        let mut uninit = unsafe { Self::new_uninit(teardown) };
+        let mut uninit = unsafe { Self::new_uninit() };
         let rv = init(uninit.as_mut());
         if rv < 0 {
             Err(Error::Code(rv))
@@ -36,14 +36,13 @@ impl<T> TskBox<T> {
     //
     // The returned value is uninitialized.
     // Using the object prior to initilization is likely to trigger UB.
-    pub unsafe fn new_uninit(teardown: unsafe extern "C" fn(*mut T) -> i32) -> Self {
+    //
+    // UB will occur if the object is dropped before the pointer is initialized.
+    // One way to avoid that is to call [`libc::memset`].
+    pub unsafe fn new_uninit() -> Self {
         let x = unsafe { libc::malloc(std::mem::size_of::<T>()) as *mut T };
         let tsk = NonNull::new(x).unwrap();
-        Self {
-            tsk,
-            teardown: Some(teardown),
-            owning: true,
-        }
+        Self { tsk, owning: true }
     }
 
     /// # Safety
@@ -63,11 +62,7 @@ impl<T> TskBox<T> {
     #[allow(dead_code)]
     pub unsafe fn new_borrowed(owner: &Self) -> Self {
         let tsk = owner.tsk;
-        Self {
-            tsk,
-            teardown: None,
-            owning: false,
-        }
+        Self { tsk, owning: false }
     }
 
     /// # Safety
@@ -82,7 +77,6 @@ impl<T> TskBox<T> {
     pub unsafe fn into_raw(self) -> *mut T {
         let mut s = self;
         let rv = s.as_mut_ptr();
-        s.teardown = None;
         s.owning = false;
         rv
     }
@@ -104,15 +98,19 @@ impl<T> TskBox<T> {
     }
 }
 
-impl<T> Drop for TskBox<T> {
+impl<T> Drop for TskBox<T>
+where
+    T: TskTeardown,
+{
     fn drop(&mut self) {
-        if let Some(teardown) = self.teardown {
-            unsafe {
-                (teardown)(self.tsk.as_mut() as *mut T);
-            }
-        }
         if self.owning {
-            unsafe { libc::free(self.tsk.as_ptr() as *mut libc::c_void) }
+            unsafe {
+                // SAFETY: The internal storage type is NonNull.
+                // Whe new_uninit is used, the crate is sure to
+                // initialize objects.
+                self.as_mut().teardown();
+                libc::free(self.tsk.as_ptr() as *mut libc::c_void)
+            }
         }
     }
 }
@@ -120,29 +118,35 @@ impl<T> Drop for TskBox<T> {
 #[cfg(test)]
 fn is_send_sync<T: Send + Sync>(_: &T) {}
 
+#[cfg(test)]
+struct X {
+    data: i32,
+}
+
+#[cfg(test)]
+unsafe extern "C" fn teardown_x(_: *mut X) -> i32 {
+    0
+}
+
+#[cfg(test)]
+impl super::TskTeardown for X {
+    unsafe fn teardown(&mut self) -> i32 {
+        teardown_x(self as _)
+    }
+}
+
 // NOTE: tests must not make calls into the tskit C API!
 // We need to use miri to check for UB, and miri cannot
 // work accross FFI.
 
 #[test]
 fn test_miri() {
-    struct X {
-        data: i32,
-    }
-
-    unsafe extern "C" fn teardown_x(_: *mut X) -> i32 {
-        0
-    }
-
     let options = 0_i32;
 
-    let b = TskBox::new(
-        |x: *mut X| unsafe {
-            (*x).data = options;
-            0
-        },
-        teardown_x,
-    )
+    let b = TskBox::new(|x: *mut X| unsafe {
+        (*x).data = options;
+        0
+    })
     .unwrap();
 
     let _ = unsafe { TskBox::new_borrowed(&b) };
@@ -151,24 +155,18 @@ fn test_miri() {
 }
 
 #[test]
+fn test_miri_uninit() {
+    let _ = unsafe { TskBox::<X>::new_uninit() };
+}
+
+#[test]
 fn test_into_raw_miri() {
-    struct X {
-        data: i32,
-    }
-
-    unsafe extern "C" fn teardown_x(_: *mut X) -> i32 {
-        0
-    }
-
     let options = 0_i32;
 
-    let b = TskBox::new(
-        |x: *mut X| unsafe {
-            (*x).data = options;
-            0
-        },
-        teardown_x,
-    )
+    let b = TskBox::new(|x: *mut X| unsafe {
+        (*x).data = options;
+        0
+    })
     .unwrap();
 
     let p = unsafe { b.into_raw() };
@@ -177,25 +175,31 @@ fn test_into_raw_miri() {
 }
 
 #[test]
+fn test_table_collection_tskbox_uninit() {
+    let mut tables = unsafe { TskBox::<super::bindings::tsk_table_collection_t>::new_uninit() };
+    unsafe {
+        libc::memset(
+            tables.as_mut_ptr() as _,
+            0,
+            std::mem::size_of::<super::bindings::tsk_table_collection_t>(),
+        )
+    };
+}
+
+#[test]
 fn test_table_collection_tskbox() {
     let flags: u32 = 0;
-    let _ = TskBox::new(
-        |t: *mut super::bindings::tsk_table_collection_t| unsafe {
-            super::bindings::tsk_table_collection_init(t, flags)
-        },
-        super::bindings::tsk_table_collection_free,
-    );
+    let _ = TskBox::new(|t: *mut super::bindings::tsk_table_collection_t| unsafe {
+        super::bindings::tsk_table_collection_init(t, flags)
+    });
 }
 
 #[test]
 fn test_table_collection_tskbox_shared_ptr() {
     let flags: u32 = 0;
-    let tables = TskBox::new(
-        |t: *mut super::bindings::tsk_table_collection_t| unsafe {
-            super::bindings::tsk_table_collection_init(t, flags)
-        },
-        super::bindings::tsk_table_collection_free,
-    )
+    let tables = TskBox::new(|t: *mut super::bindings::tsk_table_collection_t| unsafe {
+        super::bindings::tsk_table_collection_init(t, flags)
+    })
     .unwrap();
     let _ = unsafe { TskBox::new_borrowed(&tables) };
 }
