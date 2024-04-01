@@ -318,7 +318,7 @@ mod test_provenances {
 
     #[test]
     fn test_add_rows() {
-        let records = vec!["banana".to_string(), "split".to_string()];
+        let records = ["banana".to_string(), "split".to_string()];
         let mut tables = crate::TableCollection::new(10.).unwrap();
         for (i, r) in records.iter().enumerate() {
             let row_id = tables.add_provenance(r).unwrap();
