@@ -103,7 +103,7 @@ mod util;
 pub use edge_differences::*;
 pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
-pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividualTable};
+pub use individual_table::{IndividualTable, IndividualTableRow};
 pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow};
 pub use newtypes::*;

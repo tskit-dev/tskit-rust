@@ -127,6 +127,10 @@ impl TableViews {
         &self.individuals
     }
 
+    pub fn individuals_mut(&mut self) -> &mut IndividualTable {
+        &mut self.individuals
+    }
+
     /// Get reference to the [``PopulationTable``](crate::PopulationTable).
     pub fn populations(&self) -> &PopulationTable {
         &self.populations
