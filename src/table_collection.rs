@@ -3,17 +3,21 @@ use std::vec;
 
 use crate::error::TskitError;
 use crate::metadata::EdgeMetadata;
+use crate::metadata::MutationMetadata;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
 use crate::IndividualTableSortOptions;
+use crate::MutationId;
 use crate::Position;
 use crate::SimplificationOptions;
+use crate::SiteId;
 use crate::TableClearOptions;
 use crate::TableEqualityOptions;
 use crate::TableIntegrityCheckFlags;
 use crate::TableOutputOptions;
 use crate::TableSortOptions;
+use crate::Time;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use crate::{EdgeId, NodeId};
@@ -481,11 +485,26 @@ impl TableCollection {
     /// ```
     => add_site_with_metadata, self, &mut (*self.as_mut_ptr()).sites);
 
-    mutation_table_add_row!(
     /// Add a row to the mutation table.
-    => add_mutation, self, &mut (*self.as_mut_ptr()).mutations);
+    pub fn add_mutation<S, N, P, T>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+    ) -> Result<MutationId, TskitError>
+    where
+        S: Into<SiteId>,
+        N: Into<NodeId>,
+        P: Into<MutationId>,
+        T: Into<Time>,
+    {
+        self.views
+            .mutations_mut()
+            .add_row(site, node, parent, time, derived_state)
+    }
 
-    mutation_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the mutation table.
     ///
     /// # Examples
@@ -507,7 +526,31 @@ impl TableCollection {
     ///                                           &metadata).is_ok());
     /// # }
     /// ```
-    => add_mutation_with_metadata, self, &mut (*self.as_mut_ptr()).mutations);
+    pub fn add_mutation_with_metadata<S, N, P, T, M>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<MutationId, TskitError>
+    where
+        S: Into<SiteId>,
+        N: Into<NodeId>,
+        P: Into<MutationId>,
+        T: Into<Time>,
+        M: MutationMetadata,
+    {
+        self.views.mutations_mut().add_row_with_metadata(
+            site,
+            node,
+            parent,
+            time,
+            derived_state,
+            metadata,
+        )
+    }
 
     population_table_add_row!(
     /// Add a row to the population_table
@@ -1036,7 +1079,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the mutation table from an [`OwningMutationTable`](`crate::OwningSiteTable`)
+    /// Set the mutation table from an [`MutationTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1047,7 +1090,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut mutations = tskit::OwningMutationTable::default();
+    /// let mut mutations = tskit::MutationTable::default();
     /// mutations.add_row(14, 12, -1, 11.3, None).unwrap();
     /// tables.set_mutations(&mutations).unwrap();
     /// assert_eq!(tables.mutations().num_rows(), 1);
@@ -1055,21 +1098,21 @@ impl TableCollection {
     /// # mutations.clear().unwrap();
     /// # assert_eq!(mutations.num_rows(), 0);
     /// ```
-    pub fn set_mutations(&mut self, mutations: &crate::OwningMutationTable) -> TskReturnValue {
+    pub fn set_mutations(&mut self, mutations: &crate::MutationTable) -> TskReturnValue {
         // SAFETY: neither self nor nodes are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_mutation_table_set_columns(
                 self.inner.mutations_mut(),
-                (*mutations.as_ptr()).num_rows,
-                (*mutations.as_ptr()).site,
-                (*mutations.as_ptr()).node,
-                (*mutations.as_ptr()).parent,
-                (*mutations.as_ptr()).time,
-                (*mutations.as_ptr()).derived_state,
-                (*mutations.as_ptr()).derived_state_offset,
-                (*mutations.as_ptr()).metadata,
-                (*mutations.as_ptr()).metadata_offset,
+                (mutations.as_ref()).num_rows,
+                (mutations.as_ref()).site,
+                (mutations.as_ref()).node,
+                (mutations.as_ref()).parent,
+                (mutations.as_ref()).time,
+                (mutations.as_ref()).derived_state,
+                (mutations.as_ref()).derived_state_offset,
+                (mutations.as_ref()).metadata,
+                (mutations.as_ref()).metadata_offset,
             )
         };
         handle_tsk_return_value!(rv)
