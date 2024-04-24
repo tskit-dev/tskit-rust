@@ -4,6 +4,7 @@ use std::vec;
 use crate::error::TskitError;
 use crate::metadata::EdgeMetadata;
 use crate::metadata::MutationMetadata;
+use crate::metadata::SiteMetadata;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
@@ -456,11 +457,15 @@ impl TableCollection {
             .add_row_with_metadata(flags, time, population, individual, metadata)
     }
 
-    site_table_add_row!(
     /// Add a row to the site table
-    => add_site, self, &mut (*self.as_mut_ptr()).sites);
+    pub fn add_site<P: Into<Position>>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+    ) -> Result<SiteId, TskitError> {
+        self.views.sites_mut().add_row(position, ancestral_state)
+    }
 
-    site_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the site table
     ///
     /// # Examples
@@ -483,7 +488,16 @@ impl TableCollection {
     ///                                       &metadata).is_ok());
     /// # }
     /// ```
-    => add_site_with_metadata, self, &mut (*self.as_mut_ptr()).sites);
+    pub fn add_site_with_metadata<P: Into<Position>, M: SiteMetadata>(
+        &mut self,
+        position: P,
+        ancestral_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<SiteId, TskitError> {
+        self.views
+            .sites_mut()
+            .add_row_with_metadata(position, ancestral_state, metadata)
+    }
 
     /// Add a row to the mutation table.
     pub fn add_mutation<S, N, P, T>(
@@ -1054,7 +1068,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut sites = tskit::OwningSiteTable::default();
+    /// let mut sites = tskit::SiteTable::default();
     /// sites.add_row(11.0, None).unwrap();
     /// tables.set_sites(&sites).unwrap();
     /// assert_eq!(tables.sites().num_rows(), 1);
@@ -1062,18 +1076,18 @@ impl TableCollection {
     /// # sites.clear().unwrap();
     /// # assert_eq!(sites.num_rows(), 0);
     /// ```
-    pub fn set_sites(&mut self, sites: &crate::OwningSiteTable) -> TskReturnValue {
-        // SAFETY: neither self nor nodes are possible
+    pub fn set_sites(&mut self, sites: &crate::SiteTable) -> TskReturnValue {
+        // SAFETY: neither self nor sites are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_site_table_set_columns(
                 self.inner.sites_mut(),
-                (*sites.as_ptr()).num_rows,
-                (*sites.as_ptr()).position,
-                (*sites.as_ptr()).ancestral_state,
-                (*sites.as_ptr()).ancestral_state_offset,
-                (*sites.as_ptr()).metadata,
-                (*sites.as_ptr()).metadata_offset,
+                (sites.as_ref()).num_rows,
+                (sites.as_ref()).position,
+                (sites.as_ref()).ancestral_state,
+                (sites.as_ref()).ancestral_state_offset,
+                (sites.as_ref()).metadata,
+                (sites.as_ref()).metadata_offset,
             )
         };
         handle_tsk_return_value!(rv)

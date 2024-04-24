@@ -34,19 +34,6 @@ macro_rules! decode_metadata_row {
     };
 }
 
-macro_rules! process_state_input {
-    ($state: expr) => {
-        match $state {
-            Some(x) => (
-                x.as_ptr() as *const libc::c_char,
-                x.len() as $crate::sys::bindings::tsk_size_t,
-                $state,
-            ),
-            None => (std::ptr::null(), 0, $state),
-        }
-    };
-}
-
 macro_rules! err_if_not_tracking_samples {
     ($flags: expr, $rv: expr) => {
         match $flags.contains($crate::TreeFlags::SAMPLE_LISTS) {
@@ -512,62 +499,6 @@ macro_rules! individual_table_add_row_with_metadata {
                                                   md.len()?.into(),
                                                   $table)
             }
-    };
-}
-
-macro_rules! site_table_add_row_details {
-    ($position: ident,
-     $ancestral_state: ident,
-     $metadata: expr,
-     $metadata_len: expr,
-     $table: expr) => {{
-        let astate = process_state_input!($ancestral_state);
-        let rv = unsafe {
-            $crate::sys::bindings::tsk_site_table_add_row(
-                $table,
-                $position.into().into(),
-                astate.0,
-                astate.1,
-                $metadata,
-                $metadata_len,
-            )
-        };
-        handle_tsk_return_value!(rv, rv.into())
-    }};
-}
-
-macro_rules! site_table_add_row {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name<P>(&mut $self,
-                     position: P,
-                     ancestral_state: Option<&[u8]>) -> Result<$crate::SiteId, $crate::TskitError>
-        where
-            P: Into<$crate::Position>,
-        {
-            site_table_add_row_details!(position, ancestral_state,
-                                        std::ptr::null(), 0, $table)
-        }
-    };
-}
-
-macro_rules! site_table_add_row_with_metadata {
-    ($(#[$attr:meta])* => $name: ident, $self: ident, $table: expr) => {
-        $(#[$attr])*
-        pub fn $name<P, M>(&mut $self,
-                        position: P,
-                        ancestral_state: Option<&[u8]>,
-                        metadata: &M) -> Result<$crate::SiteId, $crate::TskitError>
-        where
-            P: Into<$crate::Position>,
-            M: $crate::metadata::SiteMetadata
-        {
-            let md = $crate::metadata::EncodedMetadata::new(metadata)?;
-            site_table_add_row_details!(position, ancestral_state,
-                                        md.as_ptr(),
-                                        md.len()?.into(),
-                                        $table)
-        }
     };
 }
 

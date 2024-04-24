@@ -109,6 +109,10 @@ impl TableViews {
         &self.sites
     }
 
+    pub fn sites_mut(&mut self) -> &mut SiteTable {
+        &mut self.sites
+    }
+
     /// Get reference to the [``MutationTable``](crate::MutationTable).
     pub fn mutations(&self) -> &MutationTable {
         &self.mutations
