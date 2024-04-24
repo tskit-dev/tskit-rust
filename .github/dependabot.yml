@@ -9,7 +9,7 @@ updates:
   commit-message:
     prefix: "chore: "
   allow:
-    dependency-type: "direct"
+   - dependency-type: "direct"
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
