@@ -389,9 +389,8 @@ impl TableCollection {
         P: Into<crate::PopulationId>,
         I: Into<crate::IndividualId>,
     {
-        crate::node_table::add_row(flags, time, population, individual, unsafe {
-            &mut (*self.as_mut_ptr()).nodes
-        })
+        self.nodes_mut()
+            .add_row(flags, time, population, individual)
     }
 
     /// Add a node using default values
@@ -411,9 +410,7 @@ impl TableCollection {
         time: T,
         defaults: &D,
     ) -> Result<NodeId, TskitError> {
-        crate::node_table::add_row_with_defaults(time, defaults, unsafe {
-            &mut (*self.as_mut_ptr()).nodes
-        })
+        self.nodes_mut().add_row_with_defaults(time, defaults)
     }
 
     /// Add a row with optional metadata to the node table
@@ -451,14 +448,8 @@ impl TableCollection {
         I: Into<crate::IndividualId>,
         N: crate::metadata::NodeMetadata,
     {
-        crate::node_table::add_row_with_metadata(
-            flags,
-            time,
-            population,
-            individual,
-            metadata,
-            unsafe { &mut (*self.as_mut_ptr()).nodes },
-        )
+        self.nodes_mut()
+            .add_row_with_metadata(flags, time, population, individual, metadata)
     }
 
     site_table_add_row!(
@@ -972,7 +963,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the node table from an [`OwningNodeTable`](`crate::OwningNodeTable`)
+    /// Set the node table from an [`NodeTable`](`crate::NodeTable`)
     ///
     /// # Errors
     ///
@@ -983,7 +974,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut nodes = tskit::OwningNodeTable::default();
+    /// let mut nodes = tskit::NodeTable::default();
     /// nodes.add_row(0, 10.0, -1, -1).unwrap();
     /// tables.set_nodes(&nodes).unwrap();
     /// assert_eq!(tables.nodes().num_rows(), 1);
@@ -991,19 +982,19 @@ impl TableCollection {
     /// # nodes.clear().unwrap();
     /// # assert_eq!(nodes.num_rows(), 0);
     /// ```
-    pub fn set_nodes(&mut self, nodes: &crate::OwningNodeTable) -> TskReturnValue {
+    pub fn set_nodes(&mut self, nodes: &crate::NodeTable) -> TskReturnValue {
         // SAFETY: neither self nor nodes are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_node_table_set_columns(
                 self.inner.nodes_mut(),
-                (*nodes.as_ptr()).num_rows,
-                (*nodes.as_ptr()).flags,
-                (*nodes.as_ptr()).time,
-                (*nodes.as_ptr()).population,
-                (*nodes.as_ptr()).individual,
-                (*nodes.as_ptr()).metadata,
-                (*nodes.as_ptr()).metadata_offset,
+                (nodes.as_ref()).num_rows,
+                (nodes.as_ref()).flags,
+                (nodes.as_ref()).time,
+                (nodes.as_ref()).population,
+                (nodes.as_ref()).individual,
+                (nodes.as_ref()).metadata,
+                (nodes.as_ref()).metadata_offset,
             )
         };
         handle_tsk_return_value!(rv)

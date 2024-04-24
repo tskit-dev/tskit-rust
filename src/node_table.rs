@@ -9,105 +9,6 @@ use crate::TskitError;
 use crate::{IndividualId, NodeId, PopulationId};
 use ll_bindings::tsk_id_t;
 
-pub(crate) fn add_row_details(
-    flags: ll_bindings::tsk_flags_t,
-    time: f64,
-    population: ll_bindings::tsk_id_t,
-    individual: ll_bindings::tsk_id_t,
-    metadata: *const std::os::raw::c_char,
-    metadata_length: ll_bindings::tsk_size_t,
-    table: *mut ll_bindings::tsk_node_table_t,
-) -> Result<NodeId, TskitError> {
-    let rv = unsafe {
-        ll_bindings::tsk_node_table_add_row(
-            table,
-            flags,
-            time,
-            population,
-            individual,
-            metadata,
-            metadata_length,
-        )
-    };
-    handle_tsk_return_value!(rv, rv.into())
-}
-
-pub(crate) fn add_row<F, T, P, I>(
-    flags: F,
-    time: T,
-    population: P,
-    individual: I,
-    table: *mut ll_bindings::tsk_node_table_t,
-) -> Result<NodeId, TskitError>
-where
-    F: Into<NodeFlags>,
-    T: Into<Time>,
-    P: Into<PopulationId>,
-    I: Into<IndividualId>,
-{
-    add_row_details(
-        flags.into().bits(),
-        time.into().into(),
-        population.into().into(),
-        individual.into().into(),
-        std::ptr::null(),
-        0,
-        table,
-    )
-}
-
-pub(crate) fn add_row_with_metadata<F, T, P, I, N>(
-    flags: F,
-    time: T,
-    population: P,
-    individual: I,
-    metadata: &N,
-    table: *mut ll_bindings::tsk_node_table_t,
-) -> Result<NodeId, TskitError>
-where
-    F: Into<NodeFlags>,
-    T: Into<Time>,
-    P: Into<PopulationId>,
-    I: Into<IndividualId>,
-    N: NodeMetadata,
-{
-    let md = crate::metadata::EncodedMetadata::new(metadata)?;
-    let mdlen = md.len()?;
-    add_row_details(
-        flags.into().bits(),
-        time.into().into(),
-        population.into().into(),
-        individual.into().into(),
-        md.as_ptr(),
-        mdlen.into(),
-        table,
-    )
-}
-
-pub(crate) fn add_row_with_defaults<T: Into<crate::Time>, D: crate::node_table::DefaultNodeData>(
-    time: T,
-    defaults: &D,
-    table: *mut ll_bindings::tsk_node_table_t,
-) -> Result<NodeId, TskitError> {
-    let md = defaults.metadata()?;
-    let (ptr, mdlen) = match &md {
-        Some(value) => (
-            value.as_ptr().cast::<i8>(),
-            crate::SizeType::try_from(value.len())?,
-        ),
-        None => (std::ptr::null(), 0.into()),
-    };
-    add_row_details(
-        defaults.flags().bits(),
-        time.into().into(),
-        defaults.population().into(),
-        defaults.individual().into(),
-        ptr,
-        mdlen.into(),
-        table,
-    )
-}
-
 /// Row of a [`NodeTable`]
 #[derive(Debug)]
 pub struct NodeTableRow {
@@ -481,18 +382,68 @@ where
 #[cfg(doctest)]
 struct NodeDefaultsWithMetadataNotCloneNotDebug;
 
-/// An immtable view of a node table.
-#[derive(Debug)]
+/// A node table
+///
+/// # Examples
+///
+/// ```
+/// use tskit::NodeTable;
+///
+/// let mut nodes = NodeTable::default();
+/// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(nodes.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::NodeTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::NodeMetadata)]
+/// #[serializer("serde_json")]
+/// struct NodeMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = NodeMetadata{value: 42};
+///
+/// let mut nodes = NodeTable::default();
+///
+/// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match nodes.metadata::<NodeMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+///
+/// # }
+/// ```
+#[derive(Debug, Default)]
 #[repr(transparent)]
 pub struct NodeTable {
-    table_: sys::LLNodeTableRef,
+    table_: sys::NodeTable,
 }
 
 impl NodeTable {
+    pub fn new() -> Result<Self, TskitError> {
+        let table_ = sys::NodeTable::new(0)?;
+        Ok(Self { table_ })
+    }
+
     pub(crate) fn new_from_table(
         nodes: *mut ll_bindings::tsk_node_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLNodeTableRef::new_from_table(nodes)?;
+        let ptr = std::ptr::NonNull::new(nodes).unwrap();
+        let table_ = unsafe { sys::NodeTable::new_borrowed(ptr) };
         Ok(NodeTable { table_ })
     }
 
@@ -835,7 +786,7 @@ impl NodeTable {
     /// table collection:
     ///
     /// ```
-    /// let mut nodes = tskit::OwningNodeTable::default();
+    /// let mut nodes = tskit::NodeTable::default();
     /// assert!(nodes.add_row(tskit::NodeFlags::new_sample(), 10., -1, -1).is_ok());
     /// # assert_eq!(nodes.num_rows(), 1);
     /// let flags = nodes.flags_slice_mut();
@@ -872,61 +823,12 @@ impl NodeTable {
     build_table_column_slice_getter!(
         /// Get the population column as a slice
         => population, population_slice_raw, crate::sys::bindings::tsk_id_t);
-}
 
-build_owned_table_type!(
-    /// A standalone node table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningNodeTable;
-    ///
-    /// let mut nodes = OwningNodeTable::default();
-    /// let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(nodes.num_rows(), 1);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningNodeTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::NodeMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct NodeMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = NodeMetadata{value: 42};
-    ///
-    /// let mut nodes = OwningNodeTable::default();
-    ///
-    /// let rowid = nodes.add_row_with_metadata(0, 1., -1, -1, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match nodes.metadata::<NodeMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    ///
-    /// # }
-    /// ```
-    => OwningNodeTable,
-    NodeTable,
-    crate::sys::LLOwningNodeTable,
-    crate::sys::bindings::tsk_node_table_t
-);
+    /// Clear all data from the table
+    pub fn clear(&mut self) -> Result<i32, TskitError> {
+        handle_tsk_return_value!(self.table_.clear())
+    }
 
-impl OwningNodeTable {
     pub fn add_row<F, T, P, I>(
         &mut self,
         flags: F,
@@ -940,32 +842,39 @@ impl OwningNodeTable {
         P: Into<PopulationId>,
         I: Into<IndividualId>,
     {
-        add_row(flags, time, population, individual, self.as_mut_ptr())
+        let rv = self.table_.add_row(
+            flags.into().bits(),
+            time.into().into(),
+            population.into().into(),
+            individual.into().into(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
     }
 
-    pub fn add_row_with_metadata<F, T, P, I, N>(
+    pub fn add_row_with_metadata<F, T, P, I, M>(
         &mut self,
         flags: F,
         time: T,
         population: P,
         individual: I,
-        metadata: &N,
+        metadata: &M,
     ) -> Result<NodeId, TskitError>
     where
         F: Into<NodeFlags>,
         T: Into<Time>,
         P: Into<PopulationId>,
         I: Into<IndividualId>,
-        N: NodeMetadata,
+        M: NodeMetadata,
     {
-        add_row_with_metadata(
-            flags,
-            time,
-            population,
-            individual,
-            metadata,
-            self.as_mut_ptr(),
-        )
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let rv = self.table_.add_row_with_metadata(
+            flags.into().bits(),
+            time.into().into(),
+            population.into().into(),
+            individual.into().into(),
+            md.as_slice(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
     }
 
     /// Add row with defaults
@@ -973,31 +882,35 @@ impl OwningNodeTable {
     /// # Examples
     ///
     /// ```
-    /// # let mut nodes = tskit::OwningNodeTable::default();
+    /// # let mut nodes = tskit::NodeTable::default();
     /// let node_defaults = tskit::NodeDefaults::default();
     /// let rv = nodes.add_row_with_defaults(1.0, &node_defaults).unwrap();
     /// assert_eq!(rv, 0);
     /// let rv = nodes.add_row_with_defaults(1.0, &node_defaults).unwrap();
     /// assert_eq!(rv, 1);
     /// ```
-    pub fn add_row_with_defaults<T: Into<crate::Time> + Copy, D: DefaultNodeData>(
+    pub fn add_row_with_defaults<T: Into<crate::Time>, D: crate::node_table::DefaultNodeData>(
         &mut self,
         time: T,
         defaults: &D,
     ) -> Result<NodeId, TskitError> {
-        add_row_with_defaults(time, defaults, self.as_mut_ptr())
-    }
-}
-
-#[cfg(test)]
-mod test_owned_node_table {
-    use super::*;
-
-    #[test]
-    fn test_add_row() {
-        let mut nodes = OwningNodeTable::default();
-        let rowid = nodes.add_row(0, 1.1, -1, -1).unwrap();
-        assert_eq!(rowid, 0);
-        assert_eq!(nodes.num_rows(), 1);
+        match defaults.metadata()? {
+            None => self.add_row(
+                defaults.flags(),
+                time,
+                defaults.population(),
+                defaults.individual(),
+            ),
+            Some(md) => {
+                let rv = self.table_.add_row_with_metadata(
+                    defaults.flags().bits(),
+                    time.into().into(),
+                    defaults.population().into(),
+                    defaults.individual().into(),
+                    &md,
+                )?;
+                handle_tsk_return_value!(rv, rv.into())
+            }
+        }
     }
 }
