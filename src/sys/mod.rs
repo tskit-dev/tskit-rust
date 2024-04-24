@@ -13,9 +13,11 @@ mod individual_table;
 mod migration_table;
 mod mutation_table;
 mod node_table;
+mod population_table;
+#[cfg(feature = "provenance")]
+mod provenance_table;
 mod site_table;
 mod table_collection;
-mod tables;
 mod trait_impls;
 mod traits;
 mod tree;
@@ -33,9 +35,11 @@ pub use individual_table::IndividualTable;
 pub use migration_table::MigrationTable;
 pub use mutation_table::MutationTable;
 pub use node_table::NodeTable;
+pub use population_table::PopulationTable;
+#[cfg(feature = "provenance")]
+pub use provenance_table::ProvenanceTable;
 pub use site_table::SiteTable;
 pub use table_collection::*;
-pub use tables::*;
 pub use tree::LLTree;
 pub use treeseq::LLTreeSeq;
 

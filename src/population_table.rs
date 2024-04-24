@@ -106,18 +106,62 @@ impl<'a> streaming_iterator::StreamingIterator for PopulationTableRowView<'a> {
     }
 }
 
-/// An immutable view of site table.
+/// A population table
+///
+/// # Examples
+///
+/// ```
+/// use tskit::PopulationTable;
+///
+/// let mut populations = PopulationTable::default();
+/// let rowid = populations.add_row().unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(populations.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::PopulationTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::PopulationMetadata)]
+/// #[serializer("serde_json")]
+/// struct PopulationMetadata {
+///     name: String,
+/// }
+///
+/// let metadata = PopulationMetadata{name: "YRB".to_string()};
+///
+/// let mut populations = PopulationTable::default();
+///
+/// let rowid = populations.add_row_with_metadata(&metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match populations.metadata::<PopulationMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(&decoded.name, "YRB"),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+/// # }
+/// ```
 #[repr(transparent)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PopulationTable {
-    table_: sys::LLPopulationTableRef,
+    table_: sys::PopulationTable,
 }
 
 impl PopulationTable {
     pub(crate) fn new_from_table(
         populations: *mut ll_bindings::tsk_population_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLPopulationTableRef::new_from_table(populations)?;
+        let ptr = std::ptr::NonNull::new(populations).unwrap();
+        let table_ = unsafe { sys::PopulationTable::new_borrowed(ptr) };
         Ok(PopulationTable { table_ })
     }
 
@@ -204,60 +248,21 @@ impl PopulationTable {
             _ => None,
         }
     }
-}
 
-build_owned_table_type!(
-/// A standalone population table that owns its data.
-///
-/// # Examples
-///
-/// ```
-/// use tskit::OwningPopulationTable;
-///
-/// let mut populations = OwningPopulationTable::default();
-/// let rowid = populations.add_row().unwrap();
-/// assert_eq!(rowid, 0);
-/// assert_eq!(populations.num_rows(), 1);
-/// ```
-///
-/// An example with metadata.
-/// This requires the cargo feature `"derive"` for `tskit`.
-///
-/// ```
-/// # #[cfg(any(feature="doc", feature="derive"))] {
-/// use tskit::OwningPopulationTable;
-///
-/// #[derive(serde::Serialize,
-///          serde::Deserialize,
-///          tskit::metadata::PopulationMetadata)]
-/// #[serializer("serde_json")]
-/// struct PopulationMetadata {
-///     name: String,
-/// }
-///
-/// let metadata = PopulationMetadata{name: "YRB".to_string()};
-///
-/// let mut populations = OwningPopulationTable::default();
-///
-/// let rowid = populations.add_row_with_metadata(&metadata).unwrap();
-/// assert_eq!(rowid, 0);
-///
-/// match populations.metadata::<PopulationMetadata>(rowid) {
-///     // rowid is in range, decoding succeeded
-///     Some(Ok(decoded)) => assert_eq!(&decoded.name, "YRB"),
-///     // rowid is in range, decoding failed
-///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-///     None => panic!("row id out of range")
-/// }
-/// # }
-/// ```
-    => OwningPopulationTable,
-    PopulationTable,
-    crate::sys::LLOwningPopulationTable,
-    crate::sys::bindings::tsk_population_table_t
-);
+    pub fn add_row(&mut self) -> Result<PopulationId, TskitError> {
+        Ok(self.table_.add_row()?.into())
+    }
 
-impl OwningPopulationTable {
-    population_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    population_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    pub fn add_row_with_metadata<M: crate::metadata::PopulationMetadata>(
+        &mut self,
+        metadata: &M,
+    ) -> Result<PopulationId, TskitError> {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        Ok(self.table_.add_row_with_metadata(md.as_slice())?.into())
+    }
+
+    /// Clear all data from the table
+    pub fn clear(&mut self) -> Result<i32, TskitError> {
+        handle_tsk_return_value!(self.table_.clear())
+    }
 }

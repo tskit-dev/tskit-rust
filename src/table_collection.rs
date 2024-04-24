@@ -5,6 +5,7 @@ use crate::error::TskitError;
 use crate::metadata::EdgeMetadata;
 use crate::metadata::MigrationMetadata;
 use crate::metadata::MutationMetadata;
+use crate::metadata::PopulationMetadata;
 use crate::metadata::SiteMetadata;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
@@ -633,7 +634,6 @@ impl TableCollection {
         )
     }
 
-    population_table_add_row!(
     /// Add a row to the population_table
     ///
     /// # Examples
@@ -642,9 +642,10 @@ impl TableCollection {
     /// # let mut tables = tskit::TableCollection::new(55.0).unwrap();
     /// tables.add_population().unwrap();
     /// ```
-    => add_population, self, &mut (*self.as_mut_ptr()).populations);
+    pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
+        self.views.populations_mut().add_row()
+    }
 
-    population_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the population_table
     ///
     /// # Examples
@@ -664,7 +665,12 @@ impl TableCollection {
     /// let metadata = PopulationMetadata{x: 1};
     /// assert!(tables.add_population_with_metadata(&metadata).is_ok());
     /// # }
-    => add_population_with_metadata, self, &mut (*self.as_mut_ptr()).populations);
+    pub fn add_population_with_metadata<M: PopulationMetadata>(
+        &mut self,
+        metadata: &M,
+    ) -> Result<PopulationId, TskitError> {
+        self.views.populations_mut().add_row_with_metadata(metadata)
+    }
 
     /// Build the "input" and "output"
     /// indexes for the edge table.
@@ -993,7 +999,6 @@ impl TableCollection {
 
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
-    provenance_table_add_row!(
     /// Add provenance record with a time stamp.
     ///
     /// All implementation of this trait provided by `tskit` use
@@ -1010,7 +1015,7 @@ impl TableCollection {
     ///
     /// # Examples
     /// ```
-    /// 
+    ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// # #[cfg(feature = "provenance")] {
     /// tables.add_provenance(&String::from("Some provenance")).unwrap();
@@ -1042,7 +1047,9 @@ impl TableCollection {
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
     /// # }
     /// ```
-    => add_provenance, self, &mut (*self.as_mut_ptr()).provenances);
+    pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
+        self.views.provenances_mut().add_row(record)
+    }
 
     /// Set the edge table from an [`EdgeTable`](`crate::EdgeTable`)
     ///
@@ -1124,7 +1131,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the site table from an [`OwningSiteTable`](`crate::OwningSiteTable`)
+    /// Set the site table from an [`SiteTable`](`crate::SiteTable`)
     ///
     /// # Errors
     ///
@@ -1160,7 +1167,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the mutation table from an [`MutationTable`](`crate::OwningSiteTable`)
+    /// Set the mutation table from an [`MutationTable`](`crate::MutationTable`)
     ///
     /// # Errors
     ///
@@ -1199,7 +1206,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the individual table from an [`IndividualTable`](`crate::OwningSiteTable`)
+    /// Set the individual table from an [`IndividualTable`](`crate::IndividualTable`)
     ///
     /// # Errors
     ///
@@ -1238,7 +1245,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the migration table from an [`MigrationTable`](`crate::OwningSiteTable`)
+    /// Set the migration table from an [`MigrationTable`](`crate::MigrationTable`)
     ///
     /// # Errors
     ///
@@ -1277,7 +1284,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the population table from an [`OwningPopulationTable`](`crate::OwningSiteTable`)
+    /// Set the population table from an [`PopulationTable`](`crate::SiteTable`)
     ///
     /// # Errors
     ///
@@ -1288,25 +1295,22 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut populations = tskit::OwningPopulationTable::default();
+    /// let mut populations = tskit::PopulationTable::default();
     /// populations.add_row().unwrap();
     /// tables.set_populations(&populations).unwrap();
     /// assert_eq!(tables.populations().num_rows(), 1);
     /// # populations.clear().unwrap();
     /// # assert_eq!(populations.num_rows(), 0);
     /// ```
-    pub fn set_populations(
-        &mut self,
-        populations: &crate::OwningPopulationTable,
-    ) -> TskReturnValue {
+    pub fn set_populations(&mut self, populations: &crate::PopulationTable) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_population_table_set_columns(
                 self.inner.populations_mut(),
-                (*populations.as_ptr()).num_rows,
-                (*populations.as_ptr()).metadata,
-                (*populations.as_ptr()).metadata_offset,
+                (populations.as_ref()).num_rows,
+                (populations.as_ref()).metadata,
+                (populations.as_ref()).metadata_offset,
             )
         };
         handle_tsk_return_value!(rv)
@@ -1315,7 +1319,7 @@ impl TableCollection {
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Set the provenance table from an
-    /// [`OwningProvenanceTable`](`crate::provenance::OwningProvenanceTable`)
+    /// [`ProvenanceTable`](`crate::provenance::ProvenanceTable`)
     ///
     /// # Errors
     ///
@@ -1327,7 +1331,7 @@ impl TableCollection {
     /// # #[cfg(feature="provenance")] {
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut provenances = tskit::provenance::OwningProvenanceTable::default();
+    /// let mut provenances = tskit::provenance::ProvenanceTable::default();
     /// provenances.add_row("I like pancakes").unwrap();
     /// tables.set_provenances(&provenances).unwrap();
     /// assert_eq!(tables.provenances().num_rows(), 1);
@@ -1338,18 +1342,18 @@ impl TableCollection {
     /// ```
     pub fn set_provenances(
         &mut self,
-        provenances: &crate::provenance::OwningProvenanceTable,
+        provenances: &crate::provenance::ProvenanceTable,
     ) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_set_columns(
                 self.inner.provenances_mut(),
-                (*provenances.as_ptr()).num_rows,
-                (*provenances.as_ptr()).timestamp,
-                (*provenances.as_ptr()).timestamp_offset,
-                (*provenances.as_ptr()).record,
-                (*provenances.as_ptr()).record_offset,
+                (provenances.as_ref()).num_rows,
+                (provenances.as_ref()).timestamp,
+                (provenances.as_ref()).timestamp_offset,
+                (provenances.as_ref()).record,
+                (provenances.as_ref()).record_offset,
             )
         };
         handle_tsk_return_value!(rv)
