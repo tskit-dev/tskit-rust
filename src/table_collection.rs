@@ -2,6 +2,7 @@ use delegate::delegate;
 use std::vec;
 
 use crate::error::TskitError;
+use crate::metadata::EdgeMetadata;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
@@ -168,7 +169,6 @@ impl TableCollection {
         self.inner.sequence_length().into()
     }
 
-    edge_table_add_row!(
     /// Add a row to the edge table
     ///
     /// # Examples
@@ -211,9 +211,16 @@ impl TableCollection {
     ///
     /// See [`TableCollection::check_integrity`] for how to catch these data model
     /// violations.
-    => add_edge, self, &mut(*self.as_mut_ptr()).edges);
+    pub fn add_edge<L: Into<Position>, R: Into<Position>, P: Into<NodeId>, C: Into<NodeId>>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+    ) -> Result<EdgeId, TskitError> {
+        self.views.edges_mut().add_row(left, right, parent, child)
+    }
 
-    edge_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the edge table
     ///
     /// # Examples
@@ -234,7 +241,24 @@ impl TableCollection {
     /// assert!(tables.add_edge_with_metadata(0., 53., 1, 11, &metadata).is_ok());
     /// # }
     /// ```
-    => add_edge_with_metadata, self, &mut(*self.as_mut_ptr()).edges);
+    pub fn add_edge_with_metadata<
+        L: Into<Position>,
+        R: Into<Position>,
+        P: Into<NodeId>,
+        C: Into<NodeId>,
+        M: EdgeMetadata,
+    >(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+        metadata: &M,
+    ) -> Result<EdgeId, TskitError> {
+        self.views
+            .edges_mut()
+            .add_row_with_metadata(left, right, parent, child, metadata)
+    }
 
     individual_table_add_row!(
     /// Add a row to the individual table
@@ -905,7 +929,7 @@ impl TableCollection {
     /// ```
     => add_provenance, self, &mut (*self.as_mut_ptr()).provenances);
 
-    /// Set the edge table from an [`OwningEdgeTable`](`crate::OwningEdgeTable`)
+    /// Set the edge table from an [`EdgeTable`](`crate::EdgeTable`)
     ///
     /// # Errors
     ///
@@ -914,9 +938,8 @@ impl TableCollection {
     /// # Example
     ///
     /// ```rust
-    /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut edges = tskit::OwningEdgeTable::default();
+    /// let mut edges = tskit::EdgeTable::default();
     /// edges.add_row(0., 1., 0, 12).unwrap();
     /// tables.set_edges(&edges).unwrap();
     /// assert_eq!(tables.edges().num_rows(), 1);
@@ -924,19 +947,26 @@ impl TableCollection {
     /// # edges.clear().unwrap();
     /// # assert_eq!(edges.num_rows(), 0);
     /// ```
-    pub fn set_edges(&mut self, edges: &crate::OwningEdgeTable) -> TskReturnValue {
+    ///
+    /// The borrow checker will prevent ill-advised operations:
+    ///
+    /// ```compile_fail
+    /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
+    /// tables.set_edges(&tables.edges()).unwrap();
+    /// ```
+    pub fn set_edges(&mut self, edges: &crate::EdgeTable) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_edge_table_set_columns(
                 self.inner.edges_mut(),
-                (*edges.as_ptr()).num_rows,
-                (*edges.as_ptr()).left,
-                (*edges.as_ptr()).right,
-                (*edges.as_ptr()).parent,
-                (*edges.as_ptr()).child,
-                (*edges.as_ptr()).metadata,
-                (*edges.as_ptr()).metadata_offset,
+                (edges.as_ref()).num_rows,
+                (edges.as_ref()).left,
+                (edges.as_ref()).right,
+                (edges.as_ref()).parent,
+                (edges.as_ref()).child,
+                (edges.as_ref()).metadata,
+                (edges.as_ref()).metadata_offset,
             )
         };
         handle_tsk_return_value!(rv)

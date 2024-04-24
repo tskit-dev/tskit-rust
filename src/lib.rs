@@ -101,7 +101,7 @@ pub mod types;
 mod util;
 
 pub use edge_differences::*;
-pub use edge_table::{EdgeTable, EdgeTableRow, OwningEdgeTable};
+pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
 pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividualTable};
 pub use migration_table::{MigrationTable, MigrationTableRow, OwningMigrationTable};

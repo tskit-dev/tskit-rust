@@ -90,6 +90,10 @@ impl TableViews {
         &self.edges
     }
 
+    pub fn edges_mut(&mut self) -> &mut EdgeTable {
+        &mut self.edges
+    }
+
     /// Get reference to the [``NodeTable``](crate::NodeTable).
     pub fn nodes(&self) -> &NodeTable {
         &self.nodes

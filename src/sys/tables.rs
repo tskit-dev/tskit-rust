@@ -27,7 +27,6 @@ macro_rules! basic_lltableref_impl {
     };
 }
 
-basic_lltableref_impl!(LLEdgeTableRef, tsk_edge_table_t);
 basic_lltableref_impl!(LLNodeTableRef, tsk_node_table_t);
 basic_lltableref_impl!(LLMutationTableRef, tsk_mutation_table_t);
 basic_lltableref_impl!(LLSiteTableRef, tsk_site_table_t);
@@ -72,12 +71,6 @@ macro_rules! basic_llowningtable_impl {
     };
 }
 
-basic_llowningtable_impl!(
-    LLOwningEdgeTable,
-    tsk_edge_table_t,
-    tsk_edge_table_init,
-    tsk_edge_table_clear
-);
 basic_llowningtable_impl!(
     LLOwningNodeTable,
     tsk_node_table_t,

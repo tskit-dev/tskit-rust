@@ -7,6 +7,7 @@ mod macros;
 #[allow(rustdoc::broken_intra_doc_links)]
 pub mod bindings;
 
+mod edge_table;
 pub mod flags;
 mod table_collection;
 mod tables;
@@ -22,6 +23,7 @@ mod tskbox;
 /// "Null" identifier value.
 pub(crate) const TSK_NULL: bindings::tsk_id_t = -1;
 
+pub use edge_table::EdgeTable;
 pub use table_collection::*;
 pub use tables::*;
 pub use tree::LLTree;
