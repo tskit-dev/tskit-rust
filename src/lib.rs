@@ -105,7 +105,7 @@ pub use edge_table::{EdgeTable, EdgeTableRow};
 pub use error::TskitError;
 pub use individual_table::{IndividualTable, IndividualTableRow, OwningIndividualTable};
 pub use migration_table::{MigrationTable, MigrationTableRow, OwningMigrationTable};
-pub use mutation_table::{MutationTable, MutationTableRow, OwningMutationTable};
+pub use mutation_table::{MutationTable, MutationTableRow};
 pub use newtypes::*;
 pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTableRow};
 pub use population_table::{OwningPopulationTable, PopulationTable, PopulationTableRow};

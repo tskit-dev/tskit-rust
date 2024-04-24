@@ -1,4 +1,5 @@
 use crate::metadata;
+use crate::metadata::MutationMetadata;
 use crate::sys;
 use crate::SizeType;
 use crate::Time;
@@ -156,17 +157,61 @@ impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
 }
 
 /// An immutable view of site table.
-#[derive(Debug)]
+///
+/// # Examples
+///
+/// ```
+/// use tskit::MutationTable;
+///
+/// let mut mutations = MutationTable::default();
+/// let rowid = mutations.add_row(1, 2, 0, 1.0, None).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(mutations.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::MutationTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::MutationMetadata)]
+/// #[serializer("serde_json")]
+/// struct MutationMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = MutationMetadata{value: 42};
+///
+/// let mut mutations = MutationTable::default();
+///
+/// let rowid = mutations.add_row_with_metadata(0, 1, 5, 10.0, None, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match mutations.metadata::<MutationMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+/// # }
+/// ```
+#[derive(Debug, Default)]
 #[repr(transparent)]
 pub struct MutationTable {
-    table_: sys::LLMutationTableRef,
+    table_: sys::MutationTable,
 }
 
 impl MutationTable {
     pub(crate) fn new_from_table(
         mutations: *mut ll_bindings::tsk_mutation_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLMutationTableRef::new_from_table(mutations)?;
+        let ptr = std::ptr::NonNull::new(mutations).unwrap();
+        let table_ = unsafe { sys::MutationTable::new_borrowed(ptr) };
         Ok(MutationTable { table_ })
     }
 
@@ -342,60 +387,61 @@ impl MutationTable {
     build_table_column_slice_getter!(
         /// Get the parent column as a slice
         => parent, parent_slice_raw, crate::sys::bindings::tsk_id_t);
-}
 
-build_owned_table_type!(
-/// A standalone mutation table that owns its data.
-///
-/// # Examples
-///
-/// ```
-/// use tskit::OwningMutationTable;
-///
-/// let mut mutations = OwningMutationTable::default();
-/// let rowid = mutations.add_row(1, 2, 0, 1.0, None).unwrap();
-/// assert_eq!(rowid, 0);
-/// assert_eq!(mutations.num_rows(), 1);
-/// ```
-///
-/// An example with metadata.
-/// This requires the cargo feature `"derive"` for `tskit`.
-///
-/// ```
-/// # #[cfg(any(feature="doc", feature="derive"))] {
-/// use tskit::OwningMutationTable;
-///
-/// #[derive(serde::Serialize,
-///          serde::Deserialize,
-///          tskit::metadata::MutationMetadata)]
-/// #[serializer("serde_json")]
-/// struct MutationMetadata {
-///     value: i32,
-/// }
-///
-/// let metadata = MutationMetadata{value: 42};
-///
-/// let mut mutations = OwningMutationTable::default();
-///
-/// let rowid = mutations.add_row_with_metadata(0, 1, 5, 10.0, None, &metadata).unwrap();
-/// assert_eq!(rowid, 0);
-///
-/// match mutations.metadata::<MutationMetadata>(rowid) {
-///     // rowid is in range, decoding succeeded
-///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-///     // rowid is in range, decoding failed
-///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-///     None => panic!("row id out of range")
-/// }
-/// # }
-/// ```
-    => OwningMutationTable,
-    MutationTable,
-    crate::sys::LLOwningMutationTable,
-    crate::sys::bindings::tsk_mutation_table_t
-);
+    /// Clear all data from the table
+    pub fn clear(&mut self) -> Result<i32, TskitError> {
+        handle_tsk_return_value!(self.table_.clear())
+    }
 
-impl OwningMutationTable {
-    mutation_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    mutation_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    pub fn add_row<S, N, P, T>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+    ) -> Result<MutationId, TskitError>
+    where
+        S: Into<SiteId>,
+        N: Into<NodeId>,
+        P: Into<MutationId>,
+        T: Into<Time>,
+    {
+        let rv = self.table_.add_row(
+            site.into().into(),
+            node.into().into(),
+            parent.into().into(),
+            time.into().into(),
+            derived_state,
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row_with_metadata<S, N, P, T, M>(
+        &mut self,
+        site: S,
+        node: N,
+        parent: P,
+        time: T,
+        derived_state: Option<&[u8]>,
+        metadata: &M,
+    ) -> Result<MutationId, TskitError>
+    where
+        S: Into<SiteId>,
+        N: Into<NodeId>,
+        P: Into<MutationId>,
+        T: Into<Time>,
+        M: MutationMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let rv = self.table_.add_row_with_metadata(
+            site.into().into(),
+            node.into().into(),
+            parent.into().into(),
+            time.into().into(),
+            derived_state,
+            md.as_slice(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
 }
