@@ -236,6 +236,10 @@ impl EncodedMetadata {
     pub(crate) fn len(&self) -> Result<SizeType, crate::TskitError> {
         SizeType::try_from(self.encoded.len())
     }
+
+    pub(crate) fn as_slice(&self) -> &[u8] {
+        &self.encoded
+    }
 }
 
 #[derive(Error, Debug)]

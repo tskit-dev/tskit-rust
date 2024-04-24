@@ -1,4 +1,5 @@
 use crate::metadata;
+use crate::metadata::EdgeMetadata;
 use crate::sys;
 use crate::Position;
 use crate::TskitError;
@@ -138,18 +139,69 @@ impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
     }
 }
 
-/// An immutable view of an edge table.
+/// An edge table.
+///
+/// # Examples
+///
+/// ```
+/// use tskit::EdgeTable;
+///
+/// let mut edges = EdgeTable::default();
+/// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(edges.num_rows(), 1);
+///
+/// edges.clear().unwrap();
+/// assert_eq!(edges.num_rows(), 0);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::EdgeTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::EdgeMetadata)]
+/// #[serializer("serde_json")]
+/// struct EdgeMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = EdgeMetadata{value: 42};
+///
+/// let mut edges = EdgeTable::default();
+///
+/// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match edges.metadata::<EdgeMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+/// # }
 #[repr(transparent)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct EdgeTable {
-    table_: sys::LLEdgeTableRef,
+    table_: sys::EdgeTable,
 }
 
 impl EdgeTable {
+    pub fn new() -> Result<Self, TskitError> {
+        let table_ = sys::EdgeTable::new(0)?;
+        Ok(Self { table_ })
+    }
+
     pub(crate) fn new_from_table(
         edges: *mut ll_bindings::tsk_edge_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLEdgeTableRef::new_from_table(edges)?;
+        let ptr = std::ptr::NonNull::new(edges).unwrap();
+        let table_ = unsafe { sys::EdgeTable::new_borrowed(ptr) };
         Ok(EdgeTable { table_ })
     }
 
@@ -304,63 +356,115 @@ impl EdgeTable {
     build_table_column_slice_getter!(
         /// Get the child column as a slice of the underlying integer type
         => child, child_slice_raw, ll_bindings::tsk_id_t);
+
+    /// Clear all data from the table
+    pub fn clear(&mut self) -> Result<i32, TskitError> {
+        handle_tsk_return_value!(self.table_.clear())
+    }
+
+    /// Add a row without metadata.
+    ///
+    /// See [crate::TableCollection::add_edge] for examples
+    pub fn add_row<L: Into<Position>, R: Into<Position>, P: Into<NodeId>, C: Into<NodeId>>(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+    ) -> Result<EdgeId, TskitError> {
+        let rv = self.table_.add_row(
+            left.into().into(),
+            right.into().into(),
+            parent.into().into(),
+            child.into().into(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    /// Add a row with metadata.
+    ///
+    /// See [crate::TableCollection::add_edge_with_metadata] for examples
+    pub fn add_row_with_metadata<
+        L: Into<Position>,
+        R: Into<Position>,
+        P: Into<NodeId>,
+        C: Into<NodeId>,
+        M: EdgeMetadata,
+    >(
+        &mut self,
+        left: L,
+        right: R,
+        parent: P,
+        child: C,
+        metadata: &M,
+    ) -> Result<EdgeId, TskitError> {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let rv = self.table_.add_row_with_metadata(
+            left.into().into(),
+            right.into().into(),
+            parent.into().into(),
+            child.into().into(),
+            md.as_slice(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
 }
 
-build_owned_table_type!(
-    /// A standalone edge table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningEdgeTable;
-    ///
-    /// let mut edges = OwningEdgeTable::default();
-    /// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(edges.num_rows(), 1);
-    ///
-    /// edges.clear().unwrap();
-    /// assert_eq!(edges.num_rows(), 0);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningEdgeTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::EdgeMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct EdgeMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = EdgeMetadata{value: 42};
-    ///
-    /// let mut edges = OwningEdgeTable::default();
-    ///
-    /// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match edges.metadata::<EdgeMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    /// # }
-    /// ```
-    => OwningEdgeTable,
-    EdgeTable,
-    crate::sys::LLOwningEdgeTable,
-    crate::sys::bindings::tsk_edge_table_t
-);
-
-impl OwningEdgeTable {
-    edge_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
-}
+//build_owned_table_type!(
+//    /// A standalone edge table that owns its data.
+//    ///
+//    /// # Examples
+//    ///
+//    /// ```
+//    /// use tskit::OwningEdgeTable;
+//    ///
+//    /// let mut edges = OwningEdgeTable::default();
+//    /// let rowid = edges.add_row(1., 2., 0, 1).unwrap();
+//    /// assert_eq!(rowid, 0);
+//    /// assert_eq!(edges.num_rows(), 1);
+//    ///
+//    /// edges.clear().unwrap();
+//    /// assert_eq!(edges.num_rows(), 0);
+//    /// ```
+//    ///
+//    /// An example with metadata.
+//    /// This requires the cargo feature `"derive"` for `tskit`.
+//    ///
+//    /// ```
+//    /// # #[cfg(any(feature="doc", feature="derive"))] {
+//    /// use tskit::OwningEdgeTable;
+//    ///
+//    /// #[derive(serde::Serialize,
+//    ///          serde::Deserialize,
+//    ///          tskit::metadata::EdgeMetadata)]
+//    /// #[serializer("serde_json")]
+//    /// struct EdgeMetadata {
+//    ///     value: i32,
+//    /// }
+//    ///
+//    /// let metadata = EdgeMetadata{value: 42};
+//    ///
+//    /// let mut edges = OwningEdgeTable::default();
+//    ///
+//    /// let rowid = edges.add_row_with_metadata(0., 1., 5, 10, &metadata).unwrap();
+//    /// assert_eq!(rowid, 0);
+//    ///
+//    /// match edges.metadata::<EdgeMetadata>(rowid) {
+//    ///     // rowid is in range, decoding succeeded
+//    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+//    ///     // rowid is in range, decoding failed
+//    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+//    ///     None => panic!("row id out of range")
+//    /// }
+//    /// # }
+//    /// ```
+//    => OwningEdgeTable,
+//    EdgeTable,
+//    crate::sys::LLOwningEdgeTable,
+//    crate::sys::bindings::tsk_edge_table_t
+//);
+//
+//impl OwningEdgeTable {
+//    edge_table_add_row!(=> add_row, self, self.as_mut_ptr());
+//    edge_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+//}

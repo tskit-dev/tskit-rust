@@ -67,6 +67,16 @@ where
 
     /// # Safety
     ///
+    /// The underlying pointer must be initialized
+    pub unsafe fn new_init_from_ptr(ptr: NonNull<T>) -> Self {
+        Self {
+            tsk: ptr,
+            owning: false,
+        }
+    }
+
+    /// # Safety
+    ///
     /// The returned pointer is no longer managed, meaing
     /// that it is the caller's responsibility to properly
     /// tear down and free the return value.
