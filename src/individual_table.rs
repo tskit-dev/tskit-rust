@@ -96,11 +96,56 @@ impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
     }
 }
 
-/// An immutable view of a individual table.
-#[derive(Debug)]
+/// An individual table.
+///
+/// # Examples
+///
+/// ```
+/// use tskit::IndividualTable;
+///
+/// let mut individuals = IndividualTable::default();
+/// let rowid = individuals.add_row(0, None, None).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(individuals.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::IndividualTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::IndividualMetadata)]
+/// #[serializer("serde_json")]
+/// struct IndividualMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = IndividualMetadata{value: 42};
+///
+/// let mut individuals = IndividualTable::default();
+///
+/// let rowid = individuals.add_row_with_metadata(0, None, None, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match individuals.metadata::<IndividualMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+///
+/// # }
+/// ```
+#[derive(Debug, Default)]
 #[repr(transparent)]
 pub struct IndividualTable {
-    table_: sys::LLIndividualTableRef,
+    table_: sys::IndividualTable,
 }
 
 fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
@@ -141,7 +186,8 @@ impl IndividualTable {
     pub(crate) fn new_from_table(
         individuals: *mut ll_bindings::tsk_individual_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLIndividualTableRef::new_from_table(individuals)?;
+        let ptr = std::ptr::NonNull::new(individuals).unwrap();
+        let table_ = unsafe { sys::IndividualTable::new_borrowed(ptr) };
         Ok(IndividualTable { table_ })
     }
 
@@ -434,62 +480,73 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
     build_table_column_slice_getter!(
         /// Get the flags column as a slice
         => flags, flags_slice_raw, ll_bindings::tsk_flags_t);
-}
 
-build_owned_table_type!(
-    /// A standalone individual table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningIndividualTable;
-    ///
-    /// let mut individuals = OwningIndividualTable::default();
-    /// let rowid = individuals.add_row(0, None, None).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(individuals.num_rows(), 1);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningIndividualTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::IndividualMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct IndividualMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = IndividualMetadata{value: 42};
-    ///
-    /// let mut individuals = OwningIndividualTable::default();
-    ///
-    /// let rowid = individuals.add_row_with_metadata(0, None, None, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match individuals.metadata::<IndividualMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    ///
-    /// # }
-    /// ```
-    => OwningIndividualTable,
-    IndividualTable,
-    crate::sys::LLOwningIndividualTable,
-    crate::sys::bindings::tsk_individual_table_t
-);
+    /// Clear all data from the table
+    pub fn clear(&mut self) -> Result<i32, TskitError> {
+        handle_tsk_return_value!(self.table_.clear())
+    }
 
-impl OwningIndividualTable {
-    individual_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    individual_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    pub fn add_row<F, L, P>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+    ) -> Result<IndividualId, TskitError>
+    where
+        F: Into<IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+    {
+        let location = unsafe {
+            std::slice::from_raw_parts(
+                location.get_slice().as_ptr().cast::<f64>(),
+                location.get_slice().len(),
+            )
+        };
+        let parents = unsafe {
+            std::slice::from_raw_parts(
+                parents.get_slice().as_ptr().cast::<tsk_id_t>(),
+                parents.get_slice().len(),
+            )
+        };
+        let rv = self
+            .table_
+            .add_row(flags.into().bits(), location, parents)?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row_with_metadata<F, L, P, M>(
+        &mut self,
+        flags: F,
+        location: L,
+        parents: P,
+        metadata: &M,
+    ) -> Result<IndividualId, TskitError>
+    where
+        F: Into<IndividualFlags>,
+        L: crate::IndividualLocation,
+        P: crate::IndividualParents,
+        M: crate::metadata::IndividualMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let location = unsafe {
+            std::slice::from_raw_parts(
+                location.get_slice().as_ptr().cast::<f64>(),
+                location.get_slice().len(),
+            )
+        };
+        let parents = unsafe {
+            std::slice::from_raw_parts(
+                parents.get_slice().as_ptr().cast::<tsk_id_t>(),
+                parents.get_slice().len(),
+            )
+        };
+        let rv = self.table_.add_row_with_metadata(
+            flags.into().bits(),
+            location,
+            parents,
+            md.as_slice(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
 }

@@ -9,6 +9,7 @@ pub mod bindings;
 
 mod edge_table;
 pub mod flags;
+mod individual_table;
 mod migration_table;
 mod mutation_table;
 mod node_table;
@@ -28,6 +29,7 @@ mod tskbox;
 pub(crate) const TSK_NULL: bindings::tsk_id_t = -1;
 
 pub use edge_table::EdgeTable;
+pub use individual_table::IndividualTable;
 pub use migration_table::MigrationTable;
 pub use mutation_table::MutationTable;
 pub use node_table::NodeTable;
