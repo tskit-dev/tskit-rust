@@ -15,5 +15,3 @@ updates:
   schedule:
     interval: monthly
     time: "13:00"
-  commit-message:
-    prefix: "chore: "
