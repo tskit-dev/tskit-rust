@@ -1,4 +1,5 @@
 use crate::metadata;
+use crate::metadata::MigrationMetadata;
 use crate::sys;
 use crate::Position;
 use crate::SizeType;
@@ -158,18 +159,63 @@ impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
     }
 }
 
-/// An immutable view of a migration table.
-#[derive(Debug)]
+/// A migration table.
+///
+/// # Examples
+///
+/// ```
+/// use tskit::MigrationTable;
+///
+/// let mut migrations = MigrationTable::default();
+/// let rowid = migrations.add_row((0., 1.), 1, (0, 1), 10.3).unwrap();
+/// assert_eq!(rowid, 0);
+/// assert_eq!(migrations.num_rows(), 1);
+/// ```
+///
+/// An example with metadata.
+/// This requires the cargo feature `"derive"` for `tskit`.
+///
+/// ```
+/// # #[cfg(any(feature="doc", feature="derive"))] {
+/// use tskit::MigrationTable;
+///
+/// #[derive(serde::Serialize,
+///          serde::Deserialize,
+///          tskit::metadata::MigrationMetadata)]
+/// #[serializer("serde_json")]
+/// struct MigrationMetadata {
+///     value: i32,
+/// }
+///
+/// let metadata = MigrationMetadata{value: 42};
+///
+/// let mut migrations = MigrationTable::default();
+///
+/// let rowid = migrations.add_row_with_metadata((0., 1.), 1, (0, 1), 10.3, &metadata).unwrap();
+/// assert_eq!(rowid, 0);
+///
+/// match migrations.metadata::<MigrationMetadata>(rowid) {
+///     // rowid is in range, decoding succeeded
+///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
+///     // rowid is in range, decoding failed
+///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
+///     None => panic!("row id out of range")
+/// }
+///
+/// # }
+/// ```
+#[derive(Debug, Default)]
 #[repr(transparent)]
 pub struct MigrationTable {
-    table_: sys::LLMigrationTableRef,
+    table_: sys::MigrationTable,
 }
 
 impl MigrationTable {
     pub(crate) fn new_from_table(
         migrations: *mut ll_bindings::tsk_migration_table_t,
     ) -> Result<Self, TskitError> {
-        let table_ = sys::LLMigrationTableRef::new_from_table(migrations)?;
+        let ptr = std::ptr::NonNull::new(migrations).unwrap();
+        let table_ = unsafe { sys::MigrationTable::new_borrowed(ptr) };
         Ok(MigrationTable { table_ })
     }
 
@@ -366,61 +412,63 @@ impl MigrationTable {
     build_table_column_slice_getter!(
         /// Get the dest column as a slice
         => dest, dest_slice_raw, ll_bindings::tsk_id_t);
-}
 
-build_owned_table_type!(
-    /// A standalone migration table that owns its data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tskit::OwningMigrationTable;
-    ///
-    /// let mut migrations = OwningMigrationTable::default();
-    /// let rowid = migrations.add_row((0., 1.), 1, (0, 1), 10.3).unwrap();
-    /// assert_eq!(rowid, 0);
-    /// assert_eq!(migrations.num_rows(), 1);
-    /// ```
-    ///
-    /// An example with metadata.
-    /// This requires the cargo feature `"derive"` for `tskit`.
-    ///
-    /// ```
-    /// # #[cfg(any(feature="doc", feature="derive"))] {
-    /// use tskit::OwningMigrationTable;
-    ///
-    /// #[derive(serde::Serialize,
-    ///          serde::Deserialize,
-    ///          tskit::metadata::MigrationMetadata)]
-    /// #[serializer("serde_json")]
-    /// struct MigrationMetadata {
-    ///     value: i32,
-    /// }
-    ///
-    /// let metadata = MigrationMetadata{value: 42};
-    ///
-    /// let mut migrations = OwningMigrationTable::default();
-    ///
-    /// let rowid = migrations.add_row_with_metadata((0., 1.), 1, (0, 1), 10.3, &metadata).unwrap();
-    /// assert_eq!(rowid, 0);
-    ///
-    /// match migrations.metadata::<MigrationMetadata>(rowid) {
-    ///     // rowid is in range, decoding succeeded
-    ///     Some(Ok(decoded)) => assert_eq!(decoded.value, 42),
-    ///     // rowid is in range, decoding failed
-    ///     Some(Err(e)) => panic!("error decoding metadata: {:?}", e),
-    ///     None => panic!("row id out of range")
-    /// }
-    ///
-    /// # }
-    /// ```
-    => OwningMigrationTable,
-    MigrationTable,
-    crate::sys::LLOwningMigrationTable,
-    crate::sys::bindings::tsk_migration_table_t
-);
+    /// Clear all data from the table
+    pub fn clear(&mut self) -> Result<i32, TskitError> {
+        handle_tsk_return_value!(self.table_.clear())
+    }
 
-impl OwningMigrationTable {
-    migration_table_add_row!(=> add_row, self, self.as_mut_ptr());
-    migration_table_add_row_with_metadata!(=> add_row_with_metadata, self, self.as_mut_ptr());
+    pub fn add_row<LEFT, RIGHT, N, SOURCE, DEST, T>(
+        &mut self,
+        span: (LEFT, RIGHT),
+        node: N,
+        source_dest: (SOURCE, DEST),
+        time: T,
+    ) -> Result<MigrationId, TskitError>
+    where
+        LEFT: Into<Position>,
+        RIGHT: Into<Position>,
+        N: Into<NodeId>,
+        SOURCE: Into<PopulationId>,
+        DEST: Into<PopulationId>,
+        T: Into<Time>,
+    {
+        let rv = self.table_.add_row(
+            (span.0.into().into(), span.1.into().into()),
+            node.into().into(),
+            source_dest.0.into().into(),
+            source_dest.1.into().into(),
+            time.into().into(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
+
+    pub fn add_row_with_metadata<LEFT, RIGHT, N, SOURCE, DEST, T, M>(
+        &mut self,
+        span: (LEFT, RIGHT),
+        node: N,
+        source_dest: (SOURCE, DEST),
+        time: T,
+        metadata: &M,
+    ) -> Result<MigrationId, TskitError>
+    where
+        LEFT: Into<Position>,
+        RIGHT: Into<Position>,
+        N: Into<NodeId>,
+        SOURCE: Into<PopulationId>,
+        DEST: Into<PopulationId>,
+        T: Into<Time>,
+        M: MigrationMetadata,
+    {
+        let md = crate::metadata::EncodedMetadata::new(metadata)?;
+        let rv = self.table_.add_row_with_metadata(
+            (span.0.into().into(), span.1.into().into()),
+            node.into().into(),
+            source_dest.0.into().into(),
+            source_dest.1.into().into(),
+            time.into().into(),
+            md.as_slice(),
+        )?;
+        handle_tsk_return_value!(rv, rv.into())
+    }
 }

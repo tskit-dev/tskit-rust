@@ -3,13 +3,16 @@ use std::vec;
 
 use crate::error::TskitError;
 use crate::metadata::EdgeMetadata;
+use crate::metadata::MigrationMetadata;
 use crate::metadata::MutationMetadata;
 use crate::metadata::SiteMetadata;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
 use crate::IndividualTableSortOptions;
+use crate::MigrationId;
 use crate::MutationId;
+use crate::PopulationId;
 use crate::Position;
 use crate::SimplificationOptions;
 use crate::SiteId;
@@ -330,7 +333,6 @@ impl TableCollection {
     /// # }
     => add_individual_with_metadata, self, &mut (*self.as_mut_ptr()).individuals);
 
-    migration_table_add_row!(
     /// Add a row to the migration table
     ///
     /// # Warnings
@@ -346,9 +348,26 @@ impl TableCollection {
     ///                              (0, 1),
     ///                              53.5).is_ok());
     /// ```
-    => add_migration, self, &mut (*self.as_mut_ptr()).migrations);
+    pub fn add_migration<LEFT, RIGHT, N, SOURCE, DEST, T>(
+        &mut self,
+        span: (LEFT, RIGHT),
+        node: N,
+        source_dest: (SOURCE, DEST),
+        time: T,
+    ) -> Result<MigrationId, TskitError>
+    where
+        LEFT: Into<Position>,
+        RIGHT: Into<Position>,
+        N: Into<NodeId>,
+        SOURCE: Into<PopulationId>,
+        DEST: Into<PopulationId>,
+        T: Into<Time>,
+    {
+        self.views
+            .migrations_mut()
+            .add_row(span, node, source_dest, time)
+    }
 
-    migration_table_add_row_with_metadata!(
     /// Add a row with optional metadata to the migration table
     ///
     /// # Examples
@@ -378,7 +397,27 @@ impl TableCollection {
     ///
     /// Migration tables are not currently supported
     /// by tree sequence simplification.
-    => add_migration_with_metadata, self, &mut (*self.as_mut_ptr()).migrations);
+    pub fn add_migration_with_metadata<LEFT, RIGHT, N, SOURCE, DEST, T, M>(
+        &mut self,
+        span: (LEFT, RIGHT),
+        node: N,
+        source_dest: (SOURCE, DEST),
+        time: T,
+        metadata: &M,
+    ) -> Result<MigrationId, TskitError>
+    where
+        LEFT: Into<Position>,
+        RIGHT: Into<Position>,
+        N: Into<NodeId>,
+        SOURCE: Into<PopulationId>,
+        DEST: Into<PopulationId>,
+        T: Into<Time>,
+        M: MigrationMetadata,
+    {
+        self.views
+            .migrations_mut()
+            .add_row_with_metadata(span, node, source_dest, time, metadata)
+    }
 
     /// Add a row to the node table
     pub fn add_node<F, T, P, I>(
@@ -1174,7 +1213,7 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    /// Set the migration table from an [`OwningMigrationTable`](`crate::OwningSiteTable`)
+    /// Set the migration table from an [`MigrationTable`](`crate::OwningSiteTable`)
     ///
     /// # Errors
     ///
@@ -1185,7 +1224,7 @@ impl TableCollection {
     /// ```rust
     /// #
     /// let mut tables = tskit::TableCollection::new(1.0).unwrap();
-    /// let mut migrations = tskit::OwningMigrationTable::default();
+    /// let mut migrations = tskit::MigrationTable::default();
     /// migrations.add_row((0.25, 0.37), 1, (0, 1), 111.0).unwrap();
     /// tables.set_migrations(&migrations).unwrap();
     /// assert_eq!(tables.migrations().num_rows(), 1);
@@ -1193,21 +1232,21 @@ impl TableCollection {
     /// # migrations.clear().unwrap();
     /// # assert_eq!(migrations.num_rows(), 0);
     /// ```
-    pub fn set_migrations(&mut self, migrations: &crate::OwningMigrationTable) -> TskReturnValue {
+    pub fn set_migrations(&mut self, migrations: &crate::MigrationTable) -> TskReturnValue {
         // SAFETY: neither self nor edges are possible
         // to create with null pointers.
         let rv = unsafe {
             ll_bindings::tsk_migration_table_set_columns(
                 self.inner.migrations_mut(),
-                (*migrations.as_ptr()).num_rows,
-                (*migrations.as_ptr()).left,
-                (*migrations.as_ptr()).right,
-                (*migrations.as_ptr()).node,
-                (*migrations.as_ptr()).source,
-                (*migrations.as_ptr()).dest,
-                (*migrations.as_ptr()).time,
-                (*migrations.as_ptr()).metadata,
-                (*migrations.as_ptr()).metadata_offset,
+                (migrations.as_ref()).num_rows,
+                (migrations.as_ref()).left,
+                (migrations.as_ref()).right,
+                (migrations.as_ref()).node,
+                (migrations.as_ref()).source,
+                (migrations.as_ref()).dest,
+                (migrations.as_ref()).time,
+                (migrations.as_ref()).metadata,
+                (migrations.as_ref()).metadata_offset,
             )
         };
         handle_tsk_return_value!(rv)
