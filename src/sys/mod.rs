@@ -9,6 +9,7 @@ pub mod bindings;
 
 mod edge_table;
 pub mod flags;
+mod node_table;
 mod table_collection;
 mod tables;
 mod trait_impls;
@@ -24,6 +25,7 @@ mod tskbox;
 pub(crate) const TSK_NULL: bindings::tsk_id_t = -1;
 
 pub use edge_table::EdgeTable;
+pub use node_table::NodeTable;
 pub use table_collection::*;
 pub use tables::*;
 pub use tree::LLTree;
