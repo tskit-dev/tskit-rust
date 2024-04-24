@@ -27,7 +27,6 @@ macro_rules! basic_lltableref_impl {
     };
 }
 
-basic_lltableref_impl!(LLMigrationTableRef, tsk_migration_table_t);
 basic_lltableref_impl!(LLPopulationTableRef, tsk_population_table_t);
 basic_lltableref_impl!(LLIndividualTableRef, tsk_individual_table_t);
 
@@ -73,12 +72,6 @@ basic_llowningtable_impl!(
     tsk_individual_table_t,
     tsk_individual_table_init,
     tsk_individual_table_clear
-);
-basic_llowningtable_impl!(
-    LLOwningMigrationTable,
-    tsk_migration_table_t,
-    tsk_migration_table_init,
-    tsk_migration_table_clear
 );
 basic_llowningtable_impl!(
     LLOwningPopulationTable,

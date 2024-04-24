@@ -137,6 +137,10 @@ impl TableViews {
         &self.migrations
     }
 
+    pub fn migrations_mut(&mut self) -> &mut MigrationTable {
+        &mut self.migrations
+    }
+
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
