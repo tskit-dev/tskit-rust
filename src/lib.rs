@@ -108,7 +108,7 @@ pub use migration_table::{MigrationTable, MigrationTableRow};
 pub use mutation_table::{MutationTable, MutationTableRow};
 pub use newtypes::*;
 pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTableRow};
-pub use population_table::{OwningPopulationTable, PopulationTable, PopulationTableRow};
+pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use sys::flags::*;
 pub use table_collection::TableCollection;

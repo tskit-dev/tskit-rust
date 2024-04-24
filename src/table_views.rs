@@ -136,6 +136,10 @@ impl TableViews {
         &self.populations
     }
 
+    pub fn populations_mut(&mut self) -> &mut PopulationTable {
+        &mut self.populations
+    }
+
     /// Get reference to the [``MigrationTable``](crate::MigrationTable).
     pub fn migrations(&self) -> &MigrationTable {
         &self.migrations
@@ -150,6 +154,13 @@ impl TableViews {
     /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
     pub fn provenances(&self) -> &ProvenanceTable {
         &self.provenances
+    }
+
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
+    pub fn provenances_mut(&mut self) -> &mut ProvenanceTable {
+        &mut self.provenances
     }
 
     /// Return an iterator over the edges.

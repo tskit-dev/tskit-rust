@@ -163,7 +163,6 @@
 //! * We have not yet tested importing metadata encoded using `rust`
 //!   into `Python` via the `tskit` `Python API`.
 
-use crate::SizeType;
 use thiserror::Error;
 
 #[cfg(feature = "derive")]
@@ -223,18 +222,6 @@ impl EncodedMetadata {
     pub(crate) fn new<M: MetadataRoundtrip + ?Sized>(md: &M) -> Result<Self, MetadataError> {
         let encoded = md.encode()?;
         Ok(Self { encoded })
-    }
-
-    pub(crate) fn as_ptr(&self) -> *const libc::c_char {
-        if self.encoded.is_empty() {
-            std::ptr::null()
-        } else {
-            self.encoded.as_ptr().cast::<i8>()
-        }
-    }
-
-    pub(crate) fn len(&self) -> Result<SizeType, crate::TskitError> {
-        SizeType::try_from(self.encoded.len())
     }
 
     pub(crate) fn as_slice(&self) -> &[u8] {
@@ -314,11 +301,7 @@ mod tests {
     fn test_encoded_metadata_roundtrip() {
         let f = F { x: -3, y: 42 };
         let enc = EncodedMetadata::new(&f).unwrap();
-        let p = enc.as_ptr();
-        let mut d = vec![];
-        for i in 0..usize::try_from(enc.len().unwrap()).unwrap() {
-            d.push(unsafe { *p.add(i) as u8 });
-        }
+        let d = enc.as_slice().to_owned();
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
         assert_eq!(f.y, df.y);
@@ -348,11 +331,7 @@ mod test_serde {
     fn test_encoded_metadata_roundtrip() {
         let f = F { x: -3, y: 42 };
         let enc = EncodedMetadata::new(&f).unwrap();
-        let p = enc.as_ptr();
-        let mut d = vec![];
-        for i in 0..usize::try_from(enc.len().unwrap()).unwrap() {
-            d.push(unsafe { *p.add(i) as u8 });
-        }
+        let d = enc.as_slice().to_owned();
         let df = F::decode(&d).unwrap();
         assert_eq!(f.x, df.x);
         assert_eq!(f.y, df.y);
