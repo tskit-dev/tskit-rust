@@ -14,7 +14,7 @@ use crate::TskitError;
 pub struct Tree<'treeseq> {
     pub(crate) inner: LLTree<'treeseq>,
     api: TreeInterface,
-    advanced: bool,
+    advanced: i32,
 }
 
 impl<'treeseq> Deref for Tree<'treeseq> {
@@ -42,7 +42,7 @@ impl<'treeseq> Tree<'treeseq> {
         let api = TreeInterface::new(nonnull, num_nodes, num_nodes + 1, flags);
         Ok(Self {
             inner,
-            advanced: false,
+            advanced: 0,
             api,
         })
     }
@@ -92,14 +92,14 @@ impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
         } else {
             unsafe { ll_bindings::tsk_tree_next(self.inner.as_mut_ptr()) }
         };
-        self.advanced = rv == 1;
+        self.advanced = rv;
         if rv < 0 {
             panic_on_tskit_error!(rv);
         }
     }
 
     fn get(&self) -> Option<&Self::Item> {
-        match self.advanced {
+        match self.advanced == (ll_bindings::TSK_TREE_OK as i32) {
             true => Some(self),
             false => None,
         }
@@ -117,7 +117,7 @@ impl<'ts> streaming_iterator::DoubleEndedStreamingIterator for Tree<'ts> {
         } else {
             unsafe { ll_bindings::tsk_tree_prev(self.as_mut_ptr()) }
         };
-        self.advanced = rv == 1;
+        self.advanced = rv;
         if rv < 0 {
             panic_on_tskit_error!(rv);
         }
