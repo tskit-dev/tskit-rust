@@ -74,6 +74,16 @@ where
             owning: false,
         }
     }
+    //
+    /// # Safety
+    ///
+    /// The underlying pointer must be initialized
+    pub unsafe fn new_init_owning_from_ptr(ptr: NonNull<T>) -> Self {
+        Self {
+            tsk: ptr,
+            owning: true,
+        }
+    }
 
     /// # Safety
     ///
