@@ -1,6 +1,7 @@
 use crate::error::TskitError;
 use crate::sys;
 use crate::NodeId;
+use crate::Position;
 use crate::SimplificationOptions;
 use crate::SizeType;
 use crate::TableCollection;
@@ -241,6 +242,36 @@ impl TreeSequence {
         let tree = Tree::new(&self.inner, flags)?;
 
         Ok(tree)
+    }
+
+    /// Create an iterator over trees starting at a specific position.
+    ///
+    /// See [`TreeSequence::tree_iterator`] for details
+    ///
+    /// # Errors
+    ///
+    /// * [`TskitError`] if `at` is not valid
+    pub fn tree_iterator_at_position<F: Into<TreeFlags>, P: Into<Position>>(
+        &self,
+        flags: F,
+        at: P,
+    ) -> Result<Tree, TskitError> {
+        Tree::new_at_position(&self.inner, flags, at)
+    }
+
+    /// Create an iterator over trees starting at a specific tree index.
+    ///
+    /// See [`TreeSequence::tree_iterator`] for details
+    ///
+    /// # Errors
+    ///
+    /// * [`TskitError`] if `at` is not valid
+    pub fn tree_iterator_at_index<F: Into<TreeFlags>>(
+        &self,
+        flags: F,
+        at: i32,
+    ) -> Result<Tree, TskitError> {
+        Tree::new_at_index(&self.inner, flags, at)
     }
 
     /// Get the list of samples as a vector.

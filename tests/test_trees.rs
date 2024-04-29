@@ -399,6 +399,50 @@ fn test_reverse_tree_iteration() {
 }
 
 #[test]
+fn test_tree_iteration_at_position() {
+    let treeseq = treeseq_from_small_table_collection_two_trees();
+    let mut tree_iter = treeseq
+        .tree_iterator_at_position(TreeFlags::default(), 502.)
+        .unwrap();
+    let interval = tree_iter.interval();
+    assert!(502. >= interval.0 && 502. < interval.1);
+    assert!(tree_iter.next().is_none())
+}
+
+#[test]
+fn test_tree_iteration_at_invalid_position() {
+    let treeseq = treeseq_from_small_table_collection_two_trees();
+    assert!(treeseq
+        .tree_iterator_at_position(TreeFlags::default(), -1.)
+        .is_err());
+    assert!(treeseq
+        .tree_iterator_at_position(TreeFlags::default(), 1001.)
+        .is_err());
+}
+
+#[test]
+fn test_tree_iteration_at_index() {
+    let treeseq = treeseq_from_small_table_collection_two_trees();
+    let mut tree_iter = treeseq
+        .tree_iterator_at_index(TreeFlags::default(), 1)
+        .unwrap();
+    let interval = tree_iter.interval();
+    assert!(502. >= interval.0 && 502. < interval.1);
+    assert!(tree_iter.next().is_none())
+}
+
+#[test]
+fn test_tree_iteration_at_invalid_index() {
+    let treeseq = treeseq_from_small_table_collection_two_trees();
+    assert!(treeseq
+        .tree_iterator_at_index(TreeFlags::default(), -1)
+        .is_err());
+    assert!(treeseq
+        .tree_iterator_at_index(TreeFlags::default(), 2)
+        .is_err());
+}
+
+#[test]
 fn build_arc() {
     let t = treeseq_from_small_table_collection_two_trees();
     let a = Arc::new(t);
