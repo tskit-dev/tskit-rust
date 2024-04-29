@@ -3,6 +3,7 @@ use std::ops::DerefMut;
 
 use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, LLTreeSeq};
+use crate::Position;
 use crate::TreeFlags;
 use crate::TreeInterface;
 use crate::TskitError;
@@ -44,6 +45,38 @@ impl<'treeseq> Tree<'treeseq> {
             advanced: false,
             api,
         })
+    }
+
+    pub(crate) fn new_at_position<F: Into<TreeFlags>, P: Into<Position>>(
+        ts: &'treeseq LLTreeSeq,
+        flags: F,
+        at: P,
+    ) -> Result<Self, TskitError> {
+        let mut tree = Self::new(ts, flags)?;
+        assert!(!tree.as_ptr().is_null());
+        assert_eq!(unsafe { (*tree.as_ptr()).index }, -1);
+        // SAFETY: tree is initialized and the pointer is not NULL
+        match unsafe { ll_bindings::tsk_tree_seek(tree.as_mut_ptr(), at.into().into(), 0) } {
+            code if code < 0 => return Err(TskitError::ErrorCode { code }),
+            _ => (),
+        };
+        Ok(tree)
+    }
+
+    pub(crate) fn new_at_index<F: Into<TreeFlags>>(
+        ts: &'treeseq LLTreeSeq,
+        flags: F,
+        at: i32,
+    ) -> Result<Self, TskitError> {
+        let mut tree = Self::new(ts, flags)?;
+        assert!(!tree.as_ptr().is_null());
+        assert_eq!(unsafe { (*tree.as_ptr()).index }, -1);
+        // SAFETY: tree is initialized and the pointer is not NULL
+        match unsafe { ll_bindings::tsk_tree_seek_index(tree.as_mut_ptr(), at, 0) } {
+            code if code < 0 => return Err(TskitError::ErrorCode { code }),
+            _ => (),
+        };
+        Ok(tree)
     }
 }
 
