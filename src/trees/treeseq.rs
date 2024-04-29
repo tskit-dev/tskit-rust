@@ -163,23 +163,23 @@ impl TreeSequence {
         Self::new(tables, TreeSequenceFlags::default())
     }
 
-    /// Obtain a copy of the [`TableCollection`].
-    /// The result is a "deep" copy of the tables.
+    /// Obtain the underlying [`TableCollection`].
+    ///
     ///
     /// # Errors
     ///
     /// [`TskitError`] will be raised if the underlying C library returns an error code.
-    pub fn dump_tables(&self) -> Result<TableCollection, TskitError> {
-        // SAFETY: the C api requires the destination of a copy to be uninitialized.
-        // The copying, which comes next, will initialized it
-        let mut inner = unsafe { crate::sys::TableCollection::new_uninit() };
-
-        // SAFETY: self.as_ptr is not null and inner is not initialized.
-        let rv = unsafe {
-            ll_bindings::tsk_table_collection_copy((*self.as_ptr()).tables, inner.as_mut_ptr(), 0)
-        };
-
-        handle_tsk_return_value!(rv, TableCollection::new_from_ll(inner)?)
+    pub fn dump_tables(self) -> Result<TableCollection, TskitError> {
+        assert!(!self.as_ptr().is_null());
+        let mut treeseq = self;
+        // SAFETY: the above assert passed
+        let tables = std::ptr::NonNull::new(unsafe { (*treeseq.as_ptr()).tables }).unwrap();
+        // SAFETY: the above assert passed
+        unsafe { (*treeseq.as_mut_ptr()).tables = std::ptr::null_mut() };
+        // SAFETY: the table collection points to data that has passed
+        // tsk_table_collection_check_integrity, meaning that it must be initialized.
+        let tables = unsafe { crate::sys::TableCollection::new_owning_from_nonnull(tables) };
+        crate::TableCollection::new_from_ll(tables)
     }
 
     /// Create an iterator over trees.

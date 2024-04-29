@@ -25,6 +25,15 @@ impl TableCollection {
 
     // # Safety
     //
+    // `tables` must be an initialized `tsk_table_collection_t`
+    pub unsafe fn new_owning_from_nonnull(
+        tables: std::ptr::NonNull<tsk_table_collection_t>,
+    ) -> Self {
+        Self(TskBox::new_init_owning_from_ptr(tables))
+    }
+
+    // # Safety
+    //
     // The returned value is uninitialized.
     // Using the object prior to initilization is likely to trigger UB.
     pub unsafe fn new_uninit() -> Self {
@@ -35,13 +44,13 @@ impl TableCollection {
     pub fn copy(&self) -> (i32, TableCollection) {
         // SAFETY: the C API requires that the destiniation of a copy be uninitalized.
         // Copying into it will initialize the object.
-        let mut dest = unsafe { TskBox::new_uninit() };
+        let mut dest = unsafe { Self::new_uninit() };
         // SAFETY: self.as_ptr() is not null and dest matches the input
         // expectations of the C API.
         let rv = unsafe {
             super::bindings::tsk_table_collection_copy(self.as_ptr(), dest.as_mut_ptr(), 0)
         };
-        (rv, Self(dest))
+        (rv, dest)
     }
 
     pub fn sequence_length(&self) -> f64 {
