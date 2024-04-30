@@ -107,6 +107,6 @@ impl TableCollection {
     }
 
     pub fn into_raw(self) -> *mut tsk_table_collection_t {
-        unsafe { self.0.into_raw() }
+        self.0.into_raw()
     }
 }
