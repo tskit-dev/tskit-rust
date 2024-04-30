@@ -271,28 +271,6 @@ impl TreeSequence {
         Tree::new_at_index(&self.inner, flags, at)
     }
 
-    /// Get the list of samples as a vector.
-    /// # Panics
-    ///
-    /// Will panic if the number of samples is too large to cast to a valid id.
-    #[deprecated(
-        since = "0.2.3",
-        note = "Please use TreeSequence::sample_nodes instead"
-    )]
-    pub fn samples_to_vec(&self) -> Vec<NodeId> {
-        let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };
-        let mut rv = vec![];
-
-        for i in 0..num_samples {
-            let u = match isize::try_from(i) {
-                Ok(o) => NodeId::from(unsafe { *(*self.as_ptr()).samples.offset(o) }),
-                Err(e) => panic!("{}", e),
-            };
-            rv.push(u);
-        }
-        rv
-    }
-
     /// Get the list of sample nodes as a slice.
     pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples = unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ptr()) };

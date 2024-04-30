@@ -380,28 +380,6 @@ impl TreeInterface {
         sys::tsk_column_access::<NodeId, _, _, _>(u.into(), self.as_ref().right_sib, self.array_len)
     }
 
-    /// Obtain the list of samples for the current tree/tree sequence
-    /// as a vector.
-    ///
-    /// # Panics
-    ///
-    /// Will panic if the number of samples is too large to cast to a valid id.
-    #[deprecated(since = "0.2.3", note = "Please use Tree::sample_nodes instead")]
-    pub fn samples_to_vec(&self) -> Vec<NodeId> {
-        let num_samples =
-            unsafe { ll_bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
-        let mut rv = vec![];
-
-        for i in 0..num_samples {
-            let u = match isize::try_from(i) {
-                Ok(o) => unsafe { *(*(self.as_ref()).tree_sequence).samples.offset(o) },
-                Err(e) => panic!("{}", e),
-            };
-            rv.push(u.into());
-        }
-        rv
-    }
-
     /// Get the list of sample nodes as a slice.
     pub fn sample_nodes(&self) -> &[NodeId] {
         let num_samples =
