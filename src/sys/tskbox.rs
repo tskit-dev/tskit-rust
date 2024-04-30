@@ -85,7 +85,7 @@ where
         }
     }
 
-    /// # Safety
+    /// # Note
     ///
     /// The returned pointer is no longer managed, meaing
     /// that it is the caller's responsibility to properly
@@ -94,7 +94,7 @@ where
     /// Failing to do so will may result in a
     /// memory leak.
     #[allow(dead_code)]
-    pub unsafe fn into_raw(self) -> *mut T {
+    pub fn into_raw(self) -> *mut T {
         let mut s = self;
         let rv = s.as_mut_ptr();
         s.owning = false;
@@ -189,7 +189,7 @@ fn test_into_raw_miri() {
     })
     .unwrap();
 
-    let p = unsafe { b.into_raw() };
+    let p = b.into_raw();
 
     unsafe { libc::free(p as *mut libc::c_void) }
 }
