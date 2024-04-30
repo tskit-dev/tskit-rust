@@ -40,8 +40,7 @@ macro_rules! flag_builder_api {
 }
 
 bitflags! {
-    /// Control the behavior of [`crate::TableCollection::simplify`]
-    /// and [`crate::TreeSequence::simplify`]
+    /// Control the behavior of table simplification.
     ///
     /// Inclusion of values sets an option to `true`.
     /// The default behavior (`NONE`) is to perform the algorithm
@@ -57,18 +56,20 @@ bitflags! {
     /// ### Default flags
     ///
     /// ```
-    /// let flags = tskit::SimplificationOptions::default();
-    /// assert_eq!(flags, tskit::SimplificationOptions::NONE);
+    /// # use tskit::SimplificationOptions;
+    /// let flags = SimplificationOptions::default();
+    /// assert_eq!(flags, SimplificationOptions::NONE);
     /// ```
     ///
     /// ### Using a "builder" API
     ///
     /// ```
+    /// # use tskit::SimplificationOptions;
     /// let flags =
-    /// tskit::SimplificationOptions::default().keep_unary().filter_populations().filter_sites();
-    /// assert!(flags.contains(tskit::SimplificationOptions::KEEP_UNARY));
-    /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_POPULATIONS));
-    /// assert!(flags.contains(tskit::SimplificationOptions::FILTER_SITES));
+    /// SimplificationOptions::default().keep_unary().filter_populations().filter_sites();
+    /// assert!(flags.contains(SimplificationOptions::KEEP_UNARY));
+    /// assert!(flags.contains(SimplificationOptions::FILTER_POPULATIONS));
+    /// assert!(flags.contains(SimplificationOptions::FILTER_SITES));
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -107,8 +108,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().keep_input_roots();
-    /// assert!(f.contains(tskit::SimplificationOptions::KEEP_INPUT_ROOTS));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().keep_input_roots();
+    /// assert!(f.contains(SimplificationOptions::KEEP_INPUT_ROOTS));
     /// ```
     => keep_input_roots, KEEP_INPUT_ROOTS);
 
@@ -118,8 +120,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().keep_unary();
-    /// assert!(f.contains(tskit::SimplificationOptions::KEEP_UNARY));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().keep_unary();
+    /// assert!(f.contains(SimplificationOptions::KEEP_UNARY));
     /// ```
     => keep_unary, KEEP_UNARY);
 
@@ -129,8 +132,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().keep_unary_in_individuals();
-    /// assert!(f.contains(tskit::SimplificationOptions::KEEP_UNARY_IN_INDIVIDUALS));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().keep_unary_in_individuals();
+    /// assert!(f.contains(SimplificationOptions::KEEP_UNARY_IN_INDIVIDUALS));
     /// ```
     => keep_unary_in_individuals, KEEP_UNARY_IN_INDIVIDUALS);
 
@@ -140,8 +144,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().filter_populations();
-    /// assert!(f.contains(tskit::SimplificationOptions::FILTER_POPULATIONS));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().filter_populations();
+    /// assert!(f.contains(SimplificationOptions::FILTER_POPULATIONS));
     /// ```
     => filter_populations, FILTER_POPULATIONS);
 
@@ -151,8 +156,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().filter_sites();
-    /// assert!(f.contains(tskit::SimplificationOptions::FILTER_SITES));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().filter_sites();
+    /// assert!(f.contains(SimplificationOptions::FILTER_SITES));
     /// ```
     => filter_sites, FILTER_SITES);
 
@@ -162,8 +168,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().reduce_to_site_topology();
-    /// assert!(f.contains(tskit::SimplificationOptions::REDUCE_TO_SITE_TOPOLOGY));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().reduce_to_site_topology();
+    /// assert!(f.contains(SimplificationOptions::REDUCE_TO_SITE_TOPOLOGY));
     /// ```
     => reduce_to_site_topology, REDUCE_TO_SITE_TOPOLOGY);
 
@@ -173,8 +180,9 @@ impl SimplificationOptions {
     /// # Examples
     ///
     /// ```
-    /// let f = tskit::SimplificationOptions::default().filter_individuals();
-    /// assert!(f.contains(tskit::SimplificationOptions::FILTER_INDIVIDUALS));
+    /// # use tskit::SimplificationOptions;
+    /// let f = SimplificationOptions::default().filter_individuals();
+    /// assert!(f.contains(SimplificationOptions::FILTER_INDIVIDUALS));
     /// ```
     => filter_individuals, FILTER_INDIVIDUALS);
 }
@@ -187,34 +195,39 @@ bitflags! {
     /// ## Set default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TableClearOptions::default();
-    /// assert_eq!(f, tskit::TableClearOptions::NONE);
+    /// # use tskit::TableClearOptions;
+    /// let f = TableClearOptions::default();
+    /// assert_eq!(f, TableClearOptions::NONE);
     /// ```
     ///
     /// ## Builder API
     ///
     /// ```
-    /// let f = tskit::TableClearOptions::default().clear_metadata_schema();
-    /// assert_eq!(f, tskit::TableClearOptions::CLEAR_METADATA_SCHEMAS);
+    /// # use tskit::TableClearOptions;
+    /// let f = TableClearOptions::default().clear_metadata_schema();
+    /// assert_eq!(f, TableClearOptions::CLEAR_METADATA_SCHEMAS);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableClearOptions::default().clear_ts_metadata_and_schema();
-    /// assert_eq!(f, tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA);
+    /// # use tskit::TableClearOptions;
+    /// let f = TableClearOptions::default().clear_ts_metadata_and_schema();
+    /// assert_eq!(f, TableClearOptions::CLEAR_TS_METADATA_SCHEMA);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableClearOptions::default().clear_provenance();
-    /// assert_eq!(f, tskit::TableClearOptions::CLEAR_PROVENANCE);
+    /// # use tskit::TableClearOptions;
+    /// let f = TableClearOptions::default().clear_provenance();
+    /// assert_eq!(f, TableClearOptions::CLEAR_PROVENANCE);
     ///
     /// ```
-    /// let f = tskit::TableClearOptions::default().clear_metadata_schema().clear_ts_metadata_and_schema();
-    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_METADATA_SCHEMAS));
-    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
+    /// # use tskit::TableClearOptions;
+    /// let f = TableClearOptions::default().clear_metadata_schema().clear_ts_metadata_and_schema();
+    /// assert!(f.contains(TableClearOptions::CLEAR_METADATA_SCHEMAS));
+    /// assert!(f.contains(TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
     /// let f = f.clear();
-    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_METADATA_SCHEMAS));
-    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
-    /// assert!(f.contains(tskit::TableClearOptions::CLEAR_PROVENANCE);
+    /// assert!(f.contains(TableClearOptions::CLEAR_METADATA_SCHEMAS));
+    /// assert!(f.contains(TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
+    /// assert!(f.contains(TableClearOptions::CLEAR_PROVENANCE);
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -247,41 +260,47 @@ bitflags! {
     /// ## Set default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TableEqualityOptions::default();
-    /// assert_eq!(f, tskit::TableEqualityOptions::NONE);
+    /// # use tskit::TableEqualityOptions;
+    /// let f = TableEqualityOptions::default();
+    /// assert_eq!(f, TableEqualityOptions::NONE);
     /// ```
     ///
     /// ## Builder API
     ///
     /// ```
-    /// let f = tskit::TableEqualityOptions::default().ignore_metadata();
-    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_METADATA);
+    /// # use tskit::TableEqualityOptions;
+    /// let f = TableEqualityOptions::default().ignore_metadata();
+    /// assert_eq!(f, TableEqualityOptions::IGNORE_METADATA);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableEqualityOptions::default().ignore_ts_metadata();
-    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_TS_METADATA);
+    /// # use tskit::TableEqualityOptions;
+    /// let f = TableEqualityOptions::default().ignore_ts_metadata();
+    /// assert_eq!(f, TableEqualityOptions::IGNORE_TS_METADATA);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableEqualityOptions::default().ignore_timestamps();
-    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_TIMESTAMPS);
+    /// # use tskit::TableEqualityOptions;
+    /// let f = TableEqualityOptions::default().ignore_timestamps();
+    /// assert_eq!(f, TableEqualityOptions::IGNORE_TIMESTAMPS);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableEqualityOptions::default().ignore_provenance();
-    /// assert_eq!(f, tskit::TableEqualityOptions::IGNORE_PROVENANCE);
+    /// # use tskit::TableEqualityOptions;
+    /// let f = TableEqualityOptions::default().ignore_provenance();
+    /// assert_eq!(f, TableEqualityOptions::IGNORE_PROVENANCE);
     /// let f = f.ignore_metadata();
-    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_PROVENANCE));
-    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_METADATA));
+    /// assert!(f.contains(TableEqualityOptions::IGNORE_PROVENANCE));
+    /// assert!(f.contains(TableEqualityOptions::IGNORE_METADATA));
     /// ```
     ///
     /// ### Method chaining
     ///
     /// ```
-    /// let f = tskit::TableEqualityOptions::default().ignore_provenance().ignore_metadata();
-    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_PROVENANCE));
-    /// assert!(f.contains(tskit::TableEqualityOptions::IGNORE_METADATA));
+    /// # use tskit::TableEqualityOptions;
+    /// let f = TableEqualityOptions::default().ignore_provenance().ignore_metadata();
+    /// assert!(f.contains(TableEqualityOptions::IGNORE_PROVENANCE));
+    /// assert!(f.contains(TableEqualityOptions::IGNORE_METADATA));
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -318,8 +337,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TableSortOptions::default();
-    /// assert_eq!(f, tskit::TableSortOptions::NONE);
+    /// # use tskit::TableSortOptions;
+    /// let f = TableSortOptions::default();
+    /// assert_eq!(f, TableSortOptions::NONE);
     /// ```
     ///
     /// ## Builder API
@@ -327,8 +347,9 @@ bitflags! {
     /// These methods can all be chained.
     ///
     /// ```
-    /// let f = tskit::TableSortOptions::default().no_check_integrity();
-    /// assert_eq!(f, tskit::TableSortOptions::NO_CHECK_INTEGRITY);
+    /// # use tskit::TableSortOptions;
+    /// let f = TableSortOptions::default().no_check_integrity();
+    /// assert_eq!(f, TableSortOptions::NO_CHECK_INTEGRITY);
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -354,8 +375,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::IndividualTableSortOptions::default();
-    /// assert_eq!(f, tskit::IndividualTableSortOptions::NONE);
+    /// # use tskit::IndividualTableSortOptions;
+    /// let f = IndividualTableSortOptions::default();
+    /// assert_eq!(f, IndividualTableSortOptions::NONE);
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -374,8 +396,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TreeFlags::default();
-    /// assert_eq!(f, tskit::TreeFlags::NONE);
+    /// # use tskit::TreeFlags;
+    /// let f = TreeFlags::default();
+    /// assert_eq!(f, TreeFlags::NONE);
     /// ```
     ///
     /// ## Builder API
@@ -383,13 +406,15 @@ bitflags! {
     /// These methods can be chained.
     ///
     /// ```
-    /// let f = tskit::TreeFlags::default().sample_lists();
-    /// assert_eq!(f, tskit::TreeFlags::SAMPLE_LISTS);
+    /// # use tskit::TreeFlags;
+    /// let f = TreeFlags::default().sample_lists();
+    /// assert_eq!(f, TreeFlags::SAMPLE_LISTS);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TreeFlags::default().no_sample_counts();
-    /// assert_eq!(f, tskit::TreeFlags::NO_SAMPLE_COUNTS);
+    /// # use tskit::TreeFlags;
+    /// let f = TreeFlags::default().no_sample_counts();
+    /// assert_eq!(f, TreeFlags::NO_SAMPLE_COUNTS);
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -422,8 +447,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TableOutputOptions::default();
-    /// assert_eq!(f, tskit::TableOutputOptions::NONE);
+    /// # use tskit::TableOutputOptions;
+    /// let f = TableOutputOptions::default();
+    /// assert_eq!(f, TableOutputOptions::NONE);
     /// ```
     ///
     /// # Note
@@ -450,8 +476,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TreeSequenceFlags::default();
-    /// assert_eq!(f, tskit::TreeSequenceFlags::NONE);
+    /// # use tskit::TreeSequenceFlags;
+    /// let f = TreeSequenceFlags::default();
+    /// assert_eq!(f, TreeSequenceFlags::NONE);
     /// ```
     ///
     /// ## Builder API
@@ -459,8 +486,9 @@ bitflags! {
     /// These methods may be chained.
     ///
     /// ```
-    /// let f = tskit::TreeSequenceFlags::default().build_indexes();
-    /// assert_eq!(f, tskit::TreeSequenceFlags::BUILD_INDEXES);
+    /// # use tskit::TreeSequenceFlags;
+    /// let f = TreeSequenceFlags::default().build_indexes();
+    /// assert_eq!(f, TreeSequenceFlags::BUILD_INDEXES);
     /// ```
     ///
     #[derive(Default)]
@@ -488,8 +516,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::NONE);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default();
+    /// assert_eq!(f, TableIntegrityCheckFlags::NONE);
     /// ```
     ///
     /// ## Builder API
@@ -497,43 +526,51 @@ bitflags! {
     /// These methods may be chained.
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_edge_ordering();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_EDGE_ORDERING);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_edge_ordering();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_EDGE_ORDERING);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_site_ordering();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_SITE_ORDERING);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_site_ordering();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_SITE_ORDERING);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_site_duplicates();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_SITE_DUPLICATES);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_site_duplicates();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_SITE_DUPLICATES);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_mutation_ordering();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_MUTATION_ORDERING);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_mutation_ordering();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_MUTATION_ORDERING);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_individual_ordering();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_individual_ordering();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_INDIVIDUAL_ORDERING);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_migration_ordering();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_MIGRATION_ORDERING);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_migration_ordering();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_MIGRATION_ORDERING);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_indexes();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_INDEXES);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_indexes();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_INDEXES);
     /// ```
     ///
     /// ```
-    /// let f = tskit::TableIntegrityCheckFlags::default().check_trees();
-    /// assert_eq!(f, tskit::TableIntegrityCheckFlags::CHECK_TREES);
+    /// # use tskit::TableIntegrityCheckFlags;
+    /// let f = TableIntegrityCheckFlags::default().check_trees();
+    /// assert_eq!(f, TableIntegrityCheckFlags::CHECK_TREES);
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
@@ -594,8 +631,9 @@ bitflags! {
     /// ## Default (empty) flags
     ///
     /// ```
-    /// let f = tskit::NodeFlags::default();
-    /// assert_eq!(f, tskit::NodeFlags::NONE);
+    /// # use tskit::NodeFlags;
+    /// let f = NodeFlags::default();
+    /// assert_eq!(f, NodeFlags::NONE);
     /// ```
     ///
     /// ## Create a sample node
@@ -604,8 +642,9 @@ bitflags! {
     /// via a constructor:
     ///
     /// ```
-    /// let f = tskit::NodeFlags::new_sample();
-    /// assert_eq!(f, tskit::NodeFlags::IS_SAMPLE);
+    /// # use tskit::NodeFlags;
+    /// let f = NodeFlags::new_sample();
+    /// assert_eq!(f, NodeFlags::IS_SAMPLE);
     /// ```
     ///
     /// ## Buider API
@@ -613,8 +652,9 @@ bitflags! {
     /// These methods can be chained.
     ///
     /// ```
-    /// let f = tskit::NodeFlags::default().mark_sample();
-    /// assert_eq!(f, tskit::NodeFlags::IS_SAMPLE);
+    /// # use tskit::NodeFlags;
+    /// let f = NodeFlags::default().mark_sample();
+    /// assert_eq!(f, NodeFlags::IS_SAMPLE);
     /// ```
     #[derive(Default)]
     #[repr(transparent)]
