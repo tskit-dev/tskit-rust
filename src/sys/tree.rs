@@ -1,7 +1,7 @@
 use super::bindings::tsk_tree_t;
 use super::flags::TreeFlags;
 use super::tskbox::TskBox;
-use super::LLTreeSeq;
+use super::TreeSequence;
 use super::TskitError;
 
 pub struct LLTree<'treeseq> {
@@ -11,11 +11,11 @@ pub struct LLTree<'treeseq> {
     // Thus, we could theoretically cause UB without
     // tying the rust-side object liftimes together.
     #[allow(dead_code)]
-    treeseq: &'treeseq LLTreeSeq,
+    treeseq: &'treeseq TreeSequence,
 }
 
 impl<'treeseq> LLTree<'treeseq> {
-    pub fn new(treeseq: &'treeseq LLTreeSeq, flags: TreeFlags) -> Result<Self, TskitError> {
+    pub fn new(treeseq: &'treeseq TreeSequence, flags: TreeFlags) -> Result<Self, TskitError> {
         let mut inner = TskBox::new(|x: *mut super::bindings::tsk_tree_t| unsafe {
             super::bindings::tsk_tree_init(x, treeseq.as_ref(), flags.bits())
         })?;

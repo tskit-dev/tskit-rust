@@ -2,7 +2,7 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 
 use crate::sys::bindings as ll_bindings;
-use crate::sys::{LLTree, LLTreeSeq};
+use crate::sys::{LLTree, TreeSequence};
 use crate::Position;
 use crate::TreeFlags;
 use crate::TreeInterface;
@@ -32,7 +32,7 @@ impl<'treeseq> DerefMut for Tree<'treeseq> {
 
 impl<'treeseq> Tree<'treeseq> {
     pub(crate) fn new<F: Into<TreeFlags>>(
-        ts: &'treeseq LLTreeSeq,
+        ts: &'treeseq crate::sys::TreeSequence,
         flags: F,
     ) -> Result<Self, TskitError> {
         let flags = flags.into();
@@ -48,7 +48,7 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     pub(crate) fn new_at_position<F: Into<TreeFlags>, P: Into<Position>>(
-        ts: &'treeseq LLTreeSeq,
+        ts: &'treeseq crate::sys::TreeSequence,
         flags: F,
         at: P,
     ) -> Result<Self, TskitError> {
@@ -64,7 +64,7 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     pub(crate) fn new_at_index<F: Into<TreeFlags>>(
-        ts: &'treeseq LLTreeSeq,
+        ts: &'treeseq TreeSequence,
         flags: F,
         at: i32,
     ) -> Result<Self, TskitError> {
