@@ -25,7 +25,7 @@ impl<'treeseq> LLTree<'treeseq> {
             let code = unsafe {
                 super::bindings::tsk_tree_set_tracked_samples(
                     inner.as_mut(),
-                    treeseq.num_samples(),
+                    treeseq.num_samples().into(),
                     (inner.as_mut()).samples,
                 )
             };

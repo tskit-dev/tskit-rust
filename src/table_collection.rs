@@ -109,13 +109,8 @@ impl TableCollection {
         })
     }
 
-    pub(crate) fn into_raw(self) -> Result<*mut ll_bindings::tsk_table_collection_t, TskitError> {
-        let mut tables = self;
-        let mut temp = crate::sys::TableCollection::new(1.)?;
-        std::mem::swap(&mut temp, &mut tables.inner);
-        let ptr = temp.as_mut_ptr();
-        std::mem::forget(temp);
-        handle_tsk_return_value!(0, ptr)
+    pub(crate) fn into_inner(self) -> crate::sys::TableCollection {
+        self.inner
     }
 
     /// Load a table collection from a file.

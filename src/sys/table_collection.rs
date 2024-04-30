@@ -105,4 +105,8 @@ impl TableCollection {
         // SAFETY: self pointer is not null
         unsafe { &mut (*self.as_mut_ptr()).sites }
     }
+
+    pub fn into_raw(self) -> *mut tsk_table_collection_t {
+        unsafe { self.0.into_raw() }
+    }
 }

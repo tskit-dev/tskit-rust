@@ -11,9 +11,10 @@ pub struct TreeSequence(TskBox<bindings::tsk_treeseq_t>);
 
 impl TreeSequence {
     pub fn new(
-        tables: *mut bindings::tsk_table_collection_t,
+        tables: super::TableCollection,
         flags: super::flags::TreeSequenceFlags,
     ) -> Result<Self, TskitError> {
+        let tables = tables.into_raw();
         let inner = TskBox::new(|t: *mut bindings::tsk_treeseq_t| unsafe {
             tsk_treeseq_init(t, tables, flags.bits() | bindings::TSK_TAKE_OWNERSHIP)
         })?;
@@ -30,9 +31,9 @@ impl TreeSequence {
 
     pub fn simplify(
         &self,
-        samples: &[bindings::tsk_id_t],
+        samples: &[super::newtypes::NodeId],
         options: super::flags::SimplificationOptions,
-        idmap: *mut bindings::tsk_id_t,
+        idmap: Option<&mut [super::newtypes::NodeId]>,
     ) -> Result<Self, TskitError> {
         // The output is an UNINITIALIZED treeseq,
         // else we leak memory.
@@ -42,11 +43,15 @@ impl TreeSequence {
         let rv = unsafe {
             bindings::tsk_treeseq_simplify(
                 self.as_ref(),
-                samples.as_ptr(),
-                samples.len() as bindings::tsk_size_t,
+                // The cast is safe/sound b/c NodeId is repr(transparent)
+                samples.as_ptr().cast::<_>(),
+                samples.len().try_into().unwrap(),
                 options.bits(),
                 ts.as_mut_ptr(),
-                idmap,
+                match idmap {
+                    Some(s) => s.as_mut_ptr().cast::<_>(),
+                    None => std::ptr::null_mut(),
+                },
             )
         };
         if rv < 0 {
@@ -72,9 +77,9 @@ impl TreeSequence {
         }
     }
 
-    pub fn num_trees(&self) -> bindings::tsk_size_t {
+    pub fn num_trees(&self) -> super::newtypes::SizeType {
         // SAFETY: self pointer is not null
-        unsafe { bindings::tsk_treeseq_get_num_trees(self.as_ref()) }
+        unsafe { bindings::tsk_treeseq_get_num_trees(self.as_ref()) }.into()
     }
 
     pub fn num_nodes_raw(&self) -> bindings::tsk_size_t {
@@ -95,7 +100,7 @@ impl TreeSequence {
         }
     }
 
-    pub fn num_samples(&self) -> bindings::tsk_size_t {
-        unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ref()) }
+    pub fn num_samples(&self) -> super::newtypes::SizeType {
+        unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ref()) }.into()
     }
 }
