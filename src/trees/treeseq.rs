@@ -9,7 +9,6 @@ use crate::TableOutputOptions;
 use crate::TreeFlags;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
-use ll_bindings::tsk_id_t;
 use sys::bindings as ll_bindings;
 
 use super::Tree;
@@ -113,7 +112,7 @@ impl TreeSequence {
         tables: TableCollection,
         flags: F,
     ) -> Result<Self, TskitError> {
-        let raw_tables_ptr = tables.into_raw()?;
+        let raw_tables_ptr = tables.into_inner();
         let mut inner = sys::TreeSequence::new(raw_tables_ptr, flags.into())?;
         let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut())?;
         Ok(Self { inner, views })
@@ -302,7 +301,7 @@ impl TreeSequence {
 
     /// Get the number of trees.
     pub fn num_trees(&self) -> SizeType {
-        self.inner.num_trees().into()
+        self.inner.num_trees()
     }
 
     /// Calculate the average Kendall-Colijn (`K-C`) distance between
@@ -322,7 +321,7 @@ impl TreeSequence {
 
     // FIXME: document
     pub fn num_samples(&self) -> SizeType {
-        self.inner.num_samples().into()
+        self.inner.num_samples()
     }
 
     /// Simplify tables and return a new tree sequence.
@@ -348,15 +347,12 @@ impl TreeSequence {
         if idmap {
             output_node_map.resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
         }
-        let llsamples = unsafe {
-            std::slice::from_raw_parts(samples.as_ptr().cast::<tsk_id_t>(), samples.len())
-        };
         let mut inner = self.inner.simplify(
-            llsamples,
+            samples,
             options.into(),
             match idmap {
-                true => output_node_map.as_mut_ptr().cast::<tsk_id_t>(),
-                false => std::ptr::null_mut(),
+                true => Some(&mut output_node_map),
+                false => None,
             },
         )?;
         let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut())?;
