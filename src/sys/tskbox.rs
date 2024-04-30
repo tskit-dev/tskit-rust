@@ -1,7 +1,7 @@
 use std::ptr::NonNull;
 
-use super::Error;
 use super::TskTeardown;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct TskBox<T: TskTeardown> {
@@ -21,12 +21,12 @@ impl<T> TskBox<T>
 where
     T: TskTeardown,
 {
-    pub fn new<F: Fn(*mut T) -> i32>(init: F) -> Result<Self, Error> {
+    pub fn new<F: Fn(*mut T) -> i32>(init: F) -> Result<Self, TskitError> {
         // SAFETY: we will initialize it next
         let mut uninit = unsafe { Self::new_uninit() };
-        let rv = init(uninit.as_mut());
-        if rv < 0 {
-            Err(Error::Code(rv))
+        let code = init(uninit.as_mut());
+        if code < 0 {
+            Err(TskitError::ErrorCode { code })
         } else {
             Ok(uninit)
         }

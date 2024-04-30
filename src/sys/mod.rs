@@ -46,14 +46,60 @@ pub use treeseq::LLTreeSeq;
 
 use traits::TskTeardown;
 
-#[non_exhaustive]
 #[derive(Error, Debug)]
-pub enum Error {
+#[non_exhaustive]
+pub enum TskitError {
+    /// Returned when conversion attempts fail
+    #[error("range error: {}", *.0)]
+    RangeError(String),
+    /// Used when bad input is encountered.
+    #[error("we received {} but expected {}",*got, *expected)]
+    ValueError { got: String, expected: String },
+    /// Used when array access is out of range.
+    /// Typically, this is used when accessing
+    /// arrays allocated on the C side.
+    #[error("Invalid index")]
+    IndexError,
+    /// Raised when samples are requested from
+    /// [`crate::Tree`] objects, but sample lists are
+    /// not being updated.
+    #[error("Not tracking samples in Trees")]
+    NotTrackingSamples,
+    /// Wrapper around tskit C API error codes.
+    #[error("{}", get_tskit_error_message(*code))]
+    ErrorCode { code: i32 },
+    /// A redirection of [``crate::metadata::MetadataError``]
+    #[error("{value:?}")]
+    MetadataError {
+        /// The redirected error
+        #[from]
+        value: MetadataError,
+    },
+    /// General error variant
     #[error("{}", *.0)]
-    Message(String),
-    #[error("{}", get_tskit_error_message(*.0))]
-    Code(i32),
+    LibraryError(String),
 }
+
+#[derive(Error, Debug)]
+#[non_exhaustive]
+pub enum MetadataError {
+    /// Error related to types implementing
+    /// metadata serialization.
+    #[error("{}", *value)]
+    RoundtripError {
+        #[from]
+        value: Box<dyn std::error::Error + Send + Sync>,
+    },
+}
+
+//#[non_exhaustive]
+//#[derive(Error, Debug)]
+//pub enum Error {
+//    #[error("{}", *.0)]
+//    Message(String),
+//    #[error("{}", get_tskit_error_message(*.0))]
+//    Code(i32),
+//}
 
 fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_size_t>, T: Copy>(
     row: R,
@@ -170,25 +216,25 @@ pub fn get_tskit_error_message(code: i32) -> String {
 
 #[test]
 fn test_error_message() {
-    fn foo() -> Result<(), Error> {
-        Err(Error::Message("foobar".to_owned()))
+    fn foo() -> Result<(), TskitError> {
+        Err(TskitError::LibraryError("foobar".to_owned()))
     }
 
     let msg = "foobar".to_owned();
     match foo() {
-        Err(Error::Message(m)) => assert_eq!(m, msg),
+        Err(TskitError::LibraryError(m)) => assert_eq!(m, msg),
         _ => panic!("unexpected match"),
     }
 }
 
 #[test]
 fn test_error_code() {
-    fn foo() -> Result<(), Error> {
-        Err(Error::Code(-202))
+    fn foo() -> Result<(), TskitError> {
+        Err(TskitError::ErrorCode { code: -202 })
     }
 
     match foo() {
-        Err(Error::Code(x)) => {
+        Err(TskitError::ErrorCode { code: x }) => {
             assert_eq!(x, -202);
         }
         _ => panic!("unexpected match"),

@@ -6,13 +6,13 @@ use super::bindings::tsk_migration_table_clear;
 use super::bindings::tsk_migration_table_init;
 use super::bindings::tsk_migration_table_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct MigrationTable(TskBox<tsk_migration_table_t>);
 
 impl MigrationTable {
-    pub fn new(options: u32) -> Result<Self, Error> {
+    pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_migration_table_t| unsafe {
             tsk_migration_table_init(e, options)
         })?;
@@ -43,7 +43,7 @@ impl MigrationTable {
         source: tsk_id_t,
         dest: tsk_id_t,
         time: f64,
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         self.add_row_with_metadata(span, node, source, dest, time, &[])
     }
 
@@ -55,7 +55,7 @@ impl MigrationTable {
         dest: tsk_id_t,
         time: f64,
         metadata: &[u8],
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         unsafe {
             Ok(tsk_migration_table_add_row(
                 self.as_mut(),

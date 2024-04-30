@@ -6,13 +6,13 @@ use super::bindings::tsk_population_table_clear;
 use super::bindings::tsk_population_table_init;
 use super::bindings::tsk_population_table_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct PopulationTable(TskBox<tsk_population_table_t>);
 
 impl PopulationTable {
-    pub fn new(options: u32) -> Result<Self, Error> {
+    pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_population_table_t| unsafe {
             tsk_population_table_init(e, options)
         })?;
@@ -36,11 +36,11 @@ impl PopulationTable {
         unsafe { tsk_population_table_clear(self.as_mut()) }
     }
 
-    pub fn add_row(&mut self) -> Result<tsk_id_t, Error> {
+    pub fn add_row(&mut self) -> Result<tsk_id_t, TskitError> {
         self.add_row_with_metadata(&[])
     }
 
-    pub fn add_row_with_metadata(&mut self, metadata: &[u8]) -> Result<tsk_id_t, Error> {
+    pub fn add_row_with_metadata(&mut self, metadata: &[u8]) -> Result<tsk_id_t, TskitError> {
         unsafe {
             Ok(tsk_population_table_add_row(
                 self.as_mut(),

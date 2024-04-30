@@ -6,13 +6,13 @@ use super::bindings::tsk_mutation_table_clear;
 use super::bindings::tsk_mutation_table_init;
 use super::bindings::tsk_mutation_table_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct MutationTable(TskBox<tsk_mutation_table_t>);
 
 impl MutationTable {
-    pub fn new(options: u32) -> Result<Self, Error> {
+    pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_mutation_table_t| unsafe {
             tsk_mutation_table_init(e, options)
         })?;
@@ -43,7 +43,7 @@ impl MutationTable {
         parent: tsk_id_t,
         time: f64,
         derived_state: Option<&[u8]>,
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         self.add_row_with_metadata(site, node, parent, time, derived_state, &[])
     }
 
@@ -55,7 +55,7 @@ impl MutationTable {
         time: f64,
         derived_state: Option<&[u8]>,
         metadata: &[u8],
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         unsafe {
             Ok(tsk_mutation_table_add_row(
                 self.as_mut(),
