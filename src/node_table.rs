@@ -842,13 +842,7 @@ impl NodeTable {
         P: Into<PopulationId>,
         I: Into<IndividualId>,
     {
-        let rv = self.table_.add_row(
-            flags.into().bits(),
-            time.into().into(),
-            population.into().into(),
-            individual.into().into(),
-        )?;
-        handle_tsk_return_value!(rv, rv.into())
+        self.table_.add_row(flags, time, population, individual)
     }
 
     pub fn add_row_with_metadata<F, T, P, I, M>(
@@ -867,14 +861,8 @@ impl NodeTable {
         M: NodeMetadata,
     {
         let md = crate::metadata::EncodedMetadata::new(metadata)?;
-        let rv = self.table_.add_row_with_metadata(
-            flags.into().bits(),
-            time.into().into(),
-            population.into().into(),
-            individual.into().into(),
-            md.as_slice(),
-        )?;
-        handle_tsk_return_value!(rv, rv.into())
+        self.table_
+            .add_row_with_metadata(flags, time, population, individual, md.as_slice())
     }
 
     /// Add row with defaults
@@ -901,16 +889,13 @@ impl NodeTable {
                 defaults.population(),
                 defaults.individual(),
             ),
-            Some(md) => {
-                let rv = self.table_.add_row_with_metadata(
-                    defaults.flags().bits(),
-                    time.into().into(),
-                    defaults.population().into(),
-                    defaults.individual().into(),
-                    &md,
-                )?;
-                handle_tsk_return_value!(rv, rv.into())
-            }
+            Some(md) => self.table_.add_row_with_metadata(
+                defaults.flags(),
+                time,
+                defaults.population(),
+                defaults.individual(),
+                &md,
+            ),
         }
     }
 }

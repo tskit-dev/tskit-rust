@@ -1,7 +1,5 @@
 use std::ptr::NonNull;
 
-use super::bindings::tsk_flags_t;
-use super::bindings::tsk_id_t;
 use super::bindings::tsk_node_table_add_row;
 use super::bindings::tsk_node_table_clear;
 use super::bindings::tsk_node_table_init;
@@ -36,34 +34,52 @@ impl NodeTable {
         unsafe { tsk_node_table_clear(self.as_mut()) }
     }
 
-    pub fn add_row(
+    pub fn add_row<F, T, P, I>(
         &mut self,
-        flags: tsk_flags_t,
-        time: f64,
-        population: tsk_id_t,
-        individual: tsk_id_t,
-    ) -> Result<tsk_id_t, TskitError> {
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
+    ) -> Result<super::newtypes::NodeId, TskitError>
+    where
+        F: Into<super::flags::NodeFlags>,
+        T: Into<super::newtypes::Time>,
+        P: Into<super::newtypes::PopulationId>,
+        I: Into<super::newtypes::IndividualId>,
+    {
         self.add_row_with_metadata(flags, time, population, individual, &[])
     }
 
-    pub fn add_row_with_metadata(
+    pub fn add_row_with_metadata<F, T, P, I>(
         &mut self,
-        flags: tsk_flags_t,
-        time: f64,
-        population: tsk_id_t,
-        individual: tsk_id_t,
+        flags: F,
+        time: T,
+        population: P,
+        individual: I,
         metadata: &[u8],
-    ) -> Result<tsk_id_t, TskitError> {
-        unsafe {
-            Ok(tsk_node_table_add_row(
+    ) -> Result<super::newtypes::NodeId, TskitError>
+    where
+        F: Into<super::flags::NodeFlags>,
+        T: Into<super::newtypes::Time>,
+        P: Into<super::newtypes::PopulationId>,
+        I: Into<super::newtypes::IndividualId>,
+    {
+        // SAFETY: pointer is not null
+        // If it points to an unititalized object,
+        // the error is in an earlier "unsafe" call.
+        match unsafe {
+            tsk_node_table_add_row(
                 self.as_mut(),
-                flags,
-                time,
-                population,
-                individual,
+                flags.into().bits(),
+                time.into().into(),
+                population.into().into(),
+                individual.into().into(),
                 metadata.as_ptr().cast::<i8>(),
                 metadata.len() as u64,
-            ))
+            )
+        } {
+            id if id >= 0 => Ok(id.into()),
+            code => Err(TskitError::ErrorCode { code }),
         }
     }
 }
