@@ -58,7 +58,7 @@ use super::Tree;
 /// assert_eq!(treeseq.nodes_mut().num_rows(), 3);
 /// ```
 pub struct TreeSequence {
-    pub(crate) inner: sys::LLTreeSeq,
+    pub(crate) inner: sys::TreeSequence,
     views: crate::table_views::TableViews,
 }
 
@@ -114,8 +114,8 @@ impl TreeSequence {
         flags: F,
     ) -> Result<Self, TskitError> {
         let raw_tables_ptr = tables.into_raw()?;
-        let mut inner = sys::LLTreeSeq::new(raw_tables_ptr, flags.into())?;
-        let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut_ptr())?;
+        let mut inner = sys::TreeSequence::new(raw_tables_ptr, flags.into())?;
+        let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut())?;
         Ok(Self { inner, views })
     }
 
@@ -125,12 +125,12 @@ impl TreeSequence {
 
     /// Pointer to the low-level C type.
     pub fn as_ptr(&self) -> *const ll_bindings::tsk_treeseq_t {
-        self.inner.as_ptr()
+        self.inner.as_ref()
     }
 
     /// Mutable pointer to the low-level C type.
     pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_treeseq_t {
-        self.inner.as_mut_ptr()
+        self.inner.as_mut()
     }
 
     /// Dump the tree sequence to file.
@@ -359,7 +359,7 @@ impl TreeSequence {
                 false => std::ptr::null_mut(),
             },
         )?;
-        let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut_ptr())?;
+        let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut())?;
         Ok((
             Self { inner, views },
             match idmap {

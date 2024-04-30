@@ -36,3 +36,7 @@ impl_tskteardown!(
     super::bindings::tsk_migration_table_t,
     super::bindings::tsk_migration_table_free
 );
+impl_tskteardown!(
+    super::bindings::tsk_treeseq_t,
+    super::bindings::tsk_treeseq_free
+);
