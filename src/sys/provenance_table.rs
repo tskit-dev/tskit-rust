@@ -9,13 +9,13 @@ use super::bindings::tsk_provenance_table_init;
 use super::bindings::tsk_provenance_table_t;
 use super::bindings::tsk_size_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct ProvenanceTable(TskBox<tsk_provenance_table_t>);
 
 impl ProvenanceTable {
-    pub fn new(options: u32) -> Result<Self, Error> {
+    pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_provenance_table_t| unsafe {
             tsk_provenance_table_init(e, options)
         })?;
@@ -39,9 +39,11 @@ impl ProvenanceTable {
         unsafe { tsk_provenance_table_clear(self.as_mut()) }
     }
 
-    pub fn add_row(&mut self, record: &str) -> Result<tsk_id_t, Error> {
+    pub fn add_row(&mut self, record: &str) -> Result<tsk_id_t, TskitError> {
         if record.is_empty() {
-            return Err(Error::Message("empty provenance record".to_owned()));
+            return Err(TskitError::LibraryError(
+                "empty provenance record".to_owned(),
+            ));
         }
         let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
         let rv = unsafe {

@@ -7,13 +7,13 @@ use super::bindings::tsk_individual_table_clear;
 use super::bindings::tsk_individual_table_init;
 use super::bindings::tsk_individual_table_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct IndividualTable(TskBox<tsk_individual_table_t>);
 
 impl IndividualTable {
-    pub fn new(options: u32) -> Result<Self, Error> {
+    pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_individual_table_t| unsafe {
             tsk_individual_table_init(e, options)
         })?;
@@ -42,7 +42,7 @@ impl IndividualTable {
         flags: tsk_flags_t,
         location: &[f64],
         parents: &[tsk_id_t],
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         self.add_row_with_metadata(flags, location, parents, &[])
     }
 
@@ -52,7 +52,7 @@ impl IndividualTable {
         location: &[f64],
         parents: &[tsk_id_t],
         metadata: &[u8],
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         unsafe {
             Ok(tsk_individual_table_add_row(
                 self.as_mut(),

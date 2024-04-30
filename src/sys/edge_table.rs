@@ -6,13 +6,13 @@ use super::bindings::tsk_edge_table_init;
 use super::bindings::tsk_edge_table_t;
 use super::bindings::tsk_id_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 #[derive(Debug)]
 pub struct EdgeTable(TskBox<tsk_edge_table_t>);
 
 impl EdgeTable {
-    pub fn new(options: u32) -> Result<Self, Error> {
+    pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk =
             TskBox::new(|e: *mut tsk_edge_table_t| unsafe { tsk_edge_table_init(e, options) })?;
         Ok(Self(tsk))
@@ -41,7 +41,7 @@ impl EdgeTable {
         right: f64,
         parent: tsk_id_t,
         child: tsk_id_t,
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         self.add_row_with_metadata(left, right, parent, child, &[])
     }
 
@@ -52,7 +52,7 @@ impl EdgeTable {
         parent: tsk_id_t,
         child: tsk_id_t,
         metadata: &[u8],
-    ) -> Result<tsk_id_t, Error> {
+    ) -> Result<tsk_id_t, TskitError> {
         unsafe {
             Ok(tsk_edge_table_add_row(
                 self.as_mut(),

@@ -1,7 +1,7 @@
 use std::ffi::CString;
 
 use super::bindings;
-use super::Error;
+use super::TskitError;
 
 #[repr(transparent)]
 pub struct LLTreeSeq(bindings::tsk_treeseq_t);
@@ -10,11 +10,11 @@ impl LLTreeSeq {
     pub fn new(
         tables: *mut bindings::tsk_table_collection_t,
         flags: super::flags::TreeSequenceFlags,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, TskitError> {
         let mut inner = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
         let flags = flags.bits() | bindings::TSK_TAKE_OWNERSHIP;
         match unsafe { bindings::tsk_treeseq_init(inner.as_mut_ptr(), tables, flags) } {
-            code if code < 0 => Err(Error::Code(code)),
+            code if code < 0 => Err(TskitError::ErrorCode { code }),
             _ => Ok(Self(unsafe { inner.assume_init() })),
         }
     }
@@ -36,7 +36,7 @@ impl LLTreeSeq {
         samples: &[bindings::tsk_id_t],
         options: super::flags::SimplificationOptions,
         idmap: *mut bindings::tsk_id_t,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, TskitError> {
         // The output is an UNINITIALIZED treeseq,
         // else we leak memory.
         let mut ts = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::uninit();
@@ -58,16 +58,20 @@ impl LLTreeSeq {
             // and tsk_treeseq_free uses safe methods
             // to clean up.
             unsafe { bindings::tsk_treeseq_free(ts.as_mut_ptr()) };
-            Err(Error::Code(rv))
+            Err(TskitError::ErrorCode { code: rv })
         } else {
             Ok(Self(init))
         }
     }
 
-    pub fn dump(&self, filename: CString, options: bindings::tsk_flags_t) -> Result<i32, Error> {
+    pub fn dump(
+        &self,
+        filename: CString,
+        options: bindings::tsk_flags_t,
+    ) -> Result<i32, TskitError> {
         // SAFETY: self pointer is not null
         match unsafe { bindings::tsk_treeseq_dump(self.as_ptr(), filename.as_ptr(), options) } {
-            code if code < 0 => Err(Error::Code(code)),
+            code if code < 0 => Err(TskitError::ErrorCode { code }),
             code => Ok(code),
         }
     }
@@ -84,14 +88,14 @@ impl LLTreeSeq {
         unsafe { (*(*self.as_ptr()).tables).nodes.num_rows }
     }
 
-    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, Error> {
+    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
         let mut kc: f64 = f64::NAN;
         let kcp: *mut f64 = &mut kc;
         // SAFETY: self pointer is not null
         match unsafe {
             bindings::tsk_treeseq_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp)
         } {
-            code if code < 0 => Err(Error::Code(code)),
+            code if code < 0 => Err(TskitError::ErrorCode { code }),
             _ => Ok(kc),
         }
     }
@@ -100,9 +104,9 @@ impl LLTreeSeq {
         unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ptr()) }
     }
 
-    fn free(&mut self) -> Result<(), Error> {
+    fn free(&mut self) -> Result<(), TskitError> {
         match unsafe { bindings::tsk_treeseq_free(self.as_mut_ptr()) } {
-            code if code < 0 => Err(Error::Code(code)),
+            code if code < 0 => Err(TskitError::ErrorCode { code }),
             _ => Ok(()),
         }
     }

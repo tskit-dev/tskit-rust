@@ -163,8 +163,6 @@
 //! * We have not yet tested importing metadata encoded using `rust`
 //!   into `Python` via the `tskit` `Python API`.
 
-use thiserror::Error;
-
 #[cfg(feature = "derive")]
 #[doc(hidden)]
 pub extern crate tskit_derive;
@@ -229,17 +227,7 @@ impl EncodedMetadata {
     }
 }
 
-#[derive(Error, Debug)]
-#[non_exhaustive]
-pub enum MetadataError {
-    /// Error related to types implementing
-    /// [``MetadataRoundtrip``]
-    #[error("{}", *value)]
-    RoundtripError {
-        #[from]
-        value: Box<dyn std::error::Error + Send + Sync>,
-    },
-}
+pub use crate::sys::MetadataError;
 
 #[cfg(test)]
 mod tests {

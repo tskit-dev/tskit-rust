@@ -10,12 +10,12 @@ use super::bindings::tsk_site_table_t;
 use super::bindings::tsk_table_collection_init;
 use super::bindings::tsk_table_collection_t;
 use super::tskbox::TskBox;
-use super::Error;
+use super::TskitError;
 
 pub struct TableCollection(TskBox<tsk_table_collection_t>);
 
 impl TableCollection {
-    pub fn new(sequence_length: f64) -> Result<Self, Error> {
+    pub fn new(sequence_length: f64) -> Result<Self, TskitError> {
         let mut tsk = TskBox::new(|tc: *mut tsk_table_collection_t| unsafe {
             tsk_table_collection_init(tc, 0)
         })?;
