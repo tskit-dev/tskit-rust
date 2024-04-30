@@ -512,16 +512,6 @@ impl NodeTable {
         )
     }
 
-    #[deprecated(since = "0.12.0", note = "use flags_slice_mut instead")]
-    pub fn flags_array_mut(&mut self) -> &mut [NodeFlags] {
-        sys::generate_slice_mut(self.as_ref().flags, self.num_rows())
-    }
-
-    #[deprecated(since = "0.12.0", note = "use time_slice_mut instead")]
-    pub fn time_array_mut(&mut self) -> &mut [Time] {
-        sys::generate_slice_mut(self.as_ref().flags, self.num_rows())
-    }
-
     /// Return the ``population`` value from row ``row`` of the table.
     ///
     /// # Examples
