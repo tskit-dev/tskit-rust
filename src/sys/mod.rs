@@ -12,6 +12,7 @@ pub mod flags;
 mod individual_table;
 mod migration_table;
 mod mutation_table;
+pub mod newtypes;
 mod node_table;
 mod population_table;
 #[cfg(feature = "provenance")]
