@@ -4,6 +4,7 @@ use super::bindings::tsk_node_table_add_row;
 use super::bindings::tsk_node_table_clear;
 use super::bindings::tsk_node_table_init;
 use super::bindings::tsk_node_table_t;
+use super::newtypes::NodeId;
 use super::tskbox::TskBox;
 use super::TskitError;
 
@@ -80,6 +81,20 @@ impl NodeTable {
         } {
             id if id >= 0 => Ok(id.into()),
             code => Err(TskitError::ErrorCode { code }),
+        }
+    }
+
+    pub fn raw_metadata(&self, row: NodeId) -> Result<Option<&[u8]>, TskitError> {
+        if row.is_null() || row.as_usize() >= self.as_ref().num_rows.try_into().unwrap() {
+            Err(TskitError::IndexError)
+        } else {
+            Ok(super::tsk_ragged_column_access(
+                row,
+                self.as_ref().metadata,
+                self.as_ref().metadata_length,
+                self.as_ref().metadata_offset,
+                self.as_ref().num_rows,
+            ))
         }
     }
 }
