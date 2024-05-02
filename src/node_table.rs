@@ -590,7 +590,7 @@ impl NodeTable {
     ///
     /// * `Some(Ok(T))` if `row` is valid and decoding succeeded.
     /// * `Some(Err(_))` if `row` is not valid and decoding failed.
-    /// * `None` if `row` is not valid.
+    /// * `None` if `row` is not valid or the row has no metadata.
     ///
     /// # Errors
     ///
@@ -604,7 +604,7 @@ impl NodeTable {
         &self,
         row: NodeId,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row).ok()??;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
