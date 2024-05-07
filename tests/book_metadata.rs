@@ -87,10 +87,7 @@ fn book_mutation_metadata() {
     // There is also no metadata at row 2,
     // because that row does not exist, so
     // you get None back
-    assert!(tables
-        .mutations()
-        .metadata::<MutationMetadata>(2.into())
-        .is_none());
+    assert!(tables.mutations().metadata::<MutationMetadata>(2).is_none());
     // ANCHOR_END: metadata_retrieval_none
 
     // ANCHOR: metadata_bulk_decode_lending_iter

@@ -308,7 +308,7 @@ impl MutationTable {
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::MutationMetadata>(
         &self,
-        row: MutationId,
+        row: impl Into<MutationId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))

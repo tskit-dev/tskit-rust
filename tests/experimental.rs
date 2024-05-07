@@ -181,7 +181,7 @@ mod experimental_features {
         // current API requires
         let decoded = tables
             .mutations()
-            .metadata::<MutationMetadataType>(0.into())
+            .metadata::<MutationMetadataType>(0)
             .unwrap()
             .unwrap();
         assert_eq!(decoded.effect_size, 0.10);
@@ -277,7 +277,7 @@ mod experimental_features_refined {
         let decoded = tables
             .0
             .mutations()
-            .metadata::<MutationMetadataType>(0.into())
+            .metadata::<MutationMetadataType>(0)
             .unwrap()
             .unwrap();
         assert_eq!(decoded.effect_size, 0.10);
