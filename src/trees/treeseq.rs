@@ -292,7 +292,8 @@ impl TreeSequence {
     /// # Parameters
     ///
     /// * `lambda` specifies the relative weight of topology and branch length.
-    ///    See [`TreeInterface::kc_distance`] for more details.
+    ///   If `lambda` is 0, we only consider topology.
+    ///   If `lambda` is 1, we only consider branch lengths.
     pub fn kc_distance(&self, other: &TreeSequence, lambda: f64) -> Result<f64, TskitError> {
         self.inner.kc_distance(&other.inner, lambda)
     }
