@@ -62,7 +62,7 @@ pub fn get_tskit_error_message(code: i32) -> String {
     sys::get_tskit_error_message(code)
 }
 
-/// Given an instance of [``TskReturnValue``](crate::TskReturnValue),
+/// Given an instance of [``TskReturnValue``],
 /// obtain the tskit error message if there is indeed an error.
 pub fn extract_error_message(x: TskReturnValue) -> Option<String> {
     x.map_or_else(|e: TskitError| Some(format!("{}", e)), |_| None)
