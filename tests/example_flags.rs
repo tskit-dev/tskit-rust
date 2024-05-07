@@ -14,7 +14,7 @@ fn clip_invalid_flags() {
     assert!(simplification_flags.is_valid());
 
     // You can skip the unsetting of invalid bits...
-    let simplification_flags = unsafe { SimplificationOptions::from_bits_unchecked(f) };
+    let simplification_flags = SimplificationOptions::from_bits_retain(f);
 
     // ... and use this function to check.
     assert!(!simplification_flags.is_valid());
