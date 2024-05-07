@@ -1,17 +1,17 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
         <title>The tskit (rust) book</title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content="noindex">
 
 
         <!-- Custom HTML head -->
         
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
         <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
@@ -32,7 +32,7 @@
         <!-- Custom theme stylesheets -->
 
     </head>
-    <body>
+    <body class="sidebar-visible no-js">
     <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
@@ -62,42 +62,71 @@
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             var html = document.querySelector('html');
-            html.classList.remove('no-js')
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
         </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var html = document.querySelector('html');
+            var body = document.querySelector('body');
             var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
             }
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
                 <ol class="chapter"><li class="chapter-item expanded affix "><a href="introduction.html">Introduction</a></li><li class="chapter-item expanded "><a href="working_with_table_collections.html"><strong aria-hidden="true">1.</strong> Working with table collections</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="table_collection_creation.html"><strong aria-hidden="true">1.1.</strong> Creation</a></li><li class="chapter-item expanded "><a href="table_collection_adding_rows.html"><strong aria-hidden="true">1.2.</strong> Adding rows</a></li><li class="chapter-item expanded "><a href="table_collection_column_access.html"><strong aria-hidden="true">1.3.</strong> Accessing table columns</a></li><li class="chapter-item expanded "><a href="table_collection_row_access.html"><strong aria-hidden="true">1.4.</strong> Accessing table rows</a></li><li class="chapter-item expanded "><a href="table_collection_validation.html"><strong aria-hidden="true">1.5.</strong> Validating table collection contents</a></li></ol></li><li class="chapter-item expanded "><a href="working_with_tree_sequences.html"><strong aria-hidden="true">2.</strong> Working with tree sequences</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="tree_sequence_from_table_collection.html"><strong aria-hidden="true">2.1.</strong> Initialization from a table collection</a></li><li class="chapter-item expanded "><a href="tree_sequence_iterate_trees.html"><strong aria-hidden="true">2.2.</strong> Iterating over trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_tree.html"><strong aria-hidden="true">2.3.</strong> Working with trees</a></li><li class="chapter-item expanded "><a href="tree_sequence_edge_diffs.html"><strong aria-hidden="true">2.4.</strong> Edge differences</a></li><li class="chapter-item expanded "><a href="tree_sequence_miscellaneous.html"><strong aria-hidden="true">2.5.</strong> Miscellaneous operations</a></li></ol></li><li class="chapter-item expanded "><a href="metadata.html"><strong aria-hidden="true">3.</strong> Metadata</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="metadata_derive.html"><strong aria-hidden="true">3.1.</strong> Defining metadata types in rust</a></li><li class="chapter-item expanded "><a href="metadata_tables.html"><strong aria-hidden="true">3.2.</strong> Metadata and tables</a></li><li class="chapter-item expanded "><a href="metadata_schema.html"><strong aria-hidden="true">3.3.</strong> Metadata schema</a></li><li class="chapter-item expanded "><a href="metadata_advanced.html"><strong aria-hidden="true">3.4.</strong> Advanced topics</a></li></ol></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">4.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="examples.html"><strong aria-hidden="true">5.</strong> Example programs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="examples_haploid_wright_fisher.html"><strong aria-hidden="true">5.1.</strong> Haploid Wright-Fisher simulation</a></li></ol></li><li class="chapter-item expanded "><a href="prelude.html">Crate prelude</a></li><li class="chapter-item expanded affix "><a href="changelog.html">Changelog</a></li><li class="chapter-item expanded affix "><a href="migration_guide.html">Migration Guide</a></li></ol>
             </div>
-            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
         </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
 
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
                                 <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
@@ -160,7 +189,7 @@ The 'nomicon is helpful for understanding how things like the <code>tskit</code>
 <h2 id="conventions-used-in-this-document"><a class="header" href="#conventions-used-in-this-document">Conventions used in this document</a></h2>
 <p>Here, <code>tskit</code> means the rust API.
 <code>tskit-c</code> and <code>tskit-python</code> refer to the C and Python APIs, respectively.</p>
-<p>The phrase &quot;data model&quot; refers to <a href="https://tskit.dev/tskit/docs/stable/data-model.html">this</a>. This document will make little sense without an understanding of the data model.</p>
+<p>The phrase "data model" refers to <a href="https://tskit.dev/tskit/docs/stable/data-model.html">this</a>. This document will make little sense without an understanding of the data model.</p>
 <h2 id="relation-to-the-c-api"><a class="header" href="#relation-to-the-c-api">Relation to the C API</a></h2>
 <p>Where necessary, we will note differences from the behavior of <code>tskit-c</code>.</p>
 <p>Much of the rust API works by calling the C API.
@@ -193,7 +222,7 @@ However, client code can make direct calls to that API via the module <code>tski
 <h3 id="adding-tskit-as-a-dependency-to-a-rust-project"><a class="header" href="#adding-tskit-as-a-dependency-to-a-rust-project">Adding <code>tskit</code> as a dependency to a rust project</a></h3>
 <p>In your <code>Cargo.toml</code>:</p>
 <pre><code class="language-{toml}">[dependencies]
-tskit = &quot;~X.Y.Z&quot;
+tskit = "~X.Y.Z"
 </code></pre>
 <p>The latest version to fill in <code>X.Y.Z</code> can be found <a href="https://crates.io/crates/tskit">here</a>.
 See <a href="https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html">here</a> for how to specify version numbers.</p>
@@ -214,7 +243,7 @@ Here it is a <a href="https://doc.rust-lang.org/rust-by-example/generics/new_typ
         assert_eq!(tables.sequence_length(), 100.0);
     } else {
         panic!(
-            &quot;TableCollection creation sequence length = {} failed&quot;,
+            "TableCollection creation sequence length = {} failed",
             sequence_length
         );
     }</code></pre>
@@ -240,7 +269,7 @@ This design means that the following is equivalent to what we wrote above:</p>
         }</code></pre>
 <p>We see from the <code>if let</code> pattern that functions adding rows return
 <a href="https://doc.rust-lang.org/std/result/enum.Result.html"><code>Result</code></a>.
-In general, errors only occur when the C back-end fails to allocate memory 
+In general, errors only occur when the C back-end fails to allocate memory
 to expand the table columns.
 If we add a row with invalid data, no error is returned!
 To catch such errors, we must explicitly check table integrity (see <a href="table_collection_validation.html#checking-table-integrity">below</a>).</p>
@@ -285,7 +314,7 @@ Because metadata are optional per-row, any metadata defaults are stored as an <a
     }</code></pre>
 <h5 id="case-1-no-default-metadata"><a class="header" href="#case-1-no-default-metadata">Case 1: no default metadata</a></h5>
 <p>A common use case is that the metadata differs for every row.
-For this case, it makes sense for the default value to be the <code>None</code> variant of the <code>Option</code>. </p>
+For this case, it makes sense for the default value to be the <code>None</code> variant of the <code>Option</code>.</p>
 <p>This case is straightforward:</p>
 <pre><code class="language-rust  noplaygound  ignore">
     // Create a type alias for brevity
@@ -354,7 +383,7 @@ However, let's take a look at what we need to do if our next row uses a non-defa
         )
         .unwrap();</code></pre>
 <p>Note the call to <code>..defaults.clone()</code>.
-(For that call to compile, <code>NodeMetadata</code> must implement <code>Clone</code>!.) 
+(For that call to compile, <code>NodeMetadata</code> must implement <code>Clone</code>!.)
 Without that, our <code>defaults</code> instance would have <em>moved</em>, leading to a move-after-use compiler error when we add a third row:</p>
 <pre><code class="language-rust  noplaygound  ignore">    let n2 = tables
         .add_node_with_defaults(
@@ -384,7 +413,7 @@ The following snippet adds and edge and then validates the data for that row of 
             assert_eq!(r, right);
         }
     } else {
-        panic!(&quot;that should have worked...&quot;);
+        panic!("that should have worked...");
     }</code></pre>
 <p>The return type of the getters is the <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option</code></a> enum. The <code>None</code> variant is returned when row indexes are out of range:</p>
 <pre><code class="language-rust  noplaygound  ignore">    assert!(tables.edges().parent(tskit::EdgeId::NULL).is_none());</code></pre>
@@ -397,7 +426,7 @@ ancestral states for sites, derived states for mutations,
 parent and location information for individuals, etc..</li>
 </ul>
 <p><code>tskit</code> provides two ways to access row data.
-The first is by a &quot;view&quot;, which contains non-owning references
+The first is by a "view", which contains non-owning references
 to the ragged column data.
 The second is by row objects containing <em>copies</em> of the ragged column data.</p>
 <p>The former will be more efficient when the ragged columns are populated.
@@ -415,7 +444,7 @@ objects.</p>
         assert_eq!(row.parent, parent);
         assert_eq!(row.child, child);
     } else {
-        panic!(&quot;that should have worked...&quot;);
+        panic!("that should have worked...");
     }</code></pre>
 <p>To iterate over all views we use <em>lending</em> iterators:</p>
 <pre><code class="language-rust  noplaygound  ignore">    let mut edge_table_lending_iter = tables.edges().lending_iter();
@@ -430,7 +459,7 @@ objects.</p>
     }</code></pre>
 <h4 id="lending-iterators"><a class="header" href="#lending-iterators">Lending iterators</a></h4>
 <p>The lending iterators are implemented using the <a href="https://docs.rs/streaming-iterator/latest/streaming_iterator/"><code>streaming_iterator</code></a> crate.
-(The community now prefers the term &quot;lending&quot; over &quot;streaming&quot; for this concept.)
+(The community now prefers the term "lending" over "streaming" for this concept.)
 The <code>tskit</code> prelude includes the trait declarations that allow the code shown above to compile.</p>
 <p>rust 1.65.0 stabilized Generic Associated Types, or GATs.
 GATs allows lending iterators to be implemented directly without the workarounds used in the <code>streaming_iterator</code> crate.
@@ -445,7 +474,7 @@ Rather, we will see what the community settles on and will decide in the future 
         assert_eq!(row.parent, parent);
         assert_eq!(row.child, child);
     } else {
-        panic!(&quot;that should have worked...&quot;);
+        panic!("that should have worked...");
     }</code></pre>
 <p>The row types are rust structures. The table data are <em>copied</em> into these structures, making them relatively more expensive to work with. We are looking into removing the copies and returning slices, but doing so currently impacts the design of table row iterators such as:</p>
 <pre><code class="language-rust  noplaygound  ignore">    for row in tables.edges_iter() {
@@ -459,7 +488,7 @@ Rather, we will see what the community settles on and will decide in the future 
 <p>These iterators are rust iterator types--they <code>impl Iterator&lt;Item=X&gt;</code>, where <code>X</code> is a table row type.</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="checking-table-integrity"><a class="header" href="#checking-table-integrity">Checking table integrity</a></h2>
 <p>The data model involves lazy checking of inputs.
-In other words, we can add invalid row data that is not caught by the &quot;add row&quot; functions.
+In other words, we can add invalid row data that is not caught by the "add row" functions.
 We inherit this behavior from the C API.</p>
 <p>We can check that the tables contain valid data by:</p>
 <pre><code class="language-rust  noplaygound  ignore">    let mut tables = tskit::TableCollection::new(100.0).unwrap();
@@ -467,10 +496,10 @@ We inherit this behavior from the C API.</p>
     tables.add_edge(-1.0, 110.0, 0, 1).unwrap();
     // ...and we can catch that here
     match tables.check_integrity(tskit::TableIntegrityCheckFlags::default()) {
-        Ok(code) =&gt; panic!(&quot;expected Err(e) but got code: {}&quot;, code),
+        Ok(code) =&gt; panic!("expected Err(e) but got code: {}", code),
         // tskit::TskitError can be formatted into the same
         // error messages that tskit-c/tskit-python give.
-        Err(e) =&gt; println!(&quot;{}&quot;, e),
+        Err(e) =&gt; println!("{}", e),
     }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="working-with-tree-sequences"><a class="header" href="#working-with-tree-sequences">Working with tree sequences <img align="right" width="73" height="45" src="https://raw.githubusercontent.com/tskit-dev/administrative/main/logos/svg/tskit-rust/Tskit_rust_logo.eps.svg"></a></h1>
 <p>The next several sections provide examples based on a tree sequence with two trees.</p>
@@ -514,7 +543,7 @@ and instead just unwrap them.</p>
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -522,7 +551,7 @@ and instead just unwrap them.</p>
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -530,7 +559,7 @@ and instead just unwrap them.</p>
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -538,7 +567,7 @@ and instead just unwrap them.</p>
         .unwrap();
     tables
         .add_node(
-            TSK_NODE_IS_SAMPLE,
+            tskit::NodeFlags::new_sample(),
             0.0,
             PopulationId::NULL,
             IndividualId::NULL,
@@ -575,7 +604,7 @@ Any further attempts to manipulate the table collection variable will result in 
 <p>This API depends on traits most easily brought into scope via the crate prelude:</p>
 <pre><code class="language-rust  noplayground  ignore">use tskit::prelude::*;</code></pre>
 <p>A <code>next_back()</code> function allows iteration to the next tree left of the current tree.
-We currently do not have an API expressing &quot;build me an iterator starting from the rightmost tree&quot;.
+We currently do not have an API expressing "build me an iterator starting from the rightmost tree".
 Such an thing is certainly doable.</p>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="working-with-trees"><a class="header" href="#working-with-trees">Working with trees</a></h2>
 <p>Iterating over a tree sequence returns instances of <code>tskit::Tree</code>.
@@ -661,20 +690,20 @@ For each tree, a standard <code>Iterator</code> over removals and insertions is 
 <pre><code class="language-rust  noplaygound  ignore">    if let Ok(mut edge_diff_iterator) = treeseq.edge_differences_iter() {
         while let Some(diffs) = edge_diff_iterator.next() {
             for edge_removal in diffs.edge_removals() {
-                println!(&quot;{}&quot;, edge_removal);
+                println!("{}", edge_removal);
             }
             for edge_insertion in diffs.edge_insertions() {
-                println!(&quot;{}&quot;, edge_insertion);
+                println!("{}", edge_insertion);
             }
         }
     } else {
-        panic!(&quot;creating edge diffs iterator failed&quot;);
+        panic!("creating edge diffs iterator failed");
     }</code></pre>
 <p>Edge differences are the basis of efficient algorithms based on the incremental updating of summaries of trees.
 The following example co-iterates over edge differences and trees.
 The edge differences are used to calculate the parent array for each tree:</p>
 <pre><code class="language-rust  noplaygound  ignore">    let num_nodes = treeseq.nodes().num_rows().as_usize();
-    // num_nodes + 1 to reflect a &quot;virtual root&quot; present in
+    // num_nodes + 1 to reflect a "virtual root" present in
     // the tree arrays
     let mut parents = vec![NodeId::NULL; num_nodes + 1];
     match treeseq.edge_differences_iter() {
@@ -693,15 +722,15 @@ The edge differences are used to calculate the parent array for each tree:</p>
                     assert_eq!(tree.parent_array(), &amp;parents);
                 }
             }
-            Err(e) =&gt; panic!(&quot;error creating tree iter: {:?}&quot;, e),
+            Err(e) =&gt; panic!("error creating tree iter: {:?}", e),
         },
-        Err(e) =&gt; panic!(&quot;error creating edge diff iter: {:?}&quot;, e),
+        Err(e) =&gt; panic!("error creating edge diff iter: {:?}", e),
     }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h2 id="miscellaneous-operations"><a class="header" href="#miscellaneous-operations">Miscellaneous operations</a></h2>
 <h3 id="writing-to-a-file"><a class="header" href="#writing-to-a-file">Writing to a file</a></h3>
-<pre><code class="language-rust  noplayground  ignore">treeseq.dump(&quot;file.trees&quot;, tskit::TableOutputOptions::default()).unwrap();</code></pre>
+<pre><code class="language-rust  noplayground  ignore">treeseq.dump("file.trees", tskit::TableOutputOptions::default()).unwrap();</code></pre>
 <h3 id="loading-from-a-file"><a class="header" href="#loading-from-a-file">Loading from a file</a></h3>
-<pre><code class="language-rust  noplayground  ignore">let treeseq = tskit::TreeSequence::load(&quot;file.trees&quot;).unwrap();</code></pre>
+<pre><code class="language-rust  noplayground  ignore">let treeseq = tskit::TreeSequence::load("file.trees").unwrap();</code></pre>
 <h3 id="get-a-deep-copy-of-the-tables"><a class="header" href="#get-a-deep-copy-of-the-tables">Get a deep copy of the tables</a></h3>
 <p>Get a <em>copy</em> of the table collection in the tree sequence:</p>
 <pre><code class="language-rust  noplayground  ignore">let tables = treeseq.dump_tables.unwrap();</code></pre>
@@ -725,7 +754,7 @@ In other words, a type to be used as node metadata implements the <code>tskit::m
 <p>Using the <code>tskit</code> cargo feature <code>derive</code>, we can use procedural macros to define metadata types.
 Here, we define a metadata type for a mutation table:</p>
 <pre><code class="language-rust  noplayground  ignore">    #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
-    #[serializer(&quot;serde_json&quot;)]
+    #[serializer("serde_json")]
     struct MutationMetadata {
         effect_size: f64,
         dominance: f64,
@@ -790,9 +819,9 @@ We assume nothing about the API used to encode/decode metadata.
 Therefore, the error could be anything.</p>
 <pre><code class="language-rust  noplayground  ignore">    let fetched_md = match tables.mutations().metadata::&lt;MutationMetadata&gt;(mut_id_0) {
         Some(Ok(m)) =&gt; m,
-        Some(Err(e)) =&gt; panic!(&quot;metadata decoding failed: {:?}&quot;, e),
+        Some(Err(e)) =&gt; panic!("metadata decoding failed: {:?}", e),
         None =&gt; panic!(
-            &quot;hmmm...row {} should have been a valid row with metadata...&quot;,
+            "hmmm...row {} should have been a valid row with metadata...",
             mut_id_0
         ),
     };
@@ -861,13 +890,14 @@ for some rows not having metadata:</p>
             MutationMetadata::decode(row_view.metadata.unwrap()).unwrap(),
         ));
     }</code></pre>
-<p>The first method gives `Vec&lt;Option&lt;M</p>
+<p>The first method gives <code>Vec&lt;Option&lt;MutationMetadata&gt;&gt;</code>.
+The second gives <code>Vec&lt;(MutationId, MutationMetadata)&gt;</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="error-handling"><a class="header" href="#error-handling">Error handling <img align="right" width="73" height="45" src="https://raw.githubusercontent.com/tskit-dev/administrative/main/logos/svg/tskit-rust/Tskit_rust_logo.eps.svg"></a></h1>
 <p>The error type is <a href="https://docs.rs/tskit/latest/tskit/error/enum.TskitError.html#"><code>tskit::error::TskitError</code></a>.</p>
 <p>This type implements <code>Display</code> and may thus be printed via:</p>
 <pre><code class="language-rust  noplayground  ignore">let x = match operation() {
     Ok(y) =&gt; y,
-    Err(e) =&gt; panic(&quot;{}&quot;, e);
+    Err(e) =&gt; panic("{}", e);
 };</code></pre>
 <p>The enum variant <code>TskitError::ErrorCode</code> represents integer return values from <code>tskit-c</code>.
 When printed via <code>Display</code>, the detailed error message is fetched.
@@ -889,13 +919,13 @@ The code is a reimplementation of an example program distributed with <code>tski
     update_bookmark: bool,
 ) -&gt; Result&lt;tskit::TreeSequence&gt; {
     if popsize == 0 {
-        return Err(anyhow::Error::msg(&quot;popsize must be &gt; 0&quot;));
+        return Err(anyhow::Error::msg("popsize must be &gt; 0"));
     }
     if num_generations == 0 {
-        return Err(anyhow::Error::msg(&quot;num_generations must be &gt; 0&quot;));
+        return Err(anyhow::Error::msg("num_generations must be &gt; 0"));
     }
     if simplify_interval == 0 {
-        return Err(anyhow::Error::msg(&quot;simplify_interval must be &gt; 0&quot;));
+        return Err(anyhow::Error::msg("simplify_interval must be &gt; 0"));
     }
     let mut tables = tskit::TableCollection::new(1.0)?;
 
@@ -927,10 +957,10 @@ The code is a reimplementation of an example program distributed with <code>tski
             let child = tables.add_node(0, bt, -1, -1)?;
             let left_parent = parents
                 .get(parent_picker.sample(&amp;mut rng))
-                .ok_or_else(|| anyhow::Error::msg(&quot;invalid left_parent index&quot;))?;
+                .ok_or_else(|| anyhow::Error::msg("invalid left_parent index"))?;
             let right_parent = parents
                 .get(parent_picker.sample(&amp;mut rng))
-                .ok_or_else(|| anyhow::Error::msg(&quot;invalid right_parent index&quot;))?;
+                .ok_or_else(|| anyhow::Error::msg("invalid right_parent index"))?;
             let breakpoint = breakpoint_generator.sample(&amp;mut rng);
             tables.add_edge(0., breakpoint, *left_parent, child)?;
             tables.add_edge(breakpoint, 1.0, *right_parent, child)?;
@@ -966,8 +996,6 @@ The code is a reimplementation of an example program distributed with <code>tski
 <p>The contents of the crate prelude are:</p>
 <pre><code class="language-rust  noplayground  ignore">//! Export commonly-use types and traits
 
-pub use crate::tsk_flags_t;
-pub use crate::TSK_NODE_IS_SAMPLE;
 pub use streaming_iterator::DoubleEndedStreamingIterator;
 pub use streaming_iterator::StreamingIterator;
 pub use {
@@ -1066,7 +1094,7 @@ pub use {
 <h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
 <ul>
 <li>Add examples/haploid_wright_fisher.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/394">#394</a>)</li>
-<li>Add lending iterators over table row &quot;views&quot; (<a href="https://github.com/tskit-dev/tskit-rust/pull/398">#398</a>)</li>
+<li>Add lending iterators over table row "views" (<a href="https://github.com/tskit-dev/tskit-rust/pull/398">#398</a>)</li>
 <li>Impl PartialEq for table row views. (<a href="https://github.com/tskit-dev/tskit-rust/pull/400">#400</a>)</li>
 <li>Add ProvenenceTableRowView (<a href="https://github.com/tskit-dev/tskit-rust/pull/401">#401</a>)</li>
 <li>Add row_view() for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/402">#402</a>)</li>
@@ -1111,7 +1139,7 @@ pub use {
 <ul>
 <li>Derive Debug for all table row types (<a href="https://github.com/tskit-dev/tskit-rust/pull/361">#361</a>)</li>
 <li>[<strong>breaking</strong>] Update generic bounds on metadata getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/370">#370</a>)</li>
-<li>Impl DerefMut for &quot;owned&quot; tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/371">#371</a>)</li>
+<li>Impl DerefMut for "owned" tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/371">#371</a>)</li>
 </ul>
 <h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
 <ul>
@@ -1232,7 +1260,7 @@ pub use {
 </ul>
 <h3 id="documentation-7"><a class="header" href="#documentation-7">Documentation</a></h3>
 <ul>
-<li>Fix warnings from &quot;cargo doc&quot; (<a href="https://github.com/tskit-dev/tskit-rust/pull/255">#255</a>)</li>
+<li>Fix warnings from "cargo doc" (<a href="https://github.com/tskit-dev/tskit-rust/pull/255">#255</a>)</li>
 </ul>
 <h3 id="features-5"><a class="header" href="#features-5">Features</a></h3>
 <ul>
@@ -1244,7 +1272,7 @@ pub use {
 <h3 id="miscellaneous-tasks-5"><a class="header" href="#miscellaneous-tasks-5">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Add cliff.toml (config file for git-cliff) (<a href="https://github.com/tskit-dev/tskit-rust/pull/257">#257</a>)</li>
-<li>Prefix &quot;chore: &quot; to dependabot.yml (<a href="https://github.com/tskit-dev/tskit-rust/pull/258">#258</a>)</li>
+<li>Prefix "chore: " to dependabot.yml (<a href="https://github.com/tskit-dev/tskit-rust/pull/258">#258</a>)</li>
 <li>Use cargo-hack to streamline CI. (<a href="https://github.com/tskit-dev/tskit-rust/pull/259">#259</a>)</li>
 <li>Add cargo-valgrind CI workflow (<a href="https://github.com/tskit-dev/tskit-rust/pull/277">#277</a>)</li>
 </ul>
@@ -1286,12 +1314,12 @@ pub use {
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/fb2128c0a54f2fe3bc54c17c77b6c3124e167621"><code>fb2128c0a5</code></a>] Add dependency caching for CI. (#230) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/aff053c786b5e0294d90d053be2b538c82105f3f"><code>aff053c786</code></a>] Improvements to handling of tsk_flags_t: (#227) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/5f558cb0514af85573de9425c1b9bdd7b42bdf3d"><code>5f558cb051</code></a>] Audit pedantic lints re: integer casts (#223) (Kevin R. Thornton)</li>
-<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/609546185c8e69def5d82116fc9c28ee8d53a070"><code>609546185c</code></a>] Fix several &quot;pedantic&quot; lints from clippy: (#222) (Kevin R. Thornton)</li>
+<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/609546185c8e69def5d82116fc9c28ee8d53a070"><code>609546185c</code></a>] Fix several "pedantic" lints from clippy: (#222) (Kevin R. Thornton)</li>
 </ul>
 <h2 id="2022-03-24-version-070"><a class="header" href="#2022-03-24-version-070">2022-03-24, Version 0.7.0</a></h2>
 <h3 id="commits-3"><a class="header" href="#commits-3">Commits</a></h3>
 <ul>
-<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/8427c2fea78a045cea9ad2927b783a4a5bf423b4"><code>8427c2fea7</code></a>] Change order of generics to match argument order for all &quot;add&quot; (#221) (Kevin R. Thornton)</li>
+<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/8427c2fea78a045cea9ad2927b783a4a5bf423b4"><code>8427c2fea7</code></a>] Change order of generics to match argument order for all "add" (#221) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/6ef040673171f1c69d549f09d67b8b393b72769d"><code>6ef0406731</code></a>] Fix typo in docstring for TableCollection::full_sort. (#219) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/a1a7e1220878182f22b2a46b3a189e7dfdbe6218"><code>a1a7e12208</code></a>] Add TableCollection::topological_sort_individuals. (#218) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/4c17ca62a25ded88e1205e6321178529d3c5120a"><code>4c17ca62a2</code></a>] Update clap requirement from ~3.0.0 to ~3.1.3 (#215) (dependabot[bot])</li>
@@ -1313,7 +1341,7 @@ pub use {
 <li>Add newtypes for Time, Position, and Location.</li>
 <li>Add newtype SizeType, which wraps tsk_size_t.</li>
 <li>tsk_id_t and tsk_size_t removed from library prelude.</li>
-<li>The Provenance trait is removed and all &quot;provenance stuff&quot;
+<li>The Provenance trait is removed and all "provenance stuff"
 is now a first-class table API supported by the TableAccess trait.</li>
 </ul>
 <p>New features:</p>
@@ -1362,7 +1390,7 @@ is now a first-class table API supported by the TableAccess trait.</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/41633b60ed1ccb401a1a2794beb518ee1bc0f4ad"><code>41633b60ed</code></a>] Add metadata type registration via derive macros. (#163) (Kevin R. Thornton)</li>
 </ul>
 <h2 id="2021-08-31-version-040"><a class="header" href="#2021-08-31-version-040">2021-08-31, Version 0.4.0</a></h2>
-<p>The theme of this release is &quot;type safety&quot;.
+<p>The theme of this release is "type safety".
 This release breaks API due to use of newtypes for row IDs and new metadata marker traits.</p>
 <h3 id="commits-9"><a class="header" href="#commits-9">Commits</a></h3>
 <ul>
@@ -1372,11 +1400,11 @@ This release breaks API due to use of newtypes for row IDs and new metadata mark
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/fafd45703365188cc3771cb56bb50ead220c6958"><code>fafd457033</code></a>] Refactor metadata encoding: (#158) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/258b4ee5f039d643a4a6fb56ff4a8cf56919b996"><code>258b4ee5f0</code></a>] replace IdIsNull trait with associated fn (#156) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/9987fc0472b1f912569cdf898faa2bba9d3c5d38"><code>9987fc0472</code></a>] Release build optimizations: (#155) (Kevin R. Thornton)</li>
-<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/58ac4a92d77b7428e926c3ff942b6bf9d5872959"><code>58ac4a92d7</code></a>] Refine what &quot;NULL&quot;-ness means for an Id type: (#154) (Kevin R. Thornton)</li>
+<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/58ac4a92d77b7428e926c3ff942b6bf9d5872959"><code>58ac4a92d7</code></a>] Refine what "NULL"-ness means for an Id type: (#154) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/ad4975fc7076057534d85e927bc39fd6e303dfb6"><code>ad4975fc70</code></a>] Update bindgen requirement from 0.58.1 to 0.59.1 (#152) (dependabot[bot])</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/8a553eaa80d7872ccae3faf54a5717777bcf7e9f"><code>8a553eaa80</code></a>] fix clippy warnings that showed up in rust 1.54 (#153) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/bef4bb6c7acf9f054f62f2a746de1d9ed5805445"><code>bef4bb6c7a</code></a>] Allow empty provenance records. (#151) (Kevin R. Thornton)</li>
-<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/86df7020407df7165d2bb2ae9bcff28d2abd3274"><code>86df702040</code></a>] Improve test coverage of &quot;adding rows to table collections&quot; (#143): (Kevin R. Thornton)</li>
+<li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/86df7020407df7165d2bb2ae9bcff28d2abd3274"><code>86df702040</code></a>] Improve test coverage of "adding rows to table collections" (#143): (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/036680050bdca732f3be4db439dfcfafd144d79c"><code>036680050b</code></a>] * Update trees API to use NodeId (#145) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/7a716bbe76860fcb06d0c724e987420bd3d5048f"><code>7a716bbe76</code></a>] Add additional member functions to TableCollection to (#141) (Kevin R. Thornton)</li>
 <li>[<a href="https://github.com/tskit-dev/tskit-rust/commit/baf6f1743015741e6438f63dc2a5122ae0739c2b"><code>baf6f17430</code></a>] Fix Into&lt; &gt; type for TableCollection::add_individual_* (#142) (Kevin R. Thornton)</li>
@@ -1542,12 +1570,12 @@ Technically, this is an API change, but only with respect to return type and the
 <div style="break-before: page; page-break-before: always;"></div><h1 id="migration-guide"><a class="header" href="#migration-guide">Migration guide</a></h1>
 <p>This document helps with migration to newer versions of <code>tskit-rust</code>.
 This document will not be exhaustive.
-Rather, it will focus on highlights or &quot;must know&quot; items.</p>
+Rather, it will focus on highlights or "must know" items.</p>
 <p>Regarding breaking changes:</p>
 <ul>
 <li>This document will discuss breaking changes requiring change in client code.</li>
-<li>Other changes listed in the change log as breaking are considered &quot;technically breaking
-but unlikely to affect anyone in practice&quot;. Please file an issue if we are wrong!</li>
+<li>Other changes listed in the change log as breaking are considered "technically breaking
+but unlikely to affect anyone in practice". Please file an issue if we are wrong!</li>
 </ul>
 <p>Acronyms used:</p>
 <ul>
@@ -1587,7 +1615,7 @@ The bug resulted in UB when advancing trees for release builds.</li>
 Any code previously matching on errors will now break because the match is no longer exhaustive.</p>
 <h4 id="row-getters"><a class="header" href="#row-getters">Row getters</a></h4>
 <p>This change occurred over several PR.</p>
-<p>All &quot;getter&quot; functions for table rows now return <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option</code></a> instead of <a href="https://doc.rust-lang.org/std/result/enum.Result.html"><code>Result</code></a> when a row index is out of bounds.
+<p>All "getter" functions for table rows now return <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option</code></a> instead of <a href="https://doc.rust-lang.org/std/result/enum.Result.html"><code>Result</code></a> when a row index is out of bounds.
 These functions now return <code>None</code> for the out of bounds case.
 This behavior change brings the API in line with other rust APIs.</p>
 <p>To update:</p>
