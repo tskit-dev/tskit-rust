@@ -43,6 +43,7 @@ mod experimental_features {
         }
     }
 
+    #[allow(dead_code)]
     trait IndividualMetadataRetrieval: MetadataRetrieval<tskit::IndividualId> {
         fn individual_metadata(
             &self,
