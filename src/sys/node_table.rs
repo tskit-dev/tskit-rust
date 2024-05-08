@@ -84,7 +84,8 @@ impl NodeTable {
         }
     }
 
-    pub fn raw_metadata(&self, row: NodeId) -> Result<Option<&[u8]>, TskitError> {
+    pub fn raw_metadata(&self, row: impl Into<NodeId>) -> Result<Option<&[u8]>, TskitError> {
+        let row = row.into();
         if row.is_null() || row.as_usize() >= self.as_ref().num_rows.try_into().unwrap() {
             Err(TskitError::IndexError)
         } else {

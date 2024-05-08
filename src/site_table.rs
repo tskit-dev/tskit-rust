@@ -243,7 +243,7 @@ impl SiteTable {
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::SiteMetadata>(
         &self,
-        row: SiteId,
+        row: impl Into<SiteId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))

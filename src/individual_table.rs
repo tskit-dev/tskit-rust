@@ -290,7 +290,7 @@ impl IndividualTable {
     /// # assert!(tables.add_individual_with_metadata(0, None, None,
     /// #                                             &metadata).is_ok());
     /// // We know the metadata are here, so we unwrap the Option and the Result:
-    /// let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
+    /// let decoded = tables.individuals().metadata::<IndividualMetadata>(0).unwrap().unwrap();
     /// assert_eq!(decoded.x, 1);
     /// # }
     /// ```
@@ -313,7 +313,7 @@ impl IndividualTable {
     /// # assert!(tables
     /// #     .add_individual_with_metadata(0, None, None, &metadata)
     /// #     .is_ok());
-    /// match tables.individuals().metadata::<IndividualMetadata>(0.into())
+    /// match tables.individuals().metadata::<IndividualMetadata>(0)
     /// {
     ///     Some(Ok(metadata)) => assert_eq!(metadata.x, 1),
     ///     Some(Err(_)) => panic!("got an error??"),
@@ -350,7 +350,7 @@ impl IndividualTable {
 # }
 # 
 # let mut tables = tskit::TableCollection::new(10.).unwrap();
-match tables.individuals().metadata::<MutationMetadata>(0.into())
+match tables.individuals().metadata::<MutationMetadata>(0)
 {
     Some(Ok(metadata)) => assert_eq!(metadata.x, 1),
     Some(Err(_)) => panic!("got an error??"),
@@ -398,7 +398,7 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
     /// // Add a row with our metadata
     /// assert!(tables.add_individual_with_metadata(0, None, None, &metadata).is_ok());
     /// // Trying to fetch using our SECOND type as the generic type works!
-    /// match tables.individuals().metadata::<IndividualMetadataToo>(0.into())
+    /// match tables.individuals().metadata::<IndividualMetadataToo>(0)
     /// {
     ///     Some(Ok(metadata)) => assert_eq!(metadata.x, 1),
     ///     Some(Err(_)) => panic!("got an error??"),
@@ -420,7 +420,7 @@ match tables.individuals().metadata::<MutationMetadata>(0.into())
     /// metadata type for a table.
     pub fn metadata<T: metadata::IndividualMetadata>(
         &self,
-        row: IndividualId,
+        row: impl Into<IndividualId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))

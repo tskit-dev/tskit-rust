@@ -336,7 +336,7 @@ impl TableCollection {
     /// let metadata = IndividualMetadata{x: 1};
     /// assert!(tables.add_individual_with_metadata(0, None, None,
     ///                                             &metadata).is_ok());
-    /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0.into()).unwrap().unwrap();
+    /// # let decoded = tables.individuals().metadata::<IndividualMetadata>(0).unwrap().unwrap();
     /// # assert_eq!(decoded.x, 1);
     /// # }
     pub fn add_individual_with_metadata<F, L, P, M>(

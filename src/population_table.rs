@@ -194,7 +194,7 @@ impl PopulationTable {
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::PopulationMetadata>(
         &self,
-        row: PopulationId,
+        row: impl Into<PopulationId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))

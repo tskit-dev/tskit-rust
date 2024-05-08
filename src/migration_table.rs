@@ -320,7 +320,7 @@ impl MigrationTable {
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::MigrationMetadata>(
         &self,
-        row: MigrationId,
+        row: impl Into<MigrationId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))

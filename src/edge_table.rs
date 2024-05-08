@@ -278,7 +278,7 @@ impl EdgeTable {
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::EdgeMetadata>(
         &self,
-        row: EdgeId,
+        row: impl Into<EdgeId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))

@@ -602,7 +602,7 @@ impl NodeTable {
     /// See [`crate::IndividualTable::metadata`] for examples.
     pub fn metadata<T: metadata::NodeMetadata>(
         &self,
-        row: NodeId,
+        row: impl Into<NodeId>,
     ) -> Option<Result<T, TskitError>> {
         let buffer = self.table_.raw_metadata(row).ok()??;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
