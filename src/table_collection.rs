@@ -10,13 +10,17 @@ use crate::metadata::SiteMetadata;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
+use crate::EdgeTable;
 use crate::IndividualTableSortOptions;
 use crate::MigrationId;
+use crate::MigrationTable;
 use crate::MutationId;
+use crate::MutationTable;
 use crate::PopulationId;
 use crate::Position;
 use crate::SimplificationOptions;
 use crate::SiteId;
+use crate::SiteTable;
 use crate::TableClearOptions;
 use crate::TableEqualityOptions;
 use crate::TableIntegrityCheckFlags;
@@ -1371,5 +1375,207 @@ impl TableCollection {
     /// Mutable pointer to the low-level C type.
     pub fn as_mut_ptr(&mut self) -> *mut ll_bindings::tsk_table_collection_t {
         self.inner.as_mut_ptr()
+    }
+
+    /// Truncate the [TableCollection] to specified genome intervals.
+    ///
+    /// # Return
+    /// - `Ok(None)`: when truncation leads to empty edge table.
+    /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
+    /// and results in non-empty edge table.
+    /// - `Error(TskitError)`: Any errors from the C API propagate. An
+    /// [TskitError::RangeError] will occur when `intervals` are not
+    /// sorted. Note that as `tskit` currently does not support `simplify`
+    /// on [TableCollection] with a non-empty migration table, calling
+    /// `keep_intervals` on those [TableCollection] with `simplify` set to
+    /// `true` will return an error.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use tskit::*;
+    /// # let snode = NodeFlags::new_sample();
+    /// # let anode = NodeFlags::default();
+    /// # let pop = PopulationId::NULL;
+    /// # let ind = IndividualId::NULL;
+    /// # let seqlen = 100.0;
+    /// # let (t0, t10) = (0.0, 10.0);
+    /// # let (left, right) = (0.0, 100.0);
+    /// # let sim_opts = SimplificationOptions::default();
+    /// #
+    /// # let mut tables = TableCollection::new(seqlen).unwrap();
+    /// # let child1 = tables.add_node(snode, t0, pop, ind).unwrap();
+    /// # let child2 = tables.add_node(snode, t0, pop, ind).unwrap();
+    /// # let parent = tables.add_node(anode, t10, pop, ind).unwrap();
+    /// #
+    /// # tables.add_edge(left, right, parent, child1).unwrap();
+    /// # tables.add_edge(left, right, parent, child2).unwrap();
+    /// # tables.full_sort(TableSortOptions::all()).unwrap();
+    /// # tables.simplify(&[child1, child2], sim_opts, false).unwrap();
+    /// # tables.build_index().unwrap();
+    /// #
+    /// let intervals = [(0.0, 10.0), (90.0, 100.0)].into_iter();
+    /// tables.keep_intervals(intervals, true).unwrap().unwrap();
+    /// ```
+    ///
+    /// Note that no new provenance will be appended.
+    pub fn keep_intervals<P>(
+        self,
+        intervals: impl Iterator<Item = (P, P)>,
+        simplify: bool,
+    ) -> Result<Option<Self>, TskitError>
+    where
+        P: Into<Position>,
+    {
+        use streaming_iterator::StreamingIterator;
+        let mut tables = self;
+        // use tables from sys to allow easier process with metadata
+        let options = 0;
+        let mut new_edges = crate::sys::EdgeTable::new(options)?;
+        let mut new_migrations = crate::sys::MigrationTable::new(options)?;
+        let mut new_sites = crate::sys::SiteTable::new(options)?;
+        let mut new_mutations = crate::sys::MutationTable::new(options)?;
+
+        // for old site id to new site id mapping
+        let mut site_map = vec![-1i32; tables.sites().num_rows().as_usize()];
+
+        // logicals to indicate whether a site (old) will be kept in new site table
+        let mut keep_sites = vec![false; tables.sites().num_rows().try_into()?];
+
+        let mut last_interval = (Position::from(0.0), Position::from(0.0));
+        for (s, e) in intervals {
+            let (s, e) = (s.into(), e.into());
+            // make sure intervals are sorted
+            if (s > e) || (s < last_interval.1) {
+                return Err(TskitError::RangeError(
+                    "intervals not valid or sorted".into(),
+                ));
+            }
+            keep_sites
+                .iter_mut()
+                .zip(tables.sites_iter())
+                .for_each(|(k, site_row)| {
+                    *k = *k || ((site_row.position >= s) && (site_row.position < e));
+                });
+
+            // use stream_iter and while-let pattern for easier ? operator within a loop
+            let mut edge_iter = tables
+                .edges()
+                .lending_iter()
+                .filter(|edge_row| !((edge_row.right <= s) || (edge_row.left >= e)));
+
+            while let Some(edge_row) = edge_iter.next() {
+                new_edges.add_row_with_metadata(
+                    if edge_row.left < s { s } else { edge_row.left }.into(),
+                    if edge_row.right > e {
+                        e
+                    } else {
+                        edge_row.right
+                    }
+                    .into(),
+                    edge_row.parent.into(),
+                    edge_row.child.into(),
+                    edge_row.metadata.unwrap_or(&[0u8; 0]),
+                )?;
+            }
+
+            let mut migration_iter = tables
+                .migrations()
+                .lending_iter()
+                .filter(|mrow| !((mrow.right <= s) || (mrow.left >= e)));
+
+            while let Some(migration_row) = migration_iter.next() {
+                new_migrations.add_row_with_metadata(
+                    (migration_row.left.into(), migration_row.right.into()),
+                    migration_row.node.into(),
+                    migration_row.source.into(),
+                    migration_row.dest.into(),
+                    migration_row.time.into(),
+                    migration_row.metadata.unwrap_or(&[0u8; 0]),
+                )?;
+            }
+            last_interval = (s, e);
+        }
+
+        let mut running_site_id = 0;
+        let mut site_iter = tables.sites().lending_iter();
+        while let Some(site_row) = site_iter.next() {
+            let old_id = site_row.id.to_usize().unwrap();
+            if keep_sites[old_id] {
+                new_sites.add_row_with_metadata(
+                    site_row.position.into(),
+                    site_row.ancestral_state,
+                    site_row.metadata.unwrap_or(&[0u8; 0]),
+                )?;
+                site_map[old_id] = running_site_id;
+                running_site_id += 1;
+            }
+        }
+
+        // build mutation_map
+        let mutation_map: Vec<_> = {
+            let mut n = 0;
+            tables
+                .mutations()
+                .site_slice()
+                .iter()
+                .map(|site| {
+                    if keep_sites[site.as_usize()] {
+                        n += 1
+                    };
+                    n - 1
+                })
+                .collect()
+        };
+
+        let mut mutations_iter = tables.mutations().lending_iter();
+        while let Some(mutation_row) = mutations_iter.next() {
+            let old_id = mutation_row.site.to_usize().unwrap();
+            if keep_sites[old_id] {
+                let new_site = site_map[old_id];
+                let new_parent = {
+                    if mutation_row.parent.is_null() {
+                        mutation_row.parent.into()
+                    } else {
+                        mutation_map[mutation_row.parent.as_usize()]
+                    }
+                };
+                new_mutations.add_row_with_metadata(
+                    new_site,
+                    mutation_row.node.into(),
+                    new_parent,
+                    mutation_row.time.into(),
+                    mutation_row.derived_state,
+                    mutation_row.metadata.unwrap_or(&[0u8; 0]),
+                )?;
+            }
+        }
+
+        // convert sys version of tables to non-sys version of tables
+        let new_edges = EdgeTable::new_from_table(new_edges.as_mut())?;
+        let new_migrations = MigrationTable::new_from_table(new_migrations.as_mut())?;
+        let new_mutations = MutationTable::new_from_table(new_mutations.as_mut())?;
+        let new_sites = SiteTable::new_from_table(new_sites.as_mut())?;
+
+        // replace old tables with new tables
+        tables.set_edges(&new_edges).map(|_| ())?;
+        tables.set_migrations(&new_migrations).map(|_| ())?;
+        tables.set_mutations(&new_mutations).map(|_| ())?;
+        tables.set_sites(&new_sites)?;
+
+        // sort tables
+        tables.full_sort(TableSortOptions::default())?;
+
+        // simplify tables
+        if simplify {
+            let samples = tables.samples_as_vector();
+            tables.simplify(samples.as_slice(), SimplificationOptions::default(), false)?;
+        }
+
+        // return None when edge table is empty
+        if tables.edges().num_rows() == 0 {
+            Ok(None)
+        } else {
+            Ok(Some(tables))
+        }
     }
 }
