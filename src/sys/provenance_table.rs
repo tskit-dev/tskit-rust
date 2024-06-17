@@ -1,5 +1,3 @@
-#![cfg(feature = "provenance")]
-
 use std::ptr::NonNull;
 
 use super::bindings::tsk_id_t;
