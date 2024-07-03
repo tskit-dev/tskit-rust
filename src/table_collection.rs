@@ -1379,16 +1379,19 @@ impl TableCollection {
 
     /// Truncate the [TableCollection] to specified genome intervals.
     ///
-    /// # Return
+    /// # Return value
     /// - `Ok(None)`: when truncation leads to empty edge table.
     /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
-    /// and results in non-empty edge table.
+    /// and results in non-empty edge table. The table collection is sorted.
     /// - `Error(TskitError)`: Any errors from the C API propagate. An
     /// [TskitError::RangeError] will occur when `intervals` are not
-    /// sorted. Note that as `tskit` currently does not support `simplify`
-    /// on [TableCollection] with a non-empty migration table, calling
-    /// `keep_intervals` on those [TableCollection] with `simplify` set to
-    /// `true` will return an error.
+    /// sorted.
+    ///
+    /// # Notes
+    ///
+    /// - There is no option to simplify the output value.
+    ///   Do so manually if desired.
+    ///   Encapsulate the procedure if necessary.
     ///
     /// # Example
     /// ```rust
@@ -1414,7 +1417,7 @@ impl TableCollection {
     /// # tables.build_index().unwrap();
     /// #
     /// let intervals = [(0.0, 10.0), (90.0, 100.0)].into_iter();
-    /// tables.keep_intervals(intervals, true).unwrap().unwrap();
+    /// tables.keep_intervals(intervals).unwrap().unwrap();
     /// ```
     ///
     /// Note that no new provenance will be appended.
@@ -1563,12 +1566,6 @@ impl TableCollection {
 
         // sort tables
         tables.full_sort(TableSortOptions::default())?;
-
-        // simplify tables
-        if simplify {
-            let samples = tables.samples_as_vector();
-            tables.simplify(samples.as_slice(), SimplificationOptions::default(), false)?;
-        }
 
         // return None when edge table is empty
         if tables.edges().num_rows() == 0 {

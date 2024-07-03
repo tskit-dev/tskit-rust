@@ -346,15 +346,19 @@ impl TreeSequence {
 
     /// Truncate the [TreeSequence] to specified genome intervals.
     ///
+    /// # Return value
     /// - `Ok(None)`: when truncation leads to empty edge table.
     /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
-    /// and results in non-empty edge table.
+    /// and results in non-empty edge table. The tables are sorted.
     /// - `Error(TskitError)`: Any errors from the C API propagate. An
     /// [TskitError::RangeError] will occur when `intervals` are not
-    /// sorted. Note that as `tskit` currently does not support `simplify`
-    /// on [TreeSequence] with a non-empty migration table, calling
-    /// `keep_intervals` on those [TreeSequence] with `simplify` set to `true`
-    /// will return an error.
+    /// sorted.
+    ///
+    /// # Notes
+    ///
+    /// - There is no option to simplify the output value.
+    ///   Do so manually if desired.
+    ///   Encapsulate the procedure if necessary.
     ///
     /// # Example
     /// ```rust
@@ -382,25 +386,22 @@ impl TreeSequence {
     ///  # let trees = TreeSequence::new(tables, TreeSequenceFlags::default()).unwrap();
     ///  #
     ///  let intervals = [(0.0, 10.0), (90.0, 100.0)].into_iter();
-    ///  trees.keep_intervals(intervals, true).unwrap().unwrap();
+    ///  let mut tables = trees.keep_intervals(intervals).unwrap().unwrap();
+    ///  // Conversion back to tree sequence requires the usual steps
+    ///  tables.simplify(&tables.samples_as_vector(), tskit::SimplificationOptions::default(), false).unwrap();
+    ///  tables.build_index().unwrap();
+    ///  let trees = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
     /// ```
     ///
     /// Note that no new provenance will be appended.
     pub fn keep_intervals<P>(
         self,
         intervals: impl Iterator<Item = (P, P)>,
-    ) -> Result<Option<Self>, TskitError>
+    ) -> Result<Option<TableCollection>, TskitError>
     where
         P: Into<Position>,
     {
-        let tables = self.dump_tables()?;
-        match tables.keep_intervals(intervals) {
-            Ok(Some(tables)) => {
-                Self::new(tables, TreeSequenceFlags::default().build_indexes()).map(Some)
-            }
-            Ok(None) => Ok(None),
-            Err(e) => Err(e),
-        }
+        self.dump_tables()?.keep_intervals(intervals)
     }
 
     #[cfg(feature = "provenance")]
