@@ -1421,7 +1421,6 @@ impl TableCollection {
     pub fn keep_intervals<P>(
         self,
         intervals: impl Iterator<Item = (P, P)>,
-        simplify: bool,
     ) -> Result<Option<Self>, TskitError>
     where
         P: Into<Position>,

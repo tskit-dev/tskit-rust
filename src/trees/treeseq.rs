@@ -389,13 +389,12 @@ impl TreeSequence {
     pub fn keep_intervals<P>(
         self,
         intervals: impl Iterator<Item = (P, P)>,
-        simplify: bool,
     ) -> Result<Option<Self>, TskitError>
     where
         P: Into<Position>,
     {
         let tables = self.dump_tables()?;
-        match tables.keep_intervals(intervals, simplify) {
+        match tables.keep_intervals(intervals) {
             Ok(Some(tables)) => {
                 Self::new(tables, TreeSequenceFlags::default().build_indexes()).map(Some)
             }
