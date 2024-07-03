@@ -344,6 +344,66 @@ impl TreeSequence {
         ))
     }
 
+    /// Truncate the [TreeSequence] to specified genome intervals.
+    ///
+    /// - `Ok(None)`: when truncation leads to empty edge table.
+    /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
+    /// and results in non-empty edge table.
+    /// - `Error(TskitError)`: Any errors from the C API propagate. An
+    /// [TskitError::RangeError] will occur when `intervals` are not
+    /// sorted. Note that as `tskit` currently does not support `simplify`
+    /// on [TreeSequence] with a non-empty migration table, calling
+    /// `keep_intervals` on those [TreeSequence] with `simplify` set to `true`
+    /// will return an error.
+    ///
+    /// # Example
+    /// ```rust
+    ///  # use tskit::*;
+    ///  # let snode = NodeFlags::new_sample();
+    ///  # let anode = NodeFlags::default();
+    ///  # let pop = PopulationId::NULL;
+    ///  # let ind = IndividualId::NULL;
+    ///  # let seqlen = 100.0;
+    ///  # let (t0, t10) = (0.0, 10.0);
+    ///  # let (left, right) = (0.0, 100.0);
+    ///  # let sim_opts = SimplificationOptions::default();
+    ///  #
+    ///  # let mut tables = TableCollection::new(seqlen).unwrap();
+    ///  # let child1 = tables.add_node(snode, t0, pop, ind).unwrap();
+    ///  # let child2 = tables.add_node(snode, t0, pop, ind).unwrap();
+    ///  # let parent = tables.add_node(anode, t10, pop, ind).unwrap();
+    ///  #
+    ///  # tables.add_edge(left, right, parent, child1).unwrap();
+    ///  # tables.add_edge(left, right, parent, child2).unwrap();
+    ///  # tables.full_sort(TableSortOptions::all()).unwrap();
+    ///  # tables.simplify(&[child1, child2], sim_opts, false).unwrap();
+    ///  # tables.build_index().unwrap();
+    ///  #
+    ///  # let trees = TreeSequence::new(tables, TreeSequenceFlags::default()).unwrap();
+    ///  #
+    ///  let intervals = [(0.0, 10.0), (90.0, 100.0)].into_iter();
+    ///  trees.keep_intervals(intervals, true).unwrap().unwrap();
+    /// ```
+    ///
+    /// Note that no new provenance will be appended.
+    pub fn keep_intervals<P>(
+        self,
+        intervals: impl Iterator<Item = (P, P)>,
+        simplify: bool,
+    ) -> Result<Option<Self>, TskitError>
+    where
+        P: Into<Position>,
+    {
+        let tables = self.dump_tables()?;
+        match tables.keep_intervals(intervals, simplify) {
+            Ok(Some(tables)) => {
+                Self::new(tables, TreeSequenceFlags::default().build_indexes()).map(Some)
+            }
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Add provenance record with a time stamp.
