@@ -56,6 +56,12 @@ macro_rules! impl_id_traits {
             }
         }
 
+        impl From<&super::bindings::tsk_id_t> for $idtype {
+            fn from(value: &super::bindings::tsk_id_t) -> Self {
+                Self(*value)
+            }
+        }
+
         impl TryFrom<$idtype> for usize {
             type Error = $crate::TskitError;
             fn try_from(value: $idtype) -> Result<Self, Self::Error> {
@@ -69,8 +75,21 @@ macro_rules! impl_id_traits {
             }
         }
 
+        impl TryFrom<&$idtype> for usize {
+            type Error = $crate::TskitError;
+            fn try_from(value: &$idtype) -> Result<Self, Self::Error> {
+                (*value).try_into()
+            }
+        }
+
         impl From<$idtype> for super::bindings::tsk_id_t {
             fn from(value: $idtype) -> Self {
+                value.0
+            }
+        }
+
+        impl From<&$idtype> for super::bindings::tsk_id_t {
+            fn from(value: &$idtype) -> Self {
                 value.0
             }
         }
@@ -80,6 +99,14 @@ macro_rules! impl_id_traits {
 
             fn try_from(value: $idtype) -> Result<Self, Self::Error> {
                 SizeType::try_from(value.0)
+            }
+        }
+
+        impl TryFrom<&$idtype> for SizeType {
+            type Error = $crate::TskitError;
+
+            fn try_from(value: &$idtype) -> Result<Self, Self::Error> {
+                SizeType::try_from(*value)
             }
         }
 
@@ -182,8 +209,20 @@ macro_rules! impl_f64_newtypes {
             }
         }
 
+        impl From<&f64> for $type {
+            fn from(value: &f64) -> Self {
+                Self(*value)
+            }
+        }
+
         impl From<$type> for f64 {
             fn from(value: $type) -> Self {
+                value.0
+            }
+        }
+
+        impl From<&$type> for f64 {
+            fn from(value: &$type) -> Self {
                 value.0
             }
         }

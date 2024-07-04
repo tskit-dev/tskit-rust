@@ -229,3 +229,17 @@ fn test_usize_to_size_type() {
     let s = SizeType::try_from(x).ok();
     assert_eq!(s, Some(0.into()));
 }
+
+#[test]
+fn test_from_reference() {
+    let x = 2;
+    let y = NodeId::from(&x);
+    assert_eq!(y, 2);
+    assert_eq!(2, tsk_id_t::from(&y));
+}
+
+#[test]
+fn test_try_from_reference() {
+    let y = NodeId::from(2);
+    assert_eq!(2, usize::try_from(&y).unwrap());
+}
