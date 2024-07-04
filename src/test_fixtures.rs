@@ -519,7 +519,7 @@ mod keep_intervals {
         for intervals in intervals_lst {
             let add_migration_table = false;
             let trees = generate_simple_treesequence(add_migration_table);
-            let res = trees.keep_intervals(intervals.into_iter(), true);
+            let res = trees.keep_intervals(intervals.into_iter());
             assert!(res.is_err());
         }
     }
@@ -529,27 +529,13 @@ mod keep_intervals {
         let intervals = [(10.0, 20.0)];
 
         let add_migration_table = true;
-        let to_simplify = true;
         let trees = generate_simple_treesequence(add_migration_table);
-        let res = trees.keep_intervals(intervals.iter().copied(), to_simplify);
-        assert!(res.is_err());
-
-        let add_migration_table = true;
-        let to_simply = false;
-        let trees = generate_simple_treesequence(add_migration_table);
-        let res = trees.keep_intervals(intervals.iter().copied(), to_simply);
+        let res = trees.keep_intervals(intervals.iter().copied());
         assert!(res.is_ok());
 
         let add_migration_table = false;
-        let to_simply = true;
         let trees = generate_simple_treesequence(add_migration_table);
-        let res = trees.keep_intervals(intervals.iter().copied(), to_simply);
-        assert!(res.is_ok());
-
-        let add_migration_table = false;
-        let to_simply = false;
-        let trees = generate_simple_treesequence(add_migration_table);
-        let res = trees.keep_intervals(intervals.iter().copied(), to_simply);
+        let res = trees.keep_intervals(intervals.iter().copied());
         assert!(res.is_ok());
     }
 
@@ -573,20 +559,23 @@ mod keep_intervals {
                 .unwrap();
 
                 if exepected.edges().num_rows() > 0 {
-                    let truncated = full_trees
-                        .keep_intervals(intervals.iter().copied(), true)
+                    let mut truncated = full_trees
+                        .keep_intervals(intervals.iter().copied())
                         .expect("error")
                         .expect("empty table");
+                    let samples = truncated.samples_as_vector();
+                    assert!(truncated.edges().num_rows() > 0);
+                    truncated
+                        .simplify(&samples, crate::SimplificationOptions::default(), false)
+                        .expect("error simplifying");
 
                     // dump tables for comparision
-                    let truncated = truncated.dump_tables().unwrap();
                     let expected = exepected.dump_tables().unwrap();
-
                     let res = truncated.equals(&expected, TableEqualityOptions::all());
                     assert!(res);
                 } else {
                     let trucated = full_trees
-                        .keep_intervals(intervals.iter().copied(), true)
+                        .keep_intervals(intervals.iter().copied())
                         .unwrap();
                     assert!(trucated.is_none());
                 }
