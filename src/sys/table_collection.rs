@@ -32,6 +32,10 @@ impl TableCollection {
         Self(TskBox::new_init_owning_from_ptr(tables))
     }
 
+    pub unsafe fn new_borrowed(tables: std::ptr::NonNull<tsk_table_collection_t>) -> Self {
+        Self(TskBox::new_init_from_ptr(tables))
+    }
+
     // # Safety
     //
     // The returned value is uninitialized.
