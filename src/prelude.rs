@@ -7,3 +7,4 @@ pub use {
     crate::NodeId, crate::PopulationId, crate::Position, crate::RawFlags, crate::SiteId,
     crate::SizeType, crate::Time,
 };
+pub use crate::TableAccess;
