@@ -215,7 +215,7 @@ where
         T::nodes(self)
     }
     fn populations(&self) -> &crate::PopulationTable {
-        T::populations(&self)
+        T::populations(self)
     }
 }
 
