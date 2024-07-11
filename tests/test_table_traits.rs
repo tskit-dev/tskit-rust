@@ -25,10 +25,22 @@ where
     tables.edges().iter().collect::<Vec<_>>()
 }
 
+fn get_edges_via_table_iteration_trait_object(tables: &dyn tskit::TableIteration) -> Vec<tskit::EdgeTableRow>
+{
+    tables.edges().iter().collect::<Vec<_>>()
+}
+
 #[test]
 fn test_table_collection_edge_iteration() {
     let tables = make_tables();
     let v0 = get_edges_from_tables(&tables);
     let v1 = get_edges_via_table_iteration_trait(&tables);
+    assert_eq!(v0, v1);
+}
+#[test]
+fn test_table_collection_edge_iteration_object_safety() {
+    let tables = Box::new(make_tables());
+    let v0 = get_edges_from_tables(&tables);
+    let v1 = get_edges_via_table_iteration_trait_object(&tables);
     assert_eq!(v0, v1);
 }
