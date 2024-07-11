@@ -129,6 +129,12 @@ pub trait TableAccess {
 }
 
 pub trait TableIteration: TableAccess {
+    fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
+        self.edges().iter()
+    }
+}
+
+pub trait ObjectSafeTableIteration: TableAccess {
     fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::EdgeTableRow> + '_> {
         Box::new(self.edges().iter())
     }
@@ -227,3 +233,4 @@ where
 }
 
 impl<T> TableIteration for T where T: TableAccess {}
+impl<T> ObjectSafeTableIteration for T where T: TableAccess {}
