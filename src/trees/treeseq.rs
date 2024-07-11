@@ -58,6 +58,7 @@ use super::Tree;
 /// ```
 pub struct TreeSequence {
     pub(crate) inner: sys::TreeSequence,
+    tables: crate::TableCollection,
     views: crate::table_views::TableViews,
 }
 
@@ -115,7 +116,16 @@ impl TreeSequence {
         let raw_tables_ptr = tables.into_inner();
         let mut inner = sys::TreeSequence::new(raw_tables_ptr, flags.into())?;
         let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut())?;
-        Ok(Self { inner, views })
+        let tables = unsafe {
+            TableCollection::new_from_ll(sys::TableCollection::new_borrowed(
+                std::ptr::NonNull::new(inner.as_mut().tables).unwrap(),
+            ))
+        }?;
+        Ok(Self {
+            inner,
+            tables,
+            views,
+        })
     }
 
     fn as_ref(&self) -> &ll_bindings::tsk_treeseq_t {
@@ -335,8 +345,17 @@ impl TreeSequence {
             },
         )?;
         let views = crate::table_views::TableViews::new_from_tree_sequence(inner.as_mut())?;
+        let tables = unsafe {
+            TableCollection::new_from_ll(sys::TableCollection::new_borrowed(
+                std::ptr::NonNull::new(inner.as_mut().tables).unwrap(),
+            ))
+        }?;
         Ok((
-            Self { inner, views },
+            Self {
+                inner,
+                tables,
+                views,
+            },
             match idmap {
                 true => Some(output_node_map),
                 false => None,
@@ -472,6 +491,22 @@ impl TreeSequence {
         &self,
     ) -> Result<crate::edge_differences::EdgeDifferencesIterator, TskitError> {
         crate::edge_differences::EdgeDifferencesIterator::new_from_treeseq(self, 0)
+    }
+
+    /// Reference to the underlying table collection.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
+    /// tables.add_node(tskit::NodeFlags::default(),0.0, -1, -1).unwrap();
+    /// tables.build_index();
+    /// let tcopy = tables.deepcopy().unwrap();
+    /// let tree_sequence = tskit::TreeSequence::try_from(tcopy).unwrap();
+    /// assert_eq!(tables.equals(tree_sequence.tables(), 0), true);
+    /// ```
+    pub fn tables(&self) -> &TableCollection {
+        &self.tables
     }
 }
 
