@@ -128,6 +128,12 @@ pub trait TableAccess {
     fn migrations(&self) -> &crate::MigrationTable;
 }
 
+pub trait TableIteration: TableAccess {
+    fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
+        self.edges().iter()
+    }
+}
+
 impl TableAccess for crate::TableCollection {
     fn edges(&self) -> &crate::EdgeTable {
         self.edges()
@@ -171,3 +177,5 @@ impl TableAccess for crate::TreeSequence {
         self.tables().migrations()
     }
 }
+
+impl<T> TableIteration for T where T: TableAccess {}
