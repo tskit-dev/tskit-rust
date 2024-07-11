@@ -8,3 +8,4 @@ pub use {
     crate::SizeType, crate::Time,
 };
 pub use crate::TableAccess;
+pub use crate::TableIteration;
