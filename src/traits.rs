@@ -119,3 +119,55 @@ impl_individual_parents!(
 );
 impl_individual_parents!(N, usize, &[crate::IndividualId; N], self, self.as_slice());
 impl_individual_parents!(N, usize, [crate::IndividualId; N], self, self.as_slice());
+
+pub trait TableAccess {
+    fn edges(&self) -> &crate::EdgeTable;
+    fn nodes(&self) -> &crate::NodeTable;
+    fn sites(&self) -> &crate::SiteTable;
+    fn mutations(&self) -> &crate::MutationTable;
+    fn migrations(&self) -> &crate::MigrationTable;
+}
+
+impl TableAccess for crate::TableCollection {
+    fn edges(&self) -> &crate::EdgeTable {
+        self.edges()
+    }
+
+    fn nodes(&self) -> &crate::NodeTable {
+        self.nodes()
+    }
+
+    fn sites(&self) -> &crate::SiteTable {
+        self.sites()
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        self.mutations()
+    }
+
+    fn migrations(&self) -> &crate::MigrationTable {
+        self.migrations()
+    }
+}
+
+impl TableAccess for crate::TreeSequence {
+    fn edges(&self) -> &crate::EdgeTable {
+        self.tables().edges()
+    }
+
+    fn nodes(&self) -> &crate::NodeTable {
+        self.tables().nodes()
+    }
+
+    fn sites(&self) -> &crate::SiteTable {
+        self.tables().sites()
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        self.tables().mutations()
+    }
+
+    fn migrations(&self) -> &crate::MigrationTable {
+        self.tables().migrations()
+    }
+}
