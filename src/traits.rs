@@ -232,5 +232,5 @@ where
     }
 }
 
-impl<T> TableIteration for T where T: TableAccess {}
-impl<T> ObjectSafeTableIteration for T where T: TableAccess {}
+impl<T> TableIteration for T where T: TableAccess + ?Sized {}
+impl<T> ObjectSafeTableIteration for T where T: TableAccess + ?Sized {}
