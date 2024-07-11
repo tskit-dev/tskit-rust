@@ -129,8 +129,8 @@ pub trait TableAccess {
 }
 
 pub trait TableIteration: TableAccess {
-    fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
-        self.edges().iter()
+    fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::EdgeTableRow> + '_> {
+        Box::new(self.edges().iter())
     }
 }
 
@@ -175,6 +175,54 @@ impl TableAccess for crate::TreeSequence {
 
     fn migrations(&self) -> &crate::MigrationTable {
         self.tables().migrations()
+    }
+}
+
+impl<T> TableAccess for &T
+where
+    T: TableAccess,
+{
+    fn migrations(&self) -> &crate::MigrationTable {
+        T::migrations(&self)
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        T::mutations(self)
+    }
+
+    fn edges(&self) -> &crate::EdgeTable {
+        T::edges(self)
+    }
+    fn sites(&self) -> &crate::SiteTable {
+        T::sites(self)
+    }
+    fn nodes(&self) -> &crate::NodeTable {
+        T::nodes(self)
+    }
+}
+
+impl<T> TableAccess for Box<T>
+where
+    T: TableAccess,
+{
+    fn migrations(&self) -> &crate::MigrationTable {
+        self.as_ref().migrations()
+    }
+
+    fn edges(&self) -> &crate::EdgeTable {
+        self.as_ref().edges()
+    }
+
+    fn nodes(&self) -> &crate::NodeTable {
+        todo!()
+    }
+
+    fn sites(&self) -> &crate::SiteTable {
+        todo!()
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        todo!()
     }
 }
 
