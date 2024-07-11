@@ -183,7 +183,7 @@ where
     T: TableAccess,
 {
     fn migrations(&self) -> &crate::MigrationTable {
-        T::migrations(&self)
+        T::migrations(self)
     }
 
     fn mutations(&self) -> &crate::MutationTable {
