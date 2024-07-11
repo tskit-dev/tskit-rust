@@ -25,8 +25,9 @@ where
     tables.edges().iter().collect::<Vec<_>>()
 }
 
-fn get_edges_via_table_iteration_trait_object(tables: &dyn tskit::TableIteration) -> Vec<tskit::EdgeTableRow>
-{
+fn get_edges_via_table_iteration_trait_object(
+    tables: &dyn tskit::TableIteration,
+) -> Vec<tskit::EdgeTableRow> {
     tables.edges().iter().collect::<Vec<_>>()
 }
 
