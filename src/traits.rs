@@ -126,6 +126,7 @@ pub trait TableAccess {
     fn sites(&self) -> &crate::SiteTable;
     fn mutations(&self) -> &crate::MutationTable;
     fn migrations(&self) -> &crate::MigrationTable;
+    fn populations(&self) -> &crate::PopulationTable;
 }
 
 pub trait TableIteration: TableAccess {
@@ -160,6 +161,10 @@ impl TableAccess for crate::TableCollection {
     fn migrations(&self) -> &crate::MigrationTable {
         self.migrations()
     }
+
+    fn populations(&self) -> &crate::PopulationTable {
+        self.populations()
+    }
 }
 
 impl TableAccess for crate::TreeSequence {
@@ -181,6 +186,10 @@ impl TableAccess for crate::TreeSequence {
 
     fn migrations(&self) -> &crate::MigrationTable {
         self.tables().migrations()
+    }
+
+    fn populations(&self) -> &crate::PopulationTable {
+        self.tables().populations()
     }
 }
 
@@ -205,6 +214,9 @@ where
     fn nodes(&self) -> &crate::NodeTable {
         T::nodes(self)
     }
+    fn populations(&self) -> &crate::PopulationTable {
+        T::populations(&self)
+    }
 }
 
 impl<T> TableAccess for Box<T>
@@ -228,6 +240,10 @@ where
     }
 
     fn mutations(&self) -> &crate::MutationTable {
+        todo!()
+    }
+
+    fn populations(&self) -> &crate::PopulationTable {
         todo!()
     }
 }
