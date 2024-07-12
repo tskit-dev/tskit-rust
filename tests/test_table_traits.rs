@@ -11,6 +11,12 @@ impl IteratorOutput {
         Self { edges, nodes }
     }
 
+    fn new_from_treeseq(treeseq: &tskit::TreeSequence) -> Self {
+        let edges = treeseq.tables().edges().iter().collect::<Vec<_>>();
+        let nodes = treeseq.tables().nodes().iter().collect::<Vec<_>>();
+        Self { edges, nodes }
+    }
+
     fn new_from_table_access<T>(access: &T) -> Self
     where
         T: tskit::TableAccess,
@@ -47,6 +53,17 @@ fn validate_output_from_tables(tables: tskit::TableCollection) {
     assert_eq!(tables_output, dynamic_output);
 }
 
+fn validate_output_from_treeseq(treeseq: tskit::TreeSequence) {
+    let treeseq_output = IteratorOutput::new_from_treeseq(&treeseq);
+    let access_output = IteratorOutput::new_from_table_access(&treeseq);
+    assert_eq!(treeseq_output, access_output);
+    let iteration_output = IteratorOutput::new_from_table_iteration(&treeseq);
+    assert_eq!(treeseq_output, iteration_output);
+    let boxed = Box::new(treeseq);
+    let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
+    assert_eq!(treeseq_output, dynamic_output);
+}
+
 fn make_tables() -> tskit::TableCollection {
     let mut tables = tskit::TableCollection::new(100.).unwrap();
     tables
@@ -59,7 +76,7 @@ fn make_tables() -> tskit::TableCollection {
         .add_node(tskit::NodeFlags::default(), 1.0, -1, -1)
         .unwrap();
     tables.add_edge(0., 50., 1, 0).unwrap();
-    tables.add_edge(0., 50., 2, 0).unwrap();
+    tables.add_edge(50., 100., 2, 0).unwrap();
     tables
 }
 
@@ -67,4 +84,13 @@ fn make_tables() -> tskit::TableCollection {
 fn test_traits_with_table_collection() {
     let tables = make_tables();
     validate_output_from_tables(tables)
+}
+
+#[test]
+fn test_traits_with_tree_sequence() {
+    let mut tables = make_tables();
+    tables.full_sort(tskit::TableSortOptions::default()).unwrap();
+    tables.build_index().unwrap();
+    let treeseq = tskit::TreeSequence::try_from(tables).unwrap();
+    validate_output_from_treeseq(treeseq)
 }
