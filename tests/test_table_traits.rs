@@ -156,11 +156,23 @@ fn test_traits_with_table_collection() {
 #[test]
 fn test_traits_with_table_collection_holder() {
     let tables = make_tables();
-    let tref = &tables;
+    let tref: &tskit::TableCollection = &tables;
     let tables_output = IteratorOutput::new_from_tables(tref);
-    let boxed = Box::new(tref);
-    let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
-    assert_eq!(tables_output, dynamic_output);
+    //let boxed = Box::new(tref);
+    //let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
+    //assert_eq!(tables_output, dynamic_output);
+    fn foo(_: impl tskit::TableIteration) {
+        todo!("this compiles");
+
+    }
+    fn foo2<T>(_: T) where T: tskit::TableIteration {
+        todo!("this compiles");
+    }
+    foo(tref);
+    foo2(tref);
+    let h = TablesHolder{tables:tref};
+    foo(h.tables);
+    foo2(h.tables);
 }
 
 #[test]
