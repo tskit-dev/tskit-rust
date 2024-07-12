@@ -209,6 +209,7 @@ where
     }
 
     fn edges(&self) -> &crate::EdgeTable {
+        todo!("can only trigger with with Box<&thing that impl TableAccess>");
         T::edges(self)
     }
     fn sites(&self) -> &crate::SiteTable {
