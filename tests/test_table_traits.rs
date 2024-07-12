@@ -125,14 +125,16 @@ fn validate_output_from_treeseq(treeseq: tskit::TreeSequence) {
 
 fn make_tables() -> tskit::TableCollection {
     let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let pop0 = tables.add_population().unwrap();
+    let pop1 = tables.add_population().unwrap();
     tables
-        .add_node(tskit::NodeFlags::default(), 0.0, -1, -1)
+        .add_node(tskit::NodeFlags::default(), 0.0, pop1, -1)
         .unwrap();
     tables
-        .add_node(tskit::NodeFlags::default(), 1.0, -1, -1)
+        .add_node(tskit::NodeFlags::default(), 1.0, pop0, -1)
         .unwrap();
     tables
-        .add_node(tskit::NodeFlags::default(), 1.0, -1, -1)
+        .add_node(tskit::NodeFlags::default(), 1.0, pop1, -1)
         .unwrap();
     tables.add_edge(0., 50., 1, 0).unwrap();
     tables.add_edge(50., 100., 2, 0).unwrap();
