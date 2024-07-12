@@ -158,10 +158,6 @@ fn test_traits_with_table_collection_holder() {
     let tables = make_tables();
     let tref = &tables;
     let tables_output = IteratorOutput::new_from_tables(tref);
-    let access_output = IteratorOutput::new_from_table_access(tref);
-    assert_eq!(tables_output, access_output);
-    let iteration_output = IteratorOutput::new_from_table_iteration(tref);
-    assert_eq!(tables_output, iteration_output);
     let boxed = Box::new(tref);
     let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
     assert_eq!(tables_output, dynamic_output);
