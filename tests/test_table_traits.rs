@@ -18,6 +18,10 @@ fn get_edges_from_tables(tables: &tskit::TableCollection) -> Vec<tskit::EdgeTabl
     tables.edges().iter().collect::<Vec<_>>()
 }
 
+fn get_populations_from_tables(tables: &tskit::TableCollection) -> Vec<tskit::PopulationTableRow> {
+    tables.populations().iter().collect::<Vec<_>>()
+}
+
 fn get_edges_via_table_iteration_trait<T>(tables: &T) -> Vec<tskit::EdgeTableRow>
 where
     T: tskit::TableIteration,
@@ -25,10 +29,23 @@ where
     tables.edges().iter().collect::<Vec<_>>()
 }
 
+fn get_populations_via_table_iteration_trait<T>(tables: &T) -> Vec<tskit::PopulationTableRow>
+where
+    T: tskit::TableIteration,
+{
+    tables.populations().iter().collect::<Vec<_>>()
+}
+
 fn get_edges_via_table_iteration_trait_object(
     tables: &dyn tskit::ObjectSafeTableIteration,
 ) -> Vec<tskit::EdgeTableRow> {
     tskit::ObjectSafeTableIteration::edges_iter(tables).collect::<Vec<_>>()
+}
+
+fn get_populations_via_table_iteration_trait_object(
+    tables: &dyn tskit::ObjectSafeTableIteration,
+) -> Vec<tskit::PopulationTableRow> {
+    tskit::ObjectSafeTableIteration::populations_iter(tables).collect::<Vec<_>>()
 }
 
 #[test]
@@ -38,10 +55,27 @@ fn test_table_collection_edge_iteration() {
     let v1 = get_edges_via_table_iteration_trait(&tables);
     assert_eq!(v0, v1);
 }
+
+#[test]
+fn test_table_collection_population_iteration() {
+    let tables = make_tables();
+    let v0 = get_populations_from_tables(&tables);
+    let v1 = get_populations_via_table_iteration_trait(&tables);
+    assert_eq!(v0, v1);
+}
+
 #[test]
 fn test_table_collection_edge_iteration_object_safety() {
     let tables = Box::new(make_tables());
     let v0 = get_edges_from_tables(&tables);
     let v1 = get_edges_via_table_iteration_trait_object(&tables);
+    assert_eq!(v0, v1);
+}
+
+#[test]
+fn test_table_collection_population_iteration_object_safety() {
+    let tables = Box::new(make_tables());
+    let v0 = get_populations_from_tables(&tables);
+    let v1 = get_populations_via_table_iteration_trait_object(&tables);
     assert_eq!(v0, v1);
 }

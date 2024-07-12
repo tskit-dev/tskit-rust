@@ -139,6 +139,9 @@ pub trait ObjectSafeTableIteration: TableAccess {
     fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::EdgeTableRow> + '_> {
         Box::new(self.edges().iter())
     }
+    fn populations_iter(&self) -> Box<dyn Iterator<Item = crate::PopulationTableRow> + '_> {
+        Box::new(self.populations().iter())
+    }
 }
 
 impl TableAccess for crate::TableCollection {
