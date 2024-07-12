@@ -239,15 +239,15 @@ where
     }
 
     fn sites(&self) -> &crate::SiteTable {
-        todo!()
+        self.as_ref().sites()
     }
 
     fn mutations(&self) -> &crate::MutationTable {
-        todo!()
+        self.as_ref().mutations()
     }
 
     fn populations(&self) -> &crate::PopulationTable {
-        todo!()
+        self.as_ref().populations()
     }
 }
 
