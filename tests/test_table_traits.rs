@@ -2,19 +2,45 @@
 struct IteratorOutput {
     edges: Vec<tskit::EdgeTableRow>,
     nodes: Vec<tskit::NodeTableRow>,
+    sites: Vec<tskit::SiteTableRow>,
+    mutations: Vec<tskit::MutationTableRow>,
+    migrations: Vec<tskit::MigrationTableRow>,
+    populations: Vec<tskit::PopulationTableRow>,
 }
 
 impl IteratorOutput {
     fn new_from_tables(tables: &tskit::TableCollection) -> Self {
         let edges = tables.edges().iter().collect::<Vec<_>>();
         let nodes = tables.nodes().iter().collect::<Vec<_>>();
-        Self { edges, nodes }
+        let sites = tables.sites().iter().collect::<Vec<_>>();
+        let mutations = tables.mutations().iter().collect::<Vec<_>>();
+        let populations = tables.populations().iter().collect::<Vec<_>>();
+        let migrations = tables.migrations().iter().collect::<Vec<_>>();
+        Self {
+            edges,
+            nodes,
+            sites,
+            mutations,
+            populations,
+            migrations,
+        }
     }
 
     fn new_from_treeseq(treeseq: &tskit::TreeSequence) -> Self {
         let edges = treeseq.tables().edges().iter().collect::<Vec<_>>();
         let nodes = treeseq.tables().nodes().iter().collect::<Vec<_>>();
-        Self { edges, nodes }
+        let sites = treeseq.tables().sites().iter().collect::<Vec<_>>();
+        let mutations = treeseq.tables().mutations().iter().collect::<Vec<_>>();
+        let populations = treeseq.tables().populations().iter().collect::<Vec<_>>();
+        let migrations = treeseq.tables().migrations().iter().collect::<Vec<_>>();
+        Self {
+            edges,
+            nodes,
+            sites,
+            mutations,
+            populations,
+            migrations,
+        }
     }
 
     fn new_from_table_access<T>(access: &T) -> Self
@@ -23,7 +49,18 @@ impl IteratorOutput {
     {
         let edges = access.edges().iter().collect::<Vec<_>>();
         let nodes = access.nodes().iter().collect::<Vec<_>>();
-        Self { edges, nodes }
+        let sites = access.sites().iter().collect::<Vec<_>>();
+        let mutations = access.mutations().iter().collect::<Vec<_>>();
+        let populations = access.populations().iter().collect::<Vec<_>>();
+        let migrations = access.migrations().iter().collect::<Vec<_>>();
+        Self {
+            edges,
+            nodes,
+            sites,
+            mutations,
+            populations,
+            migrations,
+        }
     }
 
     fn new_from_table_iteration<T>(iterator: &T) -> Self
@@ -32,13 +69,35 @@ impl IteratorOutput {
     {
         let edges = iterator.edges().iter().collect::<Vec<_>>();
         let nodes = iterator.nodes().iter().collect::<Vec<_>>();
-        Self { edges, nodes }
+        let sites = iterator.sites().iter().collect::<Vec<_>>();
+        let mutations = iterator.mutations().iter().collect::<Vec<_>>();
+        let populations = iterator.populations().iter().collect::<Vec<_>>();
+        let migrations = iterator.migrations().iter().collect::<Vec<_>>();
+        Self {
+            edges,
+            nodes,
+            sites,
+            mutations,
+            populations,
+            migrations,
+        }
     }
 
     fn new_from_dyn(dynamic: &dyn tskit::ObjectSafeTableIteration) -> Self {
         let edges = dynamic.edges().iter().collect::<Vec<_>>();
         let nodes = dynamic.nodes().iter().collect::<Vec<_>>();
-        Self { edges, nodes }
+        let sites = dynamic.sites().iter().collect::<Vec<_>>();
+        let mutations = dynamic.mutations().iter().collect::<Vec<_>>();
+        let populations = dynamic.populations().iter().collect::<Vec<_>>();
+        let migrations = dynamic.migrations().iter().collect::<Vec<_>>();
+        Self {
+            edges,
+            nodes,
+            sites,
+            mutations,
+            populations,
+            migrations,
+        }
     }
 }
 
@@ -89,7 +148,9 @@ fn test_traits_with_table_collection() {
 #[test]
 fn test_traits_with_tree_sequence() {
     let mut tables = make_tables();
-    tables.full_sort(tskit::TableSortOptions::default()).unwrap();
+    tables
+        .full_sort(tskit::TableSortOptions::default())
+        .unwrap();
     tables.build_index().unwrap();
     let treeseq = tskit::TreeSequence::try_from(tables).unwrap();
     validate_output_from_treeseq(treeseq)
