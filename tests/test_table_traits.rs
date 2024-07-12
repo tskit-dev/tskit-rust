@@ -136,6 +136,8 @@ fn make_tables() -> tskit::TableCollection {
         .unwrap();
     tables.add_edge(0., 50., 1, 0).unwrap();
     tables.add_edge(50., 100., 2, 0).unwrap();
+    let site = tables.add_site(0.25, None).unwrap();
+    tables.add_mutation(site, 1, -1, 2.0, None).unwrap();
     tables
 }
 
