@@ -1,3 +1,52 @@
+#[derive(PartialEq, Debug)]
+struct IteratorOutput {
+    edges: Vec<tskit::EdgeTableRow>,
+    nodes: Vec<tskit::NodeTableRow>,
+}
+
+impl IteratorOutput {
+    fn new_from_tables(tables: &tskit::TableCollection) -> Self {
+        let edges = tables.edges().iter().collect::<Vec<_>>();
+        let nodes = tables.nodes().iter().collect::<Vec<_>>();
+        Self { edges, nodes }
+    }
+
+    fn new_from_table_access<T>(access: &T) -> Self
+    where
+        T: tskit::TableAccess,
+    {
+        let edges = access.edges().iter().collect::<Vec<_>>();
+        let nodes = access.nodes().iter().collect::<Vec<_>>();
+        Self { edges, nodes }
+    }
+
+    fn new_from_table_iteration<T>(iterator: &T) -> Self
+    where
+        T: tskit::TableIteration,
+    {
+        let edges = iterator.edges().iter().collect::<Vec<_>>();
+        let nodes = iterator.nodes().iter().collect::<Vec<_>>();
+        Self { edges, nodes }
+    }
+
+    fn new_from_dyn(dynamic: &dyn tskit::ObjectSafeTableIteration) -> Self {
+        let edges = dynamic.edges().iter().collect::<Vec<_>>();
+        let nodes = dynamic.nodes().iter().collect::<Vec<_>>();
+        Self { edges, nodes }
+    }
+}
+
+fn validate_output_from_tables(tables: tskit::TableCollection) {
+    let tables_output = IteratorOutput::new_from_tables(&tables);
+    let access_output = IteratorOutput::new_from_table_access(&tables);
+    assert_eq!(tables_output, access_output);
+    let iteration_output = IteratorOutput::new_from_table_iteration(&tables);
+    assert_eq!(tables_output, iteration_output);
+    let boxed = Box::new(tables);
+    let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
+    assert_eq!(tables_output, dynamic_output);
+}
+
 fn make_tables() -> tskit::TableCollection {
     let mut tables = tskit::TableCollection::new(100.).unwrap();
     tables
@@ -14,68 +63,8 @@ fn make_tables() -> tskit::TableCollection {
     tables
 }
 
-fn get_edges_from_tables(tables: &tskit::TableCollection) -> Vec<tskit::EdgeTableRow> {
-    tables.edges().iter().collect::<Vec<_>>()
-}
-
-fn get_populations_from_tables(tables: &tskit::TableCollection) -> Vec<tskit::PopulationTableRow> {
-    tables.populations().iter().collect::<Vec<_>>()
-}
-
-fn get_edges_via_table_iteration_trait<T>(tables: &T) -> Vec<tskit::EdgeTableRow>
-where
-    T: tskit::TableIteration,
-{
-    tables.edges().iter().collect::<Vec<_>>()
-}
-
-fn get_populations_via_table_iteration_trait<T>(tables: &T) -> Vec<tskit::PopulationTableRow>
-where
-    T: tskit::TableIteration,
-{
-    tables.populations().iter().collect::<Vec<_>>()
-}
-
-fn get_edges_via_table_iteration_trait_object(
-    tables: &dyn tskit::ObjectSafeTableIteration,
-) -> Vec<tskit::EdgeTableRow> {
-    tskit::ObjectSafeTableIteration::edges_iter(tables).collect::<Vec<_>>()
-}
-
-fn get_populations_via_table_iteration_trait_object(
-    tables: &dyn tskit::ObjectSafeTableIteration,
-) -> Vec<tskit::PopulationTableRow> {
-    tskit::ObjectSafeTableIteration::populations_iter(tables).collect::<Vec<_>>()
-}
-
 #[test]
-fn test_table_collection_edge_iteration() {
+fn test_traits_with_table_collection() {
     let tables = make_tables();
-    let v0 = get_edges_from_tables(&tables);
-    let v1 = get_edges_via_table_iteration_trait(&tables);
-    assert_eq!(v0, v1);
-}
-
-#[test]
-fn test_table_collection_population_iteration() {
-    let tables = make_tables();
-    let v0 = get_populations_from_tables(&tables);
-    let v1 = get_populations_via_table_iteration_trait(&tables);
-    assert_eq!(v0, v1);
-}
-
-#[test]
-fn test_table_collection_edge_iteration_object_safety() {
-    let tables = Box::new(make_tables());
-    let v0 = get_edges_from_tables(&tables);
-    let v1 = get_edges_via_table_iteration_trait_object(&tables);
-    assert_eq!(v0, v1);
-}
-
-#[test]
-fn test_table_collection_population_iteration_object_safety() {
-    let tables = Box::new(make_tables());
-    let v0 = get_populations_from_tables(&tables);
-    let v1 = get_populations_via_table_iteration_trait_object(&tables);
-    assert_eq!(v0, v1);
+    validate_output_from_tables(tables)
 }

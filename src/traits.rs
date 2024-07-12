@@ -235,7 +235,7 @@ where
     }
 
     fn nodes(&self) -> &crate::NodeTable {
-        todo!()
+        self.as_ref().nodes()
     }
 
     fn sites(&self) -> &crate::SiteTable {
