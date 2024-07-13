@@ -63,8 +63,7 @@ impl IteratorOutput {
         }
     }
 
-    fn new_from_table_access_impl_syntax(access: impl tskit::TableAccess) -> Self
-    {
+    fn new_from_table_access_impl_syntax(access: impl tskit::TableAccess) -> Self {
         Self::new_from_table_access(&access)
     }
 
@@ -112,9 +111,15 @@ fn validate_output_from_tables(tables: tskit::TableCollection) {
     assert_eq!(tables_output, access_output);
     let iteration_output = IteratorOutput::new_from_table_iteration(&tables);
     assert_eq!(tables_output, iteration_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&tables);
+    assert_eq!(tables_output, impl_syntax_output);
     let boxed = Box::new(tables);
     let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
     assert_eq!(tables_output, dynamic_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&boxed);
+    assert_eq!(tables_output, impl_syntax_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(boxed);
+    assert_eq!(tables_output, impl_syntax_output);
 }
 
 fn validate_output_from_table_ref(tables: tskit::TableCollection) {
@@ -142,6 +147,11 @@ fn validate_output_from_treeseq(treeseq: tskit::TreeSequence) {
     let boxed = Box::new(treeseq);
     let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
     assert_eq!(treeseq_output, dynamic_output);
+    todo!("test impl syntax")
+}
+
+fn validate_output_from_treeseq_ref(treeseq: tskit::TreeSequence) {
+    todo!()
 }
 
 fn make_tables() -> tskit::TableCollection {
@@ -185,4 +195,15 @@ fn test_traits_with_tree_sequence() {
     tables.build_index().unwrap();
     let treeseq = tskit::TreeSequence::try_from(tables).unwrap();
     validate_output_from_treeseq(treeseq)
+}
+
+#[test]
+fn test_traits_with_tree_sequence_ref() {
+    let mut tables = make_tables();
+    tables
+        .full_sort(tskit::TableSortOptions::default())
+        .unwrap();
+    tables.build_index().unwrap();
+    let treeseq = tskit::TreeSequence::try_from(tables).unwrap();
+    validate_output_from_treeseq_ref(treeseq)
 }
