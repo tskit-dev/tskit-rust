@@ -63,6 +63,11 @@ impl IteratorOutput {
         }
     }
 
+    fn new_from_table_access_impl_syntax(access: impl tskit::TableAccess) -> Self
+    {
+        Self::new_from_table_access(&access)
+    }
+
     fn new_from_table_iteration<T>(iterator: &T) -> Self
     where
         T: tskit::TableIteration,
@@ -101,10 +106,6 @@ impl IteratorOutput {
     }
 }
 
-struct TablesHolder<'tables> {
-    tables: &'tables tskit::TableCollection,
-}
-
 fn validate_output_from_tables(tables: tskit::TableCollection) {
     let tables_output = IteratorOutput::new_from_tables(&tables);
     let access_output = IteratorOutput::new_from_table_access(&tables);
@@ -114,6 +115,22 @@ fn validate_output_from_tables(tables: tskit::TableCollection) {
     let boxed = Box::new(tables);
     let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
     assert_eq!(tables_output, dynamic_output);
+}
+
+fn validate_output_from_table_ref(tables: tskit::TableCollection) {
+    let tref = &tables;
+    let tables_output = IteratorOutput::new_from_tables(tref);
+    let access_output = IteratorOutput::new_from_table_access(tref);
+    assert_eq!(tables_output, access_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(tref);
+    assert_eq!(tables_output, impl_syntax_output);
+    let iteration_output = IteratorOutput::new_from_table_iteration(tref);
+    assert_eq!(tables_output, iteration_output);
+    let boxed = Box::new(tref);
+    let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
+    assert_eq!(tables_output, dynamic_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&boxed);
+    assert_eq!(tables_output, impl_syntax_output);
 }
 
 fn validate_output_from_treeseq(treeseq: tskit::TreeSequence) {
@@ -154,25 +171,9 @@ fn test_traits_with_table_collection() {
 }
 
 #[test]
-fn test_traits_with_table_collection_holder() {
+fn test_traits_with_table_collection_ref() {
     let tables = make_tables();
-    let tref: &tskit::TableCollection = &tables;
-    let tables_output = IteratorOutput::new_from_tables(tref);
-    //let boxed = Box::new(tref);
-    //let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
-    //assert_eq!(tables_output, dynamic_output);
-    fn foo(_: impl tskit::TableIteration) {
-        todo!("this compiles");
-
-    }
-    fn foo2<T>(_: T) where T: tskit::TableIteration {
-        todo!("this compiles");
-    }
-    foo(tref);
-    foo2(tref);
-    let h = TablesHolder{tables:tref};
-    foo(h.tables);
-    foo2(h.tables);
+    validate_output_from_table_ref(tables)
 }
 
 #[test]
