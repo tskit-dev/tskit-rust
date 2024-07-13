@@ -107,19 +107,31 @@ impl IteratorOutput {
 
 fn validate_output_from_tables(tables: tskit::TableCollection) {
     let tables_output = IteratorOutput::new_from_tables(&tables);
-    let access_output = IteratorOutput::new_from_table_access(&tables);
-    assert_eq!(tables_output, access_output);
-    let iteration_output = IteratorOutput::new_from_table_iteration(&tables);
-    assert_eq!(tables_output, iteration_output);
-    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&tables);
-    assert_eq!(tables_output, impl_syntax_output);
+    {
+        let access_output = IteratorOutput::new_from_table_access(&tables);
+        assert_eq!(tables_output, access_output);
+    }
+    {
+        let iteration_output = IteratorOutput::new_from_table_iteration(&tables);
+        assert_eq!(tables_output, iteration_output);
+    }
+    {
+        let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&tables);
+        assert_eq!(tables_output, impl_syntax_output);
+    }
     let boxed = Box::new(tables);
-    let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
-    assert_eq!(tables_output, dynamic_output);
-    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&boxed);
-    assert_eq!(tables_output, impl_syntax_output);
-    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(boxed);
-    assert_eq!(tables_output, impl_syntax_output);
+    {
+        let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
+        assert_eq!(tables_output, dynamic_output);
+    }
+    {
+        let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&boxed);
+        assert_eq!(tables_output, impl_syntax_output);
+    }
+    {
+        let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(boxed);
+        assert_eq!(tables_output, impl_syntax_output);
+    }
 }
 
 fn validate_output_from_table_ref(tables: tskit::TableCollection) {
