@@ -144,14 +144,29 @@ fn validate_output_from_treeseq(treeseq: tskit::TreeSequence) {
     assert_eq!(treeseq_output, access_output);
     let iteration_output = IteratorOutput::new_from_table_iteration(&treeseq);
     assert_eq!(treeseq_output, iteration_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(&treeseq);
+    assert_eq!(treeseq_output, impl_syntax_output);
     let boxed = Box::new(treeseq);
     let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
     assert_eq!(treeseq_output, dynamic_output);
-    todo!("test impl syntax")
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(boxed);
+    assert_eq!(treeseq_output, impl_syntax_output);
 }
 
 fn validate_output_from_treeseq_ref(treeseq: tskit::TreeSequence) {
-    todo!()
+    let treeseq_ref = &treeseq;
+    let treeseq_output = IteratorOutput::new_from_treeseq(treeseq_ref);
+    let access_output = IteratorOutput::new_from_table_access(treeseq_ref);
+    assert_eq!(treeseq_output, access_output);
+    let iteration_output = IteratorOutput::new_from_table_iteration(treeseq_ref);
+    assert_eq!(treeseq_output, iteration_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(treeseq_ref);
+    assert_eq!(treeseq_output, impl_syntax_output);
+    let boxed = Box::new(treeseq_ref);
+    let dynamic_output = IteratorOutput::new_from_dyn(&boxed);
+    assert_eq!(treeseq_output, dynamic_output);
+    let impl_syntax_output = IteratorOutput::new_from_table_access_impl_syntax(boxed);
+    assert_eq!(treeseq_output, impl_syntax_output);
 }
 
 fn make_tables() -> tskit::TableCollection {
