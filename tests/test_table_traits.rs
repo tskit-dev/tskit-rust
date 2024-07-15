@@ -73,12 +73,12 @@ impl IteratorOutput {
     where
         T: TableIteration,
     {
-        let edges = iterator.edges().iter().collect::<Vec<_>>();
-        let nodes = iterator.nodes().iter().collect::<Vec<_>>();
-        let sites = iterator.sites().iter().collect::<Vec<_>>();
-        let mutations = iterator.mutations().iter().collect::<Vec<_>>();
-        let populations = iterator.populations().iter().collect::<Vec<_>>();
-        let migrations = iterator.migrations().iter().collect::<Vec<_>>();
+        let edges = iterator.edges_iter().collect::<Vec<_>>();
+        let nodes = iterator.nodes_iter().collect::<Vec<_>>();
+        let sites = iterator.sites_iter().collect::<Vec<_>>();
+        let mutations = iterator.mutations_iter().collect::<Vec<_>>();
+        let populations = iterator.populations_iter().collect::<Vec<_>>();
+        let migrations = iterator.migrations_iter().collect::<Vec<_>>();
         Self {
             edges,
             nodes,
@@ -90,12 +90,13 @@ impl IteratorOutput {
     }
 
     fn new_from_dyn(dynamic: &dyn tskit::ObjectSafeTableIteration) -> Self {
-        let edges = dynamic.edges().iter().collect::<Vec<_>>();
-        let nodes = dynamic.nodes().iter().collect::<Vec<_>>();
-        let sites = dynamic.sites().iter().collect::<Vec<_>>();
-        let mutations = dynamic.mutations().iter().collect::<Vec<_>>();
-        let populations = dynamic.populations().iter().collect::<Vec<_>>();
-        let migrations = dynamic.migrations().iter().collect::<Vec<_>>();
+        let edges_iter: Box<dyn Iterator<Item = tskit::EdgeTableRow> + '_> = dynamic.edges_iter();
+        let edges = edges_iter.collect::<Vec<_>>();
+        let nodes = dynamic.nodes_iter().collect::<Vec<_>>();
+        let sites = dynamic.sites_iter().collect::<Vec<_>>();
+        let mutations = dynamic.mutations_iter().collect::<Vec<_>>();
+        let populations = dynamic.populations_iter().collect::<Vec<_>>();
+        let migrations = dynamic.migrations_iter().collect::<Vec<_>>();
         Self {
             edges,
             nodes,
