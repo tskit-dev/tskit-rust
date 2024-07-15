@@ -133,14 +133,41 @@ pub trait TableIteration: TableAccess {
     fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
         self.edges().iter()
     }
+    fn nodes_iter(&self) -> impl Iterator<Item = crate::NodeTableRow> + '_ {
+        self.nodes().iter()
+    }
+    fn sites_iter(&self) -> impl Iterator<Item = crate::SiteTableRow> + '_ {
+        self.sites().iter()
+    }
+    fn mutations_iter(&self) -> impl Iterator<Item = crate::MutationTableRow> + '_ {
+        self.mutations().iter()
+    }
+    fn migrations_iter(&self) -> impl Iterator<Item = crate::MigrationTableRow> + '_ {
+        self.migrations().iter()
+    }
+    fn populations_iter(&self) -> impl Iterator<Item = crate::PopulationTableRow> + '_ {
+        self.populations().iter()
+    }
 }
 
 pub trait ObjectSafeTableIteration: TableAccess {
     fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::EdgeTableRow> + '_> {
         Box::new(self.edges().iter())
     }
+    fn nodes_iter(&self) -> Box<dyn Iterator<Item = crate::NodeTableRow> + '_> {
+        Box::new(self.nodes().iter())
+    }
+    fn sites_iter(&self) -> Box<dyn Iterator<Item = crate::SiteTableRow> + '_> {
+        Box::new(self.sites().iter())
+    }
+    fn mutations_iter(&self) -> Box<dyn Iterator<Item = crate::MutationTableRow> + '_> {
+        Box::new(self.mutations().iter())
+    }
+    fn migrations_iter(&self) -> Box<dyn Iterator<Item = crate::MigrationTableRow> + '_> {
+        Box::new(self.migrations().iter())
+    }
     fn populations_iter(&self) -> Box<dyn Iterator<Item = crate::PopulationTableRow> + '_> {
-        Box::new(self.populations().iter())
+        Box::new(Box::new(self.populations().iter()))
     }
 }
 
