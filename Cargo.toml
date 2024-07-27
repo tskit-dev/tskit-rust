@@ -11,6 +11,9 @@ repository = "https://github.com/tskit-dev/tskit-rust"
 rust-version = "1.71.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lints.rust]
+# Added for rust 1.80.0
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(doc_cfg)'] }
 
 [profile.release]
 lto = "fat"

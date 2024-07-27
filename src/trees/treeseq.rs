@@ -220,7 +220,7 @@ impl TreeSequence {
     ///
     /// A `Tree`'s lifetime is tied to that of its tree sequence:
     ///
-    /// ```{compile_fail}
+    /// ```compile_fail
     /// # use streaming_iterator::StreamingIterator;
     /// # use streaming_iterator::DoubleEndedStreamingIterator;
     /// # let mut tables = tskit::TableCollection::new(1000.).unwrap();
@@ -368,10 +368,10 @@ impl TreeSequence {
     /// # Return value
     /// - `Ok(None)`: when truncation leads to empty edge table.
     /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
-    /// and results in non-empty edge table. The tables are sorted.
+    ///    and results in non-empty edge table. The tables are sorted.
     /// - `Error(TskitError)`: Any errors from the C API propagate. An
-    /// [TskitError::RangeError] will occur when `intervals` are not
-    /// sorted.
+    ///    [TskitError::RangeError] will occur when `intervals` are not
+    ///    sorted.
     ///
     /// # Notes
     ///
