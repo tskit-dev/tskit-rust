@@ -83,7 +83,7 @@ impl TableCollection {
     ///
     /// Negative sequence lengths are errors:
     ///
-    /// ```{should_panic}
+    /// ```should_panic
     /// let tables = tskit::TableCollection::new(-55.0).unwrap();
     /// ```
     pub fn new<P: Into<Position>>(sequence_length: P) -> Result<Self, TskitError> {
@@ -1382,10 +1382,10 @@ impl TableCollection {
     /// # Return value
     /// - `Ok(None)`: when truncation leads to empty edge table.
     /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
-    /// and results in non-empty edge table. The table collection is sorted.
+    ///    and results in non-empty edge table. The table collection is sorted.
     /// - `Error(TskitError)`: Any errors from the C API propagate. An
-    /// [TskitError::RangeError] will occur when `intervals` are not
-    /// sorted.
+    ///    [TskitError::RangeError] will occur when `intervals` are not
+    ///    sorted.
     ///
     /// # Notes
     ///
