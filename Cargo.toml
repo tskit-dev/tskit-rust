@@ -45,7 +45,7 @@ humantime = {version = "2.1.0"}
 # chrono = "0.4.19"
 
 [build-dependencies]
-bindgen = "0.69.4"
+bindgen = "0.70.1"
 cc = { version = "1.0", features = ["parallel"] }
 pkg-config = "0.3"
 
