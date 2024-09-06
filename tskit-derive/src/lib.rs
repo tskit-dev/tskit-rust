@@ -55,7 +55,7 @@ fn impl_metadata_roundtrip_macro(ast: &syn::DeriveInput) -> Result<TokenStream, 
     let attrs = &ast.attrs;
 
     for attr in attrs.iter() {
-        if attr.path.is_ident("serializer") {
+        if attr.path().is_ident("serializer") {
             let lit: syn::LitStr = attr.parse_args().unwrap();
             let serializer = lit.value();
 
@@ -67,7 +67,7 @@ fn impl_metadata_roundtrip_macro(ast: &syn::DeriveInput) -> Result<TokenStream, 
                 proc_macro_error2::abort!(serializer, "is not a supported protocol.");
             }
         } else {
-            proc_macro_error2::abort!(attr.path, "is not a supported attribute.");
+            proc_macro_error2::abort!(attr.path(), "is not a supported attribute.");
         }
     }
 
