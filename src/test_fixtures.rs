@@ -384,7 +384,7 @@ pub mod simulation {
                         let site_not_exist = site_id_map_tables[mut_pos] == SiteId::NULL;
                         if site_not_exist {
                             site_id_map_tables[mut_pos] =
-                                tables.add_site(mut_pos as f64, Some(&[b'a'])).unwrap();
+                                tables.add_site(mut_pos as f64, Some(b"a")).unwrap();
                         }
                         // add mutation
                         let parent_mut = site_last_mutation_tables[mut_pos];
@@ -407,7 +407,7 @@ pub mod simulation {
                             let site_not_exist = site_id_map_tr_tbls[mut_pos] == SiteId::NULL;
                             if site_not_exist {
                                 site_id_map_tr_tbls[mut_pos] =
-                                    tr_tbls.add_site(mut_pos as f64, Some(&[b'a'])).unwrap();
+                                    tr_tbls.add_site(mut_pos as f64, Some(b"a")).unwrap();
                             }
                             // add mutation
                             let parent_mut = site_last_mutation_tr_tbls[mut_pos];
