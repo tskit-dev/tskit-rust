@@ -30,7 +30,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2.7.5
-      - uses: taiki-e/install-action@v2.46.6
+      - uses: taiki-e/install-action@cargo-hack
       - run: sudo apt-get update -y
         if: matrix.os == 'ubuntu-latest'
       - name: cargo check (powerset)
@@ -73,7 +73,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy
       - uses: Swatinem/rust-cache@v2.7.5
-      - uses: taiki-e/install-action@v2.46.6
+      - uses: taiki-e/install-action@cargo-hack
       - name: clippy (all targets, feature powerset)
         run: cargo hack clippy --all-targets --feature-powerset -- -D warnings
 
@@ -89,6 +89,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-      - uses: taiki-e/install-action@v2.46.6
+      - uses: taiki-e/install-action@cargo-hack
       - name: cargo check msrv
         run: cargo hack check --feature-powerset 

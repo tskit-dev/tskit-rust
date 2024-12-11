@@ -30,7 +30,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - uses: Swatinem/rust-cache@v2.7.5
-      - uses: taiki-e/install-action@v2.46.6
+      - uses: taiki-e/install-action@cargo-hack
       - name: Install Linux tooling for 32 bit builds
         run: |
           sudo apt-get update -y
