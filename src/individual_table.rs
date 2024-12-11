@@ -50,7 +50,7 @@ impl<'a> IndividualTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for IndividualTableRowView<'a> {
+impl PartialEq for IndividualTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && self.flags == other.flags
@@ -60,9 +60,9 @@ impl<'a> PartialEq for IndividualTableRowView<'a> {
     }
 }
 
-impl<'a> Eq for IndividualTableRowView<'a> {}
+impl Eq for IndividualTableRowView<'_> {}
 
-impl<'a> PartialEq<IndividualTableRow> for IndividualTableRowView<'a> {
+impl PartialEq<IndividualTableRow> for IndividualTableRowView<'_> {
     fn eq(&self, other: &IndividualTableRow) -> bool {
         self.id == other.id
             && self.flags == other.flags
@@ -82,7 +82,7 @@ impl PartialEq<IndividualTableRowView<'_>> for IndividualTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for IndividualTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for IndividualTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();
@@ -162,7 +162,7 @@ pub(crate) type IndividualTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a IndividualTable>;
 pub(crate) type IndividualTableIterator = crate::table_iterator::TableIterator<IndividualTable>;
 
-impl<'a> Iterator for IndividualTableRefIterator<'a> {
+impl Iterator for IndividualTableRefIterator<'_> {
     type Item = IndividualTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -52,7 +52,7 @@ pub(crate) type MigrationTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a MigrationTable>;
 pub(crate) type MigrationTableIterator = crate::table_iterator::TableIterator<MigrationTable>;
 
-impl<'a> Iterator for MigrationTableRefIterator<'a> {
+impl Iterator for MigrationTableRefIterator<'_> {
     type Item = MigrationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -101,7 +101,7 @@ impl<'a> MigrationTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for MigrationTableRowView<'a> {
+impl PartialEq for MigrationTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && self.node == other.node
@@ -114,9 +114,9 @@ impl<'a> PartialEq for MigrationTableRowView<'a> {
     }
 }
 
-impl<'a> Eq for MigrationTableRowView<'a> {}
+impl Eq for MigrationTableRowView<'_> {}
 
-impl<'a> PartialEq<MigrationTableRow> for MigrationTableRowView<'a> {
+impl PartialEq<MigrationTableRow> for MigrationTableRowView<'_> {
     fn eq(&self, other: &MigrationTableRow) -> bool {
         self.id == other.id
             && self.node == other.node
@@ -142,7 +142,7 @@ impl PartialEq<MigrationTableRowView<'_>> for MigrationTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for MigrationTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for MigrationTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

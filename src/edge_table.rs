@@ -43,7 +43,7 @@ fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow>
 pub(crate) type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable>;
 pub(crate) type EdgeTableIterator = crate::table_iterator::TableIterator<EdgeTable>;
 
-impl<'a> Iterator for EdgeTableRefIterator<'a> {
+impl Iterator for EdgeTableRefIterator<'_> {
     type Item = EdgeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -89,7 +89,7 @@ impl<'a> EdgeTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for EdgeTableRowView<'a> {
+impl PartialEq for EdgeTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && self.parent == other.parent
@@ -100,9 +100,9 @@ impl<'a> PartialEq for EdgeTableRowView<'a> {
     }
 }
 
-impl<'a> Eq for EdgeTableRowView<'a> {}
+impl Eq for EdgeTableRowView<'_> {}
 
-impl<'a> PartialEq<EdgeTableRow> for EdgeTableRowView<'a> {
+impl PartialEq<EdgeTableRow> for EdgeTableRowView<'_> {
     fn eq(&self, other: &EdgeTableRow) -> bool {
         self.id == other.id
             && self.parent == other.parent
@@ -124,7 +124,7 @@ impl PartialEq<EdgeTableRowView<'_>> for EdgeTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for EdgeTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for EdgeTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

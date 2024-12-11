@@ -39,7 +39,7 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
 pub(crate) type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable>;
 pub(crate) type SiteTableIterator = crate::table_iterator::TableIterator<SiteTable>;
 
-impl<'a> Iterator for SiteTableRefIterator<'a> {
+impl Iterator for SiteTableRefIterator<'_> {
     type Item = SiteTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -80,7 +80,7 @@ impl<'a> SiteTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for SiteTableRowView<'a> {
+impl PartialEq for SiteTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && crate::util::partial_cmp_equal(&self.position, &other.position)
@@ -89,9 +89,9 @@ impl<'a> PartialEq for SiteTableRowView<'a> {
     }
 }
 
-impl<'a> Eq for SiteTableRowView<'a> {}
+impl Eq for SiteTableRowView<'_> {}
 
-impl<'a> PartialEq<SiteTableRow> for SiteTableRowView<'a> {
+impl PartialEq<SiteTableRow> for SiteTableRowView<'_> {
     fn eq(&self, other: &SiteTableRow) -> bool {
         self.id == other.id
             && crate::util::partial_cmp_equal(&self.position, &other.position)
@@ -109,7 +109,7 @@ impl PartialEq<SiteTableRowView<'_>> for SiteTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for SiteTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for SiteTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

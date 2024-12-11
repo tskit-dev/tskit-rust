@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         rust:
-          - stable
+          - 1.82.0
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.12.1
@@ -34,7 +34,7 @@ jobs:
       - run: sudo apt-get install -y valgrind
         if: matrix.os == 'ubuntu-latest'
       - run: cargo install cargo-valgrind
-      - name: run cargo valgrind
+      - name: run cargo valgrind --locked
         run: |
             cargo valgrind test --all-targets --all-features
       - name: run cargo valgrind on doc tests

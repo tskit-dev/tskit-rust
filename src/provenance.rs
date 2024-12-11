@@ -54,7 +54,7 @@ fn make_provenance_row(table: &ProvenanceTable, pos: tsk_id_t) -> Option<Provena
 type ProvenanceTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a ProvenanceTable>;
 type ProvenanceTableIterator = crate::table_iterator::TableIterator<ProvenanceTable>;
 
-impl<'a> Iterator for ProvenanceTableRefIterator<'a> {
+impl Iterator for ProvenanceTableRefIterator<'_> {
     type Item = ProvenanceTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -96,7 +96,7 @@ impl<'a> ProvenanceTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for ProvenanceTableRowView<'a> {
+impl PartialEq for ProvenanceTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id && self.timestamp == other.timestamp && self.record == other.record
     }
@@ -104,7 +104,7 @@ impl<'a> PartialEq for ProvenanceTableRowView<'a> {
 
 impl Eq for ProvenanceTableRowView<'_> {}
 
-impl<'a> PartialEq<ProvenanceTableRow> for ProvenanceTableRowView<'a> {
+impl PartialEq<ProvenanceTableRow> for ProvenanceTableRowView<'_> {
     fn eq(&self, other: &ProvenanceTableRow) -> bool {
         self.id == other.id && self.timestamp == other.timestamp && self.record == other.record
     }
@@ -116,7 +116,7 @@ impl PartialEq<ProvenanceTableRowView<'_>> for ProvenanceTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for ProvenanceTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for ProvenanceTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();
