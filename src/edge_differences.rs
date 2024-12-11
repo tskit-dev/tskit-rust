@@ -149,7 +149,7 @@ pub type EdgeInsertion = EdgeDifference<Insertion>;
 /// Type alias for [`EdgeDifference<Removal>`]
 pub type EdgeRemoval = EdgeDifference<Removal>;
 
-impl<'a, T> Iterator for EdgeDifferences<'a, T>
+impl<T> Iterator for EdgeDifferences<'_, T>
 where
     T: private::EdgeDifferenceIteration,
 {

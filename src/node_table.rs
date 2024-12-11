@@ -45,7 +45,7 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
 pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable>;
 pub(crate) type NodeTableIterator = crate::table_iterator::TableIterator<NodeTable>;
 
-impl<'a> Iterator for NodeTableRefIterator<'a> {
+impl Iterator for NodeTableRefIterator<'_> {
     type Item = NodeTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -90,7 +90,7 @@ impl<'a> NodeTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for NodeTableRowView<'a> {
+impl PartialEq for NodeTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && self.flags == other.flags
@@ -101,9 +101,9 @@ impl<'a> PartialEq for NodeTableRowView<'a> {
     }
 }
 
-impl<'a> Eq for NodeTableRowView<'a> {}
+impl Eq for NodeTableRowView<'_> {}
 
-impl<'a> PartialEq<NodeTableRow> for NodeTableRowView<'a> {
+impl PartialEq<NodeTableRow> for NodeTableRowView<'_> {
     fn eq(&self, other: &NodeTableRow) -> bool {
         self.id == other.id
             && self.flags == other.flags
@@ -125,7 +125,7 @@ impl PartialEq<NodeTableRowView<'_>> for NodeTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for NodeTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for NodeTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

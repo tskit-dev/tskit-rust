@@ -38,7 +38,7 @@ pub(crate) type PopulationTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a PopulationTable>;
 pub(crate) type PopulationTableIterator = crate::table_iterator::TableIterator<PopulationTable>;
 
-impl<'a> Iterator for PopulationTableRefIterator<'a> {
+impl Iterator for PopulationTableRefIterator<'_> {
     type Item = PopulationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -75,15 +75,15 @@ impl<'a> PopulationTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for PopulationTableRowView<'a> {
+impl PartialEq for PopulationTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id && self.metadata == other.metadata
     }
 }
 
-impl<'a> Eq for PopulationTableRowView<'a> {}
+impl Eq for PopulationTableRowView<'_> {}
 
-impl<'a> PartialEq<PopulationTableRow> for PopulationTableRowView<'a> {
+impl PartialEq<PopulationTableRow> for PopulationTableRowView<'_> {
     fn eq(&self, other: &PopulationTableRow) -> bool {
         self.id == other.id && optional_container_comparison!(self.metadata, other.metadata)
     }
@@ -95,7 +95,7 @@ impl PartialEq<PopulationTableRowView<'_>> for PopulationTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for PopulationTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for PopulationTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

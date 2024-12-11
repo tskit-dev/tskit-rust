@@ -55,7 +55,7 @@ pub(crate) type MutationTableRefIterator<'a> =
     crate::table_iterator::TableIterator<&'a MutationTable>;
 pub(crate) type MutationTableIterator = crate::table_iterator::TableIterator<MutationTable>;
 
-impl<'a> Iterator for MutationTableRefIterator<'a> {
+impl Iterator for MutationTableRefIterator<'_> {
     type Item = MutationTableRow;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -102,7 +102,7 @@ impl<'a> MutationTableRowView<'a> {
     }
 }
 
-impl<'a> PartialEq for MutationTableRowView<'a> {
+impl PartialEq for MutationTableRowView<'_> {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
             && self.site == other.site
@@ -114,9 +114,9 @@ impl<'a> PartialEq for MutationTableRowView<'a> {
     }
 }
 
-impl<'a> Eq for MutationTableRowView<'a> {}
+impl Eq for MutationTableRowView<'_> {}
 
-impl<'a> PartialEq<MutationTableRow> for MutationTableRowView<'a> {
+impl PartialEq<MutationTableRow> for MutationTableRowView<'_> {
     fn eq(&self, other: &MutationTableRow) -> bool {
         self.id == other.id
             && self.site == other.site
@@ -140,7 +140,7 @@ impl PartialEq<MutationTableRowView<'_>> for MutationTableRow {
     }
 }
 
-impl<'a> streaming_iterator::StreamingIterator for MutationTableRowView<'a> {
+impl streaming_iterator::StreamingIterator for MutationTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

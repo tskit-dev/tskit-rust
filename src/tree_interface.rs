@@ -463,10 +463,10 @@ impl TreeInterface {
         }
     }
 
-    /// Return the [`crate::NodeTable`] for this current tree
-    /// (and the tree sequence from which it came).
-    ///
-    /// This is a convenience function for accessing node times, etc..
+    // /// Return the [`crate::NodeTable`] for this current tree
+    // /// (and the tree sequence from which it came).
+    // ///
+    // /// This is a convenience function for accessing node times, etc..
     //    fn node_table(&self) -> &crate::NodeTable {
     //       &self.nodes
     //  }
@@ -664,7 +664,7 @@ impl<'a> PostorderNodeIterator<'a> {
     }
 }
 
-impl<'a> Iterator for PostorderNodeIterator<'a> {
+impl Iterator for PostorderNodeIterator<'_> {
     type Item = NodeId;
     fn next(&mut self) -> Option<Self::Item> {
         match self.current_node_index < self.num_nodes_current_tree {

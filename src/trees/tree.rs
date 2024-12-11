@@ -17,14 +17,14 @@ pub struct Tree<'treeseq> {
     advanced: i32,
 }
 
-impl<'treeseq> Deref for Tree<'treeseq> {
+impl Deref for Tree<'_> {
     type Target = TreeInterface;
     fn deref(&self) -> &Self::Target {
         &self.api
     }
 }
 
-impl<'treeseq> DerefMut for Tree<'treeseq> {
+impl DerefMut for Tree<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.api
     }
@@ -106,7 +106,7 @@ impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
     }
 }
 
-impl<'ts> streaming_iterator::DoubleEndedStreamingIterator for Tree<'ts> {
+impl streaming_iterator::DoubleEndedStreamingIterator for Tree<'_> {
     fn advance_back(&mut self) {
         assert!(!self.as_ptr().is_null());
         // SAFETY: pointer is not null.
