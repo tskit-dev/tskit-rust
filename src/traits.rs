@@ -119,3 +119,164 @@ impl_individual_parents!(
 );
 impl_individual_parents!(N, usize, &[crate::IndividualId; N], self, self.as_slice());
 impl_individual_parents!(N, usize, [crate::IndividualId; N], self, self.as_slice());
+
+pub trait TableAccess {
+    fn edges(&self) -> &crate::EdgeTable;
+    fn nodes(&self) -> &crate::NodeTable;
+    fn sites(&self) -> &crate::SiteTable;
+    fn mutations(&self) -> &crate::MutationTable;
+    fn migrations(&self) -> &crate::MigrationTable;
+    fn populations(&self) -> &crate::PopulationTable;
+}
+
+pub trait TableIteration: TableAccess {
+    fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
+        self.edges().iter()
+    }
+    fn nodes_iter(&self) -> impl Iterator<Item = crate::NodeTableRow> + '_ {
+        self.nodes().iter()
+    }
+    fn sites_iter(&self) -> impl Iterator<Item = crate::SiteTableRow> + '_ {
+        self.sites().iter()
+    }
+    fn mutations_iter(&self) -> impl Iterator<Item = crate::MutationTableRow> + '_ {
+        self.mutations().iter()
+    }
+    fn migrations_iter(&self) -> impl Iterator<Item = crate::MigrationTableRow> + '_ {
+        self.migrations().iter()
+    }
+    fn populations_iter(&self) -> impl Iterator<Item = crate::PopulationTableRow> + '_ {
+        self.populations().iter()
+    }
+}
+
+pub trait ObjectSafeTableIteration: TableAccess {
+    fn edges_iter(&self) -> Box<dyn Iterator<Item = crate::EdgeTableRow> + '_> {
+        Box::new(self.edges().iter())
+    }
+    fn nodes_iter(&self) -> Box<dyn Iterator<Item = crate::NodeTableRow> + '_> {
+        Box::new(self.nodes().iter())
+    }
+    fn sites_iter(&self) -> Box<dyn Iterator<Item = crate::SiteTableRow> + '_> {
+        Box::new(self.sites().iter())
+    }
+    fn mutations_iter(&self) -> Box<dyn Iterator<Item = crate::MutationTableRow> + '_> {
+        Box::new(self.mutations().iter())
+    }
+    fn migrations_iter(&self) -> Box<dyn Iterator<Item = crate::MigrationTableRow> + '_> {
+        Box::new(self.migrations().iter())
+    }
+    fn populations_iter(&self) -> Box<dyn Iterator<Item = crate::PopulationTableRow> + '_> {
+        Box::new(Box::new(self.populations().iter()))
+    }
+}
+
+impl TableAccess for crate::TableCollection {
+    fn edges(&self) -> &crate::EdgeTable {
+        self.edges()
+    }
+
+    fn nodes(&self) -> &crate::NodeTable {
+        self.nodes()
+    }
+
+    fn sites(&self) -> &crate::SiteTable {
+        self.sites()
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        self.mutations()
+    }
+
+    fn migrations(&self) -> &crate::MigrationTable {
+        self.migrations()
+    }
+
+    fn populations(&self) -> &crate::PopulationTable {
+        self.populations()
+    }
+}
+
+impl TableAccess for crate::TreeSequence {
+    fn edges(&self) -> &crate::EdgeTable {
+        self.tables().edges()
+    }
+
+    fn nodes(&self) -> &crate::NodeTable {
+        self.tables().nodes()
+    }
+
+    fn sites(&self) -> &crate::SiteTable {
+        self.tables().sites()
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        self.tables().mutations()
+    }
+
+    fn migrations(&self) -> &crate::MigrationTable {
+        self.tables().migrations()
+    }
+
+    fn populations(&self) -> &crate::PopulationTable {
+        self.tables().populations()
+    }
+}
+
+impl<T> TableAccess for &T
+where
+    T: TableAccess,
+{
+    fn migrations(&self) -> &crate::MigrationTable {
+        T::migrations(self)
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        T::mutations(self)
+    }
+
+    fn edges(&self) -> &crate::EdgeTable {
+        T::edges(self)
+    }
+    fn sites(&self) -> &crate::SiteTable {
+        T::sites(self)
+    }
+    fn nodes(&self) -> &crate::NodeTable {
+        T::nodes(self)
+    }
+    fn populations(&self) -> &crate::PopulationTable {
+        T::populations(self)
+    }
+}
+
+impl<T> TableAccess for Box<T>
+where
+    T: TableAccess,
+{
+    fn migrations(&self) -> &crate::MigrationTable {
+        self.as_ref().migrations()
+    }
+
+    fn edges(&self) -> &crate::EdgeTable {
+        self.as_ref().edges()
+    }
+
+    fn nodes(&self) -> &crate::NodeTable {
+        self.as_ref().nodes()
+    }
+
+    fn sites(&self) -> &crate::SiteTable {
+        self.as_ref().sites()
+    }
+
+    fn mutations(&self) -> &crate::MutationTable {
+        self.as_ref().mutations()
+    }
+
+    fn populations(&self) -> &crate::PopulationTable {
+        self.as_ref().populations()
+    }
+}
+
+impl<T> TableIteration for T where T: TableAccess + ?Sized {}
+impl<T> ObjectSafeTableIteration for T where T: TableAccess + ?Sized {}
