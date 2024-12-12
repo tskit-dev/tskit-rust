@@ -13,7 +13,7 @@ jobs:
     #  image: ubuntu:20.10
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-latest]
         rust:
           - stable
     steps:
@@ -32,7 +32,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2.7.5
       - uses: taiki-e/install-action@cargo-hack
       - run: sudo apt-get update -y
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
       - name: cargo check (powerset)
         run: cargo hack check --feature-powerset --no-dev-deps
       - name: cargo check examples (powerset)
@@ -46,7 +46,7 @@ jobs:
 
   fmt:
     name: rust fmt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -61,7 +61,7 @@ jobs:
 
   clippy:
     name: clippy!!
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         rust:
@@ -79,7 +79,7 @@ jobs:
 
   msrv:
     name: Verify MSRV
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         rust:

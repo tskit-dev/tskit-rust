@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-24.04]
         rust:
           - 1.82.0
     steps:
@@ -30,9 +30,9 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v2.7.5
       - run: sudo apt-get update -y
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
       - run: sudo apt-get install -y valgrind
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
       - run: cargo install cargo-valgrind
       - name: run cargo valgrind --locked
         run: |

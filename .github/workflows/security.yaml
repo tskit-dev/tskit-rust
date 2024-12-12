@@ -6,7 +6,7 @@ on:
 
 jobs:
   audit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout the Repository
         uses: actions/checkout@v4.2.2
