@@ -12,7 +12,7 @@ name: Miri
 jobs:
   test_miri:
     name: Test (Miri)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4.2.2
       - uses: actions-rs/toolchain@v1.0.6
