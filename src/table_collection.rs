@@ -147,10 +147,7 @@ impl TableCollection {
     /// A panic will occur if the system runs out of memory.
     pub fn new_from_file(filename: impl AsRef<str>) -> Result<Self, TskitError> {
         // Arbitrary sequence_length.
-        let mut tables = match TableCollection::new(1.0) {
-            Ok(t) => t,
-            Err(e) => return Err(e),
-        };
+        let mut tables = TableCollection::new(1.0)?;
 
         let c_str = std::ffi::CString::new(filename.as_ref()).map_err(|_| {
             TskitError::LibraryError("call to ffi::CString::new failed".to_string())
