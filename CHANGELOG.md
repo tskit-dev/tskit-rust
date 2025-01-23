@@ -2,6 +2,156 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.1] - 2025-01-23
+
+### Features
+
+- Added keep intervals for tables and tree sequences ([#635](https://github.com/tskit-dev/tskit-rust/pull/635))
+- Add TreeSequence::tables ([#648](https://github.com/tskit-dev/tskit-rust/pull/648))
+
+### Miscellaneous Tasks
+
+- Bump serde from 1.0.199 to 1.0.203 ([#639](https://github.com/tskit-dev/tskit-rust/pull/639))
+- Bump serde_json from 1.0.115 to 1.0.117 ([#637](https://github.com/tskit-dev/tskit-rust/pull/637))
+- Bump thiserror from 1.0.58 to 1.0.61 ([#638](https://github.com/tskit-dev/tskit-rust/pull/638))
+- Bump cc from 1.0.96 to 1.0.98 ([#640](https://github.com/tskit-dev/tskit-rust/pull/640))
+- Bump libc from 0.2.154 to 0.2.155 ([#636](https://github.com/tskit-dev/tskit-rust/pull/636))
+- Bump anyhow from 1.0.81 to 1.0.86 ([#641](https://github.com/tskit-dev/tskit-rust/pull/641))
+- Bump bitflags from 2.5.0 to 2.6.0 ([#645](https://github.com/tskit-dev/tskit-rust/pull/645))
+- Bump serde_json from 1.0.117 to 1.0.120 ([#646](https://github.com/tskit-dev/tskit-rust/pull/646))
+- Bump cc from 1.0.98 to 1.0.104 ([#643](https://github.com/tskit-dev/tskit-rust/pull/643))
+
+### Refactor
+
+- [**breaking**] Use Into<Idtype> for metadata retrieval fns ([#633](https://github.com/tskit-dev/tskit-rust/pull/633))
+- Separate keep_intervals from simplify ([#647](https://github.com/tskit-dev/tskit-rust/pull/647))
+- Update to proc_macro_error2 ([#661](https://github.com/tskit-dev/tskit-rust/pull/661))
+- Bump to syn 2.0 ([#663](https://github.com/tskit-dev/tskit-rust/pull/663))
+
+### Styling
+
+- Remove duplicated attribute ([#642](https://github.com/tskit-dev/tskit-rust/pull/642))
+- Fix lints from rust 1.80.0 ([#650](https://github.com/tskit-dev/tskit-rust/pull/650))
+- Fix lints from rust 1.81.0 ([#662](https://github.com/tskit-dev/tskit-rust/pull/662))
+- Clippy lints for rustc 1.84.0 ([#699](https://github.com/tskit-dev/tskit-rust/pull/699))
+
+## [0.15.0-alpha.0] - 2024-05-07
+
+### Documentation
+
+- Fix incomplete sentence in metadata_advanced.md ([#529](https://github.com/tskit-dev/tskit-rust/pull/529))
+- Remove visible use of namespace from flags doc tests ([#618](https://github.com/tskit-dev/tskit-rust/pull/618))
+- Fix lints from rustdoc ([#631](https://github.com/tskit-dev/tskit-rust/pull/631))
+
+### Features
+
+- Allow tree iteration to start at a given position/tree index ([#613](https://github.com/tskit-dev/tskit-rust/pull/613))
+- Sys::NodeTable::raw_metadata ([#628](https://github.com/tskit-dev/tskit-rust/pull/628))
+
+### Miscellaneous Tasks
+
+- Add cargo-semver checks + caching to CI ([#493](https://github.com/tskit-dev/tskit-rust/pull/493))
+- Update bindgen requirement from 0.63.0 to 0.65.1 ([#499](https://github.com/tskit-dev/tskit-rust/pull/499))
+- [**breaking**] Update tskit C files to C API 1.1.2 ([#501](https://github.com/tskit-dev/tskit-rust/pull/501))
+- Move sys into subdir ([#503](https://github.com/tskit-dev/tskit-rust/pull/503))
+- Move bindings into sys ([#504](https://github.com/tskit-dev/tskit-rust/pull/504))
+- Reorganize tables code in sys ([#511](https://github.com/tskit-dev/tskit-rust/pull/511))
+- Reorganize treeseq code in sys ([#512](https://github.com/tskit-dev/tskit-rust/pull/512))
+- Move flags into sys and re-export ([#513](https://github.com/tskit-dev/tskit-rust/pull/513))
+- Reorganize tree/treeseq code ([#515](https://github.com/tskit-dev/tskit-rust/pull/515))
+- Update bindgen requirement from 0.65.1 to 0.66.1 ([#523](https://github.com/tskit-dev/tskit-rust/pull/523))
+- Update delegate requirement from 0.9.0 to 0.10.0 ([#525](https://github.com/tskit-dev/tskit-rust/pull/525))
+- Bump dependencies ([#533](https://github.com/tskit-dev/tskit-rust/pull/533))
+- Bump serde from 1.0.185 to 1.0.188 ([#538](https://github.com/tskit-dev/tskit-rust/pull/538))
+- Bump actions/checkout from 2 to 4 ([#544](https://github.com/tskit-dev/tskit-rust/pull/544))
+- Bump libc from 0.2.147 to 0.2.148 ([#543](https://github.com/tskit-dev/tskit-rust/pull/543))
+- Bump serde_json from 1.0.105 to 1.0.107 ([#542](https://github.com/tskit-dev/tskit-rust/pull/542))
+- Bump thiserror from 1.0.47 to 1.0.49 ([#541](https://github.com/tskit-dev/tskit-rust/pull/541))
+- Bump bindgen from 0.66.1 to 0.68.1 ([#540](https://github.com/tskit-dev/tskit-rust/pull/540))
+- Audit and remove unused dependencies ([#545](https://github.com/tskit-dev/tskit-rust/pull/545))
+- Bump clap version ([#548](https://github.com/tskit-dev/tskit-rust/pull/548))
+- Replace cargo-msrv with cargo check + specific version ([#549](https://github.com/tskit-dev/tskit-rust/pull/549))
+- Pin clap in Cargo.toml ([#550](https://github.com/tskit-dev/tskit-rust/pull/550))
+- Bump thiserror from 1.0.49 to 1.0.50 ([#559](https://github.com/tskit-dev/tskit-rust/pull/559))
+- Bump styfle/cancel-workflow-action from 0.11.0 to 0.12.0 ([#556](https://github.com/tskit-dev/tskit-rust/pull/556))
+- Bump serde_json from 1.0.107 to 1.0.108 ([#558](https://github.com/tskit-dev/tskit-rust/pull/558))
+- Bump libc from 0.2.148 to 0.2.149 ([#557](https://github.com/tskit-dev/tskit-rust/pull/557))
+- Bump serde from 1.0.188 to 1.0.190 ([#560](https://github.com/tskit-dev/tskit-rust/pull/560))
+- Bump libc from 0.2.149 to 0.2.150 ([#561](https://github.com/tskit-dev/tskit-rust/pull/561))
+- Bump serde from 1.0.190 to 1.0.193 ([#563](https://github.com/tskit-dev/tskit-rust/pull/563))
+- Bump bindgen from 0.68.1 to 0.69.1 ([#562](https://github.com/tskit-dev/tskit-rust/pull/562))
+- Bump serde_json from 1.0.108 to 1.0.109 ([#568](https://github.com/tskit-dev/tskit-rust/pull/568))
+- Bump thiserror from 1.0.50 to 1.0.56 ([#572](https://github.com/tskit-dev/tskit-rust/pull/572))
+- Bump libc from 0.2.150 to 0.2.151 ([#565](https://github.com/tskit-dev/tskit-rust/pull/565))
+- Bump pkg-config from 0.3.27 to 0.3.28 ([#567](https://github.com/tskit-dev/tskit-rust/pull/567))
+- Bump anyhow from 1.0.75 to 1.0.79 ([#571](https://github.com/tskit-dev/tskit-rust/pull/571))
+- Bump delegate from 0.10.0 to 0.12.0 ([#566](https://github.com/tskit-dev/tskit-rust/pull/566))
+- Bump shlex from 1.1.0 to 1.3.0 ([#574](https://github.com/tskit-dev/tskit-rust/pull/574))
+- Bump bindgen from 0.69.1 to 0.69.2 ([#577](https://github.com/tskit-dev/tskit-rust/pull/577))
+- Bump serde from 1.0.193 to 1.0.196 ([#579](https://github.com/tskit-dev/tskit-rust/pull/579))
+- Bump libc from 0.2.151 to 0.2.153 ([#576](https://github.com/tskit-dev/tskit-rust/pull/576))
+- Bump pkg-config from 0.3.28 to 0.3.29 ([#578](https://github.com/tskit-dev/tskit-rust/pull/578))
+- Bump styfle/cancel-workflow-action from 0.12.0 to 0.12.1 ([#575](https://github.com/tskit-dev/tskit-rust/pull/575))
+- Bump serde from 1.0.196 to 1.0.197 ([#583](https://github.com/tskit-dev/tskit-rust/pull/583))
+- Bump bindgen from 0.69.2 to 0.69.4 ([#584](https://github.com/tskit-dev/tskit-rust/pull/584))
+- Bump serde_json from 1.0.109 to 1.0.114 ([#586](https://github.com/tskit-dev/tskit-rust/pull/586))
+- Bump cc from 1.0.83 to 1.0.88 ([#585](https://github.com/tskit-dev/tskit-rust/pull/585))
+- Bump thiserror from 1.0.56 to 1.0.57 ([#581](https://github.com/tskit-dev/tskit-rust/pull/581))
+- Bump pkg-config from 0.3.29 to 0.3.30 ([#582](https://github.com/tskit-dev/tskit-rust/pull/582))
+- Bump all dependencies ([#593](https://github.com/tskit-dev/tskit-rust/pull/593))
+- Bump baptiste0928/cargo-install from 2 to 3 ([#580](https://github.com/tskit-dev/tskit-rust/pull/580))
+- Bump serde from 1.0.197 to 1.0.199 ([#626](https://github.com/tskit-dev/tskit-rust/pull/626))
+- Bump cc from 1.0.90 to 1.0.96 ([#625](https://github.com/tskit-dev/tskit-rust/pull/625))
+- Bump libc from 0.2.153 to 0.2.154 ([#627](https://github.com/tskit-dev/tskit-rust/pull/627))
+
+### Refactor
+
+- [**breaking**] Remove TSK_NODE_IS_SAMPLE ([#505](https://github.com/tskit-dev/tskit-rust/pull/505))
+- [**breaking**] Remove tsk_flags_t from lib.rs and prelude ([#506](https://github.com/tskit-dev/tskit-rust/pull/506))
+- [**breaking**] Remove tsk_size_t ([#507](https://github.com/tskit-dev/tskit-rust/pull/507))
+- [**breaking**] Remove TSK_NULL ([#508](https://github.com/tskit-dev/tskit-rust/pull/508))
+- [**breaking**] Remove tsk_id_t ([#509](https://github.com/tskit-dev/tskit-rust/pull/509))
+- [**breaking**] C API bindings are now feature gates ([#510](https://github.com/tskit-dev/tskit-rust/pull/510))
+- LLTreeSeq impl now takes flag types directly ([#514](https://github.com/tskit-dev/tskit-rust/pull/514))
+- Add sys::LLTree ([#516](https://github.com/tskit-dev/tskit-rust/pull/516))
+- [**breaking**] Mark all pub enums non_exhaustive. ([#519](https://github.com/tskit-dev/tskit-rust/pull/519))
+- Remove unneeded private feilds from struct Tree ([#521](https://github.com/tskit-dev/tskit-rust/pull/521))
+- Replace MBox with TskBox for "owning" table types ([#536](https://github.com/tskit-dev/tskit-rust/pull/536))
+- Drop MBox for the storage behing TableCollection. ([#539](https://github.com/tskit-dev/tskit-rust/pull/539))
+- Remove unsafe label from fn that is now safe ([#552](https://github.com/tskit-dev/tskit-rust/pull/552))
+- TskBox::new now returns Result ([#553](https://github.com/tskit-dev/tskit-rust/pull/553))
+- Sys::TskBox<T> now requires that T implement a private trait. ([#573](https://github.com/tskit-dev/tskit-rust/pull/573))
+- [**breaking**] EdgeTable implemented using sys::EdgeTable ([#595](https://github.com/tskit-dev/tskit-rust/pull/595))
+- [**breaking**] NodeTable implemented using sys::NodeTable ([#604](https://github.com/tskit-dev/tskit-rust/pull/604))
+- [**breaking**] MutationTable implemented using sys::MutationTable ([#606](https://github.com/tskit-dev/tskit-rust/pull/606))
+- [**breaking**] SiteTable implemented using sys::SiteTable ([#607](https://github.com/tskit-dev/tskit-rust/pull/607))
+- [**breaking**] MigrationTable implemented using sys::MigrationTable ([#608](https://github.com/tskit-dev/tskit-rust/pull/608))
+- [**breaking**] IndividualTable implemented using sys::IndividualTable ([#609](https://github.com/tskit-dev/tskit-rust/pull/609))
+- [**breaking**] Population and Provenance tables use new  sys:: types. ([#610](https://github.com/tskit-dev/tskit-rust/pull/610))
+- [**breaking**] TreeSequence::dump_tables now consumes self. ([#612](https://github.com/tskit-dev/tskit-rust/pull/612))
+- Use TSK_TREE_OK in StreamingIterator impl for Tree ([#614](https://github.com/tskit-dev/tskit-rust/pull/614))
+- Move newtype definitions to sys module. ([#616](https://github.com/tskit-dev/tskit-rust/pull/616))
+- Move TskitError to sys and reexport ([#617](https://github.com/tskit-dev/tskit-rust/pull/617))
+- Use newtypes and generics for sys::NodeTable ([#619](https://github.com/tskit-dev/tskit-rust/pull/619))
+- Sys:: tree sequence now uses TskBox ([#620](https://github.com/tskit-dev/tskit-rust/pull/620))
+- Low level tables/tree sequences ([#622](https://github.com/tskit-dev/tskit-rust/pull/622))
+- Mark TskBox::into_raw safe ([#623](https://github.com/tskit-dev/tskit-rust/pull/623))
+- [**breaking**] Remove deprecated items ([#624](https://github.com/tskit-dev/tskit-rust/pull/624))
+- [**breaking**] Bump bitflags to 2.5.x ([#630](https://github.com/tskit-dev/tskit-rust/pull/630))
+
+### Styling
+
+- Address clippy lints due to rust 1.72.0 ([#535](https://github.com/tskit-dev/tskit-rust/pull/535))
+- Fix lints from rustc 1.77.1 ([#592](https://github.com/tskit-dev/tskit-rust/pull/592))
+- Fix lints from rust 1.78 ([#629](https://github.com/tskit-dev/tskit-rust/pull/629))
+
+### Testing
+
+- Add explicit tests of empty bitflags types ([#527](https://github.com/tskit-dev/tskit-rust/pull/527))
+- Rewrite test without proptest ([#534](https://github.com/tskit-dev/tskit-rust/pull/534))
+- Verify MSRV in CI ([#546](https://github.com/tskit-dev/tskit-rust/pull/546))
+- Remove CI pinned to an explicit MSRV ([#547](https://github.com/tskit-dev/tskit-rust/pull/547))
+
 ## [0.14.1] - 2023-04-16
 
 ### Bug Fixes
