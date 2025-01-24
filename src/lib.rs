@@ -68,6 +68,10 @@
 //!
 //! * A lot of wrappers to the C functions.
 //! * Tree sequence statistics!
+//!
+//! # Manual
+//!
+//! A manual is [here](https://tskit-dev.github.io/tskit-rust).
 
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
