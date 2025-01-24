@@ -40,6 +40,9 @@ cargo test --all-features
 cargo doc --all-features --open
 ```
 
+API documentation for the latest release is [here](https://docs.rs/tskit).
+A manual is [here](https://tskit-dev.github.io/tskit-rust).
+
 ### Calculating code coverage
 
 First, install `tarpaulin`:
