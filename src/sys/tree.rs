@@ -1,3 +1,4 @@
+use super::bindings::tsk_size_t;
 use super::bindings::tsk_tree_t;
 use super::flags::TreeFlags;
 use super::tskbox::TskBox;
@@ -6,6 +7,7 @@ use super::TskitError;
 
 pub struct LLTree<'treeseq> {
     inner: TskBox<tsk_tree_t>,
+    flags: TreeFlags,
     // NOTE: this reference exists becaust tsk_tree_t
     // contains a NON-OWNING pointer to tsk_treeseq_t.
     // Thus, we could theoretically cause UB without
@@ -33,7 +35,25 @@ impl<'treeseq> LLTree<'treeseq> {
                 return Err(TskitError::ErrorCode { code });
             }
         }
-        Ok(Self { inner, treeseq })
+        Ok(Self {
+            inner,
+            flags,
+            treeseq,
+        })
+    }
+
+    pub fn num_samples(&self) -> tsk_size_t {
+        assert!(self.as_ref().tree_sequence.is_null());
+        // SAFETY: tree_sequence is not NULL
+        // the tree_sequence is also initialized (unless unsafe code was used previously?)
+        unsafe { crate::sys::bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) }
+    }
+
+    pub fn samples_array(&self) -> Result<&[super::newtypes::NodeId], TskitError> {
+        err_if_not_tracking_samples!(
+            self.flags,
+            super::generate_slice(self.as_ref().samples, self.num_samples())
+        )
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut tsk_tree_t {
