@@ -2,7 +2,6 @@ use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
 use crate::Position;
 use crate::TreeFlags;
-use crate::TreeInterface;
 use crate::TskitError;
 
 /// A Tree.
@@ -10,7 +9,6 @@ use crate::TskitError;
 /// Wrapper around `tsk_tree_t`.
 pub struct Tree<'treeseq> {
     pub(crate) inner: LLTree<'treeseq>,
-    api: TreeInterface,
     advanced: i32,
 }
 
@@ -20,14 +18,10 @@ impl<'treeseq> Tree<'treeseq> {
         flags: F,
     ) -> Result<Self, TskitError> {
         let flags = flags.into();
-        let mut inner = LLTree::new(ts, flags)?;
-        let nonnull = std::ptr::NonNull::new(inner.as_mut_ptr()).unwrap();
-        let num_nodes = ts.num_nodes_raw();
-        let api = TreeInterface::new(nonnull, num_nodes, num_nodes + 1, flags);
+        let inner = LLTree::new(ts, flags)?;
         Ok(Self {
             inner,
             advanced: 0,
-            api,
         })
     }
 
