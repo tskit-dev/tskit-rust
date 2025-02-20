@@ -99,14 +99,21 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// Return the virtual root of the tree.
     pub fn virtual_root(&self) -> NodeId {
-        self.inner.virtual_root().into()
+        self.inner.virtual_root()
     }
 
     /// Get the left sib of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
     pub fn left_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        self.inner.left_sib(u.into()).map(|x| x.into())
+        self.inner.left_sib(u.into())
+    }
+
+    /// Get the right child of node `u`.
+    ///
+    /// Returns `None` if `u` is out of range.
+    pub fn right_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
+        self.inner.left_sib(u.into())
     }
 }
 
