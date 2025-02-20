@@ -1,5 +1,7 @@
 //! Export commonly-use types and traits
 
+pub use crate::TableAccess;
+pub use crate::TableIteration;
 pub use streaming_iterator::DoubleEndedStreamingIterator;
 pub use streaming_iterator::StreamingIterator;
 pub use {
