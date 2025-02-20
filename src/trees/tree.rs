@@ -1,6 +1,3 @@
-use std::ops::Deref;
-use std::ops::DerefMut;
-
 use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
 use crate::Position;
@@ -15,19 +12,6 @@ pub struct Tree<'treeseq> {
     pub(crate) inner: LLTree<'treeseq>,
     api: TreeInterface,
     advanced: i32,
-}
-
-impl Deref for Tree<'_> {
-    type Target = TreeInterface;
-    fn deref(&self) -> &Self::Target {
-        &self.api
-    }
-}
-
-impl DerefMut for Tree<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.api
-    }
 }
 
 impl<'treeseq> Tree<'treeseq> {
