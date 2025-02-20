@@ -1,5 +1,6 @@
 use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
+use crate::NodeId;
 use crate::Position;
 use crate::TreeFlags;
 use crate::TskitError;
@@ -60,6 +61,40 @@ impl<'treeseq> Tree<'treeseq> {
             self.inner.as_ref().interval.left.into(),
             self.inner.as_ref().interval.right.into(),
         )
+    }
+
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // ERROR
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let s = tree.samples_array().unwrap();
+    ///     for _ in s {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let s = tree.samples_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in s {} // ERROR
+    /// }
+    /// ```
+    pub fn samples_array(&self) -> Result<&[NodeId], TskitError> {
+        self.inner.samples_array()
     }
 }
 
