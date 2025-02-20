@@ -16,6 +16,12 @@ pub struct TableCollection(TskBox<tsk_table_collection_t>);
 
 impl TableCollection {
     pub fn new(sequence_length: f64) -> Result<Self, TskitError> {
+        if !sequence_length.is_finite() || sequence_length <= 0.0 {
+            return Err(TskitError::ValueError {
+                got: sequence_length.to_string(),
+                expected: "sequence_length >= 0.0".to_string(),
+            });
+        }
         let mut tsk = TskBox::new(|tc: *mut tsk_table_collection_t| unsafe {
             tsk_table_collection_init(tc, 0)
         })?;
@@ -113,4 +119,19 @@ impl TableCollection {
     pub fn into_raw(self) -> *mut tsk_table_collection_t {
         self.0.into_raw()
     }
+}
+
+#[test]
+fn test_nan_sequence_length() {
+    assert!(TableCollection::new(f64::NAN).is_err())
+}
+
+#[test]
+fn test_inf_sequence_length() {
+    assert!(TableCollection::new(f64::INFINITY).is_err())
+}
+
+#[test]
+fn test_neg_inf_sequence_length() {
+    assert!(TableCollection::new(f64::NEG_INFINITY).is_err())
 }

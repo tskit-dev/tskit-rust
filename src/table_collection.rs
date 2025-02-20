@@ -87,14 +87,7 @@ impl TableCollection {
     /// let tables = tskit::TableCollection::new(-55.0).unwrap();
     /// ```
     pub fn new<P: Into<Position>>(sequence_length: P) -> Result<Self, TskitError> {
-        let sequence_length = sequence_length.into();
-        if sequence_length <= 0. {
-            return Err(TskitError::ValueError {
-                got: f64::from(sequence_length).to_string(),
-                expected: "sequence_length >= 0.0".to_string(),
-            });
-        }
-        let mut inner = LLTableCollection::new(sequence_length.into())?;
+        let mut inner = LLTableCollection::new(sequence_length.into().into())?;
         let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
         Ok(Self {
             inner,
