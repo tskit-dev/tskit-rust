@@ -1,6 +1,8 @@
+use super::bindings::tsk_id_t;
 use super::bindings::tsk_size_t;
 use super::bindings::tsk_tree_t;
 use super::flags::TreeFlags;
+use super::newtypes::NodeId;
 use super::tskbox::TskBox;
 use super::TreeSequence;
 use super::TskitError;
@@ -54,6 +56,11 @@ impl<'treeseq> LLTree<'treeseq> {
             self.flags,
             super::generate_slice(self.as_ref().samples, self.num_samples())
         )
+    }
+
+    /// Return the virtual root of the tree.
+    pub fn virtual_root(&self) -> tsk_id_t {
+        self.as_ref().virtual_root
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut tsk_tree_t {

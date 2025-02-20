@@ -96,6 +96,11 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn samples_array(&self) -> Result<&[NodeId], TskitError> {
         self.inner.samples_array()
     }
+
+    /// Return the virtual root of the tree.
+    pub fn virtual_root(&self) -> NodeId {
+        self.inner.virtual_root().into()
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
