@@ -61,8 +61,8 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     /// Return the virtual root of the tree.
-    pub fn virtual_root(&self) -> tsk_id_t {
-        self.as_ref().virtual_root
+    pub fn virtual_root(&self) -> NodeId {
+        self.as_ref().virtual_root.into()
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut tsk_tree_t {
@@ -79,7 +79,7 @@ impl<'treeseq> LLTree<'treeseq> {
 
     pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
-            u.into(),
+            u,
             self.as_ref().left_sib,
             unsafe {
                 self.as_ref()
@@ -95,10 +95,9 @@ impl<'treeseq> LLTree<'treeseq> {
         )
     }
 
-    pub fn right_child<N: Into<tsk_id_t> + Copy>(&self, u: N) -> Option<tsk_id_t> {
-        todo!("doc SAFETY");
-        super::tsk_column_access::<tsk_id_t, _, _, _>(
-            u.into(),
+    pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
+            u,
             self.as_ref().right_child,
             unsafe {
                 self.as_ref()
@@ -118,7 +117,7 @@ impl<'treeseq> LLTree<'treeseq> {
 // Trait defining iteration over nodes.
 pub trait NodeIterator {
     fn next_node(&mut self);
-    fn current_node(&mut self) -> Option<tsk_id_t>;
+    fn current_node(&mut self) -> Option<NodeId>;
 }
 
 struct NodeIteratorAdapter<T>
@@ -132,7 +131,7 @@ impl<T> Iterator for NodeIteratorAdapter<T>
 where
     T: NodeIterator,
 {
-    type Item = tsk_id_t;
+    type Item = NodeId;
     fn next(&mut self) -> Option<Self::Item> {
         self.ni.next_node();
         self.ni.current_node()
@@ -140,17 +139,19 @@ where
 }
 
 struct PreorderNodeIterator<'a> {
-    current_root: tsk_id_t,
-    node_stack: Vec<tsk_id_t>,
+    current_root: NodeId,
+    node_stack: Vec<NodeId>,
     tree: &'a LLTree<'a>,
-    current_node_: Option<tsk_id_t>,
+    current_node_: Option<NodeId>,
 }
 
 impl<'a> PreorderNodeIterator<'a> {
     fn new(tree: &'a LLTree) -> Self {
         debug_assert!(tree.right_child(tree.virtual_root()).is_some());
         let mut rv = PreorderNodeIterator {
-            current_root: tree.right_child(tree.virtual_root()).unwrap_or(-1),
+            current_root: tree
+                .right_child(tree.virtual_root())
+                .unwrap_or(NodeId::NULL),
             node_stack: vec![],
             tree,
             current_node_: None,
@@ -159,7 +160,7 @@ impl<'a> PreorderNodeIterator<'a> {
         while c != -1 {
             rv.node_stack.push(c);
             debug_assert!(rv.tree.left_sib(c).is_some());
-            c = rv.tree.left_sib(c).unwrap_or(-1);
+            c = rv.tree.left_sib(c).unwrap_or(NodeId::NULL);
         }
         rv
     }
@@ -173,16 +174,16 @@ impl NodeIterator for PreorderNodeIterator<'_> {
             // because we later pop them from a steck
             // to generate the expected left-to-right ordering.
             debug_assert!(self.tree.right_child(u).is_some());
-            let mut c = self.tree.right_child(u).unwrap_or(-1);
+            let mut c = self.tree.right_child(u).unwrap_or(NodeId::NULL);
             while c != NodeId::NULL {
                 self.node_stack.push(c);
                 debug_assert!(self.tree.right_child(c).is_some());
-                c = self.tree.left_sib(c).unwrap_or(-1);
+                c = self.tree.left_sib(c).unwrap_or(NodeId::NULL);
             }
         };
     }
 
-    fn current_node(&mut self) -> Option<tsk_id_t> {
+    fn current_node(&mut self) -> Option<NodeId> {
         self.current_node_
     }
 }
