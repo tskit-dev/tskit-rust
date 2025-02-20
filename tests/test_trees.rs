@@ -326,14 +326,14 @@ fn test_iterate_samples_two_trees() {
         {
             let mut nodes: Vec<NodeId> = vec![
                 NodeId::NULL;
-                unsafe { tskit::bindings::tsk_tree_get_size_bound(tree.as_ptr()) }
+                unsafe { tskit::bindings::tsk_tree_get_size_bound(tree.as_ll_ref()) }
                     as usize
             ];
             let mut num_nodes: tskit::bindings::tsk_size_t = 0;
             let ptr = std::ptr::addr_of_mut!(num_nodes);
             unsafe {
                 tskit::bindings::tsk_tree_preorder(
-                    tree.as_ptr(),
+                    tree.as_ll_ref(),
                     nodes.as_mut_ptr() as *mut tskit::bindings::tsk_id_t,
                     ptr,
                 );

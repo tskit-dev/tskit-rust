@@ -99,7 +99,6 @@ mod table_collection;
 mod table_iterator;
 mod table_views;
 mod traits;
-mod tree_interface;
 mod trees;
 pub mod types;
 mod util;
@@ -115,10 +114,10 @@ pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTabl
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use sys::flags::*;
+pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
-pub use tree_interface::{NodeTraversalOrder, TreeInterface};
 pub use trees::{Tree, TreeSequence};
 
 // Optional features
