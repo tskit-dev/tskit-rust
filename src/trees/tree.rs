@@ -101,6 +101,13 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn virtual_root(&self) -> NodeId {
         self.inner.virtual_root().into()
     }
+
+    /// Get the left sib of node `u`.
+    ///
+    /// Returns `None` if `u` is out of range.
+    pub fn left_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
+        self.inner.left_sib(u.into()).map(|x| x.into())
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {

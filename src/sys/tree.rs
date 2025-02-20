@@ -77,9 +77,8 @@ impl<'treeseq> LLTree<'treeseq> {
         self.inner.as_ref()
     }
 
-    pub fn left_sib<N: Into<tsk_id_t> + Copy>(&self, u: N) -> Option<tsk_id_t> {
-        todo!("doc SAFETY");
-        super::tsk_column_access::<tsk_id_t, _, _, _>(
+    pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
             u.into(),
             self.as_ref().left_sib,
             unsafe {
