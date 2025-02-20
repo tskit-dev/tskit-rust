@@ -39,4 +39,8 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn as_mut_ptr(&mut self) -> *mut tsk_tree_t {
         self.inner.as_mut()
     }
+
+    pub fn as_ptr(&mut self) -> *const tsk_tree_t {
+        self.inner.as_ptr()
+    }
 }

@@ -37,10 +37,10 @@ impl<'treeseq> Tree<'treeseq> {
         at: P,
     ) -> Result<Self, TskitError> {
         let mut tree = Self::new(ts, flags)?;
-        assert!(!tree.as_ptr().is_null());
-        assert_eq!(unsafe { (*tree.as_ptr()).index }, -1);
+        assert!(!tree.inner.as_ptr().is_null());
+        assert_eq!(unsafe { (*tree.inner.as_ptr()).index }, -1);
         // SAFETY: tree is initialized and the pointer is not NULL
-        match unsafe { ll_bindings::tsk_tree_seek(tree.as_mut_ptr(), at.into().into(), 0) } {
+        match unsafe { ll_bindings::tsk_tree_seek(tree.inner.as_mut_ptr(), at.into().into(), 0) } {
             code if code < 0 => return Err(TskitError::ErrorCode { code }),
             _ => (),
         };
@@ -53,10 +53,10 @@ impl<'treeseq> Tree<'treeseq> {
         at: i32,
     ) -> Result<Self, TskitError> {
         let mut tree = Self::new(ts, flags)?;
-        assert!(!tree.as_ptr().is_null());
-        assert_eq!(unsafe { (*tree.as_ptr()).index }, -1);
+        assert!(!tree.inner.as_ptr().is_null());
+        assert_eq!(unsafe { (*tree.inner.as_ptr()).index }, -1);
         // SAFETY: tree is initialized and the pointer is not NULL
-        match unsafe { ll_bindings::tsk_tree_seek_index(tree.as_mut_ptr(), at, 0) } {
+        match unsafe { ll_bindings::tsk_tree_seek_index(tree.inner.as_mut_ptr(), at, 0) } {
             code if code < 0 => return Err(TskitError::ErrorCode { code }),
             _ => (),
         };
@@ -67,11 +67,11 @@ impl<'treeseq> Tree<'treeseq> {
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
     type Item = Tree<'ts>;
     fn advance(&mut self) {
-        assert!(!self.as_ptr().is_null());
+        assert!(!self.inner.as_ptr().is_null());
         // SAFETY: pointer is not null.
         // We also know it is initialized b/c
         // it comes from LLTree
-        let rv = if unsafe { *self.as_ptr() }.index == -1 {
+        let rv = if unsafe { *self.inner.as_ptr() }.index == -1 {
             unsafe { ll_bindings::tsk_tree_first(self.inner.as_mut_ptr()) }
         } else {
             unsafe { ll_bindings::tsk_tree_next(self.inner.as_mut_ptr()) }
@@ -92,14 +92,14 @@ impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
 
 impl streaming_iterator::DoubleEndedStreamingIterator for Tree<'_> {
     fn advance_back(&mut self) {
-        assert!(!self.as_ptr().is_null());
+        assert!(!self.inner.as_ptr().is_null());
         // SAFETY: pointer is not null.
         // We also know it is initialized b/c
         // it comes from LLTree
-        let rv = if unsafe { *self.as_ptr() }.index == -1 {
-            unsafe { ll_bindings::tsk_tree_last(self.as_mut_ptr()) }
+        let rv = if unsafe { *self.inner.as_ptr() }.index == -1 {
+            unsafe { ll_bindings::tsk_tree_last(self.inner.as_mut_ptr()) }
         } else {
-            unsafe { ll_bindings::tsk_tree_prev(self.as_mut_ptr()) }
+            unsafe { ll_bindings::tsk_tree_prev(self.inner.as_mut_ptr()) }
         };
         self.advanced = rv;
         if rv < 0 {
