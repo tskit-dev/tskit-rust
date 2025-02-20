@@ -120,12 +120,8 @@ pub trait NodeIterator {
     fn current_node(&mut self) -> Option<NodeId>;
 }
 
-struct NodeIteratorAdapter<T>
-where
-    T: NodeIterator,
-{
-    ni: T,
-}
+#[repr(transparent)]
+struct NodeIteratorAdapter<T: NodeIterator>(T);
 
 impl<T> Iterator for NodeIteratorAdapter<T>
 where
@@ -133,8 +129,8 @@ where
 {
     type Item = NodeId;
     fn next(&mut self) -> Option<Self::Item> {
-        self.ni.next_node();
-        self.ni.current_node()
+        self.0.next_node();
+        self.0.current_node()
     }
 }
 
