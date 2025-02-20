@@ -138,7 +138,7 @@ struct PreorderNodeIterator<'a> {
     current_root: NodeId,
     node_stack: Vec<NodeId>,
     tree: &'a LLTree<'a>,
-    current_node_: Option<NodeId>,
+    current_node: Option<NodeId>,
 }
 
 impl<'a> PreorderNodeIterator<'a> {
@@ -150,7 +150,7 @@ impl<'a> PreorderNodeIterator<'a> {
                 .unwrap_or(NodeId::NULL),
             node_stack: vec![],
             tree,
-            current_node_: None,
+            current_node: None,
         };
         let mut c = rv.current_root;
         while c != -1 {
@@ -164,8 +164,8 @@ impl<'a> PreorderNodeIterator<'a> {
 
 impl NodeIterator for PreorderNodeIterator<'_> {
     fn next_node(&mut self) {
-        self.current_node_ = self.node_stack.pop();
-        if let Some(u) = self.current_node_ {
+        self.current_node = self.node_stack.pop();
+        if let Some(u) = self.current_node {
             // NOTE: process children right-to-left
             // because we later pop them from a steck
             // to generate the expected left-to-right ordering.
@@ -180,6 +180,6 @@ impl NodeIterator for PreorderNodeIterator<'_> {
     }
 
     fn current_node(&mut self) -> Option<NodeId> {
-        self.current_node_
+        self.current_node
     }
 }
