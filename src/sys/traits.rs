@@ -1,3 +1,5 @@
+use super::bindings::tsk_id_t;
+
 /// For a type `tsk_foo_t`, this trait abstracts
 /// out the functionality of `tsk_foo_free`
 ///
