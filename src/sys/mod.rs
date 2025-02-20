@@ -189,22 +189,28 @@ pub fn tsk_ragged_column_access<
         .map(|(p, n)| unsafe { std::slice::from_raw_parts(p.cast::<O>(), n) })
 }
 
-pub fn generate_slice<'a, L: Into<bindings::tsk_size_t>, I, O>(
+/// # SAFETY
+///
+/// * data must not be NULL
+/// * length must be a valid offset from data
+///   (ideally it comes from the tskit-c API)
+pub unsafe fn generate_slice<'a, L: Into<bindings::tsk_size_t>, I, O>(
     data: *const I,
     length: L,
 ) -> &'a [O] {
-    assert!(!data.is_null());
-    // SAFETY: pointer is not null, length comes from C API
-    unsafe { std::slice::from_raw_parts(data.cast::<O>(), length.into() as usize) }
+    std::slice::from_raw_parts(data.cast::<O>(), length.into() as usize)
 }
 
-pub fn generate_slice_mut<'a, L: Into<bindings::tsk_size_t>, I, O>(
+/// # SAFETY
+///
+/// * data must not be NULL
+/// * length must be a valid offset from data
+///   (ideally it comes from the tskit-c API)
+pub unsafe fn generate_slice_mut<'a, L: Into<bindings::tsk_size_t>, I, O>(
     data: *mut I,
     length: L,
 ) -> &'a mut [O] {
-    assert!(!data.is_null());
-    // SAFETY: pointer is not null, length comes from C API
-    unsafe { std::slice::from_raw_parts_mut(data.cast::<O>(), length.into() as usize) }
+    std::slice::from_raw_parts_mut(data.cast::<O>(), length.into() as usize)
 }
 
 pub fn get_tskit_error_message(code: i32) -> String {

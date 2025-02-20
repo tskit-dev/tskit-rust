@@ -118,7 +118,8 @@ macro_rules! build_table_column_slice_getter {
     ($(#[$attr:meta])* => $column: ident, $name: ident, $cast: ty) => {
         $(#[$attr])*
         pub fn $name(&self) -> &[$cast] {
-            $crate::sys::generate_slice(self.as_ref().$column, self.num_rows())
+            // SAFETY: all array lengths are the number of rows in the table
+            unsafe{$crate::sys::generate_slice(self.as_ref().$column, self.num_rows())}
         }
     };
 }
@@ -127,7 +128,8 @@ macro_rules! build_table_column_slice_mut_getter {
     ($(#[$attr:meta])* => $column: ident, $name: ident, $cast: ty) => {
         $(#[$attr])*
         pub fn $name(&mut self) -> &mut [$cast] {
-            $crate::sys::generate_slice_mut(self.as_ref().$column, self.num_rows())
+            // SAFETY: all array lengths are the number of rows in the table
+            unsafe{$crate::sys::generate_slice_mut(self.as_ref().$column, self.num_rows())}
         }
     };
 }
