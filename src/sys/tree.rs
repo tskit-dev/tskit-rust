@@ -43,4 +43,8 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn as_ptr(&mut self) -> *const tsk_tree_t {
         self.inner.as_ptr()
     }
+
+    pub fn as_ref(&self) -> &tsk_tree_t {
+        self.inner.as_ref()
+    }
 }

@@ -19,10 +19,7 @@ impl<'treeseq> Tree<'treeseq> {
     ) -> Result<Self, TskitError> {
         let flags = flags.into();
         let inner = LLTree::new(ts, flags)?;
-        Ok(Self {
-            inner,
-            advanced: 0,
-        })
+        Ok(Self { inner, advanced: 0 })
     }
 
     pub(crate) fn new_at_position<F: Into<TreeFlags>, P: Into<Position>>(
@@ -55,6 +52,14 @@ impl<'treeseq> Tree<'treeseq> {
             _ => (),
         };
         Ok(tree)
+    }
+
+    /// Return the `[left, right)` coordinates of the tree.
+    pub fn interval(&self) -> (Position, Position) {
+        (
+            self.inner.as_ref().interval.left.into(),
+            self.inner.as_ref().interval.right.into(),
+        )
     }
 }
 
