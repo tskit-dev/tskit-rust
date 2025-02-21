@@ -2,6 +2,7 @@ use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
 use crate::NodeId;
 use crate::Position;
+use crate::SizeType;
 use crate::TreeFlags;
 use crate::TskitError;
 
@@ -114,6 +115,15 @@ impl<'treeseq> Tree<'treeseq> {
     /// Returns `None` if `u` is out of range.
     pub fn right_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
         self.inner.left_sib(u.into())
+    }
+
+    /// Get the number of samples below node `u`.
+    ///
+    /// # Errors
+    ///
+    /// * [`TskitError`] if [`TreeFlags::NO_SAMPLE_COUNTS`].
+    pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
+        self.inner.num_tracked_samples(u)
     }
 }
 

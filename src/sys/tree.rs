@@ -5,6 +5,7 @@ use super::bindings::tsk_size_t;
 use super::bindings::tsk_tree_t;
 use super::flags::TreeFlags;
 use super::newtypes::NodeId;
+use super::newtypes::SizeType;
 use super::tskbox::TskBox;
 use super::TreeSequence;
 use super::TskitError;
@@ -69,7 +70,7 @@ impl<'treeseq> LLTree<'treeseq> {
         self.inner.as_mut()
     }
 
-    pub fn as_ptr(&mut self) -> *const tsk_tree_t {
+    pub fn as_ptr(&self) -> *const tsk_tree_t {
         self.inner.as_ptr()
     }
 
@@ -111,6 +112,17 @@ impl<'treeseq> LLTree<'treeseq> {
             .nodes
             .num_rows,
         )
+    }
+
+    pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
+        let mut n = tsk_size_t::MAX;
+        let np: *mut tsk_size_t = &mut n;
+        assert!(!self.as_ptr().is_null());
+        // SAFETY: internal pointer not null and is initialized.
+        let code = unsafe {
+            super::bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into(), np)
+        };
+        handle_tsk_return_value!(code, n.into())
     }
 }
 
