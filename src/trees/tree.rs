@@ -122,8 +122,11 @@ impl<'treeseq> Tree<'treeseq> {
     /// # Errors
     ///
     /// * [`TskitError`] if [`TreeFlags::NO_SAMPLE_COUNTS`].
-    pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
-        self.inner.num_tracked_samples(u)
+    pub fn num_tracked_samples<N: Into<NodeId> + Copy>(
+        &self,
+        u: N,
+    ) -> Result<SizeType, TskitError> {
+        self.inner.num_tracked_samples(u.into())
     }
 }
 
