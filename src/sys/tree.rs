@@ -370,3 +370,43 @@ pub enum NodeTraversalOrder {
     ///traverse to tips, proceeed to the next root, etc..
     Postorder,
 }
+
+struct ChildIterator<'a> {
+    current_child: Option<NodeId>,
+    next_child: NodeId,
+    tree: &'a LLTree<'a>,
+}
+
+impl<'a> ChildIterator<'a> {
+    fn new(tree: &'a LLTree<'a>, u: NodeId) -> Self {
+        let c = match tree.left_child(u) {
+            Some(x) => x,
+            None => NodeId::NULL,
+        };
+
+        ChildIterator {
+            current_child: None,
+            next_child: c,
+            tree,
+        }
+    }
+}
+
+impl NodeIterator for ChildIterator<'_> {
+    fn next_node(&mut self) {
+        self.current_child = match self.next_child {
+            NodeId::NULL => None,
+            r => {
+                assert!(r >= 0);
+                let cr = Some(r);
+                debug_assert!(self.tree.right_sib(r).is_some());
+                self.next_child = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
+                cr
+            }
+        };
+    }
+
+    fn current_node(&mut self) -> Option<NodeId> {
+        self.current_child
+    }
+}
