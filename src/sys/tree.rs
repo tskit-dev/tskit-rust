@@ -1,4 +1,4 @@
-use crate::bindings;
+use super::bindings;
 
 use super::bindings::tsk_id_t;
 use super::bindings::tsk_size_t;
@@ -23,14 +23,14 @@ pub struct LLTree<'treeseq> {
 
 impl<'treeseq> LLTree<'treeseq> {
     pub fn new(treeseq: &'treeseq TreeSequence, flags: TreeFlags) -> Result<Self, TskitError> {
-        let mut inner = TskBox::new(|x: *mut super::bindings::tsk_tree_t| unsafe {
-            super::bindings::tsk_tree_init(x, treeseq.as_ref(), flags.bits())
+        let mut inner = TskBox::new(|x: *mut bindings::tsk_tree_t| unsafe {
+            bindings::tsk_tree_init(x, treeseq.as_ref(), flags.bits())
         })?;
         // Gotta ask Jerome about this one--why isn't this handled in tsk_tree_init??
         if !flags.contains(TreeFlags::NO_SAMPLE_COUNTS) {
             // SAFETY: nobody is null here.
             let code = unsafe {
-                super::bindings::tsk_tree_set_tracked_samples(
+                bindings::tsk_tree_set_tracked_samples(
                     inner.as_mut(),
                     treeseq.num_samples().into(),
                     (inner.as_mut()).samples,
@@ -119,9 +119,8 @@ impl<'treeseq> LLTree<'treeseq> {
         let np: *mut tsk_size_t = &mut n;
         assert!(!self.as_ptr().is_null());
         // SAFETY: internal pointer not null and is initialized.
-        let code = unsafe {
-            super::bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into(), np)
-        };
+        let code =
+            unsafe { bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into(), np) };
         handle_tsk_return_value!(code, n.into())
     }
 }
