@@ -53,18 +53,6 @@ macro_rules! table_row_access {
     };
 }
 
-macro_rules! iterator_for_nodeiterator {
-    ($ty: ty) => {
-        impl Iterator for $ty {
-            type Item = $crate::NodeId;
-            fn next(&mut self) -> Option<Self::Item> {
-                self.next_node();
-                self.current_node()
-            }
-        }
-    };
-}
-
 /// Convenience macro to handle implementing
 /// [`crate::metadata::MetadataRoundtrip`]
 #[macro_export]
