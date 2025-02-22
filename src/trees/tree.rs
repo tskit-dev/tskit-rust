@@ -139,6 +139,13 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn flags(&self) -> TreeFlags {
         self.inner.flags()
     }
+
+    /// Get the parent of node `u`.
+    ///
+    /// Returns `None` if `u` is out of range.
+    pub fn parent<N: Into<NodeId> + Copy + std::fmt::Debug>(&self, u: N) -> Option<NodeId> {
+        self.inner.parent(u.into())
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {

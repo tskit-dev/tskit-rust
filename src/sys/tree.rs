@@ -144,6 +144,14 @@ impl<'treeseq> LLTree<'treeseq> {
         Ok(NodeIteratorAdapter(SamplesIterator::new(self, u)?))
     }
 
+    pub fn parent(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
+            u,
+            self.as_ref().parent,
+            self.treeseq.num_nodes_raw() + 1,
+        )
+    }
+
     pub fn flags(&self) -> TreeFlags {
         self.flags
     }
