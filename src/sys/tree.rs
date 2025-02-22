@@ -96,6 +96,42 @@ impl<'treeseq> LLTree<'treeseq> {
         )
     }
 
+    pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
+            u,
+            self.as_ref().right_sib,
+            unsafe {
+                self.as_ref()
+                    .tree_sequence
+                    .as_ref()
+                    .unwrap()
+                    .tables
+                    .as_ref()
+            }
+            .unwrap()
+            .nodes
+            .num_rows,
+        )
+    }
+
+    pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
+            u,
+            self.as_ref().left_child,
+            unsafe {
+                self.as_ref()
+                    .tree_sequence
+                    .as_ref()
+                    .unwrap()
+                    .tables
+                    .as_ref()
+            }
+            .unwrap()
+            .nodes
+            .num_rows,
+        )
+    }
+
     pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
@@ -168,6 +204,10 @@ impl<'treeseq> LLTree<'treeseq> {
                 Box::new(NodeIteratorAdapter(PostorderNodeIterator::new(self)))
             }
         }
+    }
+
+    pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
+        NodeIteratorAdapter(ChildIterator::new(self, u))
     }
 }
 

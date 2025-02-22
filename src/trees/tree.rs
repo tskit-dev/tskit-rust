@@ -160,6 +160,15 @@ impl<'treeseq> Tree<'treeseq> {
     ) -> Box<dyn Iterator<Item = NodeId> + '_> {
         self.inner.traverse_nodes(order)
     }
+
+    /// Return an [`Iterator`] over the children of node `u`.
+    /// # Returns
+    ///
+    /// * `Some(iterator)` if `u` is valid
+    /// * `None` otherwise
+    pub fn children<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
+        self.inner.children(u.into())
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
