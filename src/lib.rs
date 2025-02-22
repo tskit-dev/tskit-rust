@@ -99,7 +99,6 @@ mod table_collection;
 mod table_iterator;
 mod table_views;
 mod traits;
-mod tree_interface;
 mod trees;
 pub mod types;
 mod util;
@@ -119,7 +118,6 @@ pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
-pub use tree_interface::TreeInterface;
 pub use trees::{Tree, TreeSequence};
 
 // Optional features
