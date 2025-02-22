@@ -155,6 +155,20 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn flags(&self) -> TreeFlags {
         self.flags
     }
+
+    pub fn traverse_nodes(
+        &self,
+        order: NodeTraversalOrder,
+    ) -> Box<dyn Iterator<Item = NodeId> + '_> {
+        match order {
+            NodeTraversalOrder::Preorder => {
+                Box::new(NodeIteratorAdapter(PreorderNodeIterator::new(self)))
+            }
+            NodeTraversalOrder::Postorder => {
+                Box::new(NodeIteratorAdapter(PostorderNodeIterator::new(self)))
+            }
+        }
+    }
 }
 
 // Trait defining iteration over nodes.
@@ -224,6 +238,64 @@ impl NodeIterator for PreorderNodeIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
+    }
+}
+
+struct PostorderNodeIterator<'a> {
+    nodes: Vec<NodeId>,
+    current_node_index: usize,
+    current_node: Option<NodeId>,
+    num_nodes_current_tree: usize,
+    tree: &'a LLTree<'a>,
+}
+
+impl<'a> PostorderNodeIterator<'a> {
+    fn new(tree: &'a LLTree<'a>) -> Self {
+        let mut num_nodes_current_tree: tsk_size_t = 0;
+        let ptr = std::ptr::addr_of_mut!(num_nodes_current_tree);
+        let mut nodes = vec![
+            NodeId::NULL;
+            // NOTE: this fn does not return error codes
+            usize::try_from(unsafe {
+                bindings::tsk_tree_get_size_bound(tree.as_ptr())
+            }).unwrap_or(usize::MAX)
+        ];
+
+        let rv = unsafe {
+            bindings::tsk_tree_postorder(tree.as_ptr(), nodes.as_mut_ptr().cast::<tsk_id_t>(), ptr)
+        };
+
+        // This is either out of memory
+        // or node out of range.
+        // The former is fatal, and the latter
+        // not relevant (for now), as we start at roots.
+        if rv < 0 {
+            panic!("fatal error calculating postoder node list");
+        }
+
+        Self {
+            nodes,
+            current_node_index: 0,
+            current_node: None,
+            num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap_or(0),
+            tree,
+        }
+    }
+}
+
+impl NodeIterator for PostorderNodeIterator<'_> {
+    fn next_node(&mut self) {
+        match self.current_node_index < self.num_nodes_current_tree {
+            true => {
+                self.current_node = Some(self.nodes[self.current_node_index]);
+                self.current_node_index += 1;
+            }
+            false => self.current_node = None,
+        }
+    }
+
+    fn current_node(&mut self) -> Option<NodeId> {
+        todo!()
     }
 }
 

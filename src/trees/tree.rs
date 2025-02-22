@@ -146,6 +146,20 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn parent<N: Into<NodeId> + Copy + std::fmt::Debug>(&self, u: N) -> Option<NodeId> {
         self.inner.parent(u.into())
     }
+
+    /// Return an [`Iterator`] over all nodes in the tree.
+    ///
+    /// # Parameters
+    ///
+    /// * `order`: A value from [`NodeTraversalOrder`] specifying the
+    ///   iteration order.
+    // Return value is dyn for later addition of other traversal orders
+    pub fn traverse_nodes(
+        &self,
+        order: crate::NodeTraversalOrder,
+    ) -> Box<dyn Iterator<Item = NodeId> + '_> {
+        self.inner.traverse_nodes(order)
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
