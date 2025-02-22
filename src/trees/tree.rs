@@ -128,6 +128,13 @@ impl<'treeseq> Tree<'treeseq> {
     ) -> Result<SizeType, TskitError> {
         self.inner.num_tracked_samples(u.into())
     }
+
+    pub fn samples<N: Into<NodeId> + Copy>(
+        &self,
+        u: N,
+    ) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+        self.inner.samples(u.into())
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {

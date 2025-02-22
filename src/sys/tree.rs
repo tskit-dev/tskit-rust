@@ -123,6 +123,26 @@ impl<'treeseq> LLTree<'treeseq> {
             unsafe { bindings::tsk_tree_get_num_tracked_samples(self.as_ptr(), u.into(), np) };
         handle_tsk_return_value!(code, n.into())
     }
+
+    pub fn left_sample(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
+            u,
+            self.as_ref().left_sample,
+            self.treeseq.num_nodes_raw(),
+        )
+    }
+
+    pub fn right_sample(&self, u: NodeId) -> Option<NodeId> {
+        super::tsk_column_access::<NodeId, _, _, _>(
+            u,
+            self.as_ref().right_sample,
+            self.treeseq.num_nodes_raw(),
+        )
+    }
+
+    pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+        Ok(NodeIteratorAdapter(SamplesIterator::new(self, u)?))
+    }
 }
 
 // Trait defining iteration over nodes.
@@ -186,6 +206,66 @@ impl NodeIterator for PreorderNodeIterator<'_> {
                 self.node_stack.push(c);
                 debug_assert!(self.tree.right_child(c).is_some());
                 c = self.tree.left_sib(c).unwrap_or(NodeId::NULL);
+            }
+        };
+    }
+
+    fn current_node(&mut self) -> Option<NodeId> {
+        self.current_node
+    }
+}
+
+struct SamplesIterator<'a> {
+    current_node: Option<NodeId>,
+    next_sample_index: NodeId,
+    last_sample_index: NodeId,
+    tree: &'a LLTree<'a>,
+}
+
+impl<'a> SamplesIterator<'a> {
+    fn new(tree: &'a LLTree<'a>, u: NodeId) -> Result<Self, TskitError> {
+        match tree.flags.contains(TreeFlags::SAMPLE_LISTS) {
+            false => Err(TskitError::NotTrackingSamples {}),
+            true => {
+                let next_sample_index = match tree.left_sample(u) {
+                    Some(x) => x,
+                    None => NodeId::NULL,
+                };
+                let last_sample_index = match tree.right_sample(u) {
+                    Some(x) => x,
+                    None => NodeId::NULL,
+                };
+                Ok(SamplesIterator {
+                    current_node: None,
+                    next_sample_index,
+                    last_sample_index,
+                    tree,
+                })
+            }
+        }
+    }
+}
+
+impl NodeIterator for SamplesIterator<'_> {
+    fn next_node(&mut self) {
+        self.current_node = match self.next_sample_index {
+            NodeId::NULL => None,
+            r => {
+                let raw = crate::sys::bindings::tsk_id_t::from(r);
+                if r == self.last_sample_index {
+                    let cr =
+                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(raw as isize) }.into());
+                    self.next_sample_index = NodeId::NULL;
+                    cr
+                } else {
+                    assert!(r >= 0);
+                    let cr =
+                        Some(unsafe { *(*self.tree.as_ptr()).samples.offset(raw as isize) }.into());
+                    //self.next_sample_index = self.next_sample[r];
+                    self.next_sample_index =
+                        unsafe { *(*self.tree.as_ptr()).next_sample.offset(raw as isize) }.into();
+                    cr
+                }
             }
         };
     }
