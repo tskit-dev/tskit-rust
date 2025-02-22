@@ -115,10 +115,11 @@ pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTabl
 pub use population_table::{PopulationTable, PopulationTableRow};
 pub use site_table::{SiteTable, SiteTableRow};
 pub use sys::flags::*;
+pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
-pub use tree_interface::{NodeTraversalOrder, TreeInterface};
+pub use tree_interface::TreeInterface;
 pub use trees::{Tree, TreeSequence};
 
 // Optional features

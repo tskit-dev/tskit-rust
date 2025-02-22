@@ -286,3 +286,15 @@ impl NodeIterator for SamplesIterator<'_> {
         self.current_node
     }
 }
+
+#[non_exhaustive]
+pub enum NodeTraversalOrder {
+    ///Preorder traversal, starting at the root(s) of a [`TreeInterface`].
+    ///For trees with multiple roots, start at the left root,
+    ///traverse to tips, proceeed to the next root, etc..
+    Preorder,
+    ///Postorder traversal, starting at the root(s) of a [`TreeInterface`].
+    ///For trees with multiple roots, start at the left root,
+    ///traverse to tips, proceeed to the next root, etc..
+    Postorder,
+}
