@@ -143,6 +143,10 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         Ok(NodeIteratorAdapter(SamplesIterator::new(self, u)?))
     }
+
+    pub fn flags(&self) -> TreeFlags {
+        self.flags
+    }
 }
 
 // Trait defining iteration over nodes.

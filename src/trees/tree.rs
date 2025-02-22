@@ -135,6 +135,10 @@ impl<'treeseq> Tree<'treeseq> {
     ) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
         self.inner.samples(u.into())
     }
+
+    pub fn flags(&self) -> TreeFlags {
+        self.inner.flags()
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
