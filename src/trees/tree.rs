@@ -110,6 +110,13 @@ impl<'treeseq> Tree<'treeseq> {
         self.inner.left_sib(u.into())
     }
 
+    /// Get the right sib of node `u`.
+    ///
+    /// Returns `None` if `u` is out of range.
+    pub fn right_sib<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
+        self.inner.right_sib(u.into())
+    }
+
     /// Get the right child of node `u`.
     ///
     /// Returns `None` if `u` is out of range.
