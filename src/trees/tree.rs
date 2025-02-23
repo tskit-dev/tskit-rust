@@ -114,7 +114,14 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// Returns `None` if `u` is out of range.
     pub fn right_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
-        self.inner.left_sib(u.into())
+        self.inner.right_child(u.into())
+    }
+
+    /// Get the left child of node `u`.
+    ///
+    /// Returns `None` if `u` is out of range.
+    pub fn left_child<N: Into<NodeId> + Copy>(&self, u: N) -> Option<NodeId> {
+        self.inner.left_child(u.into())
     }
 
     /// Get the number of samples below node `u`.
@@ -168,6 +175,15 @@ impl<'treeseq> Tree<'treeseq> {
     /// * `None` otherwise
     pub fn children<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
         self.inner.children(u.into())
+    }
+
+    /// Return an [`Iterator`] over the parents of node `u`.
+    /// # Returns
+    ///
+    /// * `Some(iterator)` if `u` is valid
+    /// * `None` otherwise
+    pub fn parents<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
+        self.inner.parents(u.into())
     }
 }
 

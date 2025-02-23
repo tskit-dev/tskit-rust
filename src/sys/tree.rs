@@ -209,6 +209,10 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         NodeIteratorAdapter(ChildIterator::new(self, u))
     }
+
+    pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
+        NodeIteratorAdapter(ParentsIterator::new(self, u))
+    }
 }
 
 // Trait defining iteration over nodes.
@@ -448,5 +452,43 @@ impl NodeIterator for ChildIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_child
+    }
+}
+
+struct ParentsIterator<'a> {
+    current_node: Option<NodeId>,
+    next_node: NodeId,
+    tree: &'a LLTree<'a>,
+}
+
+impl<'a> ParentsIterator<'a> {
+    fn new(tree: &'a LLTree<'a>, u: NodeId) -> Self {
+        let u = match tsk_id_t::try_from(tree.treeseq.num_nodes_raw()) {
+            Ok(num_nodes) if u < num_nodes => u,
+            _ => NodeId::NULL,
+        };
+        ParentsIterator {
+            current_node: None,
+            next_node: u,
+            tree,
+        }
+    }
+}
+
+impl NodeIterator for ParentsIterator<'_> {
+    fn next_node(&mut self) {
+        self.current_node = match self.next_node {
+            NodeId::NULL => None,
+            r => {
+                assert!(r >= 0);
+                let cr = Some(r);
+                self.next_node = self.tree.parent(r).unwrap_or(NodeId::NULL);
+                cr
+            }
+        };
+    }
+
+    fn current_node(&mut self) -> Option<NodeId> {
+        self.current_node
     }
 }
