@@ -225,6 +225,26 @@ impl<'treeseq> LLTree<'treeseq> {
             unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
         super::generate_slice(self.as_ref().samples, num_samples)
     }
+
+    pub fn parent_array(&self) -> &[NodeId] {
+        super::generate_slice(self.as_ref().parent, self.treeseq.num_nodes_raw() + 1)
+    }
+
+    pub fn left_sib_array(&self) -> &[NodeId] {
+        super::generate_slice(self.as_ref().left_sib, self.treeseq.num_nodes_raw() + 1)
+    }
+
+    pub fn right_sib_array(&self) -> &[NodeId] {
+        super::generate_slice(self.as_ref().right_sib, self.treeseq.num_nodes_raw() + 1)
+    }
+
+    pub fn left_child_array(&self) -> &[NodeId] {
+        super::generate_slice(self.as_ref().left_child, self.treeseq.num_nodes_raw() + 1)
+    }
+
+    pub fn right_child_array(&self) -> &[NodeId] {
+        super::generate_slice(self.as_ref().right_child, self.treeseq.num_nodes_raw() + 1)
+    }
 }
 
 // Trait defining iteration over nodes.

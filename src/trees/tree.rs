@@ -173,12 +173,112 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// Return all roots as a vector.
     pub fn roots_to_vec(&self) -> Vec<NodeId> {
-        self.roots().collect::<Vec::<_>>()
+        self.roots().collect::<Vec<_>>()
     }
 
     /// Get the list of sample nodes as a slice.
     pub fn sample_nodes(&self) -> &[NodeId] {
         self.inner.sample_nodes()
+    }
+
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.left_sib_array();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn left_sib_array(&self) -> &[NodeId] {
+        self.inner.left_sib_array()
+    }
+
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_sib_array();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn right_sib_array(&self) -> &[NodeId] {
+        self.inner.right_sib_array()
+    }
+
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let l = tree.left_child_array();
+    ///     drop(tree_iter);
+    ///     for _ in l {} // ERROR
+    /// }
+    /// ```
+    pub fn left_child_array(&self) -> &[NodeId] {
+        self.inner.left_child_array()
+    }
+
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_child_array();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn right_child_array(&self) -> &[NodeId] {
+        self.inner.right_child_array()
+    }
+
+    /// # Failing examples
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let p = tree.parent_array();
+    ///     drop(tree_iter);
+    ///     for _ in p {} // ERROR
+    /// }
+    /// ```
+    pub fn parent_array(&self) -> &[NodeId] {
+        self.inner.parent_array()
     }
 
     /// Return an [`Iterator`] over all nodes in the tree.
