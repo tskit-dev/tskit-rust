@@ -176,6 +176,11 @@ impl<'treeseq> Tree<'treeseq> {
         self.roots().collect::<Vec::<_>>()
     }
 
+    /// Get the list of sample nodes as a slice.
+    pub fn sample_nodes(&self) -> &[NodeId] {
+        self.inner.sample_nodes()
+    }
+
     /// Return an [`Iterator`] over all nodes in the tree.
     ///
     /// # Parameters

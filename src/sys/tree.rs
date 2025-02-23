@@ -217,6 +217,14 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn roots(&self) -> impl Iterator<Item = NodeId> + '_ {
         NodeIteratorAdapter(RootIterator::new(self))
     }
+
+    pub fn sample_nodes(&self) -> &[NodeId] {
+        assert!(!self.as_ptr().is_null());
+        // SAFETY: self ptr is not null and the tree is initialized
+        let num_samples =
+            unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
+        super::generate_slice(self.as_ref().samples, num_samples)
+    }
 }
 
 // Trait defining iteration over nodes.
