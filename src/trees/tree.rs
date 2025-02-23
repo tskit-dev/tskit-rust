@@ -312,6 +312,10 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn parents<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
         self.inner.parents(u.into())
     }
+
+    pub fn as_ref(&self) -> &ll_bindings::tsk_tree_t {
+        self.inner.as_ref()
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
