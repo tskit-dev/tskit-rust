@@ -331,7 +331,7 @@ impl NodeIterator for PostorderNodeIterator<'_> {
     }
 
     fn current_node(&mut self) -> Option<NodeId> {
-        todo!()
+        self.current_node
     }
 }
 
