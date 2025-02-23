@@ -161,6 +161,21 @@ impl<'treeseq> Tree<'treeseq> {
         self.inner.parent(u.into())
     }
 
+    /// Return an [`Iterator`] over the roots of the tree.
+    ///
+    /// # Note
+    ///
+    /// For a tree with multiple roots, the iteration starts
+    /// at the left root.
+    pub fn roots(&self) -> impl Iterator<Item = NodeId> + '_ {
+        self.inner.roots()
+    }
+
+    /// Return all roots as a vector.
+    pub fn roots_to_vec(&self) -> Vec<NodeId> {
+        self.roots().collect::<Vec::<_>>()
+    }
+
     /// Return an [`Iterator`] over all nodes in the tree.
     ///
     /// # Parameters

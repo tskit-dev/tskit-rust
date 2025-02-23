@@ -213,6 +213,10 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         NodeIteratorAdapter(ParentsIterator::new(self, u))
     }
+
+    pub fn roots(&self) -> impl Iterator<Item = NodeId> + '_ {
+        NodeIteratorAdapter(RootIterator::new(self))
+    }
 }
 
 // Trait defining iteration over nodes.
@@ -490,5 +494,41 @@ impl NodeIterator for ParentsIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
+    }
+}
+
+struct RootIterator<'a> {
+    current_root: Option<NodeId>,
+    next_root: NodeId,
+    tree: &'a LLTree<'a>,
+}
+
+impl<'a> RootIterator<'a> {
+    fn new(tree: &'a LLTree<'a>) -> Self {
+        debug_assert!(tree.left_child(tree.virtual_root()).is_some());
+        RootIterator {
+            current_root: None,
+            next_root: tree.left_child(tree.virtual_root()).unwrap_or(NodeId::NULL),
+            tree,
+        }
+    }
+}
+
+impl NodeIterator for RootIterator<'_> {
+    fn next_node(&mut self) {
+        self.current_root = match self.next_root {
+            NodeId::NULL => None,
+            r => {
+                assert!(r >= 0);
+                let cr = Some(r);
+                debug_assert!(self.tree.right_sib(r).is_some());
+                self.next_root = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
+                cr
+            }
+        };
+    }
+
+    fn current_node(&mut self) -> Option<NodeId> {
+        self.current_root
     }
 }
