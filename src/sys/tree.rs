@@ -282,7 +282,7 @@ struct PostorderNodeIterator<'a> {
     current_node_index: usize,
     current_node: Option<NodeId>,
     num_nodes_current_tree: usize,
-    tree: &'a LLTree<'a>,
+    _tree: &'a LLTree<'a>,
 }
 
 impl<'a> PostorderNodeIterator<'a> {
@@ -314,7 +314,7 @@ impl<'a> PostorderNodeIterator<'a> {
             current_node_index: 0,
             current_node: None,
             num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap_or(0),
-            tree,
+            _tree: tree,
         }
     }
 }
