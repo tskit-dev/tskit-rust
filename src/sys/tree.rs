@@ -82,17 +82,7 @@ impl<'treeseq> LLTree<'treeseq> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
             self.as_ref().left_sib,
-            unsafe {
-                self.as_ref()
-                    .tree_sequence
-                    .as_ref()
-                    .unwrap()
-                    .tables
-                    .as_ref()
-            }
-            .unwrap()
-            .nodes
-            .num_rows,
+            self.treeseq.num_nodes_raw() + 1,
         )
     }
 
@@ -100,17 +90,7 @@ impl<'treeseq> LLTree<'treeseq> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
             self.as_ref().right_sib,
-            unsafe {
-                self.as_ref()
-                    .tree_sequence
-                    .as_ref()
-                    .unwrap()
-                    .tables
-                    .as_ref()
-            }
-            .unwrap()
-            .nodes
-            .num_rows,
+            self.treeseq.num_nodes_raw() + 1,
         )
     }
 
@@ -118,17 +98,7 @@ impl<'treeseq> LLTree<'treeseq> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
             self.as_ref().left_child,
-            unsafe {
-                self.as_ref()
-                    .tree_sequence
-                    .as_ref()
-                    .unwrap()
-                    .tables
-                    .as_ref()
-            }
-            .unwrap()
-            .nodes
-            .num_rows,
+            self.treeseq.num_nodes_raw() + 1,
         )
     }
 
@@ -136,17 +106,7 @@ impl<'treeseq> LLTree<'treeseq> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
             self.as_ref().right_child,
-            unsafe {
-                self.as_ref()
-                    .tree_sequence
-                    .as_ref()
-                    .unwrap()
-                    .tables
-                    .as_ref()
-            }
-            .unwrap()
-            .nodes
-            .num_rows,
+            self.treeseq.num_nodes_raw() + 1,
         )
     }
 
