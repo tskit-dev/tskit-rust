@@ -1,9 +1,9 @@
 use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
 use crate::NodeId;
-use crate::Time;
 use crate::Position;
 use crate::SizeType;
+use crate::Time;
 use crate::TreeFlags;
 use crate::TskitError;
 
