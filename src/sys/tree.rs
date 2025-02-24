@@ -265,6 +265,16 @@ impl<'treeseq> LLTree<'treeseq> {
         )
     }
 
+    pub fn next_sample_array(&self) -> Result<&[NodeId], TskitError> {
+        err_if_not_tracking_samples!(
+            self.flags,
+            super::generate_slice(
+                self.as_ll_ref().next_sample,
+                self.treeseq.num_nodes_raw() + 1
+            )
+        )
+    }
+
     pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
         let mut kc = f64::NAN;
         let kcp: *mut f64 = &mut kc;
