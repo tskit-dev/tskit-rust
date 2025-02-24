@@ -42,6 +42,7 @@ pub use provenance_table::ProvenanceTable;
 pub use site_table::SiteTable;
 pub use table_collection::*;
 pub use tree::LLTree;
+pub use tree::NodeTraversalOrder;
 pub use treeseq::TreeSequence;
 
 use traits::TskTeardown;
