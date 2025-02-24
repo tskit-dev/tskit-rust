@@ -59,7 +59,8 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn samples_array(&self) -> Result<&[super::newtypes::NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            super::generate_slice(self.as_ll_ref().samples, self.num_samples())
+            // SAFETY: num_samples is the correct value
+            unsafe { super::generate_slice(self.as_ll_ref().samples, self.num_samples()) }
         )
     }
 
@@ -182,43 +183,63 @@ impl<'treeseq> LLTree<'treeseq> {
 
     pub fn sample_nodes(&self) -> &[NodeId] {
         assert!(!self.as_ptr().is_null());
-        // SAFETY: self ptr is not null and the tree is initialized
-        let num_samples =
-            unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence) };
-        super::generate_slice(self.as_ll_ref().samples, num_samples)
+        unsafe {
+            // SAFETY: self ptr is not null and the tree is initialized
+            // num_samples is the correct array length
+            let num_samples = bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence);
+            super::generate_slice(self.as_ll_ref().samples, num_samples)
+        }
     }
 
     pub fn parent_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ll_ref().parent, self.treeseq.num_nodes_raw() + 1)
+        // SAFETY: the array length is the number of nodes + 1 for the "virtual root"
+        unsafe { super::generate_slice(self.as_ll_ref().parent, self.treeseq.num_nodes_raw() + 1) }
     }
 
     pub fn left_sib_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ll_ref().left_sib, self.treeseq.num_nodes_raw() + 1)
+        // SAFETY: the array length is the number of nodes + 1 for the "virtual root"
+        unsafe {
+            super::generate_slice(self.as_ll_ref().left_sib, self.treeseq.num_nodes_raw() + 1)
+        }
     }
 
     pub fn right_sib_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ll_ref().right_sib, self.treeseq.num_nodes_raw() + 1)
+        // SAFETY: the array length is the number of nodes + 1 for the "virtual root"
+        unsafe {
+            super::generate_slice(self.as_ll_ref().right_sib, self.treeseq.num_nodes_raw() + 1)
+        }
     }
 
     pub fn left_child_array(&self) -> &[NodeId] {
-        super::generate_slice(
-            self.as_ll_ref().left_child,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        // SAFETY: the array length is the number of nodes + 1 for the "virtual root"
+        unsafe {
+            super::generate_slice(
+                self.as_ll_ref().left_child,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn right_child_array(&self) -> &[NodeId] {
-        super::generate_slice(
-            self.as_ll_ref().right_child,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        // SAFETY: the array length is the number of nodes + 1 for the "virtual root"
+        unsafe {
+            super::generate_slice(
+                self.as_ll_ref().right_child,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
-        let time: &[Time] = super::generate_slice(
-            unsafe { (*(*(*self.as_ptr()).tree_sequence).tables).nodes.time },
-            self.treeseq.num_nodes_raw() + 1,
-        );
+        assert!(!self.treeseq.as_ref().tables.is_null());
+        // SAFETY: array len is number of nodes + 1 for the "virtual root"
+        // tables ptr is not NULL
+        let time: &[Time] = unsafe {
+            super::generate_slice(
+                (*(self.treeseq.as_ref()).tables).nodes.time,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        };
         let mut b = Time::from(0.);
         for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
             let p = self.parent(n).ok_or(TskitError::IndexError {})?;
@@ -246,32 +267,38 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn left_sample_array(&self) -> Result<&[NodeId], TskitError> {
-        err_if_not_tracking_samples!(
-            self.flags,
+        err_if_not_tracking_samples!(self.flags, unsafe {
+            // SAFETY: array length is number of nodes + 1 for the "virtual root"
             super::generate_slice(
                 self.as_ll_ref().left_sample,
-                self.treeseq.num_nodes_raw() + 1
+                self.treeseq.num_nodes_raw() + 1,
             )
-        )
+        })
     }
 
     pub fn right_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            super::generate_slice(
-                self.as_ll_ref().right_sample,
-                self.treeseq.num_nodes_raw() + 1
-            )
+            // SAFETY: array length is number of nodes + 1 for the "virtual root"
+            unsafe {
+                super::generate_slice(
+                    self.as_ll_ref().right_sample,
+                    self.treeseq.num_nodes_raw() + 1,
+                )
+            }
         )
     }
 
     pub fn next_sample_array(&self) -> Result<&[NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            super::generate_slice(
-                self.as_ll_ref().next_sample,
-                self.treeseq.num_nodes_raw() + 1
-            )
+            // SAFETY: array length is number of nodes + 1 for the "virtual root"
+            unsafe {
+                super::generate_slice(
+                    self.as_ll_ref().next_sample,
+                    self.treeseq.num_nodes_raw() + 1,
+                )
+            }
         )
     }
 
