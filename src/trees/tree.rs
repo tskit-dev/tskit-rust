@@ -1,6 +1,7 @@
 use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
 use crate::NodeId;
+use crate::Time;
 use crate::Position;
 use crate::SizeType;
 use crate::TreeFlags;
@@ -58,10 +59,20 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// Return the `[left, right)` coordinates of the tree.
     pub fn interval(&self) -> (Position, Position) {
-        (
-            self.inner.as_ref().interval.left.into(),
-            self.inner.as_ref().interval.right.into(),
-        )
+        self.inner.interval()
+    }
+
+    /// Calculate the total length of the tree via a preorder traversal.
+    ///
+    /// # Parameters
+    ///
+    /// * `by_span`: if `true`, multiply the return value by [`TreeInterface::span`].
+    ///
+    /// # Errors
+    ///
+    /// [`TskitError`] may be returned if a node index is out of range.
+    pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
+        self.inner.total_branch_length(by_span)
     }
 
     /// # Failing examples
@@ -152,6 +163,13 @@ impl<'treeseq> Tree<'treeseq> {
 
     pub fn flags(&self) -> TreeFlags {
         self.inner.flags()
+    }
+
+    /// Return the length of the genome for which this
+    /// tree is the ancestry.
+    pub fn span(&self) -> Position {
+        let i = self.interval();
+        i.1 - i.0
     }
 
     /// Get the parent of node `u`.

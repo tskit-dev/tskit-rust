@@ -5,7 +5,9 @@ use super::bindings::tsk_size_t;
 use super::bindings::tsk_tree_t;
 use super::flags::TreeFlags;
 use super::newtypes::NodeId;
+use super::newtypes::Position;
 use super::newtypes::SizeType;
+use super::newtypes::Time;
 use super::tskbox::TskBox;
 use super::TreeSequence;
 use super::TskitError;
@@ -204,6 +206,37 @@ impl<'treeseq> LLTree<'treeseq> {
 
     pub fn right_child_array(&self) -> &[NodeId] {
         super::generate_slice(self.as_ref().right_child, self.treeseq.num_nodes_raw() + 1)
+    }
+
+    pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
+        let time: &[Time] = super::generate_slice(
+            unsafe { (*(*(*self.as_ptr()).tree_sequence).tables).nodes.time },
+            self.treeseq.num_nodes_raw() + 1,
+        );
+        let mut b = Time::from(0.);
+        for n in self.traverse_nodes(NodeTraversalOrder::Preorder) {
+            let p = self.parent(n).ok_or(TskitError::IndexError {})?;
+            if p != NodeId::NULL {
+                b += time[p.as_usize()] - time[n.as_usize()]
+            }
+        }
+
+        match by_span {
+            true => Ok(b * self.span()),
+            false => Ok(b),
+        }
+    }
+
+    pub fn interval(&self) -> (Position, Position) {
+        (
+            self.as_ref().interval.left.into(),
+            self.as_ref().interval.right.into(),
+        )
+    }
+
+    pub fn span(&self) -> Position {
+        let i = self.interval();
+        i.1 - i.0
     }
 }
 

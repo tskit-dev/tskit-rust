@@ -163,7 +163,7 @@ fn stress_test_total_branch_length() {
                 if let Some(tree) = tree_iter.next() {
                     let b = tree.total_branch_length(false).unwrap();
                     let b2 = unsafe {
-                        tskit::bindings::tsk_tree_get_total_branch_length(tree.as_ptr(), -1, &mut x)
+                        tskit::bindings::tsk_tree_get_total_branch_length(tree.as_ref(), -1, &mut x)
                     };
                     assert!(b2 >= 0, "{}", b2);
                     assert!(f64::from(b) - x <= 1e-8);
