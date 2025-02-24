@@ -331,7 +331,7 @@ impl<'treeseq> Tree<'treeseq> {
         self.inner.parents(u.into())
     }
 
-    pub fn as_ref(&self) -> &ll_bindings::tsk_tree_t {
+    pub fn as_ll_ref(&self) -> &ll_bindings::tsk_tree_t {
         self.inner.as_ref()
     }
 }
