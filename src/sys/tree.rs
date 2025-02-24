@@ -82,35 +82,55 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().left_sib,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        assert!(!self.as_ll_ref().left_sib.is_null());
+        // SAFETY: since the length is at least 1,
+        // the left_sib pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().left_sib,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().right_sib,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        assert!(!self.as_ll_ref().right_sib.is_null());
+        // SAFETY: since the length is at least 1,
+        // the right_sib pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().right_sib,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().left_child,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        assert!(!self.as_ll_ref().left_child.is_null());
+        // SAFETY: since the length is at least 1,
+        // the left_child pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().left_child,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().right_child,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        assert!(!self.as_ll_ref().right_child.is_null());
+        // SAFETY: since the length is at least 1,
+        // the right_child pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().right_child,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
@@ -124,19 +144,29 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn left_sample(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().left_sample,
-            self.treeseq.num_nodes_raw(),
-        )
+        assert!(!self.as_ll_ref().left_sample.is_null());
+        // SAFETY: since the length is at least 1,
+        // the left_sample pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().left_sample,
+                self.treeseq.num_nodes_raw(),
+            )
+        }
     }
 
     pub fn right_sample(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().right_sample,
-            self.treeseq.num_nodes_raw(),
-        )
+        assert!(!self.as_ll_ref().right_sample.is_null());
+        // SAFETY: since the length is at least 1,
+        // the right_sample pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().right_sample,
+                self.treeseq.num_nodes_raw(),
+            )
+        }
     }
 
     pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
@@ -144,11 +174,16 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn parent(&self, u: NodeId) -> Option<NodeId> {
-        super::tsk_column_access::<NodeId, _, _, _>(
-            u,
-            self.as_ll_ref().parent,
-            self.treeseq.num_nodes_raw() + 1,
-        )
+        assert!(!self.as_ll_ref().parent.is_null());
+        // SAFETY: since the length is at least 1,
+        // the parent pointer cannot be NULL
+        unsafe {
+            super::tsk_column_access::<NodeId, _, _, _>(
+                u,
+                self.as_ll_ref().parent,
+                self.treeseq.num_nodes_raw() + 1,
+            )
+        }
     }
 
     pub fn flags(&self) -> TreeFlags {

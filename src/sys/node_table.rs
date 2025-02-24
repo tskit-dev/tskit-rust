@@ -89,13 +89,23 @@ impl NodeTable {
         if row.is_null() || row.as_usize() >= self.as_ref().num_rows.try_into().unwrap() {
             Err(TskitError::IndexError)
         } else {
-            Ok(super::tsk_ragged_column_access(
-                row,
-                self.as_ref().metadata,
-                self.as_ref().metadata_length,
-                self.as_ref().metadata_offset,
-                self.as_ref().num_rows,
-            ))
+            assert!(
+                (self.as_ref().num_rows == 0 && self.as_ref().metadata_length == 0)
+                    || (!self.as_ref().metadata.is_null()
+                        && !self.as_ref().metadata_offset.is_null())
+            );
+            //SAFETY: either both columns are empty OR
+            //both pointers are not NULL, in which case the C API
+            //provides the proper lengths
+            Ok(unsafe {
+                super::tsk_ragged_column_access(
+                    row,
+                    self.as_ref().metadata,
+                    self.as_ref().metadata_length,
+                    self.as_ref().metadata_offset,
+                    self.as_ref().num_rows,
+                )
+            })
         }
     }
 }

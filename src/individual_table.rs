@@ -209,11 +209,15 @@ impl IndividualTable {
     /// * `Some(flags)` if `row` is valid.
     /// * `None` otherwise.
     pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<IndividualFlags> {
-        sys::tsk_column_access::<IndividualFlags, _, _, _>(
-            row.into(),
-            self.as_ref().flags,
-            self.num_rows(),
-        )
+        assert!(self.num_rows() == 0 || !self.as_ref().flags.is_null());
+        // SAFETY: either the column is empty or the point is not NULL
+        unsafe {
+            sys::tsk_column_access::<IndividualFlags, _, _, _>(
+                row.into(),
+                self.as_ref().flags,
+                self.num_rows(),
+            )
+        }
     }
 
     /// Return the locations for a given row.
@@ -223,13 +227,19 @@ impl IndividualTable {
     /// * `Some(location)` if `row` is valid.
     /// * `None` otherwise.
     pub fn location<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[Location]> {
-        sys::tsk_ragged_column_access(
-            row.into(),
-            self.as_ref().location,
-            self.num_rows(),
-            self.as_ref().location_offset,
-            self.as_ref().location_length,
-        )
+        assert!(
+            (self.num_rows() == 0 && self.as_ref().location_length == 0)
+                || (!self.as_ref().location.is_null() && !self.as_ref().location_offset.is_null())
+        );
+        unsafe {
+            sys::tsk_ragged_column_access(
+                row.into(),
+                self.as_ref().location,
+                self.num_rows(),
+                self.as_ref().location_offset,
+                self.as_ref().location_length,
+            )
+        }
     }
 
     /// Return the parents for a given row.
@@ -239,13 +249,19 @@ impl IndividualTable {
     /// * `Some(parents)` if `row` is valid.
     /// * `None` otherwise.
     pub fn parents<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[IndividualId]> {
-        sys::tsk_ragged_column_access(
-            row.into(),
-            self.as_ref().parents,
-            self.num_rows(),
-            self.as_ref().parents_offset,
-            self.as_ref().parents_length,
-        )
+        assert!(
+            (self.num_rows() == 0 && self.as_ref().parents_length == 0)
+                || (!self.as_ref().parents.is_null() && !self.as_ref().location_offset.is_null())
+        );
+        unsafe {
+            sys::tsk_ragged_column_access(
+                row.into(),
+                self.as_ref().parents,
+                self.num_rows(),
+                self.as_ref().parents_offset,
+                self.as_ref().parents_length,
+            )
+        }
     }
 
     /// Return the metadata for a given row.

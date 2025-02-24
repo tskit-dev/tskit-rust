@@ -233,7 +233,16 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn site<M: Into<MutationId> + Copy>(&self, row: M) -> Option<SiteId> {
-        sys::tsk_column_access::<SiteId, _, _, _>(row.into(), self.as_ref().site, self.num_rows())
+        assert!(self.num_rows() == 0 || !self.as_ref().site.is_null());
+        // SAFETY: either the column is empty or the pointer is not null,
+        // in which case the correct lengths are from the low-level objects
+        unsafe {
+            sys::tsk_column_access::<SiteId, _, _, _>(
+                row.into(),
+                self.as_ref().site,
+                self.num_rows(),
+            )
+        }
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -243,7 +252,16 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn node<M: Into<MutationId> + Copy>(&self, row: M) -> Option<NodeId> {
-        sys::tsk_column_access::<NodeId, _, _, _>(row.into(), self.as_ref().node, self.num_rows())
+        assert!(self.num_rows() == 0 || !self.as_ref().node.is_null());
+        // SAFETY: either the column is empty or the pointer is not null,
+        // in which case the correct lengths are from the low-level objects
+        unsafe {
+            sys::tsk_column_access::<NodeId, _, _, _>(
+                row.into(),
+                self.as_ref().node,
+                self.num_rows(),
+            )
+        }
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -253,11 +271,16 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn parent<M: Into<MutationId> + Copy>(&self, row: M) -> Option<MutationId> {
-        sys::tsk_column_access::<MutationId, _, _, _>(
-            row.into(),
-            self.as_ref().parent,
-            self.num_rows(),
-        )
+        assert!(self.num_rows() == 0 || !self.as_ref().parent.is_null());
+        // SAFETY: either the column is empty or the pointer is not null,
+        // in which case the correct lengths are from the low-level objects
+        unsafe {
+            sys::tsk_column_access::<MutationId, _, _, _>(
+                row.into(),
+                self.as_ref().parent,
+                self.num_rows(),
+            )
+        }
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -267,7 +290,12 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn time<M: Into<MutationId> + Copy>(&self, row: M) -> Option<Time> {
-        sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
+        assert!(self.num_rows() == 0 || !self.as_ref().time.is_null());
+        // SAFETY: either the column is empty or the pointer is not null,
+        // in which case the correct lengths are from the low-level objects
+        unsafe {
+            sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
+        }
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.
@@ -281,13 +309,22 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn derived_state<M: Into<MutationId>>(&self, row: M) -> Option<&[u8]> {
-        sys::tsk_ragged_column_access(
-            row.into(),
-            self.as_ref().derived_state,
-            self.num_rows(),
-            self.as_ref().derived_state_offset,
-            self.as_ref().derived_state_length,
-        )
+        assert!(
+            (self.num_rows() == 0 && self.as_ref().derived_state_length == 0)
+                || (!self.as_ref().derived_state.is_null()
+                    && !self.as_ref().derived_state_offset.is_null())
+        );
+        // SAFETY: either both columns are empty or both pointers at not NULL,
+        // in which case the correct lengths are from the low-level objects
+        unsafe {
+            sys::tsk_ragged_column_access(
+                row.into(),
+                self.as_ref().derived_state,
+                self.num_rows(),
+                self.as_ref().derived_state_offset,
+                self.as_ref().derived_state_length,
+            )
+        }
     }
 
     /// Retrieve decoded metadata for a `row`.

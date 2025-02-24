@@ -192,13 +192,23 @@ impl ProvenanceTable {
     /// # }
     /// ```
     pub fn timestamp<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
-        let timestamp_slice = sys::tsk_ragged_column_access(
-            row.into(),
-            self.as_ref().timestamp,
-            self.num_rows(),
-            self.as_ref().timestamp_offset,
-            self.as_ref().timestamp_length,
+        assert!(
+            (self.num_rows() != 0 && self.as_ref().timestamp_length != 0)
+                || (!self.as_ref().timestamp.is_null()
+                    && !self.as_ref().timestamp_offset.is_null())
         );
+
+        // SAFETY: the previous assert checks the safety
+        // requirements
+        let timestamp_slice = unsafe {
+            sys::tsk_ragged_column_access(
+                row.into(),
+                self.as_ref().timestamp,
+                self.num_rows(),
+                self.as_ref().timestamp_offset,
+                self.as_ref().timestamp_length,
+            )
+        };
         match timestamp_slice {
             Some(tstamp) => std::str::from_utf8(tstamp).ok(),
             None => None,
@@ -226,13 +236,22 @@ impl ProvenanceTable {
     /// # panic!("Expected Some(timestamp)");
     /// # }
     pub fn record<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<&str> {
-        let record_slice = sys::tsk_ragged_column_access(
-            row.into(),
-            self.as_ref().record,
-            self.num_rows(),
-            self.as_ref().record_offset,
-            self.as_ref().record_length,
+        assert!(
+            (self.num_rows() != 0 && self.as_ref().record_length != 0)
+                || (!self.as_ref().record.is_null() && !self.as_ref().record_offset.is_null())
         );
+
+        // SAFETY: the previous assert checks the safety
+        // requirements
+        let record_slice = unsafe {
+            sys::tsk_ragged_column_access(
+                row.into(),
+                self.as_ref().record,
+                self.num_rows(),
+                self.as_ref().record_offset,
+                self.as_ref().record_length,
+            )
+        };
         match record_slice {
             Some(rec) => std::str::from_utf8(rec).ok(),
             None => None,
