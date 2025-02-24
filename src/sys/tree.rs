@@ -201,11 +201,17 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn left_child_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ll_ref().left_child, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(
+            self.as_ll_ref().left_child,
+            self.treeseq.num_nodes_raw() + 1,
+        )
     }
 
     pub fn right_child_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ll_ref().right_child, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(
+            self.as_ll_ref().right_child,
+            self.treeseq.num_nodes_raw() + 1,
+        )
     }
 
     pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
@@ -237,6 +243,34 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn span(&self) -> Position {
         let i = self.interval();
         i.1 - i.0
+    }
+
+    pub fn left_sample_array(&self) -> Result<&[NodeId], TskitError> {
+        err_if_not_tracking_samples!(
+            self.flags,
+            super::generate_slice(
+                self.as_ll_ref().left_sample,
+                self.treeseq.num_nodes_raw() + 1
+            )
+        )
+    }
+
+    pub fn right_sample_array(&self) -> Result<&[NodeId], TskitError> {
+        err_if_not_tracking_samples!(
+            self.flags,
+            super::generate_slice(
+                self.as_ll_ref().right_sample,
+                self.treeseq.num_nodes_raw() + 1
+            )
+        )
+    }
+
+    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
+        let mut kc = f64::NAN;
+        let kcp: *mut f64 = &mut kc;
+        let code =
+            unsafe { bindings::tsk_tree_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp) };
+        handle_tsk_return_value!(code, kc)
     }
 }
 

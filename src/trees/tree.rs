@@ -339,17 +339,89 @@ impl<'treeseq> Tree<'treeseq> {
         X
     }
 
-    pub fn left_sample_array(&self) {
-        X
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // Error
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let l = tree.left_sample_array().unwrap();
+    ///     for _ in l {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let l = tree.left_sample_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in l {} // Error
+    /// }
+    /// ```
+    pub fn left_sample_array(&self) -> Result<&[NodeId], TskitError> {
+        self.inner.left_sample_array()
     }
 
-    pub fn right_sample_array(&self) {
-        x
+    /// # Failing examples
+    ///
+    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    ///
+    /// ```should_panic
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // ERROR
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_sample_array().unwrap();
+    ///     for _ in r {}
+    /// }
+    /// ```
+    ///
+    /// The lifetime of the slice is tied to the parent object:
+    ///
+    /// ```compile_fail
+    /// use streaming_iterator::StreamingIterator;
+    /// let tables = tskit::TableCollection::new(1.).unwrap();
+    /// let treeseq =
+    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
+    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
+    /// while let Some(tree) = tree_iter.next() {
+    ///     let r = tree.right_sample_array().unwrap();
+    ///     drop(tree_iter);
+    ///     for _ in r {} // ERROR
+    /// }
+    /// ```
+    pub fn right_sample_array(&self) -> Result<&[NodeId], TskitError> {
+        self.inner.right_sample_array()
     }
 
-    left_sample
-        right_sample
-        kc_distance
+    /// Calculate the average Kendall-Colijn (`K-C`) distance between
+    /// pairs of trees whose intervals overlap.
+    ///
+    /// # Note
+    ///
+    /// * [Citation](https://doi.org/10.1093/molbev/msw124)
+    ///
+    /// # Parameters
+    ///
+    /// * `lambda` specifies the relative weight of topology and branch length.
+    ///   If `lambda` is 0, we only consider topology.
+    ///   If `lambda` is 1, we only consider branch lengths.
+    pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
+        self.inner.kc_distance(&other.inner, lambda)
+    }
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
