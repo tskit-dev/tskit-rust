@@ -1,5 +1,11 @@
 use std::ptr::NonNull;
 
+use super::newtypes::MigrationId;
+use super::newtypes::NodeId;
+use super::newtypes::PopulationId;
+use super::newtypes::Position;
+use super::newtypes::Time;
+
 use super::bindings::tsk_id_t;
 use super::bindings::tsk_migration_table_add_row;
 use super::bindings::tsk_migration_table_clear;
@@ -69,6 +75,30 @@ impl MigrationTable {
                 metadata.len() as u64,
             ))
         }
+    }
+
+    pub fn node(&self, row: MigrationId) -> Option<NodeId> {
+        safe_tsk_column_access!(self, row, NodeId, node)
+    }
+
+    pub fn source(&self, row: MigrationId) -> Option<PopulationId> {
+        safe_tsk_column_access!(self, row, PopulationId, source)
+    }
+
+    pub fn dest(&self, row: MigrationId) -> Option<PopulationId> {
+        safe_tsk_column_access!(self, row, PopulationId, dest)
+    }
+
+    pub fn time(&self, row: MigrationId) -> Option<Time> {
+        safe_tsk_column_access!(self, row, Time, time)
+    }
+
+    pub fn left(&self, row: MigrationId) -> Option<Position> {
+        safe_tsk_column_access!(self, row, Position, left)
+    }
+
+    pub fn right(&self, row: MigrationId) -> Option<Position> {
+        safe_tsk_column_access!(self, row, Position, right)
     }
 }
 

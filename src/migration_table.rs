@@ -237,16 +237,7 @@ impl MigrationTable {
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
     pub fn left<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Position> {
-        assert!(self.num_rows() == 0 || !self.as_ref().time.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<Position, _, _, _>(
-                row.into(),
-                self.as_ref().left,
-                self.num_rows(),
-            )
-        }
+        self.table_.left(row.into())
     }
 
     /// Return the right coordinate for a given row.
@@ -256,35 +247,17 @@ impl MigrationTable {
     /// * `Some(positions)` if `row` is valid.
     /// * `None` otherwise.
     pub fn right<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Position> {
-        assert!(self.num_rows() == 0 || !self.as_ref().right.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<Position, _, _, _>(
-                row.into(),
-                self.as_ref().right,
-                self.num_rows(),
-            )
-        }
+        self.table_.right(row.into())
     }
 
     /// Return the node for a given row.
     ///
     /// # Returns
-    ///
+    //
     /// * `Some(node)` if `row` is valid.
     /// * `None` otherwise.
     pub fn node<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<NodeId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().node.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<NodeId, _, _, _>(
-                row.into(),
-                self.as_ref().node,
-                self.num_rows(),
-            )
-        }
+        self.table_.node(row.into())
     }
 
     /// Return the source population for a given row.
@@ -294,16 +267,7 @@ impl MigrationTable {
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
     pub fn source<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<PopulationId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().time.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<PopulationId, _, _, _>(
-                row.into(),
-                self.as_ref().source,
-                self.num_rows(),
-            )
-        }
+        self.table_.source(row.into())
     }
 
     /// Return the destination population for a given row.
@@ -313,16 +277,7 @@ impl MigrationTable {
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
     pub fn dest<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<PopulationId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().dest.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<PopulationId, _, _, _>(
-                row.into(),
-                self.as_ref().dest,
-                self.num_rows(),
-            )
-        }
+        self.table_.dest(row.into())
     }
 
     /// Return the time of the migration event for a given row.
@@ -332,12 +287,7 @@ impl MigrationTable {
     /// * `Some(time)` if `row` is valid.
     /// * `None` otherwise.
     pub fn time<M: Into<MigrationId> + Copy>(&self, row: M) -> Option<Time> {
-        assert!(self.num_rows() == 0 || !self.as_ref().time.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
-        }
+        self.table_.time(row.into())
     }
 
     /// Retrieve decoded metadata for a `row`.

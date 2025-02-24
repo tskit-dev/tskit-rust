@@ -1,5 +1,10 @@
 use std::ptr::NonNull;
 
+use super::newtypes::MutationId;
+use super::newtypes::NodeId;
+use super::newtypes::SiteId;
+use super::newtypes::Time;
+
 use super::bindings::tsk_id_t;
 use super::bindings::tsk_mutation_table_add_row;
 use super::bindings::tsk_mutation_table_clear;
@@ -75,6 +80,22 @@ impl MutationTable {
                 metadata.len() as u64,
             ))
         }
+    }
+
+    pub fn time(&self, row: MutationId) -> Option<Time> {
+        safe_tsk_column_access!(self, row, Time, time)
+    }
+
+    pub fn site(&self, row: MutationId) -> Option<SiteId> {
+        safe_tsk_column_access!(self, row, SiteId, site)
+    }
+
+    pub fn node(&self, row: MutationId) -> Option<NodeId> {
+        safe_tsk_column_access!(self, row, NodeId, node)
+    }
+
+    pub fn parent(&self, row: MutationId) -> Option<MutationId> {
+        safe_tsk_column_access!(self, row, MutationId, parent)
     }
 }
 

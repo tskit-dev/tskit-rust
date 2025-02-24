@@ -1,5 +1,8 @@
 use std::ptr::NonNull;
 
+use super::newtypes::Position;
+use super::newtypes::SiteId;
+
 use super::bindings::tsk_id_t;
 use super::bindings::tsk_site_table_add_row;
 use super::bindings::tsk_site_table_clear;
@@ -65,6 +68,10 @@ impl SiteTable {
                 metadata.len() as u64,
             ))
         }
+    }
+
+    pub fn position(&self, row: SiteId) -> Option<Position> {
+        safe_tsk_column_access!(self, row, Position, position)
     }
 }
 
