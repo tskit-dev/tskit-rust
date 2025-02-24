@@ -50,22 +50,22 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn num_samples(&self) -> tsk_size_t {
-        assert!(self.as_ref().tree_sequence.is_null());
+        assert!(self.as_ll_ref().tree_sequence.is_null());
         // SAFETY: tree_sequence is not NULL
         // the tree_sequence is also initialized (unless unsafe code was used previously?)
-        unsafe { crate::sys::bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) }
+        unsafe { crate::sys::bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence) }
     }
 
     pub fn samples_array(&self) -> Result<&[super::newtypes::NodeId], TskitError> {
         err_if_not_tracking_samples!(
             self.flags,
-            super::generate_slice(self.as_ref().samples, self.num_samples())
+            super::generate_slice(self.as_ll_ref().samples, self.num_samples())
         )
     }
 
     /// Return the virtual root of the tree.
     pub fn virtual_root(&self) -> NodeId {
-        self.as_ref().virtual_root.into()
+        self.as_ll_ref().virtual_root.into()
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut tsk_tree_t {
@@ -76,14 +76,14 @@ impl<'treeseq> LLTree<'treeseq> {
         self.inner.as_ptr()
     }
 
-    pub fn as_ref(&self) -> &tsk_tree_t {
+    pub fn as_ll_ref(&self) -> &tsk_tree_t {
         self.inner.as_ref()
     }
 
     pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().left_sib,
+            self.as_ll_ref().left_sib,
             self.treeseq.num_nodes_raw() + 1,
         )
     }
@@ -91,7 +91,7 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().right_sib,
+            self.as_ll_ref().right_sib,
             self.treeseq.num_nodes_raw() + 1,
         )
     }
@@ -99,7 +99,7 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().left_child,
+            self.as_ll_ref().left_child,
             self.treeseq.num_nodes_raw() + 1,
         )
     }
@@ -107,7 +107,7 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().right_child,
+            self.as_ll_ref().right_child,
             self.treeseq.num_nodes_raw() + 1,
         )
     }
@@ -125,7 +125,7 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn left_sample(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().left_sample,
+            self.as_ll_ref().left_sample,
             self.treeseq.num_nodes_raw(),
         )
     }
@@ -133,7 +133,7 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn right_sample(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().right_sample,
+            self.as_ll_ref().right_sample,
             self.treeseq.num_nodes_raw(),
         )
     }
@@ -145,7 +145,7 @@ impl<'treeseq> LLTree<'treeseq> {
     pub fn parent(&self, u: NodeId) -> Option<NodeId> {
         super::tsk_column_access::<NodeId, _, _, _>(
             u,
-            self.as_ref().parent,
+            self.as_ll_ref().parent,
             self.treeseq.num_nodes_raw() + 1,
         )
     }
@@ -184,28 +184,28 @@ impl<'treeseq> LLTree<'treeseq> {
         assert!(!self.as_ptr().is_null());
         // SAFETY: self ptr is not null and the tree is initialized
         let num_samples =
-            unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ref().tree_sequence) };
-        super::generate_slice(self.as_ref().samples, num_samples)
+            unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence) };
+        super::generate_slice(self.as_ll_ref().samples, num_samples)
     }
 
     pub fn parent_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ref().parent, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(self.as_ll_ref().parent, self.treeseq.num_nodes_raw() + 1)
     }
 
     pub fn left_sib_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ref().left_sib, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(self.as_ll_ref().left_sib, self.treeseq.num_nodes_raw() + 1)
     }
 
     pub fn right_sib_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ref().right_sib, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(self.as_ll_ref().right_sib, self.treeseq.num_nodes_raw() + 1)
     }
 
     pub fn left_child_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ref().left_child, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(self.as_ll_ref().left_child, self.treeseq.num_nodes_raw() + 1)
     }
 
     pub fn right_child_array(&self) -> &[NodeId] {
-        super::generate_slice(self.as_ref().right_child, self.treeseq.num_nodes_raw() + 1)
+        super::generate_slice(self.as_ll_ref().right_child, self.treeseq.num_nodes_raw() + 1)
     }
 
     pub fn total_branch_length(&self, by_span: bool) -> Result<Time, TskitError> {
@@ -229,8 +229,8 @@ impl<'treeseq> LLTree<'treeseq> {
 
     pub fn interval(&self) -> (Position, Position) {
         (
-            self.as_ref().interval.left.into(),
-            self.as_ref().interval.right.into(),
+            self.as_ll_ref().interval.left.into(),
+            self.as_ll_ref().interval.right.into(),
         )
     }
 

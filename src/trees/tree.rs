@@ -332,7 +332,7 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     pub fn as_ll_ref(&self) -> &ll_bindings::tsk_tree_t {
-        self.inner.as_ref()
+        self.inner.as_ll_ref()
     }
 }
 
