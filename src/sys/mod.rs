@@ -102,7 +102,15 @@ pub enum MetadataError {
 //    Code(i32),
 //}
 
-fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_size_t>, T: Copy>(
+/// SAFETY:
+///
+/// * column not null AND column_length is valid
+/// * OR column_length == 0
+unsafe fn tsk_column_access_detail<
+    R: Into<bindings::tsk_id_t>,
+    L: Into<bindings::tsk_size_t>,
+    T: Copy,
+>(
     row: R,
     column: *const T,
     column_length: L,
@@ -120,7 +128,7 @@ fn tsk_column_access_detail<R: Into<bindings::tsk_id_t>, L: Into<bindings::tsk_s
     }
 }
 
-pub fn tsk_column_access<
+pub unsafe fn tsk_column_access<
     O: From<T>,
     R: Into<bindings::tsk_id_t>,
     L: Into<bindings::tsk_size_t>,
@@ -133,7 +141,22 @@ pub fn tsk_column_access<
     tsk_column_access_detail(row, column, column_length).map(|v| v.into())
 }
 
-fn tsk_ragged_column_access_detail<
+/// # SAFETY
+///
+/// The safety requirements here are a bit fiddly.
+///
+/// The hard case is when the columns contain data:
+///
+/// * column and offset must both not be NULL
+/// * column_length and offset_length must both be
+///   the correct lengths for the input pointers
+/// * we return None if row < 0 or row > array length.
+/// * Thus, the requirement is that the two _lengths
+///   == 0 or (pointer both not NULL and the lengths are correct)
+///
+/// When the lengths of each column are 0, we
+/// don't worry about anything else
+unsafe fn tsk_ragged_column_access_detail<
     R: Into<bindings::tsk_id_t>,
     L: Into<bindings::tsk_size_t>,
     T: Copy,
@@ -149,14 +172,12 @@ fn tsk_ragged_column_access_detail<
     if row < 0 || row as bindings::tsk_size_t > column_length || offset_length == 0 {
         None
     } else {
-        assert!(!column.is_null());
-        assert!(!offset.is_null());
         // SAFETY: pointers are not null
         // and *_length are given by tskit-c
         let index = row as isize;
-        let start = unsafe { *offset.offset(index) };
+        let start = *offset.offset(index);
         let stop = if (row as bindings::tsk_size_t) < column_length {
-            unsafe { *offset.offset(index + 1) }
+            *offset.offset(index + 1)
         } else {
             offset_length
         };
@@ -164,14 +185,17 @@ fn tsk_ragged_column_access_detail<
             None
         } else {
             Some((
-                unsafe { column.offset(start as isize) },
+                column.offset(start as isize),
                 stop as usize - start as usize,
             ))
         }
     }
 }
 
-pub fn tsk_ragged_column_access<
+// SAFETY: see tsk_ragged_column_access_detail
+// We further erquire that a pointer to a T can
+// be safely cast to a pointer to an O.
+pub unsafe fn tsk_ragged_column_access<
     'a,
     O,
     R: Into<bindings::tsk_id_t>,
@@ -184,9 +208,12 @@ pub fn tsk_ragged_column_access<
     offset: *const bindings::tsk_size_t,
     offset_length: bindings::tsk_size_t,
 ) -> Option<&'a [O]> {
-    // SAFETY: see tsk_ragged_column_access_detail
-    tsk_ragged_column_access_detail(row, column, column_length, offset, offset_length)
-        .map(|(p, n)| unsafe { std::slice::from_raw_parts(p.cast::<O>(), n) })
+    unsafe {
+        tsk_ragged_column_access_detail(row, column, column_length, offset, offset_length)
+            // If the safety requirements of tsk_ragged_column_access_detail are upheld,
+            // then we have received a valid pointer + length from which to make a slice
+            .map(|(p, n)| std::slice::from_raw_parts(p.cast::<O>(), n))
+    }
 }
 
 /// # SAFETY

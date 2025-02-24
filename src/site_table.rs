@@ -202,11 +202,14 @@ impl SiteTable {
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
     pub fn position<S: Into<SiteId> + Copy>(&self, row: S) -> Option<Position> {
-        sys::tsk_column_access::<Position, _, _, _>(
-            row.into(),
-            self.as_ref().position,
-            self.num_rows(),
-        )
+        assert!(self.num_rows() == 0 || !self.as_ref().position.is_null());
+        unsafe {
+            sys::tsk_column_access::<Position, _, _, _>(
+                row.into(),
+                self.as_ref().position,
+                self.num_rows(),
+            )
+        }
     }
 
     /// Get the ``ancestral_state`` value from row ``row`` of the table.
@@ -216,13 +219,20 @@ impl SiteTable {
     /// * `Some(ancestral state)` if `row` is valid.
     /// * `None` otherwise.
     pub fn ancestral_state<S: Into<SiteId>>(&self, row: S) -> Option<&[u8]> {
-        sys::tsk_ragged_column_access(
-            row.into(),
-            self.as_ref().ancestral_state,
-            self.num_rows(),
-            self.as_ref().ancestral_state_offset,
-            self.as_ref().ancestral_state_length,
-        )
+        assert!(
+            (self.num_rows() == 0 && self.as_ref().ancestral_state_length == 0)
+                || (!self.as_ref().ancestral_state.is_null()
+                    && !self.as_ref().ancestral_state_offset.is_null())
+        );
+        unsafe {
+            sys::tsk_ragged_column_access(
+                row.into(),
+                self.as_ref().ancestral_state,
+                self.num_rows(),
+                self.as_ref().ancestral_state_offset,
+                self.as_ref().ancestral_state_length,
+            )
+        }
     }
 
     /// Retrieve decoded metadata for a `row`.
