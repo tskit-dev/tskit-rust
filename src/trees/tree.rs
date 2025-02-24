@@ -334,6 +334,22 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn as_ll_ref(&self) -> &ll_bindings::tsk_tree_t {
         self.inner.as_ll_ref()
     }
+
+    pub fn next_sample_array(&self) {
+        X
+    }
+
+    pub fn left_sample_array(&self) {
+        X
+    }
+
+    pub fn right_sample_array(&self) {
+        x
+    }
+
+    left_sample
+        right_sample
+        kc_distance
 }
 
 impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
