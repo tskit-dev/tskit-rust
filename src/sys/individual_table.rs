@@ -1,5 +1,8 @@
 use std::ptr::NonNull;
 
+use super::flags::IndividualFlags;
+use super::newtypes::IndividualId;
+
 use super::bindings::tsk_flags_t;
 use super::bindings::tsk_id_t;
 use super::bindings::tsk_individual_table_add_row;
@@ -65,6 +68,10 @@ impl IndividualTable {
                 metadata.len() as u64,
             ))
         }
+    }
+
+    pub fn flags(&self, row: IndividualId) -> Option<IndividualFlags> {
+        safe_tsk_column_access!(self, row, IndividualFlags, flags)
     }
 }
 

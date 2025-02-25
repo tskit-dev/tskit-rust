@@ -128,7 +128,7 @@ unsafe fn tsk_column_access_detail<
     }
 }
 
-pub unsafe fn tsk_column_access<
+unsafe fn tsk_column_access<
     O: From<T>,
     R: Into<bindings::tsk_id_t>,
     L: Into<bindings::tsk_size_t>,

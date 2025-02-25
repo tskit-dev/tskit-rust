@@ -277,3 +277,18 @@ macro_rules! impl_time_position_arithmetic {
         }
     };
 }
+
+macro_rules! safe_tsk_column_access {
+    ($self: ident, $u: ident, $output_type: ty, $column: ident) => {{
+        assert!($self.as_ref().num_rows == 0 || !$self.as_ref().$column.is_null());
+        // SAFETY: row is empty or is that the column is not a null pointer
+        // and the length is from the C API
+        unsafe {
+            super::tsk_column_access::<$output_type, _, _, _>(
+                $u,
+                $self.as_ref().$column,
+                $self.as_ref().num_rows,
+            )
+        }
+    }};
+}

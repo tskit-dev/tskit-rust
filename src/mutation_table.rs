@@ -233,16 +233,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn site<M: Into<MutationId> + Copy>(&self, row: M) -> Option<SiteId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().site.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<SiteId, _, _, _>(
-                row.into(),
-                self.as_ref().site,
-                self.num_rows(),
-            )
-        }
+        self.table_.site(row.into())
     }
 
     /// Return the ``node`` value from row ``row`` of the table.
@@ -252,16 +243,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn node<M: Into<MutationId> + Copy>(&self, row: M) -> Option<NodeId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().node.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<NodeId, _, _, _>(
-                row.into(),
-                self.as_ref().node,
-                self.num_rows(),
-            )
-        }
+        self.table_.node(row.into())
     }
 
     /// Return the ``parent`` value from row ``row`` of the table.
@@ -271,16 +253,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn parent<M: Into<MutationId> + Copy>(&self, row: M) -> Option<MutationId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().parent.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<MutationId, _, _, _>(
-                row.into(),
-                self.as_ref().parent,
-                self.num_rows(),
-            )
-        }
+        self.table_.parent(row.into())
     }
 
     /// Return the ``time`` value from row ``row`` of the table.
@@ -290,12 +263,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn time<M: Into<MutationId> + Copy>(&self, row: M) -> Option<Time> {
-        assert!(self.num_rows() == 0 || !self.as_ref().time.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
-        }
+        self.table_.time(row.into())
     }
 
     /// Get the ``derived_state`` value from row ``row`` of the table.

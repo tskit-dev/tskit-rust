@@ -209,15 +209,7 @@ impl IndividualTable {
     /// * `Some(flags)` if `row` is valid.
     /// * `None` otherwise.
     pub fn flags<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<IndividualFlags> {
-        assert!(self.num_rows() == 0 || !self.as_ref().flags.is_null());
-        // SAFETY: either the column is empty or the point is not NULL
-        unsafe {
-            sys::tsk_column_access::<IndividualFlags, _, _, _>(
-                row.into(),
-                self.as_ref().flags,
-                self.num_rows(),
-            )
-        }
+        self.table_.flags(row.into())
     }
 
     /// Return the locations for a given row.

@@ -1,5 +1,10 @@
 use std::ptr::NonNull;
 
+use super::flags::NodeFlags;
+use super::newtypes::IndividualId;
+use super::newtypes::PopulationId;
+use super::newtypes::Time;
+
 use super::bindings::tsk_node_table_add_row;
 use super::bindings::tsk_node_table_clear;
 use super::bindings::tsk_node_table_init;
@@ -107,6 +112,22 @@ impl NodeTable {
                 )
             })
         }
+    }
+
+    pub fn individual(&self, row: NodeId) -> Option<IndividualId> {
+        safe_tsk_column_access!(self, row, IndividualId, individual)
+    }
+
+    pub fn population(&self, row: NodeId) -> Option<PopulationId> {
+        safe_tsk_column_access!(self, row, PopulationId, population)
+    }
+
+    pub fn time(&self, row: NodeId) -> Option<Time> {
+        safe_tsk_column_access!(self, row, Time, time)
+    }
+
+    pub fn flags(&self, row: NodeId) -> Option<NodeFlags> {
+        safe_tsk_column_access!(self, row, NodeFlags, flags)
     }
 }
 

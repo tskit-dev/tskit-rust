@@ -480,12 +480,7 @@ impl NodeTable {
     /// # }
     /// ```
     pub fn time<N: Into<NodeId> + Copy>(&self, row: N) -> Option<Time> {
-        assert!(self.num_rows() == 0 || !self.as_ref().time.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<Time, _, _, _>(row.into(), self.as_ref().time, self.num_rows())
-        }
+        self.table_.time(row.into())
     }
 
     /// Return the ``flags`` value from row ``row`` of the table.
@@ -510,16 +505,7 @@ impl NodeTable {
     /// # }
     /// ```
     pub fn flags<N: Into<NodeId> + Copy>(&self, row: N) -> Option<NodeFlags> {
-        assert!(self.num_rows() == 0 || !self.as_ref().flags.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<NodeFlags, _, _, _>(
-                row.into(),
-                self.as_ref().flags,
-                self.num_rows(),
-            )
-        }
+        self.table_.flags(row.into())
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
@@ -544,16 +530,7 @@ impl NodeTable {
     /// * `Some(population)` if `row` is valid.
     /// * `None` otherwise.
     pub fn population<N: Into<NodeId> + Copy>(&self, row: N) -> Option<PopulationId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().population.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<PopulationId, _, _, _>(
-                row.into(),
-                self.as_ref().population,
-                self.num_rows(),
-            )
-        }
+        self.table_.population(row.into())
     }
 
     /// Return the ``population`` value from row ``row`` of the table.
@@ -592,16 +569,7 @@ impl NodeTable {
     /// * `Some(individual)` if `row` is valid.
     /// * `None` otherwise.
     pub fn individual<N: Into<NodeId> + Copy>(&self, row: N) -> Option<IndividualId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().individual.is_null());
-        // SAFETY: either the column is empty or the pointer is not null,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_column_access::<IndividualId, _, _, _>(
-                row.into(),
-                self.as_ref().individual,
-                self.num_rows(),
-            )
-        }
+        self.table_.individual(row.into())
     }
 
     /// Retrieve decoded metadata for a `row`.

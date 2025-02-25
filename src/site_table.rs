@@ -202,14 +202,7 @@ impl SiteTable {
     /// * `Some(position)` if `row` is valid.
     /// * `None` otherwise.
     pub fn position<S: Into<SiteId> + Copy>(&self, row: S) -> Option<Position> {
-        assert!(self.num_rows() == 0 || !self.as_ref().position.is_null());
-        unsafe {
-            sys::tsk_column_access::<Position, _, _, _>(
-                row.into(),
-                self.as_ref().position,
-                self.num_rows(),
-            )
-        }
+        self.table_.position(row.into())
     }
 
     /// Get the ``ancestral_state`` value from row ``row`` of the table.

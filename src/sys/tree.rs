@@ -12,6 +12,21 @@ use super::tskbox::TskBox;
 use super::TreeSequence;
 use super::TskitError;
 
+macro_rules! safe_tsk_column_access_from_tree {
+    ($self: ident, $u: ident, $output_type: ty, $column: ident) => {{
+        assert!(!$self.as_ll_ref().$column.is_null());
+        // SAFETY: minimum length is 1 so the only requirement
+        // is that the column is not a null pointer
+        unsafe {
+            super::tsk_column_access::<$output_type, _, _, _>(
+                $u,
+                $self.as_ll_ref().$column,
+                $self.treeseq.num_nodes_raw() + 1,
+            )
+        }
+    }};
+}
+
 pub struct LLTree<'treeseq> {
     inner: TskBox<tsk_tree_t>,
     flags: TreeFlags,
@@ -82,55 +97,19 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn left_sib(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().left_sib.is_null());
-        // SAFETY: since the length is at least 1,
-        // the left_sib pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().left_sib,
-                self.treeseq.num_nodes_raw() + 1,
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, left_sib)
     }
 
     pub fn right_sib(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().right_sib.is_null());
-        // SAFETY: since the length is at least 1,
-        // the right_sib pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().right_sib,
-                self.treeseq.num_nodes_raw() + 1,
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, right_sib)
     }
 
     pub fn left_child(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().left_child.is_null());
-        // SAFETY: since the length is at least 1,
-        // the left_child pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().left_child,
-                self.treeseq.num_nodes_raw() + 1,
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, left_child)
     }
 
     pub fn right_child(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().right_child.is_null());
-        // SAFETY: since the length is at least 1,
-        // the right_child pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().right_child,
-                self.treeseq.num_nodes_raw() + 1,
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, right_child)
     }
 
     pub fn num_tracked_samples(&self, u: NodeId) -> Result<SizeType, TskitError> {
@@ -144,29 +123,11 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn left_sample(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().left_sample.is_null());
-        // SAFETY: since the length is at least 1,
-        // the left_sample pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().left_sample,
-                self.treeseq.num_nodes_raw(),
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, left_sample)
     }
 
     pub fn right_sample(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().right_sample.is_null());
-        // SAFETY: since the length is at least 1,
-        // the right_sample pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().right_sample,
-                self.treeseq.num_nodes_raw(),
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, right_sample)
     }
 
     pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
@@ -174,16 +135,7 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn parent(&self, u: NodeId) -> Option<NodeId> {
-        assert!(!self.as_ll_ref().parent.is_null());
-        // SAFETY: since the length is at least 1,
-        // the parent pointer cannot be NULL
-        unsafe {
-            super::tsk_column_access::<NodeId, _, _, _>(
-                u,
-                self.as_ll_ref().parent,
-                self.treeseq.num_nodes_raw() + 1,
-            )
-        }
+        safe_tsk_column_access_from_tree!(self, u, NodeId, parent)
     }
 
     pub fn flags(&self) -> TreeFlags {

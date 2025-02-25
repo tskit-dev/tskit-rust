@@ -1,5 +1,9 @@
 use std::ptr::NonNull;
 
+use super::newtypes::EdgeId;
+use super::newtypes::NodeId;
+use super::newtypes::Position;
+
 use super::bindings::tsk_edge_table_add_row;
 use super::bindings::tsk_edge_table_clear;
 use super::bindings::tsk_edge_table_init;
@@ -64,6 +68,22 @@ impl EdgeTable {
                 metadata.len() as u64,
             ))
         }
+    }
+
+    pub fn parent(&self, row: EdgeId) -> Option<NodeId> {
+        safe_tsk_column_access!(self, row, NodeId, parent)
+    }
+
+    pub fn child(&self, row: EdgeId) -> Option<NodeId> {
+        safe_tsk_column_access!(self, row, NodeId, child)
+    }
+
+    pub fn left(&self, row: EdgeId) -> Option<Position> {
+        safe_tsk_column_access!(self, row, Position, left)
+    }
+
+    pub fn right(&self, row: EdgeId) -> Option<Position> {
+        safe_tsk_column_access!(self, row, Position, right)
     }
 }
 

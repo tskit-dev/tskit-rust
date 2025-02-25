@@ -223,15 +223,7 @@ impl EdgeTable {
     /// * `Some(parent)` if `u` is valid.
     /// * `None` otherwise.
     pub fn parent<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().parent.is_null());
-        // SAFETY: either the column is empty or the point is not NULL
-        unsafe {
-            sys::tsk_column_access::<NodeId, _, _, _>(
-                row.into(),
-                self.as_ref().parent,
-                self.num_rows(),
-            )
-        }
+        self.table_.parent(row.into())
     }
 
     /// Return the ``child`` value from row ``row`` of the table.
@@ -241,15 +233,7 @@ impl EdgeTable {
     /// * `Some(child)` if `u` is valid.
     /// * `None` otherwise.
     pub fn child<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<NodeId> {
-        assert!(self.num_rows() == 0 || !self.as_ref().child.is_null());
-        // SAFETY: either the column is empty or the point is not NULL
-        unsafe {
-            sys::tsk_column_access::<NodeId, _, _, _>(
-                row.into(),
-                self.as_ref().child,
-                self.num_rows(),
-            )
-        }
+        self.table_.child(row.into())
     }
 
     /// Return the ``left`` value from row ``row`` of the table.
@@ -259,15 +243,7 @@ impl EdgeTable {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn left<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
-        assert!(self.num_rows() == 0 || !self.as_ref().left.is_null());
-        // SAFETY: either the column is empty or the point is not NULL
-        unsafe {
-            sys::tsk_column_access::<Position, _, _, _>(
-                row.into(),
-                self.as_ref().left,
-                self.num_rows(),
-            )
-        }
+        self.table_.left(row.into())
     }
 
     /// Return the ``right`` value from row ``row`` of the table.
@@ -277,15 +253,7 @@ impl EdgeTable {
     /// * `Some(position)` if `u` is valid.
     /// * `None` otherwise.
     pub fn right<E: Into<EdgeId> + Copy>(&self, row: E) -> Option<Position> {
-        assert!(self.num_rows() == 0 || !self.as_ref().right.is_null());
-        // SAFETY: either the column is empty or the point is not NULL
-        unsafe {
-            sys::tsk_column_access::<Position, _, _, _>(
-                row.into(),
-                self.as_ref().right,
-                self.num_rows(),
-            )
-        }
+        self.table_.right(row.into())
     }
 
     /// Retrieve decoded metadata for a `row`.
