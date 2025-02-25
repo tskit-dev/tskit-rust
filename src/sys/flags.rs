@@ -625,63 +625,72 @@ impl TableIntegrityCheckFlags {
         => check_trees, CHECK_TREES);
 }
 
-bitflags! {
-    /// Node flags
-    ///
-    /// # Examples
-    ///
-    /// ## Default (empty) flags
-    ///
-    /// ```
-    /// # use tskit::NodeFlags;
-    /// let f = NodeFlags::default();
-    /// assert_eq!(f, NodeFlags::NONE);
-    /// ```
-    ///
-    /// ## Create a sample node
-    ///
-    /// Creating a sample node is such a common task that it is supported
-    /// via a constructor:
-    ///
-    /// ```
-    /// # use tskit::NodeFlags;
-    /// let f = NodeFlags::new_sample();
-    /// assert_eq!(f, NodeFlags::IS_SAMPLE);
-    /// ```
-    ///
-    /// ## Buider API
-    ///
-    /// These methods can be chained.
-    ///
-    /// ```
-    /// # use tskit::NodeFlags;
-    /// let f = NodeFlags::default().mark_sample();
-    /// assert_eq!(f, NodeFlags::IS_SAMPLE);
-    /// ```
-    #[derive(Default,Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    #[repr(transparent)]
-    pub struct NodeFlags : RawFlags {
-        /// Default (empty)
-        const NONE = 0;
-        /// Node is a sample
-        const IS_SAMPLE = ll_bindings::TSK_NODE_IS_SAMPLE;
-    }
-}
+//bitflags! {
+//    /// Node flags
+//    ///
+//    /// # Examples
+//    ///
+//    /// ## Default (empty) flags
+//    ///
+//    /// ```
+//    /// # use tskit::NodeFlags;
+//    /// let f = NodeFlags::default();
+//    /// assert_eq!(f, NodeFlags::NONE);
+//    /// ```
+//    ///
+//    /// ## Create a sample node
+//    ///
+//    /// Creating a sample node is such a common task that it is supported
+//    /// via a constructor:
+//    ///
+//    /// ```
+//    /// # use tskit::NodeFlags;
+//    /// let f = NodeFlags::new_sample();
+//    /// assert_eq!(f, NodeFlags::IS_SAMPLE);
+//    /// ```
+//    ///
+//    /// ## Buider API
+//    ///
+//    /// These methods can be chained.
+//    ///
+//    /// ```
+//    /// # use tskit::NodeFlags;
+//    /// let f = NodeFlags::default().mark_sample();
+//    /// assert_eq!(f, NodeFlags::IS_SAMPLE);
+//    /// ```
+//    #[derive(Default,Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+//    #[repr(transparent)]
+//    pub struct NodeFlags : RawFlags {
+//        /// Default (empty)
+//        const NONE = 0;
+//        /// Node is a sample
+//        const IS_SAMPLE = ll_bindings::TSK_NODE_IS_SAMPLE;
+//    }
+//}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct NodeFlags(tsk_flags_t);
 
 impl NodeFlags {
+    /// Default (empty)
+    pub const NONE: tsk_flags_t = 0;
+    /// Node is a sample
+    pub const IS_SAMPLE: tsk_flags_t = ll_bindings::TSK_NODE_IS_SAMPLE;
+
     /// Create a new flags instance with `IS_SAMPLE` set.
     pub fn new_sample() -> Self {
         Self::default().mark_sample()
     }
 
-    flag_builder_api!(
-        /// Set [`IS_SAMPLE`](crate::NodeFlags::IS_SAMPLE)
-        ///
-        /// # Note
-        ///
-        /// This function is called `mark_sample` to not conflict
-        /// with [`NodeFlags::is_sample`], which predates it.
-        => mark_sample, IS_SAMPLE);
+    /// Set [`IS_SAMPLE`](crate::NodeFlags::IS_SAMPLE)
+    ///
+    /// # Note
+    ///
+    /// This function is called `mark_sample` to not conflict
+    /// with [`NodeFlags::is_sample`], which predates it.
+    pub fn mark_sample(self) -> Self {
+        Self(self.0 | Self::IS_SAMPLE)
+    }
 
     /// We do not enforce valid flags in the library.
     /// This function will return `true` if any bits
@@ -693,7 +702,35 @@ impl NodeFlags {
     /// Returns `true` if flags contains `IS_SAMPLE`,
     /// and `false` otherwise.
     pub fn is_sample(&self) -> bool {
-        self.contains(NodeFlags::IS_SAMPLE)
+        self.contains(Self::IS_SAMPLE)
+    }
+
+    pub fn bits(&self) -> tsk_flags_t {
+        self.0
+    }
+
+    pub fn contains<I>(&self, bit: I) -> bool
+    where
+        I: Into<Self> + Copy,
+    {
+        bit.into().0 == 0 || (self.0 & bit.into().0) != 0
+    }
+
+    pub fn toggle(&mut self, bit: tsk_flags_t) {
+        self.0 ^= bit
+    }
+
+    pub fn remove<I>(&mut self, bit: I)
+    where
+        I: Into<Self>,
+    {
+        self.0 &= !bit.into().0
+    }
+}
+
+impl From<tsk_flags_t> for NodeFlags {
+    fn from(value: tsk_flags_t) -> Self {
+        Self(value)
     }
 }
 
@@ -735,12 +772,6 @@ impl_from_for_flag_types!(TreeFlags);
 impl_from_for_flag_types!(IndividualTableSortOptions);
 impl_from_for_flag_types!(TableIntegrityCheckFlags);
 impl_from_for_flag_types!(TableOutputOptions);
-
-impl From<RawFlags> for NodeFlags {
-    fn from(flags: RawFlags) -> Self {
-        Self::from_bits_retain(flags)
-    }
-}
 
 impl From<RawFlags> for IndividualFlags {
     fn from(flags: RawFlags) -> Self {

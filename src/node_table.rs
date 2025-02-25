@@ -647,7 +647,7 @@ impl NodeTable {
     /// of all nodes for which [`crate::NodeFlags::is_sample`]
     /// is `true`.
     pub fn samples_as_vector(&self) -> Vec<NodeId> {
-        self.create_node_id_vector(|row| row.flags.contains(NodeFlags::new_sample()))
+        self.create_node_id_vector(|row| row.flags.contains(NodeFlags::IS_SAMPLE))
     }
 
     /// Obtain a vector containing the indexes ("ids") of all nodes
