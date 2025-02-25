@@ -7,6 +7,8 @@ use crate::sys::bindings as ll_bindings;
 use crate::RawFlags;
 use bitflags::bitflags;
 
+use super::bindings::tsk_flags_t;
+
 macro_rules! impl_from_for_flag_types {
     ($flagstype: ty) => {
         impl From<$crate::RawFlags> for $flagstype {
@@ -743,6 +745,15 @@ impl From<RawFlags> for NodeFlags {
 impl From<RawFlags> for IndividualFlags {
     fn from(flags: RawFlags) -> Self {
         Self::from_bits_retain(flags)
+    }
+}
+
+#[derive(Copy, Clone, Default, Debug)]
+pub struct MutationParentsFlags(tsk_flags_t);
+
+impl From<MutationParentsFlags> for tsk_flags_t {
+    fn from(value: MutationParentsFlags) -> Self {
+        value.0
     }
 }
 

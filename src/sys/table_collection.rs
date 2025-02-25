@@ -1,3 +1,4 @@
+use super::bindings;
 use super::bindings::tsk_edge_table_t;
 use super::bindings::tsk_individual_table_t;
 use super::bindings::tsk_migration_table_t;
@@ -9,6 +10,7 @@ use super::bindings::tsk_provenance_table_t;
 use super::bindings::tsk_site_table_t;
 use super::bindings::tsk_table_collection_init;
 use super::bindings::tsk_table_collection_t;
+use super::flags::MutationParentsFlags;
 use super::tskbox::TskBox;
 use super::TskitError;
 
@@ -118,6 +120,20 @@ impl TableCollection {
 
     pub fn into_raw(self) -> *mut tsk_table_collection_t {
         self.0.into_raw()
+    }
+
+    pub fn compute_mutation_parents(
+        &mut self,
+        options: MutationParentsFlags,
+    ) -> Result<(), TskitError> {
+        // SAFETY: as_mut_ptr is safe because the internal pointer cannot be null
+        let code = unsafe {
+            bindings::tsk_table_collection_compute_mutation_parents(
+                self.as_mut_ptr(),
+                options.into(),
+            )
+        };
+        handle_tsk_return_value!(code, ())
     }
 }
 
