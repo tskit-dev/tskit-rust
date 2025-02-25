@@ -882,11 +882,11 @@ impl TableCollection {
     /// Return a [`crate::TreeSequence`] based on the tables.
     /// This function will raise errors if tables are not sorted,
     /// not indexed, or invalid in any way.
-    pub fn tree_sequence(
+    pub fn tree_sequence<F: Into<TreeSequenceFlags>>(
         self,
-        flags: TreeSequenceFlags,
+        flags: F,
     ) -> Result<crate::TreeSequence, TskitError> {
-        crate::TreeSequence::new(self, flags)
+        crate::TreeSequence::new(self, flags.into())
     }
 
     /// Simplify tables in place.
@@ -979,9 +979,9 @@ impl TableCollection {
     /// tables.add_edge(0., 10.0, tskit::NodeId::NULL, 0);
     /// tables.check_integrity(tskit::TableIntegrityCheckFlags::default()).unwrap();
     /// ```
-    pub fn check_integrity(&self, flags: TableIntegrityCheckFlags) -> TskReturnValue {
+    pub fn check_integrity<F: Into<TableIntegrityCheckFlags>>(&self, flags: F) -> TskReturnValue {
         let rv = unsafe {
-            ll_bindings::tsk_table_collection_check_integrity(self.as_ptr(), flags.bits())
+            ll_bindings::tsk_table_collection_check_integrity(self.as_ptr(), flags.into().bits())
         };
         handle_tsk_return_value!(rv)
     }

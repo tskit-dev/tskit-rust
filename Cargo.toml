@@ -23,7 +23,6 @@ codegen-units=1
 thiserror = "1.0"
 libc = "0.2.155"
 streaming-iterator = "0.1.5"
-bitflags = "2.6.0"
 humantime = {version = "2.1.0", optional = true}
 serde = {version = "1.0.203", features = ["derive"], optional = true}
 serde_json = {version = "1.0.120", optional = true}
