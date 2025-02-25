@@ -1564,4 +1564,12 @@ impl TableCollection {
             Ok(Some(tables))
         }
     }
+
+    /// Compute the parents of each mutation.
+    pub fn compute_mutation_parents(
+        &mut self,
+        options: crate::MutationParentsFlags,
+    ) -> Result<(), TskitError> {
+        self.inner.compute_mutation_parents(options)
+    }
 }
