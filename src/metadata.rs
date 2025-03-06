@@ -91,6 +91,13 @@
 //! let id = tables.add_individual_with_metadata(0, &[] as &[tskit::Location], &[tskit::IndividualId::NULL], &individual).unwrap();
 //! let decoded = tables.individuals().metadata::<IndividualMetadata>(id).unwrap().unwrap();
 //! assert_eq!(decoded.genetic_value.partial_cmp(&individual.genetic_value).unwrap(), std::cmp::Ordering::Equal);
+//! let _ = tables.add_individual(0, &[] as &[tskit::Location], &[tskit::IndividualId::NULL]).unwrap();
+//! let individual2 = IndividualMetadata {
+//!     genetic_value: GeneticValue(1.0),
+//! };
+//! let id2 = tables.add_individual_with_metadata(0, &[] as &[tskit::Location], &[tskit::IndividualId::NULL], &individual2).unwrap();
+//! let decoded2 = tables.individuals().metadata::<IndividualMetadata>(id2).unwrap().unwrap();
+//! assert_eq!(decoded2.genetic_value.partial_cmp(&individual2.genetic_value).unwrap(), std::cmp::Ordering::Equal);
 //! # }
 //! ```
 //!

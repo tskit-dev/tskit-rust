@@ -141,79 +141,36 @@ unsafe fn tsk_column_access<
     tsk_column_access_detail(row, column, column_length).map(|v| v.into())
 }
 
-/// # SAFETY
-///
-/// The safety requirements here are a bit fiddly.
-///
-/// The hard case is when the columns contain data:
-///
-/// * column and offset must both not be NULL
-/// * column_length and offset_length must both be
-///   the correct lengths for the input pointers
-/// * we return None if row < 0 or row > array length.
-/// * Thus, the requirement is that the two _lengths
-///   == 0 or (pointer both not NULL and the lengths are correct)
-///
-/// When the lengths of each column are 0, we
-/// don't worry about anything else
-unsafe fn tsk_ragged_column_access_detail<
-    R: Into<bindings::tsk_id_t>,
-    L: Into<bindings::tsk_size_t>,
-    T: Copy,
->(
-    row: R,
-    column: *const T,
-    column_length: L,
-    offset: *const bindings::tsk_size_t,
-    offset_length: bindings::tsk_size_t,
-) -> Option<(*const T, usize)> {
-    let row = row.into();
-    let column_length = column_length.into();
-    if row < 0 || row as bindings::tsk_size_t > column_length || offset_length == 0 {
+fn tsk_ragged_column_access_detail<'a, T>(
+    row: usize,
+    column: &'a [T],
+    raw_offset: &'a [bindings::tsk_size_t],
+) -> Option<&'a [T]> {
+    if row >= raw_offset.len() || raw_offset.is_empty() {
         None
     } else {
-        // SAFETY: pointers are not null
-        // and *_length are given by tskit-c
-        let index = row as isize;
-        let start = *offset.offset(index);
-        let stop = if (row as bindings::tsk_size_t) < column_length {
-            *offset.offset(index + 1)
+        let start = usize::try_from(raw_offset[row]).ok()?;
+        let stop = if row < raw_offset.len() - 1 {
+            usize::try_from(raw_offset[row + 1]).ok()?
         } else {
-            offset_length
+            column.len()
         };
         if start == stop {
             None
         } else {
-            Some((
-                column.offset(start as isize),
-                stop as usize - start as usize,
-            ))
+            Some(&column[start..stop])
         }
     }
 }
 
-// SAFETY: see tsk_ragged_column_access_detail
-// We further erquire that a pointer to a T can
-// be safely cast to a pointer to an O.
-unsafe fn tsk_ragged_column_access<
-    'a,
-    O,
-    R: Into<bindings::tsk_id_t>,
-    L: Into<bindings::tsk_size_t>,
-    T: Copy,
->(
+fn tsk_ragged_column_access<'a, O, R: Into<bindings::tsk_id_t>>(
     row: R,
-    column: *const T,
-    column_length: L,
-    offset: *const bindings::tsk_size_t,
-    offset_length: bindings::tsk_size_t,
+    column: &'a [O],
+    raw_offset: &'a [bindings::tsk_size_t],
 ) -> Option<&'a [O]> {
-    unsafe {
-        tsk_ragged_column_access_detail(row, column, column_length, offset, offset_length)
-            // If the safety requirements of tsk_ragged_column_access_detail are upheld,
-            // then we have received a valid pointer + length from which to make a slice
-            .map(|(p, n)| std::slice::from_raw_parts(p.cast::<O>(), n))
-    }
+    let row = row.into();
+    let row = usize::try_from(row).ok()?;
+    tsk_ragged_column_access_detail(row, column, raw_offset)
 }
 
 /// # SAFETY

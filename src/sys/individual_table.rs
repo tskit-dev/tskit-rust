@@ -1,5 +1,6 @@
 use std::ptr::NonNull;
 
+use super::bindings::tsk_size_t;
 use super::flags::IndividualFlags;
 use super::newtypes::IndividualId;
 
@@ -76,18 +77,46 @@ impl IndividualTable {
 
     raw_metadata_getter_for_tables!(IndividualId);
 
-    pub fn location(&self, row: IndividualId) -> Option<&[super::newtypes::Location]> {
-        assert!(
-            (self.as_ref().num_rows == 0 && self.as_ref().location_length == 0)
-                || (!self.as_ref().location.is_null() && !self.as_ref().location_offset.is_null())
-        );
+    pub fn location_column(&self) -> &[super::newtypes::Location] {
         unsafe {
-            super::tsk_ragged_column_access(
-                row,
-                self.as_ref().location,
-                self.as_ref().num_rows,
+            std::slice::from_raw_parts(
+                self.as_ref().location.cast::<super::newtypes::Location>(),
+                self.as_ref().location_length as usize,
+            )
+        }
+    }
+
+    fn location_offset_column_raw(&self) -> &[tsk_size_t] {
+        unsafe {
+            std::slice::from_raw_parts(
                 self.as_ref().location_offset,
-                self.as_ref().location_length,
+                self.as_ref().num_rows as usize,
+            )
+        }
+    }
+
+    pub fn location(&self, row: IndividualId) -> Option<&[super::newtypes::Location]> {
+        super::tsk_ragged_column_access(
+            row,
+            self.location_column(),
+            self.location_offset_column_raw(),
+        )
+    }
+
+    fn parents_column(&self) -> &[IndividualId] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().parents.cast::<IndividualId>(),
+                self.as_ref().parents_length as usize,
+            )
+        }
+    }
+
+    fn parents_offset_column_raw(&self) -> &[tsk_size_t] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().parents_offset,
+                self.as_ref().num_rows as usize,
             )
         }
     }
@@ -97,15 +126,11 @@ impl IndividualTable {
             (self.as_ref().num_rows == 0 && self.as_ref().parents_length == 0)
                 || (!self.as_ref().parents.is_null() && !self.as_ref().location_offset.is_null())
         );
-        unsafe {
-            super::tsk_ragged_column_access(
-                row,
-                self.as_ref().parents,
-                self.as_ref().num_rows,
-                self.as_ref().parents_offset,
-                self.as_ref().parents_length,
-            )
-        }
+        super::tsk_ragged_column_access(
+            row,
+            self.parents_column(),
+            self.parents_offset_column_raw(),
+        )
     }
 }
 

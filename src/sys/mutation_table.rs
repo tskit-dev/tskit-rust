@@ -10,6 +10,7 @@ use super::bindings::tsk_mutation_table_add_row;
 use super::bindings::tsk_mutation_table_clear;
 use super::bindings::tsk_mutation_table_init;
 use super::bindings::tsk_mutation_table_t;
+use super::bindings::tsk_size_t;
 use super::tskbox::TskBox;
 use super::TskitError;
 
@@ -100,23 +101,30 @@ impl MutationTable {
 
     raw_metadata_getter_for_tables!(MutationId);
 
-    pub fn derived_state(&self, row: MutationId) -> Option<&[u8]> {
-        assert!(
-            (self.as_ref().num_rows == 0 && self.as_ref().derived_state_length == 0)
-                || (!self.as_ref().derived_state.is_null()
-                    && !self.as_ref().derived_state_offset.is_null())
-        );
-        // SAFETY: either both columns are empty or both pointers at not NULL,
-        // in which case the correct lengths are from the low-level objects
+    fn derived_state_column(&self) -> &[u8] {
         unsafe {
-            super::tsk_ragged_column_access(
-                row,
-                self.as_ref().derived_state,
-                self.as_ref().num_rows,
-                self.as_ref().derived_state_offset,
-                self.as_ref().derived_state_length,
+            std::slice::from_raw_parts(
+                self.as_ref().derived_state.cast::<u8>(),
+                self.as_ref().derived_state_length as usize,
             )
         }
+    }
+
+    fn derived_state_offset_raw(&self) -> &[tsk_size_t] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().derived_state_offset,
+                self.as_ref().num_rows as usize,
+            )
+        }
+    }
+
+    pub fn derived_state(&self, row: MutationId) -> Option<&[u8]> {
+        super::tsk_ragged_column_access(
+            row,
+            self.derived_state_column(),
+            self.derived_state_offset_raw(),
+        )
     }
 }
 

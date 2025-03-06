@@ -58,47 +58,57 @@ impl ProvenanceTable {
         Ok(rv)
     }
 
-    pub fn timestamp(&self, row: ProvenanceId) -> Option<&str> {
-        assert!(
-            (self.as_ref().num_rows != 0 && self.as_ref().timestamp_length != 0)
-                || (!self.as_ref().timestamp.is_null()
-                    && !self.as_ref().timestamp_offset.is_null())
-        );
-
-        // SAFETY: the previous assert checks the safety
-        // requirements
-        let timestamp_slice = unsafe {
-            super::tsk_ragged_column_access(
-                row,
-                self.as_ref().timestamp,
-                self.as_ref().num_rows,
-                self.as_ref().timestamp_offset,
-                self.as_ref().timestamp_length,
+    fn timestamp_column(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().timestamp.cast::<u8>(),
+                self.as_ref().timestamp_length as usize,
             )
-        };
+        }
+    }
+
+    fn timestamp_offset_column_raw(&self) -> &[tsk_size_t] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().timestamp_offset,
+                self.as_ref().num_rows as usize,
+            )
+        }
+    }
+
+    pub fn timestamp(&self, row: ProvenanceId) -> Option<&str> {
+        let timestamp_slice = super::tsk_ragged_column_access(
+            row,
+            self.timestamp_column(),
+            self.timestamp_offset_column_raw(),
+        );
         match timestamp_slice {
             Some(tstamp) => std::str::from_utf8(tstamp).ok(),
             None => None,
         }
     }
 
-    pub fn record(&self, row: ProvenanceId) -> Option<&str> {
-        assert!(
-            (self.as_ref().num_rows != 0 && self.as_ref().record_length != 0)
-                || (!self.as_ref().record.is_null() && !self.as_ref().record_offset.is_null())
-        );
-
-        // SAFETY: the previous assert checks the safety
-        // requirements
-        let record_slice = unsafe {
-            super::tsk_ragged_column_access(
-                row,
-                self.as_ref().record,
-                self.as_ref().num_rows,
-                self.as_ref().record_offset,
-                self.as_ref().record_length,
+    fn record_column(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().record.cast::<u8>(),
+                self.as_ref().record_length as usize,
             )
-        };
+        }
+    }
+
+    fn record_offset_column_raw(&self) -> &[tsk_size_t] {
+        unsafe {
+            std::slice::from_raw_parts(self.as_ref().record_offset, self.as_ref().num_rows as usize)
+        }
+    }
+
+    pub fn record(&self, row: ProvenanceId) -> Option<&str> {
+        let record_slice = super::tsk_ragged_column_access(
+            row,
+            self.record_column(),
+            self.record_offset_column_raw(),
+        );
         match record_slice {
             Some(rec) => std::str::from_utf8(rec).ok(),
             None => None,
