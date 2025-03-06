@@ -66,7 +66,7 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// # Parameters
     ///
-    /// * `by_span`: if `true`, multiply the return value by [`TreeInterface::span`].
+    /// * `by_span`: if `true`, multiply the return value by [`Tree::span`].
     ///
     /// # Errors
     ///
@@ -303,7 +303,7 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// # Parameters
     ///
-    /// * `order`: A value from [`NodeTraversalOrder`] specifying the
+    /// * `order`: A value from [`crate::NodeTraversalOrder`] specifying the
     ///   iteration order.
     // Return value is dyn for later addition of other traversal orders
     pub fn traverse_nodes(

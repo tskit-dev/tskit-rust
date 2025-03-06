@@ -295,16 +295,17 @@ impl SimplificationOptions {
 /// # use tskit::TableClearOptions;
 /// let f = TableClearOptions::default().clear_provenance();
 /// assert_eq!(f, TableClearOptions::CLEAR_PROVENANCE);
+/// ```
 ///
 /// ```
 /// # use tskit::TableClearOptions;
 /// let f = TableClearOptions::default().clear_metadata_schema().clear_ts_metadata_and_schema();
 /// assert!(f.contains(TableClearOptions::CLEAR_METADATA_SCHEMAS));
 /// assert!(f.contains(TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
-/// let f = f.clear();
-/// assert!(f.contains(TableClearOptions::CLEAR_METADATA_SCHEMAS));
-/// assert!(f.contains(TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
-/// assert!(f.contains(TableClearOptions::CLEAR_PROVENANCE);
+/// # let f = TableClearOptions::default();
+/// # assert!(!f.contains(TableClearOptions::CLEAR_METADATA_SCHEMAS));
+/// # assert!(!f.contains(TableClearOptions::CLEAR_TS_METADATA_SCHEMA));
+/// # assert!(!f.contains(TableClearOptions::CLEAR_PROVENANCE));
 /// ```
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
@@ -438,7 +439,7 @@ impl TableSortOptions {
     contains!();
 }
 
-/// Modify behavior of [`crate::TableCollection::sort_individuals`].
+/// Modify behavior of [`crate::TableCollection::topological_sort_individuals`].
 ///
 /// # Examples
 ///
@@ -458,8 +459,8 @@ impl IndividualTableSortOptions {
     contains!();
 }
 
-/// Specify the behavior of iterating over [`Tree`] objects.
-/// See [`TreeSequence::tree_iterator`].
+/// Specify the behavior of iterating over [`crate::Tree`] objects.
+/// See [`crate::TreeSequence::tree_iterator`].
 ///
 /// # Examples
 ///
@@ -491,7 +492,7 @@ pub struct TreeFlags(RawFlags);
 
 impl TreeFlags {
     make_constant_self!(
-    /// Update sample lists, enabling [`Tree::samples`].
+    /// Update sample lists, enabling [`crate::Tree::samples`].
     => SAMPLE_LISTS,TSK_SAMPLE_LISTS);
     make_constant_self!(
     /// Do *not* update the number of samples descending

@@ -488,11 +488,11 @@ impl NodeIterator for SamplesIterator<'_> {
 
 #[non_exhaustive]
 pub enum NodeTraversalOrder {
-    ///Preorder traversal, starting at the root(s) of a [`TreeInterface`].
+    ///Preorder traversal, starting at the root(s) of a tree.
     ///For trees with multiple roots, start at the left root,
     ///traverse to tips, proceeed to the next root, etc..
     Preorder,
-    ///Postorder traversal, starting at the root(s) of a [`TreeInterface`].
+    ///Postorder traversal, starting at the root(s) of a tree.
     ///For trees with multiple roots, start at the left root,
     ///traverse to tips, proceeed to the next root, etc..
     Postorder,

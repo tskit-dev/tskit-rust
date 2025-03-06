@@ -77,6 +77,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![deny(rustdoc::broken_intra_doc_links)]
 
 #[cfg(feature = "bindings")]
 pub use sys::bindings;
