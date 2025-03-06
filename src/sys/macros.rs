@@ -295,21 +295,30 @@ macro_rules! safe_tsk_column_access {
 
 macro_rules! raw_metadata_getter_for_tables {
     ($idtype: ty) => {
-        pub fn raw_metadata<I: Into<$idtype>>(&self, row: I) -> Option<&[u8]> {
-            assert!(
-                (self.as_ref().num_rows == 0 && self.as_ref().metadata_length == 0)
-                    || (!self.as_ref().metadata.is_null()
-                        && !self.as_ref().metadata_offset.is_null())
-            );
+        fn metadata_column(&self) -> &[u8] {
             unsafe {
-                $crate::sys::tsk_ragged_column_access::<'_, u8, $idtype, _, _>(
-                    row.into(),
-                    self.as_ref().metadata,
-                    self.as_ref().num_rows,
-                    self.as_ref().metadata_offset,
-                    self.as_ref().metadata_length,
+                std::slice::from_raw_parts(
+                    self.as_ref().metadata.cast::<u8>(),
+                    self.as_ref().metadata_length as usize,
                 )
             }
+        }
+
+        fn metadata_offset_raw(&self) -> &[super::bindings::tsk_size_t] {
+            unsafe {
+                std::slice::from_raw_parts(
+                    self.as_ref().metadata_offset,
+                    self.as_ref().num_rows as usize,
+                )
+            }
+        }
+
+        pub fn raw_metadata<I: Into<$idtype>>(&self, row: I) -> Option<&[u8]> {
+            $crate::sys::tsk_ragged_column_access(
+                row.into(),
+                self.metadata_column(),
+                self.metadata_offset_raw(),
+            )
         }
     };
 }

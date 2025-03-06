@@ -1,5 +1,6 @@
 use std::ptr::NonNull;
 
+use super::bindings::tsk_size_t;
 use super::newtypes::Position;
 use super::newtypes::SiteId;
 
@@ -76,21 +77,30 @@ impl SiteTable {
 
     raw_metadata_getter_for_tables!(SiteId);
 
-    pub fn ancestral_state(&self, row: SiteId) -> Option<&[u8]> {
-        assert!(
-            (self.as_ref().num_rows == 0 && self.as_ref().ancestral_state_length == 0)
-                || (!self.as_ref().ancestral_state.is_null()
-                    && !self.as_ref().ancestral_state_offset.is_null())
-        );
+    fn ancestral_state_column(&self) -> &[u8] {
         unsafe {
-            super::tsk_ragged_column_access(
-                row,
-                self.as_ref().ancestral_state,
-                self.as_ref().num_rows,
-                self.as_ref().ancestral_state_offset,
-                self.as_ref().ancestral_state_length,
+            std::slice::from_raw_parts(
+                self.as_ref().ancestral_state.cast::<u8>(),
+                self.as_ref().ancestral_state_length as usize,
             )
         }
+    }
+
+    fn ancestral_state_offset_raw(&self) -> &[tsk_size_t] {
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref().ancestral_state_offset,
+                self.as_ref().num_rows as usize,
+            )
+        }
+    }
+
+    pub fn ancestral_state(&self, row: SiteId) -> Option<&[u8]> {
+        super::tsk_ragged_column_access(
+            row,
+            self.ancestral_state_column(),
+            self.ancestral_state_offset_raw(),
+        )
     }
 }
 
