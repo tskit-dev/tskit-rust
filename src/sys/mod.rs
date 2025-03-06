@@ -195,7 +195,7 @@ unsafe fn tsk_ragged_column_access_detail<
 // SAFETY: see tsk_ragged_column_access_detail
 // We further erquire that a pointer to a T can
 // be safely cast to a pointer to an O.
-pub unsafe fn tsk_ragged_column_access<
+unsafe fn tsk_ragged_column_access<
     'a,
     O,
     R: Into<bindings::tsk_id_t>,

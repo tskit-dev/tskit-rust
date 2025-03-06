@@ -44,7 +44,7 @@ fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<Mig
         source: table.source(pos)?,
         dest: table.dest(pos)?,
         time: table.time(pos)?,
-        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
+        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 
@@ -155,7 +155,7 @@ impl streaming_iterator::StreamingIterator for MigrationTableRowView<'_> {
         self.source = self.table.source(self.id).unwrap_or(PopulationId::NULL);
         self.dest = self.table.dest(self.id).unwrap_or(PopulationId::NULL);
         self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -227,8 +227,6 @@ impl MigrationTable {
     pub fn num_rows(&self) -> SizeType {
         self.as_ref().num_rows.into()
     }
-
-    raw_metadata_getter_for_tables!(MigrationId);
 
     /// Return the left coordinate for a given row.
     ///
@@ -310,7 +308,7 @@ impl MigrationTable {
         &self,
         row: impl Into<MigrationId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -359,7 +357,7 @@ impl MigrationTable {
             source: self.source(r)?,
             dest: self.dest(r)?,
             time: self.time(r)?,
-            metadata: self.raw_metadata(r.into()),
+            metadata: self.table_.raw_metadata(r.into()),
         };
         Some(view)
     }

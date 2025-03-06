@@ -36,7 +36,7 @@ fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow>
         right: table.right(pos)?,
         parent: table.parent(pos)?,
         child: table.child(pos)?,
-        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
+        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 
@@ -135,7 +135,7 @@ impl streaming_iterator::StreamingIterator for EdgeTableRowView<'_> {
         self.right = self.table.right(self.id).unwrap_or_else(|| f64::NAN.into());
         self.parent = self.table.parent(self.id).unwrap_or(NodeId::NULL);
         self.child = self.table.child(self.id).unwrap_or(NodeId::NULL);
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -214,8 +214,6 @@ impl EdgeTable {
         self.as_ref().num_rows.into()
     }
 
-    raw_metadata_getter_for_tables!(EdgeId);
-
     /// Return the ``parent`` value from row ``row`` of the table.
     ///
     /// # Returns
@@ -276,7 +274,7 @@ impl EdgeTable {
         &self,
         row: impl Into<EdgeId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -323,7 +321,7 @@ impl EdgeTable {
             right: self.right(r)?,
             parent: self.parent(r)?,
             child: self.child(r)?,
-            metadata: self.raw_metadata(r.into()),
+            metadata: self.table_.raw_metadata(r.into()),
         };
         Some(view)
     }

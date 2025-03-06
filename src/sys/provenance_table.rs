@@ -1,5 +1,7 @@
 use std::ptr::NonNull;
 
+use super::newtypes::ProvenanceId;
+
 use super::bindings::tsk_id_t;
 use super::bindings::tsk_provenance_table_add_row;
 use super::bindings::tsk_provenance_table_clear;
@@ -54,6 +56,53 @@ impl ProvenanceTable {
             )
         };
         Ok(rv)
+    }
+
+    pub fn timestamp(&self, row: ProvenanceId) -> Option<&str> {
+        assert!(
+            (self.as_ref().num_rows != 0 && self.as_ref().timestamp_length != 0)
+                || (!self.as_ref().timestamp.is_null()
+                    && !self.as_ref().timestamp_offset.is_null())
+        );
+
+        // SAFETY: the previous assert checks the safety
+        // requirements
+        let timestamp_slice = unsafe {
+            super::tsk_ragged_column_access(
+                row,
+                self.as_ref().timestamp,
+                self.as_ref().num_rows,
+                self.as_ref().timestamp_offset,
+                self.as_ref().timestamp_length,
+            )
+        };
+        match timestamp_slice {
+            Some(tstamp) => std::str::from_utf8(tstamp).ok(),
+            None => None,
+        }
+    }
+
+    pub fn record(&self, row: ProvenanceId) -> Option<&str> {
+        assert!(
+            (self.as_ref().num_rows != 0 && self.as_ref().record_length != 0)
+                || (!self.as_ref().record.is_null() && !self.as_ref().record_offset.is_null())
+        );
+
+        // SAFETY: the previous assert checks the safety
+        // requirements
+        let record_slice = unsafe {
+            super::tsk_ragged_column_access(
+                row,
+                self.as_ref().record,
+                self.as_ref().num_rows,
+                self.as_ref().record_offset,
+                self.as_ref().record_length,
+            )
+        };
+        match record_slice {
+            Some(rec) => std::str::from_utf8(rec).ok(),
+            None => None,
+        }
     }
 }
 

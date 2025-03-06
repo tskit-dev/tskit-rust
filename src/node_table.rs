@@ -38,7 +38,7 @@ fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow>
         flags: table.flags(pos)?,
         population: table.population(pos)?,
         individual: table.individual(pos)?,
-        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
+        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 
@@ -136,7 +136,7 @@ impl streaming_iterator::StreamingIterator for NodeTableRowView<'_> {
         self.flags = self.table.flags(self.id).unwrap_or_else(|| 0.into());
         self.population = self.table.population(self.id).unwrap_or(PopulationId::NULL);
         self.individual = self.table.individual(self.id).unwrap_or(IndividualId::NULL);
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -456,8 +456,6 @@ impl NodeTable {
         self.as_ref().num_rows.into()
     }
 
-    raw_metadata_getter_for_tables!(NodeId);
-
     /// Return the ``time`` value from row ``row`` of the table.
     ///
     /// # Returns
@@ -592,7 +590,7 @@ impl NodeTable {
         &self,
         row: impl Into<NodeId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.table_.raw_metadata(row).ok()??;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -639,7 +637,7 @@ impl NodeTable {
             flags: self.flags(r)?,
             population: self.population(r)?,
             individual: self.individual(r)?,
-            metadata: self.raw_metadata(r.into()),
+            metadata: self.table_.raw_metadata(r.into()),
         };
         Some(view)
     }

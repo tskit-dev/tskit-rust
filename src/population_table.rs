@@ -24,7 +24,7 @@ fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<P
 
     match index {
         i if i < table.num_rows() => {
-            let metadata = table.raw_metadata(pos).map(|m| m.to_vec());
+            let metadata = table.table_.raw_metadata(pos).map(|m| m.to_vec());
             Some(PopulationTableRow {
                 id: pos.into(),
                 metadata,
@@ -102,7 +102,7 @@ impl streaming_iterator::StreamingIterator for PopulationTableRowView<'_> {
 
     fn advance(&mut self) {
         self.id = (i32::from(self.id) + 1).into();
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -169,8 +169,6 @@ impl PopulationTable {
         self.table_.as_ref()
     }
 
-    raw_metadata_getter_for_tables!(PopulationId);
-
     /// Return the number of rows.
     pub fn num_rows(&self) -> SizeType {
         self.as_ref().num_rows.into()
@@ -196,7 +194,7 @@ impl PopulationTable {
         &self,
         row: impl Into<PopulationId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 
@@ -241,7 +239,7 @@ impl PopulationTable {
                 let view = PopulationTableRowView {
                     table: self,
                     id: r.into(),
-                    metadata: self.raw_metadata(r.into()),
+                    metadata: self.table_.raw_metadata(r.into()),
                 };
                 Some(view)
             }

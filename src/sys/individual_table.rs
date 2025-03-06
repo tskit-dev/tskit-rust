@@ -73,6 +73,40 @@ impl IndividualTable {
     pub fn flags(&self, row: IndividualId) -> Option<IndividualFlags> {
         safe_tsk_column_access!(self, row, IndividualFlags, flags)
     }
+
+    raw_metadata_getter_for_tables!(IndividualId);
+
+    pub fn location(&self, row: IndividualId) -> Option<&[super::newtypes::Location]> {
+        assert!(
+            (self.as_ref().num_rows == 0 && self.as_ref().location_length == 0)
+                || (!self.as_ref().location.is_null() && !self.as_ref().location_offset.is_null())
+        );
+        unsafe {
+            super::tsk_ragged_column_access(
+                row,
+                self.as_ref().location,
+                self.as_ref().num_rows,
+                self.as_ref().location_offset,
+                self.as_ref().location_length,
+            )
+        }
+    }
+
+    pub fn parents(&self, row: IndividualId) -> Option<&[IndividualId]> {
+        assert!(
+            (self.as_ref().num_rows == 0 && self.as_ref().parents_length == 0)
+                || (!self.as_ref().parents.is_null() && !self.as_ref().location_offset.is_null())
+        );
+        unsafe {
+            super::tsk_ragged_column_access(
+                row,
+                self.as_ref().parents,
+                self.as_ref().num_rows,
+                self.as_ref().parents_offset,
+                self.as_ref().parents_length,
+            )
+        }
+    }
 }
 
 impl Default for IndividualTable {

@@ -49,6 +49,8 @@ impl PopulationTable {
             ))
         }
     }
+
+    raw_metadata_getter_for_tables!(super::newtypes::PopulationId);
 }
 
 impl Default for PopulationTable {

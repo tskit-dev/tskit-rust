@@ -85,6 +85,8 @@ impl EdgeTable {
     pub fn right(&self, row: EdgeId) -> Option<Position> {
         safe_tsk_column_access!(self, row, Position, right)
     }
+
+    raw_metadata_getter_for_tables!(EdgeId);
 }
 
 impl Default for EdgeTable {
