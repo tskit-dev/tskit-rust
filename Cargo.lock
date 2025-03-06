@@ -653,7 +653,6 @@ dependencies = [
  "anyhow",
  "bincode",
  "bindgen",
- "bitflags",
  "cc",
  "clap",
  "delegate",
