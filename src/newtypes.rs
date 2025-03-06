@@ -94,7 +94,7 @@ pub use crate::sys::newtypes::PopulationId;
 
 /// A provenance ID
 ///
-/// This is an integer referring to a row of a [``provenance::ProvenanceTable``].
+/// This is an integer referring to a row of a [``crate::provenance::ProvenanceTable``].
 ///
 /// The features for this type follow the same pattern as for [``NodeId``]
 #[cfg(feature = "provenance")]
