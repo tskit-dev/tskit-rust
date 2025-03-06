@@ -44,7 +44,7 @@ fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<Mutat
                 parent: table.parent(pos)?,
                 time: table.time(pos)?,
                 derived_state,
-                metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
+                metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
             })
         }
         _ => None,
@@ -152,7 +152,7 @@ impl streaming_iterator::StreamingIterator for MutationTableRowView<'_> {
         self.parent = self.table.parent(self.id).unwrap_or(MutationId::NULL);
         self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
         self.derived_state = self.table.derived_state(self.id);
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -224,8 +224,6 @@ impl MutationTable {
         self.as_ref().num_rows.into()
     }
 
-    raw_metadata_getter_for_tables!(MutationId);
-
     /// Return the ``site`` value from row ``row`` of the table.
     ///
     /// # Errors
@@ -277,22 +275,7 @@ impl MutationTable {
     /// Will return [``IndexError``](crate::TskitError::IndexError)
     /// if ``row`` is out of range.
     pub fn derived_state<M: Into<MutationId>>(&self, row: M) -> Option<&[u8]> {
-        assert!(
-            (self.num_rows() == 0 && self.as_ref().derived_state_length == 0)
-                || (!self.as_ref().derived_state.is_null()
-                    && !self.as_ref().derived_state_offset.is_null())
-        );
-        // SAFETY: either both columns are empty or both pointers at not NULL,
-        // in which case the correct lengths are from the low-level objects
-        unsafe {
-            sys::tsk_ragged_column_access(
-                row.into(),
-                self.as_ref().derived_state,
-                self.num_rows(),
-                self.as_ref().derived_state_offset,
-                self.as_ref().derived_state_length,
-            )
-        }
+        self.table_.derived_state(row.into())
     }
 
     /// Retrieve decoded metadata for a `row`.
@@ -315,7 +298,7 @@ impl MutationTable {
         &self,
         row: impl Into<MutationId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -363,7 +346,7 @@ impl MutationTable {
             parent: self.parent(r)?,
             time: self.time(r)?,
             derived_state: self.derived_state(r),
-            metadata: self.raw_metadata(r.into()),
+            metadata: self.table_.raw_metadata(r.into()),
         };
         Some(view)
     }

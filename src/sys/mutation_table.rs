@@ -97,6 +97,27 @@ impl MutationTable {
     pub fn parent(&self, row: MutationId) -> Option<MutationId> {
         safe_tsk_column_access!(self, row, MutationId, parent)
     }
+
+    raw_metadata_getter_for_tables!(MutationId);
+
+    pub fn derived_state(&self, row: MutationId) -> Option<&[u8]> {
+        assert!(
+            (self.as_ref().num_rows == 0 && self.as_ref().derived_state_length == 0)
+                || (!self.as_ref().derived_state.is_null()
+                    && !self.as_ref().derived_state_offset.is_null())
+        );
+        // SAFETY: either both columns are empty or both pointers at not NULL,
+        // in which case the correct lengths are from the low-level objects
+        unsafe {
+            super::tsk_ragged_column_access(
+                row,
+                self.as_ref().derived_state,
+                self.as_ref().num_rows,
+                self.as_ref().derived_state_offset,
+                self.as_ref().derived_state_length,
+            )
+        }
+    }
 }
 
 impl Default for MutationTable {

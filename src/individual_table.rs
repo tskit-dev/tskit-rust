@@ -92,7 +92,7 @@ impl streaming_iterator::StreamingIterator for IndividualTableRowView<'_> {
         self.flags = self.table.flags(self.id).unwrap_or_else(|| 0.into());
         self.location = self.table.location(self.id);
         self.parents = self.table.parents(self.id);
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -154,7 +154,7 @@ fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<I
         flags: table.flags(pos)?,
         location: table.location(pos).map(|s| s.to_vec()),
         parents: table.parents(pos).map(|s| s.to_vec()),
-        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
+        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 
@@ -195,8 +195,6 @@ impl IndividualTable {
         self.table_.as_ref()
     }
 
-    raw_metadata_getter_for_tables!(IndividualId);
-
     /// Return the number of rows
     pub fn num_rows(&self) -> crate::SizeType {
         self.as_ref().num_rows.into()
@@ -219,19 +217,7 @@ impl IndividualTable {
     /// * `Some(location)` if `row` is valid.
     /// * `None` otherwise.
     pub fn location<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[Location]> {
-        assert!(
-            (self.num_rows() == 0 && self.as_ref().location_length == 0)
-                || (!self.as_ref().location.is_null() && !self.as_ref().location_offset.is_null())
-        );
-        unsafe {
-            sys::tsk_ragged_column_access(
-                row.into(),
-                self.as_ref().location,
-                self.num_rows(),
-                self.as_ref().location_offset,
-                self.as_ref().location_length,
-            )
-        }
+        self.table_.location(row.into())
     }
 
     /// Return the parents for a given row.
@@ -241,19 +227,7 @@ impl IndividualTable {
     /// * `Some(parents)` if `row` is valid.
     /// * `None` otherwise.
     pub fn parents<I: Into<IndividualId> + Copy>(&self, row: I) -> Option<&[IndividualId]> {
-        assert!(
-            (self.num_rows() == 0 && self.as_ref().parents_length == 0)
-                || (!self.as_ref().parents.is_null() && !self.as_ref().location_offset.is_null())
-        );
-        unsafe {
-            sys::tsk_ragged_column_access(
-                row.into(),
-                self.as_ref().parents,
-                self.num_rows(),
-                self.as_ref().parents_offset,
-                self.as_ref().parents_length,
-            )
-        }
+        self.table_.parents(row.into())
     }
 
     /// Return the metadata for a given row.
@@ -430,7 +404,7 @@ match tables.individuals().metadata::<MutationMetadata>(0)
         &self,
         row: impl Into<IndividualId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(|e| e.into()))
     }
 
@@ -477,7 +451,7 @@ match tables.individuals().metadata::<MutationMetadata>(0)
             flags: self.flags(r)?,
             location: self.location(r),
             parents: self.parents(r),
-            metadata: self.raw_metadata(r.into()),
+            metadata: self.table_.raw_metadata(r.into()),
         };
         Some(view)
     }

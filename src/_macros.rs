@@ -65,27 +65,6 @@ macro_rules! handle_metadata_return {
     };
 }
 
-macro_rules! raw_metadata_getter_for_tables {
-    ($idtype: ty) => {
-        fn raw_metadata<I: Into<$idtype>>(&self, row: I) -> Option<&[u8]> {
-            assert!(
-                (self.num_rows() == 0 && self.as_ref().metadata_length == 0)
-                    || (!self.as_ref().metadata.is_null()
-                        && !self.as_ref().metadata_offset.is_null())
-            );
-            unsafe {
-                $crate::sys::tsk_ragged_column_access::<'_, u8, $idtype, _, _>(
-                    row.into(),
-                    self.as_ref().metadata,
-                    self.num_rows(),
-                    self.as_ref().metadata_offset,
-                    self.as_ref().metadata_length,
-                )
-            }
-        }
-    };
-}
-
 macro_rules! row_lending_iterator_get {
     () => {
         fn get(&self) -> Option<&Self::Item> {

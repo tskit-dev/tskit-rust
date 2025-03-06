@@ -73,6 +73,25 @@ impl SiteTable {
     pub fn position(&self, row: SiteId) -> Option<Position> {
         safe_tsk_column_access!(self, row, Position, position)
     }
+
+    raw_metadata_getter_for_tables!(SiteId);
+
+    pub fn ancestral_state(&self, row: SiteId) -> Option<&[u8]> {
+        assert!(
+            (self.as_ref().num_rows == 0 && self.as_ref().ancestral_state_length == 0)
+                || (!self.as_ref().ancestral_state.is_null()
+                    && !self.as_ref().ancestral_state_offset.is_null())
+        );
+        unsafe {
+            super::tsk_ragged_column_access(
+                row,
+                self.as_ref().ancestral_state,
+                self.as_ref().num_rows,
+                self.as_ref().ancestral_state_offset,
+                self.as_ref().ancestral_state_length,
+            )
+        }
+    }
 }
 
 impl Default for SiteTable {

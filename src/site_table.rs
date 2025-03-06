@@ -32,7 +32,7 @@ fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow>
         id: pos.into(),
         position: table.position(pos)?,
         ancestral_state,
-        metadata: table.raw_metadata(pos).map(|m| m.to_vec()),
+        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
     })
 }
 
@@ -121,7 +121,7 @@ impl streaming_iterator::StreamingIterator for SiteTableRowView<'_> {
             .position(self.id)
             .unwrap_or_else(|| f64::NAN.into());
         self.ancestral_state = self.table.ancestral_state(self.id);
-        self.metadata = self.table.raw_metadata(self.id);
+        self.metadata = self.table.table_.raw_metadata(self.id);
     }
 }
 
@@ -188,8 +188,6 @@ impl SiteTable {
         self.table_.as_ref()
     }
 
-    raw_metadata_getter_for_tables!(SiteId);
-
     /// Return the number of rows
     pub fn num_rows(&self) -> SizeType {
         self.as_ref().num_rows.into()
@@ -212,20 +210,7 @@ impl SiteTable {
     /// * `Some(ancestral state)` if `row` is valid.
     /// * `None` otherwise.
     pub fn ancestral_state<S: Into<SiteId>>(&self, row: S) -> Option<&[u8]> {
-        assert!(
-            (self.num_rows() == 0 && self.as_ref().ancestral_state_length == 0)
-                || (!self.as_ref().ancestral_state.is_null()
-                    && !self.as_ref().ancestral_state_offset.is_null())
-        );
-        unsafe {
-            sys::tsk_ragged_column_access(
-                row.into(),
-                self.as_ref().ancestral_state,
-                self.num_rows(),
-                self.as_ref().ancestral_state_offset,
-                self.as_ref().ancestral_state_length,
-            )
-        }
+        self.table_.ancestral_state(row.into())
     }
 
     /// Retrieve decoded metadata for a `row`.
@@ -248,7 +233,7 @@ impl SiteTable {
         &self,
         row: impl Into<SiteId>,
     ) -> Option<Result<T, TskitError>> {
-        let buffer = self.raw_metadata(row)?;
+        let buffer = self.table_.raw_metadata(row)?;
         Some(decode_metadata_row!(T, buffer).map_err(TskitError::from))
     }
 
@@ -293,7 +278,7 @@ impl SiteTable {
             id: r.into(),
             position: self.position(r)?,
             ancestral_state: self.ancestral_state(r),
-            metadata: self.raw_metadata(r.into()),
+            metadata: self.table_.raw_metadata(r.into()),
         };
         Some(view)
     }

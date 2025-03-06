@@ -100,6 +100,8 @@ impl MigrationTable {
     pub fn right(&self, row: MigrationId) -> Option<Position> {
         safe_tsk_column_access!(self, row, Position, right)
     }
+
+    raw_metadata_getter_for_tables!(MigrationId);
 }
 
 impl Default for MigrationTable {
