@@ -92,3 +92,18 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - name: cargo check msrv
         run: cargo hack check --feature-powerset 
+
+  doc:
+    name: Build docs
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        rust:
+          - stable
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: cargo doc
+        run: cargo doc --all-features
