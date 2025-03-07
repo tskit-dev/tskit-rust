@@ -1,8 +1,5 @@
-use std::ptr::NonNull;
-
 #[cfg(feature = "provenance")]
 use crate::provenance::ProvenanceTable;
-use crate::sys::bindings as ll_bindings;
 use crate::EdgeTable;
 use crate::IndividualTable;
 use crate::MigrationTable;
@@ -41,48 +38,6 @@ impl TableViews {
                 tables.provenances_mut(),
             )?,
         })
-    }
-
-    pub(crate) fn new_from_NonNull_table_collection(
-        tables: &mut NonNull<ll_bindings::tsk_table_collection_t>,
-    ) -> Result<Self, TskitError> {
-        Ok(Self {
-            edges: crate::EdgeTable::new_from_table(&mut unsafe { tables.as_mut() }.edges)?,
-            nodes: crate::NodeTable::new_from_table(&mut unsafe { tables.as_mut() }.nodes)?,
-            sites: crate::SiteTable::new_from_table(&mut unsafe { tables.as_mut() }.sites)?,
-            mutations: crate::MutationTable::new_from_table(
-                &mut unsafe { tables.as_mut() }.mutations,
-            )?,
-            individuals: crate::IndividualTable::new_from_table(
-                &mut unsafe { tables.as_mut() }.individuals,
-            )?,
-            populations: crate::PopulationTable::new_from_table(
-                &mut unsafe { tables.as_mut() }.populations,
-            )?,
-            migrations: crate::MigrationTable::new_from_table(
-                &mut unsafe { tables.as_mut() }.migrations,
-            )?,
-            #[cfg(feature = "provenance")]
-            provenances: crate::provenance::ProvenanceTable::new_from_table(
-                &mut unsafe { tables.as_mut() }.provenances,
-            )?,
-        })
-    }
-
-    pub(crate) fn new_from_tree_sequence(
-        treeseq: *mut ll_bindings::tsk_treeseq_t,
-    ) -> Result<Self, TskitError> {
-        if treeseq.is_null() {
-            return Err(TskitError::LibraryError(
-                "tree sequence pointer is null".to_string(),
-            ));
-        }
-        let mut n = NonNull::new(unsafe { *treeseq }.tables).ok_or_else(|| {
-            TskitError::LibraryError(
-                "tree sequence contains NULL pointer to table collection".to_string(),
-            )
-        })?;
-        Self::new_from_NonNull_table_collection(&mut n)
     }
 
     /// Get reference to the [``EdgeTable``](crate::EdgeTable).
