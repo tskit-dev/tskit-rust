@@ -1,4 +1,3 @@
-use delegate::delegate;
 use std::vec;
 
 use crate::error::TskitError;
@@ -7,16 +6,21 @@ use crate::metadata::MigrationMetadata;
 use crate::metadata::MutationMetadata;
 use crate::metadata::PopulationMetadata;
 use crate::metadata::SiteMetadata;
+#[cfg(feature = "provenance")]
+use crate::provenance::ProvenanceTable;
 use crate::sys::bindings as ll_bindings;
 use crate::sys::TableCollection as LLTableCollection;
 use crate::types::Bookmark;
 use crate::EdgeTable;
+use crate::IndividualTable;
 use crate::IndividualTableSortOptions;
 use crate::MigrationId;
 use crate::MigrationTable;
 use crate::MutationId;
 use crate::MutationTable;
+use crate::NodeTable;
 use crate::PopulationId;
+use crate::PopulationTable;
 use crate::Position;
 use crate::SimplificationOptions;
 use crate::SiteId;
@@ -69,7 +73,15 @@ use ll_bindings::tsk_size_t;
 pub struct TableCollection {
     inner: LLTableCollection,
     idmap: Vec<NodeId>,
-    views: crate::table_views::TableViews,
+    edges: EdgeTable,
+    nodes: NodeTable,
+    sites: SiteTable,
+    mutations: MutationTable,
+    individuals: IndividualTable,
+    populations: PopulationTable,
+    migrations: MigrationTable,
+    #[cfg(feature = "provenance")]
+    provenances: ProvenanceTable,
 }
 
 impl TableCollection {
@@ -88,21 +100,55 @@ impl TableCollection {
     /// ```
     pub fn new<P: Into<Position>>(sequence_length: P) -> Result<Self, TskitError> {
         let mut inner = LLTableCollection::new(sequence_length.into().into())?;
-        let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
+        let edges = crate::EdgeTable::new_from_table(inner.edges_mut())?;
+        let nodes = crate::NodeTable::new_from_table(inner.nodes_mut())?;
+        let sites = crate::SiteTable::new_from_table(inner.sites_mut())?;
+        let mutations = crate::MutationTable::new_from_table(inner.mutations_mut())?;
+        let individuals = crate::IndividualTable::new_from_table(inner.individuals_mut())?;
+        let populations = crate::PopulationTable::new_from_table(inner.populations_mut())?;
+        let migrations = crate::MigrationTable::new_from_table(inner.migrations_mut())?;
+        #[cfg(feature = "provenance")]
+        let provenances =
+            crate::provenance::ProvenanceTable::new_from_table(inner.provenances_mut())?;
         Ok(Self {
             inner,
             idmap: vec![],
-            views,
+            edges,
+            nodes,
+            sites,
+            mutations,
+            individuals,
+            populations,
+            migrations,
+            #[cfg(feature = "provenance")]
+            provenances,
         })
     }
 
     pub(crate) fn new_from_ll(lltables: LLTableCollection) -> Result<Self, TskitError> {
         let mut inner = lltables;
-        let views = crate::table_views::TableViews::new_from_ll_table_collection(&mut inner)?;
+        let edges = crate::EdgeTable::new_from_table(inner.edges_mut())?;
+        let nodes = crate::NodeTable::new_from_table(inner.nodes_mut())?;
+        let sites = crate::SiteTable::new_from_table(inner.sites_mut())?;
+        let mutations = crate::MutationTable::new_from_table(inner.mutations_mut())?;
+        let individuals = crate::IndividualTable::new_from_table(inner.individuals_mut())?;
+        let populations = crate::PopulationTable::new_from_table(inner.populations_mut())?;
+        let migrations = crate::MigrationTable::new_from_table(inner.migrations_mut())?;
+        #[cfg(feature = "provenance")]
+        let provenances =
+            crate::provenance::ProvenanceTable::new_from_table(inner.provenances_mut())?;
         Ok(Self {
             inner,
             idmap: vec![],
-            views,
+            edges,
+            nodes,
+            sites,
+            mutations,
+            individuals,
+            populations,
+            migrations,
+            #[cfg(feature = "provenance")]
+            provenances,
         })
     }
 
@@ -216,7 +262,7 @@ impl TableCollection {
         parent: P,
         child: C,
     ) -> Result<EdgeId, TskitError> {
-        self.views.edges_mut().add_row(left, right, parent, child)
+        self.edges_mut().add_row(left, right, parent, child)
     }
 
     /// Add a row with optional metadata to the edge table
@@ -253,8 +299,7 @@ impl TableCollection {
         child: C,
         metadata: &M,
     ) -> Result<EdgeId, TskitError> {
-        self.views
-            .edges_mut()
+        self.edges_mut()
             .add_row_with_metadata(left, right, parent, child, metadata)
     }
 
@@ -305,9 +350,7 @@ impl TableCollection {
         L: crate::IndividualLocation,
         P: crate::IndividualParents,
     {
-        self.views
-            .individuals_mut()
-            .add_row(flags, location, parents)
+        self.individuals_mut().add_row(flags, location, parents)
     }
 
     /// Add a row with metadata to the individual table
@@ -346,8 +389,7 @@ impl TableCollection {
         P: crate::IndividualParents,
         M: crate::metadata::IndividualMetadata,
     {
-        self.views
-            .individuals_mut()
+        self.individuals_mut()
             .add_row_with_metadata(flags, location, parents, metadata)
     }
 
@@ -381,9 +423,7 @@ impl TableCollection {
         DEST: Into<PopulationId>,
         T: Into<Time>,
     {
-        self.views
-            .migrations_mut()
-            .add_row(span, node, source_dest, time)
+        self.migrations_mut().add_row(span, node, source_dest, time)
     }
 
     /// Add a row with optional metadata to the migration table
@@ -432,8 +472,7 @@ impl TableCollection {
         T: Into<Time>,
         M: MigrationMetadata,
     {
-        self.views
-            .migrations_mut()
+        self.migrations_mut()
             .add_row_with_metadata(span, node, source_dest, time, metadata)
     }
 
@@ -520,7 +559,7 @@ impl TableCollection {
         position: P,
         ancestral_state: Option<&[u8]>,
     ) -> Result<SiteId, TskitError> {
-        self.views.sites_mut().add_row(position, ancestral_state)
+        self.sites_mut().add_row(position, ancestral_state)
     }
 
     /// Add a row with optional metadata to the site table
@@ -551,8 +590,7 @@ impl TableCollection {
         ancestral_state: Option<&[u8]>,
         metadata: &M,
     ) -> Result<SiteId, TskitError> {
-        self.views
-            .sites_mut()
+        self.sites_mut()
             .add_row_with_metadata(position, ancestral_state, metadata)
     }
 
@@ -571,8 +609,7 @@ impl TableCollection {
         P: Into<MutationId>,
         T: Into<Time>,
     {
-        self.views
-            .mutations_mut()
+        self.mutations_mut()
             .add_row(site, node, parent, time, derived_state)
     }
 
@@ -613,7 +650,7 @@ impl TableCollection {
         T: Into<Time>,
         M: MutationMetadata,
     {
-        self.views.mutations_mut().add_row_with_metadata(
+        self.mutations_mut().add_row_with_metadata(
             site,
             node,
             parent,
@@ -632,7 +669,7 @@ impl TableCollection {
     /// tables.add_population().unwrap();
     /// ```
     pub fn add_population(&mut self) -> Result<PopulationId, TskitError> {
-        self.views.populations_mut().add_row()
+        self.populations_mut().add_row()
     }
 
     /// Add a row with optional metadata to the population_table
@@ -658,7 +695,7 @@ impl TableCollection {
         &mut self,
         metadata: &M,
     ) -> Result<PopulationId, TskitError> {
-        self.views.populations_mut().add_row_with_metadata(metadata)
+        self.populations_mut().add_row_with_metadata(metadata)
     }
 
     /// Build the "input" and "output"
@@ -909,10 +946,8 @@ impl TableCollection {
         idmap: bool,
     ) -> Result<Option<&[NodeId]>, TskitError> {
         if idmap {
-            self.idmap.resize(
-                usize::try_from(self.views.nodes().num_rows())?,
-                NodeId::NULL,
-            );
+            self.idmap
+                .resize(usize::try_from(self.nodes().num_rows())?, NodeId::NULL);
         }
         let rv = unsafe {
             ll_bindings::tsk_table_collection_simplify(
@@ -1037,7 +1072,7 @@ impl TableCollection {
     /// # }
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
-        self.views.provenances_mut().add_row(record)
+        self.provenances_mut().add_row(record)
     }
 
     /// Set the edge table from an [`EdgeTable`](`crate::EdgeTable`)
@@ -1348,14 +1383,176 @@ impl TableCollection {
         handle_tsk_return_value!(rv)
     }
 
-    delegate! {
-        to self.views {
-            /// Get mutable reference to the [``NodeTable``](crate::NodeTable).
-            pub fn nodes_mut(&mut self) -> &mut crate::NodeTable;
-        }
+    /// Get reference to the [``EdgeTable``](crate::EdgeTable).
+    pub fn edges(&self) -> &EdgeTable {
+        &self.edges
     }
 
-    delegate_table_view_api!();
+    pub fn edges_mut(&mut self) -> &mut EdgeTable {
+        &mut self.edges
+    }
+
+    /// Get reference to the [``NodeTable``](crate::NodeTable).
+    pub fn nodes(&self) -> &NodeTable {
+        &self.nodes
+    }
+
+    /// Get mutable reference to the [``NodeTable``](crate::NodeTable).
+    pub fn nodes_mut(&mut self) -> &mut NodeTable {
+        &mut self.nodes
+    }
+
+    /// Get reference to the [``SiteTable``](crate::SiteTable).
+    pub fn sites(&self) -> &SiteTable {
+        &self.sites
+    }
+
+    pub fn sites_mut(&mut self) -> &mut SiteTable {
+        &mut self.sites
+    }
+
+    /// Get reference to the [``MutationTable``](crate::MutationTable).
+    pub fn mutations(&self) -> &MutationTable {
+        &self.mutations
+    }
+
+    pub fn mutations_mut(&mut self) -> &mut MutationTable {
+        &mut self.mutations
+    }
+
+    /// Get reference to the [``IndividualTable``](crate::IndividualTable).
+    pub fn individuals(&self) -> &IndividualTable {
+        &self.individuals
+    }
+
+    pub fn individuals_mut(&mut self) -> &mut IndividualTable {
+        &mut self.individuals
+    }
+
+    /// Get reference to the [``PopulationTable``](crate::PopulationTable).
+    pub fn populations(&self) -> &PopulationTable {
+        &self.populations
+    }
+
+    pub fn populations_mut(&mut self) -> &mut PopulationTable {
+        &mut self.populations
+    }
+
+    /// Get reference to the [``MigrationTable``](crate::MigrationTable).
+    pub fn migrations(&self) -> &MigrationTable {
+        &self.migrations
+    }
+
+    pub fn migrations_mut(&mut self) -> &mut MigrationTable {
+        &mut self.migrations
+    }
+
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
+    pub fn provenances(&self) -> &ProvenanceTable {
+        &self.provenances
+    }
+
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// Get reference to the [``ProvenanceTable``](crate::provenance::ProvenanceTable)
+    pub fn provenances_mut(&mut self) -> &mut ProvenanceTable {
+        &mut self.provenances
+    }
+
+    /// Return an iterator over the edges.
+    pub fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
+        self.edges.iter()
+    }
+
+    /// Return an iterator over the nodes.
+    pub fn nodes_iter(&self) -> impl Iterator<Item = crate::NodeTableRow> + '_ {
+        self.nodes.iter()
+    }
+
+    /// Return an iterator over the sites.
+    pub fn sites_iter(&self) -> impl Iterator<Item = crate::SiteTableRow> + '_ {
+        self.sites.iter()
+    }
+
+    /// Return an iterator over the mutations.
+    pub fn mutations_iter(&self) -> impl Iterator<Item = crate::MutationTableRow> + '_ {
+        self.mutations.iter()
+    }
+
+    /// Return an iterator over the individuals.
+    pub fn individuals_iter(&self) -> impl Iterator<Item = crate::IndividualTableRow> + '_ {
+        self.individuals.iter()
+    }
+
+    /// Return an iterator over the populations.
+    pub fn populations_iter(&self) -> impl Iterator<Item = crate::PopulationTableRow> + '_ {
+        self.populations.iter()
+    }
+
+    /// Return an iterator over the migrations.
+    pub fn migrations_iter(&self) -> impl Iterator<Item = crate::MigrationTableRow> + '_ {
+        self.migrations.iter()
+    }
+
+    #[cfg(feature = "provenance")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+    /// Return an iterator over provenances
+    pub fn provenances_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::provenance::ProvenanceTableRow> + '_ {
+        self.provenances.iter()
+    }
+
+    /// Obtain a vector containing the indexes ("ids")
+    /// of all nodes for which [`crate::NodeFlags::is_sample`]
+    /// is `true`.
+    ///
+    /// The provided implementation dispatches to
+    /// [`crate::NodeTable::samples_as_vector`].
+    pub fn samples_as_vector(&self) -> Vec<crate::NodeId> {
+        self.nodes().samples_as_vector()
+    }
+
+    /// Obtain a vector containing the indexes ("ids") of all nodes
+    /// satisfying a certain criterion.
+    ///
+    /// The provided implementation dispatches to
+    /// [`crate::NodeTable::create_node_id_vector`].
+    ///
+    /// # Parameters
+    ///
+    /// * `f`: a function.  The function is passed the current table
+    ///    collection and each [`crate::node_table::NodeTableRow`].
+    ///    If `f` returns `true`, the index of that row is included
+    ///    in the return value.
+    ///
+    /// # Examples
+    ///
+    /// Get all nodes with time > 0.0:
+    ///
+    /// ```
+    /// let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// tables
+    ///     .add_node(tskit::NodeFlags::new_sample(), 0.0, tskit::PopulationId::NULL,
+    ///     tskit::IndividualId::NULL)
+    ///     .unwrap();
+    /// tables
+    ///     .add_node(tskit::NodeFlags::new_sample(), 1.0, tskit::PopulationId::NULL,
+    ///     tskit::IndividualId::NULL)
+    ///     .unwrap();
+    /// let samples = tables.create_node_id_vector(
+    ///     |row: &tskit::NodeTableRow| row.time > 0.,
+    /// );
+    /// assert_eq!(samples[0], 1);
+    /// ```
+    pub fn create_node_id_vector(
+        &self,
+        f: impl FnMut(&crate::NodeTableRow) -> bool,
+    ) -> Vec<crate::NodeId> {
+        self.nodes().create_node_id_vector(f)
+    }
 
     /// Pointer to the low-level C type.
     pub fn as_ptr(&self) -> *const ll_bindings::tsk_table_collection_t {
