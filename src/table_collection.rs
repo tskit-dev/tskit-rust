@@ -100,16 +100,24 @@ impl TableCollection {
     /// ```
     pub fn new<P: Into<Position>>(sequence_length: P) -> Result<Self, TskitError> {
         let mut inner = LLTableCollection::new(sequence_length.into().into())?;
-        let edges = crate::EdgeTable::new_from_table(inner.edges_mut())?;
-        let nodes = crate::NodeTable::new_from_table(inner.nodes_mut())?;
-        let sites = crate::SiteTable::new_from_table(inner.sites_mut())?;
-        let mutations = crate::MutationTable::new_from_table(inner.mutations_mut())?;
-        let individuals = crate::IndividualTable::new_from_table(inner.individuals_mut())?;
-        let populations = crate::PopulationTable::new_from_table(inner.populations_mut())?;
-        let migrations = crate::MigrationTable::new_from_table(inner.migrations_mut())?;
+        // SAFETY: all the casts to *mut Foo are coming in via an implicit
+        // cast from &mut Foo, which means that the ptr cannot be NULL.
+        // Further, successful creation of LLTableCollection means
+        // that tables are initialized.
+        // Finally, none of these variables will be pub directly other than
+        // by reference.
+        let edges = unsafe { crate::EdgeTable::new_from_table(inner.edges_mut())? };
+        let nodes = unsafe { crate::NodeTable::new_from_table(inner.nodes_mut())? };
+        let sites = unsafe { crate::SiteTable::new_from_table(inner.sites_mut())? };
+        let mutations = unsafe { crate::MutationTable::new_from_table(inner.mutations_mut())? };
+        let individuals =
+            unsafe { crate::IndividualTable::new_from_table(inner.individuals_mut())? };
+        let populations =
+            unsafe { crate::PopulationTable::new_from_table(inner.populations_mut())? };
+        let migrations = unsafe { crate::MigrationTable::new_from_table(inner.migrations_mut())? };
         #[cfg(feature = "provenance")]
         let provenances =
-            crate::provenance::ProvenanceTable::new_from_table(inner.provenances_mut())?;
+            unsafe { crate::provenance::ProvenanceTable::new_from_table(inner.provenances_mut())? };
         Ok(Self {
             inner,
             idmap: vec![],
@@ -127,16 +135,24 @@ impl TableCollection {
 
     pub(crate) fn new_from_ll(lltables: LLTableCollection) -> Result<Self, TskitError> {
         let mut inner = lltables;
-        let edges = crate::EdgeTable::new_from_table(inner.edges_mut())?;
-        let nodes = crate::NodeTable::new_from_table(inner.nodes_mut())?;
-        let sites = crate::SiteTable::new_from_table(inner.sites_mut())?;
-        let mutations = crate::MutationTable::new_from_table(inner.mutations_mut())?;
-        let individuals = crate::IndividualTable::new_from_table(inner.individuals_mut())?;
-        let populations = crate::PopulationTable::new_from_table(inner.populations_mut())?;
-        let migrations = crate::MigrationTable::new_from_table(inner.migrations_mut())?;
+        // SAFETY: all the casts to *mut Foo are coming in via an implicit
+        // cast from &mut Foo, which means that the ptr cannot be NULL.
+        // Further, successful creation of LLTableCollection means
+        // that tables are initialized.
+        // Finally, none of these variables will be pub directly other than
+        // by reference.
+        let edges = unsafe { crate::EdgeTable::new_from_table(inner.edges_mut())? };
+        let nodes = unsafe { crate::NodeTable::new_from_table(inner.nodes_mut())? };
+        let sites = unsafe { crate::SiteTable::new_from_table(inner.sites_mut())? };
+        let mutations = unsafe { crate::MutationTable::new_from_table(inner.mutations_mut())? };
+        let individuals =
+            unsafe { crate::IndividualTable::new_from_table(inner.individuals_mut())? };
+        let populations =
+            unsafe { crate::PopulationTable::new_from_table(inner.populations_mut())? };
+        let migrations = unsafe { crate::MigrationTable::new_from_table(inner.migrations_mut())? };
         #[cfg(feature = "provenance")]
         let provenances =
-            crate::provenance::ProvenanceTable::new_from_table(inner.provenances_mut())?;
+            unsafe { crate::provenance::ProvenanceTable::new_from_table(inner.provenances_mut())? };
         Ok(Self {
             inner,
             idmap: vec![],
@@ -1740,10 +1756,14 @@ impl TableCollection {
         }
 
         // convert sys version of tables to non-sys version of tables
-        let new_edges = EdgeTable::new_from_table(new_edges.as_mut())?;
-        let new_migrations = MigrationTable::new_from_table(new_migrations.as_mut())?;
-        let new_mutations = MutationTable::new_from_table(new_mutations.as_mut())?;
-        let new_sites = SiteTable::new_from_table(new_sites.as_mut())?;
+        // SAFETY: all the casts to *mut Foo are coming in via an implicit
+        // cast from &mut Foo, which means that the ptr cannot be NULL.
+        // Further, all input tables are initialized.
+        // Finally, none of these variables will be every be pub.
+        let new_edges = unsafe { EdgeTable::new_from_table(new_edges.as_mut())? };
+        let new_migrations = unsafe { MigrationTable::new_from_table(new_migrations.as_mut())? };
+        let new_mutations = unsafe { MutationTable::new_from_table(new_mutations.as_mut())? };
+        let new_sites = unsafe { SiteTable::new_from_table(new_sites.as_mut())? };
 
         // replace old tables with new tables
         tables.set_edges(&new_edges).map(|_| ())?;

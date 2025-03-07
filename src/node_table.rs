@@ -439,7 +439,14 @@ impl NodeTable {
         Ok(Self { table_ })
     }
 
-    pub(crate) fn new_from_table(
+    // # Safety
+    //
+    // * this fn must NEVER by part of the public API
+    // * all returned values must only be visible to the public API
+    //   by REFERENCE (& or &mut)
+    // * the input ptr must not be NULL
+    // * the input ptr must point to an initialized table
+    pub(crate) unsafe fn new_from_table(
         nodes: *mut ll_bindings::tsk_node_table_t,
     ) -> Result<Self, TskitError> {
         let ptr = std::ptr::NonNull::new(nodes).unwrap();
