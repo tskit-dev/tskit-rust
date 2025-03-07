@@ -98,7 +98,6 @@ mod site_table;
 mod sys;
 mod table_collection;
 mod table_iterator;
-mod table_views;
 mod traits;
 mod trees;
 pub mod types;
