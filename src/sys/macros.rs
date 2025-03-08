@@ -134,6 +134,30 @@ macro_rules! impl_id_traits {
             }
         }
 
+        impl PartialEq<&$idtype> for $idtype {
+            fn eq(&self, other: &&$idtype) -> bool {
+                self.0 == other.0
+            }
+        }
+
+        impl PartialEq<$idtype> for &$idtype {
+            fn eq(&self, other: &$idtype) -> bool {
+                self.0 == other.0
+            }
+        }
+
+        impl PartialOrd<&$idtype> for $idtype {
+            fn partial_cmp(&self, other: &&$idtype) -> Option<std::cmp::Ordering> {
+                self.partial_cmp(&other.0)
+            }
+        }
+
+        impl PartialOrd<$idtype> for &$idtype {
+            fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
+                self.0.partial_cmp(&other.0)
+            }
+        }
+
         impl Default for $idtype {
             fn default() -> Self {
                 Self::NULL
