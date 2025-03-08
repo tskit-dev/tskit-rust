@@ -124,13 +124,37 @@ macro_rules! impl_id_traits {
 
         impl PartialOrd<super::bindings::tsk_id_t> for $idtype {
             fn partial_cmp(&self, other: &super::bindings::tsk_id_t) -> Option<std::cmp::Ordering> {
-                self.0.partial_cmp(other)
+                Some(self.0.cmp(other))
             }
         }
 
         impl PartialOrd<$idtype> for super::bindings::tsk_id_t {
             fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
-                self.partial_cmp(&other.0)
+                Some(self.cmp(&other.0))
+            }
+        }
+
+        impl PartialEq<&$idtype> for $idtype {
+            fn eq(&self, other: &&$idtype) -> bool {
+                self.0 == other.0
+            }
+        }
+
+        impl PartialEq<$idtype> for &$idtype {
+            fn eq(&self, other: &$idtype) -> bool {
+                self.0 == other.0
+            }
+        }
+
+        impl PartialOrd<&$idtype> for $idtype {
+            fn partial_cmp(&self, other: &&$idtype) -> Option<std::cmp::Ordering> {
+                Some(self.0.cmp(&other.0))
+            }
+        }
+
+        impl PartialOrd<$idtype> for &$idtype {
+            fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
+                Some(self.0.cmp(&other.0))
             }
         }
 
