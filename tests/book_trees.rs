@@ -86,7 +86,7 @@ fn initialize_from_table_collection() {
                 // The children function returns another iterator
                 let _siblings = tree
                     .children(parent)
-                    .filter(|child| child != &node)
+                    .filter(|child| child != node)
                     .collect::<Vec<_>>();
             }
         }
