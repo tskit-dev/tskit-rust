@@ -243,3 +243,20 @@ fn test_try_from_reference() {
     let y = NodeId::from(2);
     assert_eq!(2, usize::try_from(&y).unwrap());
 }
+
+#[test]
+fn test_eq_to_self_ref() {
+    let x = NodeId::from(1);
+    let rx = &x;
+    assert_eq!(x, rx);
+    assert_eq!(rx, x);
+}
+
+#[test]
+fn test_ord_to_self_ref() {
+    let x = NodeId::from(1);
+    let y = NodeId::from(2);
+    let ry = &y;
+    assert!(x < ry);
+    assert!(ry > x);
+}
