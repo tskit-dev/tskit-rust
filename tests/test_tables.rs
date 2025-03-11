@@ -550,3 +550,19 @@ mod test_metadata_round_trips {
         );
     }
 }
+
+#[test]
+fn test_node_table_column_access() {
+    let mut t = tskit::NodeTable::new().unwrap();
+    let node = t
+        .add_row(tskit::NodeFlags::new_sample(), 0.0, -1, -1)
+        .unwrap();
+    let individual = t.individual_column();
+    assert_eq!(individual[node], tskit::IndividualId::NULL);
+    let population = t.population_column();
+    assert_eq!(population[node], tskit::PopulationId::NULL);
+    let time = t.time_column();
+    assert_eq!(time[node], 0.0);
+    let flags = t.flags_column();
+    assert_eq!(flags[node], tskit::NodeFlags::IS_SAMPLE);
+}
