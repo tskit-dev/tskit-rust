@@ -807,6 +807,22 @@ impl NodeTable {
         /// Get the population column as a slice
         => population, population_slice_raw, crate::sys::bindings::tsk_id_t);
 
+    pub fn individual_column(&self) -> crate::table_column::NodeTableColumn<IndividualId> {
+        crate::NodeTableColumn::new(self.individual_slice())
+    }
+
+    pub fn population_column(&self) -> crate::NodeTableColumn<PopulationId> {
+        crate::NodeTableColumn::new(self.population_slice())
+    }
+
+    pub fn time_column(&self) -> crate::NodeTableColumn<Time> {
+        crate::NodeTableColumn::new(self.time_slice())
+    }
+
+    pub fn flags_column(&self) -> crate::NodeTableColumn<NodeFlags> {
+        crate::NodeTableColumn::new(self.flags_slice())
+    }
+
     /// Clear all data from the table
     pub fn clear(&mut self) -> Result<i32, TskitError> {
         handle_tsk_return_value!(self.table_.clear())
