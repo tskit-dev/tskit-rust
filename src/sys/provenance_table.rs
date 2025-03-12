@@ -45,7 +45,7 @@ impl ProvenanceTable {
                 "empty provenance record".to_owned(),
             ));
         }
-        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
+        let timestamp = chrono::Utc::now().to_string();
         let rv = unsafe {
             tsk_provenance_table_add_row(
                 self.as_mut(),

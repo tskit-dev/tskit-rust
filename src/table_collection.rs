@@ -1047,7 +1047,7 @@ impl TableCollection {
     /// specification.
     /// This formatting approach has been the most straightforward method
     /// for supporting round trips to/from a [`crate::provenance::ProvenanceTable`].
-    /// The implementations used here use the [`humantime`](https://docs.rs/humantime/latest/humantime/) crate.
+    /// The implementations used here use the [`chrono`](https://docs.rs/chrono/latest/chrono/) crate.
     ///
     /// # Parameters
     ///
@@ -1076,9 +1076,9 @@ impl TableCollection {
     /// let timestamp = prov_ref.timestamp(0).unwrap();
     /// assert_eq!(timestamp, row_0.timestamp);
     ///
-    /// // You can get the `humantime::Timestamp` object back from the `String`:
+    /// // You can get the `chrono` object back from the `String`:
     /// use core::str::FromStr;
-    /// let timestamp_string = humantime::Timestamp::from_str(&timestamp).unwrap();
+    /// let timestamp_string = chrono::DateTime::<chrono::Utc>::from_str(&timestamp).unwrap();
     ///
     /// // Provenance transfers to the tree sequences
     /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();

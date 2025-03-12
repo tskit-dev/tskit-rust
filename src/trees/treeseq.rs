@@ -431,7 +431,7 @@ impl TreeSequence {
     /// specification.
     /// This formatting approach has been the most straightforward method
     /// for supporting round trips to/from a [`crate::provenance::ProvenanceTable`].
-    /// The implementations used here use the [`humantime`](https://docs.rs/humantime/latest/humantime/) crate.
+    /// The implementations used here use the [`chrono`](https://docs.rs/chrono/latest/chrono/) crate.
     ///
     /// # Parameters
     ///
@@ -453,7 +453,7 @@ impl TreeSequence {
     /// let timestamp = prov_ref.timestamp(0).unwrap();
     /// assert_eq!(timestamp, row_0.timestamp);
     /// use core::str::FromStr;
-    /// let dt_utc = humantime::Timestamp::from_str(&timestamp).unwrap();
+    /// let dt_utc = chrono::DateTime::<chrono::Utc>::from_str(&timestamp).unwrap();
     /// println!("utc = {}", dt_utc);
     /// # }
     /// ```
@@ -464,7 +464,7 @@ impl TreeSequence {
                 expected: "provenance record".to_string(),
             });
         }
-        let timestamp = humantime::format_rfc3339(std::time::SystemTime::now()).to_string();
+        let timestamp = chrono::Utc::now().to_string();
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
                 &mut (*self.inner.as_ref().tables).provenances,
