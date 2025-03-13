@@ -14,6 +14,18 @@ macro_rules! make_table_column {
             pub fn as_slice(&self) -> &[T] {
                 self.0
             }
+
+            pub fn get_with_id(&self, index: crate::$index) -> Option<&T> {
+                self.get_with_usize(usize::try_from(index).ok()?)
+            }
+
+            pub fn get_with_size_type(&self, index: crate::SizeType) -> Option<&T> {
+                self.get_with_usize(usize::try_from(index).ok()?)
+            }
+
+            pub fn get_with_usize(&self, index: usize) -> Option<&T> {
+                self.0.get(index)
+            }
         }
 
         impl<T> std::ops::Index<usize> for $name<'_, T> {
