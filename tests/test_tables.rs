@@ -557,12 +557,34 @@ fn test_node_table_column_access() {
     let node = t
         .add_row(tskit::NodeFlags::new_sample(), 0.0, -1, -1)
         .unwrap();
-    let individual = t.individual_column();
-    assert_eq!(individual[node], tskit::IndividualId::NULL);
-    let population = t.population_column();
-    assert_eq!(population[node], tskit::PopulationId::NULL);
-    let time = t.time_column();
-    assert_eq!(time[node], 0.0);
-    let flags = t.flags_column();
-    assert_eq!(flags[node], tskit::NodeFlags::IS_SAMPLE);
+    {
+        let individual = t.individual_column();
+        assert_eq!(individual[node], tskit::IndividualId::NULL);
+        assert_eq!(
+            individual.get_with_id(node).unwrap(),
+            &tskit::IndividualId::NULL
+        );
+        assert!(individual.get_with_size_type(t.num_rows()).is_none());
+    }
+    {
+        let population = t.population_column();
+        assert_eq!(population[node], tskit::PopulationId::NULL);
+        assert_eq!(
+            population.get_with_id(node).unwrap(),
+            &tskit::PopulationId::NULL
+        );
+    }
+    {
+        let time = t.time_column();
+        assert_eq!(time[node], 0.0);
+        assert_eq!(time.get_with_id(node).unwrap(), &0.0);
+    }
+    {
+        let flags = t.flags_column();
+        assert_eq!(flags[node], tskit::NodeFlags::IS_SAMPLE);
+        assert_eq!(
+            flags.get_with_id(node).unwrap(),
+            &tskit::NodeFlags::IS_SAMPLE
+        );
+    }
 }
