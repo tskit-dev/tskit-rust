@@ -588,3 +588,33 @@ fn test_node_table_column_access() {
         );
     }
 }
+
+#[test]
+fn test_edge_table_column_access() {
+    let mut table = tskit::EdgeTable::default();
+    let edge = table.add_row(0., 10., 1, 0).unwrap();
+
+    {
+        let column = table.left_column();
+        assert_eq!(column[edge], 0.0);
+        assert_eq!(column[edge], tskit::Position::from(0.));
+    }
+
+    {
+        let column = table.right_column();
+        assert_eq!(column[edge], 10.0);
+        assert_eq!(column[edge], tskit::Position::from(10.0));
+    }
+
+    {
+        let column = table.parent_column();
+        assert_eq!(column[edge], 1);
+        assert_eq!(column[edge], tskit::NodeId::from(1));
+    }
+
+    {
+        let column = table.child_column();
+        assert_eq!(column[edge], 0);
+        assert_eq!(column[edge], tskit::NodeId::from(0));
+    }
+}

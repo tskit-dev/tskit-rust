@@ -358,6 +358,22 @@ impl EdgeTable {
         /// Get the child column as a slice of the underlying integer type
         => child, child_slice_raw, ll_bindings::tsk_id_t);
 
+    pub fn parent_column(&self) -> crate::EdgeTableColumn<crate::NodeId> {
+        crate::EdgeTableColumn::new(self.parent_slice())
+    }
+
+    pub fn child_column(&self) -> crate::EdgeTableColumn<crate::NodeId> {
+        crate::EdgeTableColumn::new(self.child_slice())
+    }
+
+    pub fn left_column(&self) -> crate::EdgeTableColumn<Position> {
+        crate::EdgeTableColumn::new(self.left_slice())
+    }
+
+    pub fn right_column(&self) -> crate::EdgeTableColumn<Position> {
+        crate::EdgeTableColumn::new(self.right_slice())
+    }
+
     /// Clear all data from the table
     pub fn clear(&mut self) -> Result<i32, TskitError> {
         handle_tsk_return_value!(self.table_.clear())

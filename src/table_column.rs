@@ -58,3 +58,4 @@ macro_rules! make_table_column {
 }
 
 make_table_column!(NodeTableColumn, NodeId);
+make_table_column!(EdgeTableColumn, EdgeId);
