@@ -30,7 +30,7 @@ tskit-derive = {version = "0.2.0", path = "tskit-derive", optional = true}
 chrono = { version = "0.4.40", default-features = false, features = ["now", "std"] , optional = true}
 
 [dev-dependencies]
-anyhow = {version = "1.0.86"}
+anyhow = {version = "1.0.97"}
 clap = {version = "4.4.6", features = ["derive"]}
 serde = {version = "1.0.203", features = ["derive"]}
 serde-pickle = "1.1.0"
