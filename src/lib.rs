@@ -54,8 +54,8 @@
 //!     * [`crate::metadata::MigrationMetadata`]
 //!     * [`crate::metadata::PopulationMetadata`]
 //!
-//!     To see these derive macros in action, take a look
-//!     [`here`](metadata).
+//!   To see these derive macros in action, take a look
+//!   [`here`](metadata).
 //!         
 //! To add features to your `Cargo.toml` file:
 //!
