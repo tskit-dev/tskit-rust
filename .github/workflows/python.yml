@@ -1,0 +1,47 @@
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+name: Python data round trips
+
+jobs:
+  test-metadata:
+    name: Test Python metadata round trips
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+        rust:
+          - stable
+        python: [ "3.13" ]
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2.7.5
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          activate-environment: true
+          version: "latest"
+          python-version: ${{ matrix.python }}
+      - name: run JSON metadata example
+        run: |
+          cargo run --example json_metadata --features derive
+      - name: setup Python and run tests
+        run: |
+          uv venv -p ${{ matrix.python }}
+          source .venv/bin/activate
+          uv pip install -r python/requirements_locked_3_13.txt
+          python -m pytest python
+
