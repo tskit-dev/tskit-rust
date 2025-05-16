@@ -17,11 +17,17 @@ impl Default for GenericMetadata {
 #[cfg(test)]
 impl crate::metadata::MetadataRoundtrip for GenericMetadata {
     fn encode(&self) -> Result<Vec<u8>, crate::metadata::MetadataError> {
-        handle_metadata_return!(bincode::serialize(&self))
+        handle_metadata_return!(bincode::serde::encode_to_vec(
+            &self,
+            bincode::config::standard()
+        ))
     }
 
     fn decode(md: &[u8]) -> Result<Self, crate::metadata::MetadataError> {
-        handle_metadata_return!(bincode::deserialize(md))
+        handle_metadata_return!(bincode::serde::decode_from_slice(
+            md,
+            bincode::config::standard()
+        ))
     }
 }
 

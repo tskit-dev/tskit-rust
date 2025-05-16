@@ -30,7 +30,7 @@ fn impl_serde_bincode_roundtrip(name: &syn::Ident) -> TokenStream {
     let gen = quote::quote!(
         impl ::tskit::metadata::MetadataRoundtrip for #name {
             fn encode(&self) -> Result<Vec<u8>, ::tskit::metadata::MetadataError> {
-                match ::bincode::serialize(&self) {
+                match ::bincode::serde::serialize(&self) {
                     Ok(x) => Ok(x),
                     Err(e) => {
                         Err(::tskit::metadata::MetadataError::RoundtripError { value: Box::new(e) })
