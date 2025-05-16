@@ -25,7 +25,7 @@ libc = "0.2.155"
 streaming-iterator = "0.1.5"
 serde = {version = "1.0.203", features = ["derive"], optional = true}
 serde_json = {version = "1.0.120", optional = true}
-bincode = {version = "1.3.1", optional = true}
+bincode = {version = "2", optional = true}
 tskit-derive = {version = "0.2.0", path = "tskit-derive", optional = true}
 chrono = { version = "0.4.40", default-features = false, features = ["now", "std"] , optional = true}
 
@@ -35,7 +35,7 @@ clap = {version = "4.4.6", features = ["derive"]}
 serde = {version = "1.0.203", features = ["derive"]}
 serde-pickle = "1.1.0"
 serde_json = {version = "1.0.120"}
-bincode = "1.3.1"
+bincode = "2"
 rand = "0.8.3"
 rand_distr = "0.4.0"
 
