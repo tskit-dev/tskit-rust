@@ -60,3 +60,7 @@ name = "tree_traversals"
 [[example]]
 name = "json_metadata"
 required-features = ["derive"]
+
+[[example]]
+name = "bincode_metadata"
+required-features = ["derive"]
