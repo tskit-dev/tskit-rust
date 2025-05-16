@@ -54,20 +54,16 @@ impl IndividualMetadata {
 
 /// Decode mutation metadata generated in rust via the `bincode` crate.
 #[pyfunction]
-fn decode_bincode_mutation_metadata(md: Vec<u8>) -> MutationMetadata {
-    // NOTE: the unwrap here is not correct for production code
-    // and a failure will crash the Python interpreter!
-    let md = bincode::deserialize_from(md.as_slice()).unwrap();
-    md
+fn decode_bincode_mutation_metadata(md: Vec<u8>) -> PyResult<MutationMetadata> {
+    bincode::deserialize_from(md.as_slice())
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("error decoding mutation metadata"))
 }
 
 /// Decode individual metadata generated in rust via the `bincode` crate.
 #[pyfunction]
-fn decode_bincode_individual_metadata(md: Vec<u8>) -> IndividualMetadata {
-    // NOTE: the unwrap here is not correct for production code
-    // and a failure will crash the Python interpreter!
-    let md = bincode::deserialize_from(md.as_slice()).unwrap();
-    md
+fn decode_bincode_individual_metadata(md: Vec<u8>) -> PyResult<IndividualMetadata> {
+    bincode::deserialize_from(md.as_slice())
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("error decoding individual metadata"))
 }
 
 /// A Python module implemented in Rust.
