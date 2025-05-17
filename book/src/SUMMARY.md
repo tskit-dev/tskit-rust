@@ -19,7 +19,7 @@
 * [Metadata](./metadata.md)
   - [Defining metadata types in rust](./metadata_derive.md)
   - [Metadata and tables](./metadata_tables.md)
-  - [Metadata schema](./metadata_schema.md)
+  - [Metadata processing with Python](./metadata_python.md)
   - [Advanced topics](./metadata_advanced.md)
 
 * [Error handling](./error_handling.md)
