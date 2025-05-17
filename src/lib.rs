@@ -123,7 +123,6 @@ pub use traits::IndividualParents;
 pub use traits::ObjectSafeTableIteration;
 pub use traits::TableAccess;
 pub use traits::TableIteration;
-pub use tree_interface::{NodeTraversalOrder, TreeInterface};
 pub use trees::{Tree, TreeSequence};
 
 // Optional features
