@@ -119,8 +119,10 @@ pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
 pub use table_column::{EdgeTableColumn, NodeTableColumn};
 pub use traits::IndividualLocation;
-pub use traits::TableAccess;
 pub use traits::IndividualParents;
+pub use traits::TableAccess;
+pub use traits::TableIteration;
+pub use tree_interface::{NodeTraversalOrder, TreeInterface};
 pub use trees::{Tree, TreeSequence};
 
 // Optional features
