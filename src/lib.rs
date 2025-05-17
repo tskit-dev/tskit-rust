@@ -120,6 +120,9 @@ pub use table_collection::TableCollection;
 pub use table_column::{EdgeTableColumn, NodeTableColumn};
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
+pub use traits::ObjectSafeTableIteration;
+pub use traits::TableAccess;
+pub use traits::TableIteration;
 pub use trees::{Tree, TreeSequence};
 
 // Optional features
