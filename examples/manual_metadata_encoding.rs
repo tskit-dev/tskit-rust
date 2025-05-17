@@ -76,7 +76,7 @@ impl tskit::metadata::IndividualMetadata for IndividualMetadata {}
 
 fn main() {
     let ts = make_treeseq().unwrap();
-    ts.dump("with_json_metadata.trees", 0).unwrap();
+    ts.dump("with_manual_metadata.trees", 0).unwrap();
 }
 
 fn make_tables() -> anyhow::Result<tskit::TableCollection> {
