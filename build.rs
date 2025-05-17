@@ -5,17 +5,17 @@ fn main() {
     pkg_config::Config::new().atleast_version("1.2");
 
     let src = [
-        "subprojects/tskit/tskit/convert.c",
-        "subprojects/tskit/tskit/core.c",
-        "subprojects/tskit/tskit/genotypes.c",
-        "subprojects/tskit/tskit/haplotype_matching.c",
-        "subprojects/tskit/tskit/stats.c",
-        "subprojects/tskit/tskit/tables.c",
-        "subprojects/tskit/tskit/trees.c",
+        "subprojects/tskit/c/tskit/convert.c",
+        "subprojects/tskit/c/tskit/core.c",
+        "subprojects/tskit/c/tskit/genotypes.c",
+        "subprojects/tskit/c/tskit/haplotype_matching.c",
+        "subprojects/tskit/c/tskit/stats.c",
+        "subprojects/tskit/c/tskit/tables.c",
+        "subprojects/tskit/c/tskit/trees.c",
         "subprojects/kastore/kastore.c",
     ];
 
-    let tskit_path = Path::new("subprojects/tskit/");
+    let tskit_path = Path::new("subprojects/tskit/c");
     let kastore_path = Path::new("subprojects/kastore/");
     let mut builder = cc::Build::new();
     let build = builder
@@ -32,7 +32,7 @@ fn main() {
         // The input header we would like to generate
         // bindings for.
         .header("wrapper.h")
-        .clang_arg("-Isubprojects/tskit")
+        .clang_arg("-Isubprojects/tskit/c")
         .clang_arg("-Isubprojects/kastore")
         .allowlist_type("tsk.*")
         .allowlist_function("tsk.*")
@@ -56,3 +56,4 @@ fn main() {
         .write_to_file(out_path.join("auto_bindings.rs"))
         .expect("Couldn't write bindings!");
 }
+
