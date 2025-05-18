@@ -117,7 +117,7 @@ pub use site_table::{SiteTable, SiteTableRow};
 pub use sys::flags::*;
 pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
-pub use table_column::{EdgeTableColumn, NodeTableColumn};
+pub use traits::TableColumn;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
 pub use trees::{Tree, TreeSequence};

@@ -1,3 +1,5 @@
+use tskit::TableColumn;
+
 #[test]
 fn test_empty_table_collection() {
     macro_rules! validate_empty_tables {
