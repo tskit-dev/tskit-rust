@@ -20,7 +20,7 @@ lto = "fat"
 codegen-units=1
 
 [dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 libc = "0.2.155"
 streaming-iterator = "0.1.5"
 serde = {version = "1.0.203", features = ["derive"], optional = true}
