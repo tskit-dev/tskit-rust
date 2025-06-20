@@ -21,7 +21,19 @@ fn traverse_upwards_with_iterator(tree: &tskit::Tree) {
 }
 
 fn preorder_traversal(tree: &tskit::Tree) {
-    for _ in tree.traverse_nodes(tskit::NodeTraversalOrder::Preorder) {}
+    // Iterate over nodes.
+    // For preorder traversal, this avoids allocation.
+    // (But we collect the data for this example, which does allocate.)
+    let nodes_from_iter = tree
+        .traverse_nodes(tskit::NodeTraversalOrder::Preorder)
+        .collect::<Vec<_>>();
+    // Get a COPY of all nodes as a boxed slice
+    let nodes_as_slice = tree.nodes(tskit::NodeTraversalOrder::Preorder).unwrap();
+    assert_eq!(nodes_as_slice.len(), nodes_from_iter.len());
+    nodes_from_iter
+        .iter()
+        .zip(nodes_as_slice.iter())
+        .for_each(|(i, j)| assert_eq!(i, j));
 }
 
 #[derive(clap::Parser)]
