@@ -278,6 +278,7 @@ fn test_iterate_samples() {
 #[cfg(feature = "bindings")]
 #[test]
 fn test_iterate_samples_two_trees() {
+    todo!("need a test for the new Tree::nodes function");
     let treeseq = treeseq_from_small_table_collection_two_trees();
     assert_eq!(treeseq.num_trees(), 2);
     let mut tree_iter = treeseq.tree_iterator(TreeFlags::SAMPLE_LISTS).unwrap();
