@@ -124,7 +124,7 @@ impl PartialEq<EdgeTableRowView<'_>> for EdgeTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for EdgeTableRowView<'_> {
+impl crate::StreamingIterator for EdgeTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

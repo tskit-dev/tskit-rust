@@ -1,8 +1,8 @@
 #[cfg(feature = "derive")]
 #[test]
 fn book_mutation_metadata() {
-    use streaming_iterator::StreamingIterator;
     use tskit::metadata::MetadataRoundtrip;
+    use tskit::StreamingIterator;
 
     // ANCHOR: metadata_derive
     #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]

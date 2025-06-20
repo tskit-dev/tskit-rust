@@ -140,7 +140,7 @@ impl PartialEq<MutationTableRowView<'_>> for MutationTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for MutationTableRowView<'_> {
+impl crate::StreamingIterator for MutationTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

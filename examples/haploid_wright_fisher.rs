@@ -156,7 +156,7 @@ fn stress_test_total_branch_length() {
         // stress test the branch length fn b/c it is not a trivial
         // wrapper around the C API.
         {
-            use streaming_iterator::StreamingIterator;
+            use tskit::StreamingIterator;
             let mut x = f64::NAN;
             if let Ok(mut tree_iter) = ts.tree_iterator(0) {
                 // We will only do the first tree to save time.

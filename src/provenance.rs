@@ -116,7 +116,7 @@ impl PartialEq<ProvenanceTableRowView<'_>> for ProvenanceTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for ProvenanceTableRowView<'_> {
+impl crate::StreamingIterator for ProvenanceTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();
@@ -286,7 +286,7 @@ impl ProvenanceTable {
 
 #[cfg(test)]
 mod test_provenances {
-    use streaming_iterator::StreamingIterator;
+    use crate::StreamingIterator;
 
     #[test]
     fn test_empty_record_string() {
