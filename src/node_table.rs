@@ -125,7 +125,7 @@ impl PartialEq<NodeTableRowView<'_>> for NodeTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for NodeTableRowView<'_> {
+impl crate::StreamingIterator for NodeTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

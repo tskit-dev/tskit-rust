@@ -95,7 +95,7 @@ impl PartialEq<PopulationTableRowView<'_>> for PopulationTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for PopulationTableRowView<'_> {
+impl crate::StreamingIterator for PopulationTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

@@ -204,10 +204,10 @@ impl TreeSequence {
     /// ```
     /// // You must include streaming_iterator as a dependency
     /// // and import this type.
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// // Import this to allow .next_back() for reverse
     /// // iteration over trees.
-    /// use streaming_iterator::DoubleEndedStreamingIterator;
+    /// use tskit::DoubleEndedStreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// tables.build_index();
@@ -222,8 +222,8 @@ impl TreeSequence {
     /// A `Tree`'s lifetime is tied to that of its tree sequence:
     ///
     /// ```compile_fail
-    /// # use streaming_iterator::StreamingIterator;
-    /// # use streaming_iterator::DoubleEndedStreamingIterator;
+    /// # use tskit::StreamingIterator;
+    /// # use tskit::DoubleEndedStreamingIterator;
     /// # let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// # tables.build_index();
     /// let tree_sequence = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
@@ -238,7 +238,7 @@ impl TreeSequence {
     /// Be sure to note the difference from the previous example.
     ///
     /// ```no_run
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// tables.build_index();
