@@ -156,6 +156,46 @@ impl<'treeseq> LLTree<'treeseq> {
         }
     }
 
+    pub fn nodes(&self, order: NodeTraversalOrder) -> Result<Box<[NodeId]>, TskitError> {
+        let mut nodes: Vec<NodeId> = vec![
+            NodeId::NULL;
+            unsafe { super::bindings::tsk_tree_get_size_bound(self.as_ll_ref()) }
+                as usize
+        ];
+
+        let mut num_nodes: super::bindings::tsk_size_t = 0;
+        let ptr = std::ptr::addr_of_mut!(num_nodes);
+        unsafe {
+            super::bindings::tsk_tree_preorder(
+                self.as_ll_ref(),
+                nodes.as_mut_ptr() as *mut super::bindings::tsk_id_t,
+                ptr,
+            );
+        }
+
+        let code = match order {
+            NodeTraversalOrder::Preorder => unsafe {
+                super::bindings::tsk_tree_preorder(
+                    self.as_ll_ref(),
+                    nodes.as_mut_ptr() as *mut super::bindings::tsk_id_t,
+                    ptr,
+                )
+            },
+            NodeTraversalOrder::Postorder => unsafe {
+                super::bindings::tsk_tree_preorder(
+                    self.as_ll_ref(),
+                    nodes.as_mut_ptr() as *mut super::bindings::tsk_id_t,
+                    ptr,
+                )
+            },
+        };
+        if code == 0 {
+            nodes.resize(num_nodes as usize, NodeId::NULL);
+        }
+
+        handle_tsk_return_value!(code, nodes.into_boxed_slice())
+    }
+
     pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         NodeIteratorAdapter(ChildIterator::new(self, u))
     }
