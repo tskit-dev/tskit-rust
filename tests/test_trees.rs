@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::thread;
 
-use streaming_iterator::DoubleEndedStreamingIterator;
-use streaming_iterator::StreamingIterator;
+use crate::DoubleEndedStreamingIterator;
+use crate::StreamingIterator;
 
 use tskit::prelude::*;
 use tskit::NodeFlags;

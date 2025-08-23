@@ -125,7 +125,7 @@ impl PartialEq<NodeTableRowView<'_>> for NodeTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for NodeTableRowView<'_> {
+impl crate::StreamingIterator for NodeTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();
@@ -807,20 +807,20 @@ impl NodeTable {
         /// Get the population column as a slice
         => population, population_slice_raw, crate::sys::bindings::tsk_id_t);
 
-    pub fn individual_column(&self) -> crate::table_column::NodeTableColumn<IndividualId> {
-        crate::NodeTableColumn::new(self.individual_slice())
+    pub fn individual_column(&self) -> impl crate::TableColumn<NodeId, IndividualId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.individual_slice())
     }
 
-    pub fn population_column(&self) -> crate::NodeTableColumn<PopulationId> {
-        crate::NodeTableColumn::new(self.population_slice())
+    pub fn population_column(&self) -> impl crate::TableColumn<NodeId, PopulationId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.population_slice())
     }
 
-    pub fn time_column(&self) -> crate::NodeTableColumn<Time> {
-        crate::NodeTableColumn::new(self.time_slice())
+    pub fn time_column(&self) -> impl crate::TableColumn<NodeId, Time> + '_ {
+        crate::table_column::OpaqueTableColumn(self.time_slice())
     }
 
-    pub fn flags_column(&self) -> crate::NodeTableColumn<NodeFlags> {
-        crate::NodeTableColumn::new(self.flags_slice())
+    pub fn flags_column(&self) -> impl crate::TableColumn<NodeId, NodeFlags> + '_ {
+        crate::table_column::OpaqueTableColumn(self.flags_slice())
     }
 
     /// Clear all data from the table

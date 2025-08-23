@@ -1631,7 +1631,7 @@ impl TableCollection {
     where
         P: Into<Position>,
     {
-        use streaming_iterator::StreamingIterator;
+        use crate::StreamingIterator;
         let mut tables = self;
         // use tables from sys to allow easier process with metadata
         let options = 0;

@@ -33,6 +33,8 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - run: sudo apt-get update -y
         if: matrix.os == 'ubuntu-24.04'
+      - name: update toolchain
+        run: rustup toolchain install
       - name: cargo check (powerset)
         run: cargo hack check --feature-powerset --no-dev-deps
       - name: cargo check examples (powerset)
@@ -76,6 +78,8 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2.7.5
       - uses: taiki-e/install-action@cargo-hack
+      - name: update toolchain
+        run: rustup toolchain install
       - name: clippy (all targets, feature powerset)
         run: cargo hack clippy --all-targets --feature-powerset -- -D warnings
 
@@ -85,7 +89,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.71.0
+          - 1.75.0
     steps:
       - uses: actions/checkout@v4.2.2
         with: 

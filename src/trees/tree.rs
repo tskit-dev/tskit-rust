@@ -80,7 +80,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
     ///
     /// ```should_panic
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -94,7 +94,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -204,7 +204,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -224,7 +224,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -244,7 +244,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -264,7 +264,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -284,7 +284,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -340,7 +340,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
     ///
     /// ```should_panic
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -354,7 +354,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -374,7 +374,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
     ///
     /// ```should_panic
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -388,7 +388,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -408,7 +408,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
     ///
     /// ```should_panic
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -422,7 +422,7 @@ impl<'treeseq> Tree<'treeseq> {
     /// The lifetime of the slice is tied to the parent object:
     ///
     /// ```compile_fail
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// let tables = tskit::TableCollection::new(1.).unwrap();
     /// let treeseq =
     /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
@@ -454,7 +454,7 @@ impl<'treeseq> Tree<'treeseq> {
     }
 }
 
-impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
+impl<'ts> crate::StreamingIterator for Tree<'ts> {
     type Item = Tree<'ts>;
     fn advance(&mut self) {
         assert!(!self.inner.as_ptr().is_null());
@@ -480,7 +480,7 @@ impl<'ts> streaming_iterator::StreamingIterator for Tree<'ts> {
     }
 }
 
-impl streaming_iterator::DoubleEndedStreamingIterator for Tree<'_> {
+impl crate::DoubleEndedStreamingIterator for Tree<'_> {
     fn advance_back(&mut self) {
         assert!(!self.inner.as_ptr().is_null());
         // SAFETY: pointer is not null.

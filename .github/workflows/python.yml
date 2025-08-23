@@ -38,10 +38,14 @@ jobs:
       - name: run JSON metadata example
         run: |
           cargo run --example json_metadata --features derive
+      - name: run bincode metadata example
+        run: |
+          cargo run --example bincode_metadata --features derive
       - name: setup Python and run tests
         run: |
           uv venv -p ${{ matrix.python }}
           source .venv/bin/activate
           uv pip install -r python/requirements_locked_3_13.txt
+          uv pip install python/tskit_glue
           python -m pytest python
 

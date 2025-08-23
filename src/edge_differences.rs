@@ -236,7 +236,7 @@ impl EdgeDifferencesIterator {
     }
 }
 
-impl streaming_iterator::StreamingIterator for EdgeDifferencesIterator {
+impl crate::StreamingIterator for EdgeDifferencesIterator {
     type Item = EdgeDifferencesIterator;
 
     fn advance(&mut self) {

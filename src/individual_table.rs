@@ -82,7 +82,7 @@ impl PartialEq<IndividualTableRowView<'_>> for IndividualTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for IndividualTableRowView<'_> {
+impl crate::StreamingIterator for IndividualTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();
