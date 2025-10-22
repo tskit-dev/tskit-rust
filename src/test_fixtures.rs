@@ -301,10 +301,7 @@ pub mod simulation {
 
         // state variables for site/mutation tables
         let num_sites = f64::from(seqlen.into()) as usize;
-        let mut site_last_mutation_order = vec![0usize; num_sites];
-
-        let mut site_last_mutation_tables = vec![MutationId::NULL; num_sites];
-        let mut site_last_mutation_tr_tbls = vec![MutationId::NULL; num_sites];
+        let site_last_mutation_order = vec![0usize; num_sites];
 
         let mut site_id_map_tables = vec![SiteId::NULL; num_sites];
         let mut site_id_map_tr_tbls = vec![SiteId::NULL; num_sites];
@@ -387,14 +384,10 @@ pub mod simulation {
                                 tables.add_site(mut_pos as f64, Some(b"a")).unwrap();
                         }
                         // add mutation
-                        let parent_mut = site_last_mutation_tables[mut_pos];
                         let site = site_id_map_tables[mut_pos];
-                        let new_mutation = tables
-                            .add_mutation(site, c, parent_mut, t, Some(derived_state))
+                        let _ = tables
+                            .add_mutation(site, c, MutationId::NULL, t, Some(derived_state))
                             .unwrap();
-
-                        site_last_mutation_tables[mut_pos] = new_mutation;
-                        site_last_mutation_order[mut_pos] += 1;
                     }
 
                     find_overlaps(s, e, &intervals, &mut buffer);
@@ -410,12 +403,10 @@ pub mod simulation {
                                     tr_tbls.add_site(mut_pos as f64, Some(b"a")).unwrap();
                             }
                             // add mutation
-                            let parent_mut = site_last_mutation_tr_tbls[mut_pos];
                             let site = site_id_map_tr_tbls[mut_pos];
-                            let new_mutation = tr_tbls
-                                .add_mutation(site, c, parent_mut, t, Some(derived_state))
+                            let _ = tr_tbls
+                                .add_mutation(site, c, MutationId::NULL, t, Some(derived_state))
                                 .unwrap();
-                            site_last_mutation_tr_tbls[mut_pos] = new_mutation;
                         }
                     }
                 }
@@ -447,6 +438,23 @@ pub mod simulation {
         // build indices
         tables.build_index().unwrap();
         tr_tbls.build_index().unwrap();
+
+        // Calculate mutation parents
+        // TODO: need safe API for this.
+        let code = unsafe {
+            crate::sys::bindings::tsk_table_collection_compute_mutation_parents(
+                tables.as_mut_ptr(),
+                0,
+            )
+        };
+        assert_eq!(code, 0);
+        let code = unsafe {
+            crate::sys::bindings::tsk_table_collection_compute_mutation_parents(
+                tr_tbls.as_mut_ptr(),
+                0,
+            )
+        };
+        assert_eq!(code, 0);
 
         // to tree sequences
         let treeseq_opts = TreeSequenceFlags::default();
