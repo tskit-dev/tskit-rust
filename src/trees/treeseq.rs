@@ -477,16 +477,9 @@ impl TreeSequence {
         handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
     }
 
-    /// Build a lending iterator over edge differences.
-    ///
-    /// # Errors
-    ///
-    /// * [`TskitError`] if the `C` back end is unable to allocate
-    ///   needed memory
-    pub fn edge_differences_iter(
-        &self,
-    ) -> Result<crate::edge_differences::EdgeDifferencesIterator, TskitError> {
-        crate::edge_differences::EdgeDifferencesIterator::new_from_treeseq(self, 0)
+    /// Build an iterator over edge differences.
+    pub fn edge_differences_iter(&self) -> crate::edge_differences::EdgeDifferencesIterator {
+        crate::edge_differences::EdgeDifferencesIterator::new(self)
     }
 
     /// Reference to the underlying table collection.
