@@ -633,6 +633,30 @@ impl TreeSequence {
     ) -> Vec<crate::NodeId> {
         self.tables.create_node_id_vector(f)
     }
+
+    #[allow(unused)]
+    pub(crate) fn edge_insertion_order(&self) -> &[crate::EdgeId] {
+        self.inner.edge_insertion_order()
+    }
+
+    #[allow(unused)]
+    pub(crate) fn edge_insertion_order_column(
+        &self,
+    ) -> impl crate::TableColumn<crate::EdgeId, crate::EdgeId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.edge_insertion_order())
+    }
+
+    #[allow(unused)]
+    pub(crate) fn edge_removal_order(&self) -> &[crate::EdgeId] {
+        self.inner.edge_removal_order()
+    }
+
+    #[allow(unused)]
+    pub(crate) fn edge_removal_order_column(
+        &self,
+    ) -> impl crate::TableColumn<crate::EdgeId, crate::EdgeId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.edge_removal_order())
+    }
 }
 
 impl TryFrom<TableCollection> for TreeSequence {
