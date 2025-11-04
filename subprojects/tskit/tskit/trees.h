@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2019-2023 Tskit Developers
+ * Copyright (c) 2019-2024 Tskit Developers
  * Copyright (c) 2015-2018 University of Oxford
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -52,6 +52,8 @@ extern "C" {
 #define TSK_STAT_POLARISED               (1 << 10)
 #define TSK_STAT_SPAN_NORMALISE          (1 << 11)
 #define TSK_STAT_ALLOW_TIME_UNCALIBRATED (1 << 12)
+#define TSK_STAT_PAIR_NORMALISE          (1 << 13)
+#define TSK_STAT_NONCENTRED              (1 << 14)
 
 /* Options for map_mutations */
 #define TSK_MM_FIXED_ANCESTRAL_STATE (1 << 0)
@@ -69,6 +71,11 @@ when the tree sequence is initialised. Indexes are required for a valid
 tree sequence, and are not built by default for performance reasons.
 */
 #define TSK_TS_INIT_BUILD_INDEXES (1 << 0)
+/**
+If specified, mutation parents in the table collection will be overwritten
+with those computed from the topology when the tree sequence is initialised.
+*/
+#define TSK_TS_INIT_COMPUTE_MUTATION_PARENTS (1 << 1)
 /** @} */
 
 // clang-format on
@@ -110,6 +117,28 @@ typedef struct {
      *  lead to undefined behaviour. */
     tsk_table_collection_t *tables;
 } tsk_treeseq_t;
+
+typedef struct {
+    tsk_id_t index;
+    struct {
+        double left;
+        double right;
+    } interval;
+    struct {
+        tsk_id_t start;
+        tsk_id_t stop;
+        const tsk_id_t *order;
+    } in;
+    struct {
+        tsk_id_t start;
+        tsk_id_t stop;
+        const tsk_id_t *order;
+    } out;
+    tsk_id_t left_current_index;
+    tsk_id_t right_current_index;
+    int direction;
+    const tsk_treeseq_t *tree_sequence;
+} tsk_tree_position_t;
 
 /**
 @brief A single tree in a tree sequence.
@@ -256,6 +285,7 @@ typedef struct {
     int direction;
     tsk_id_t left_index;
     tsk_id_t right_index;
+    tsk_tree_position_t tree_pos;
 } tsk_tree_t;
 
 /****************************************************************************/
@@ -891,6 +921,43 @@ int tsk_treeseq_simplify(const tsk_treeseq_t *self, const tsk_id_t *samples,
     tsk_size_t num_samples, tsk_flags_t options, tsk_treeseq_t *output,
     tsk_id_t *node_map);
 
+/**
+@brief Extends haplotypes
+
+Returns a new tree sequence in which the span covered by ancestral nodes
+is "extended" to regions of the genome according to the following rule:
+If an ancestral segment corresponding to node `n` has ancestor `p` and
+descendant `c` on some portion of the genome, and on an adjacent segment of
+genome `p` is still an ancestor of `c`, then `n` is inserted into the
+path from `p` to `c`. For instance, if `p` is the parent of `n` and `n`
+is the parent of `c`, then the span of the edges from `p` to `n` and
+`n` to `c` are extended, and the span of the edge from `p` to `c` is
+reduced. However, any edges whose child node is a sample are not
+modified.  The `node` of certain mutations may also be remapped; to do this
+unambiguously we need to know mutation times. If mutations times are unknown,
+use `tsk_table_collection_compute_mutation_times` first.
+
+The method will not affect any tables except the edge table, or the node
+column in the mutation table.
+
+The method works by iterating over the genome to look for edges that can
+be extended in this way; the maximum number of such iterations is
+controlled by ``max_iter``.
+
+@rst
+
+**Options**: None currently defined.
+@endrst
+
+@param self A pointer to a tsk_treeseq_t object.
+@param max_iter The maximum number of iterations over the tree sequence.
+@param options Bitwise option flags. (UNUSED)
+@param output A pointer to an uninitialised tsk_treeseq_t object.
+@return Return 0 on success or a negative value on failure.
+*/
+int tsk_treeseq_extend_haplotypes(
+    const tsk_treeseq_t *self, int max_iter, tsk_flags_t options, tsk_treeseq_t *output);
+
 /** @} */
 
 int tsk_treeseq_split_edges(const tsk_treeseq_t *self, double time, tsk_flags_t flags,
@@ -920,6 +987,17 @@ int tsk_treeseq_general_stat(const tsk_treeseq_t *self, tsk_size_t K, const doub
     tsk_size_t M, general_stat_func_t *f, void *f_params, tsk_size_t num_windows,
     const double *windows, tsk_flags_t options, double *result);
 
+typedef int norm_func_t(tsk_size_t result_dim, const double *hap_weights, tsk_size_t n_a,
+    tsk_size_t n_b, double *result, void *params);
+
+int tsk_treeseq_two_locus_count_stat(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t result_dim, const tsk_id_t *set_indexes,
+    general_stat_func_t *f, norm_func_t *norm_f, tsk_size_t out_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t out_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+
 /* One way weighted stats */
 
 typedef int one_way_weighted_method(const tsk_treeseq_t *self, tsk_size_t num_weights,
@@ -943,6 +1021,29 @@ int tsk_treeseq_trait_linear_model(const tsk_treeseq_t *self, tsk_size_t num_wei
     const double *weights, tsk_size_t num_covariates, const double *covariates,
     tsk_size_t num_windows, const double *windows, tsk_flags_t options, double *result);
 
+/* Two way weighted stats with covariates */
+
+typedef int two_way_weighted_method(const tsk_treeseq_t *self, tsk_size_t num_weights,
+    const double *weights, tsk_size_t num_index_tuples, const tsk_id_t *index_tuples,
+    tsk_size_t num_windows, const double *windows, double *result, tsk_flags_t options);
+
+int tsk_treeseq_genetic_relatedness_weighted(const tsk_treeseq_t *self,
+    tsk_size_t num_weights, const double *weights, tsk_size_t num_index_tuples,
+    const tsk_id_t *index_tuples, tsk_size_t num_windows, const double *windows,
+    double *result, tsk_flags_t options);
+
+/* One way weighted stats with vector output */
+
+typedef int weighted_vector_method(const tsk_treeseq_t *self, tsk_size_t num_weights,
+    const double *weights, tsk_size_t num_windows, const double *windows,
+    tsk_size_t num_focal_nodes, const tsk_id_t *focal_nodes, double *result,
+    tsk_flags_t options);
+
+int tsk_treeseq_genetic_relatedness_vector(const tsk_treeseq_t *self,
+    tsk_size_t num_weights, const double *weights, tsk_size_t num_windows,
+    const double *windows, tsk_size_t num_focal_nodes, const tsk_id_t *focal_nodes,
+    double *result, tsk_flags_t options);
+
 /* One way sample set stats */
 
 typedef int one_way_sample_stat_method(const tsk_treeseq_t *self,
@@ -962,12 +1063,79 @@ int tsk_treeseq_Y1(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
 int tsk_treeseq_allele_frequency_spectrum(const tsk_treeseq_t *self,
     tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
     const tsk_id_t *sample_sets, tsk_size_t num_windows, const double *windows,
-    tsk_flags_t options, double *result);
+    tsk_size_t num_time_windows, const double *time_windows, tsk_flags_t options,
+    double *result);
 
 typedef int general_sample_stat_method(const tsk_treeseq_t *self,
     tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
     const tsk_id_t *sample_sets, tsk_size_t num_indexes, const tsk_id_t *indexes,
     tsk_size_t num_windows, const double *windows, tsk_flags_t options, double *result);
+
+typedef int two_locus_count_stat_method(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t num_rows, const tsk_id_t *row_sites,
+    const double *row_positions, tsk_size_t num_cols, const tsk_id_t *col_sites,
+    const double *col_positions, tsk_flags_t options, double *result);
+
+int tsk_treeseq_D(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_D2(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_r2(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_D_prime(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_r(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_Dz(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_pi2(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_D2_unbiased(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_Dz_unbiased(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_pi2_unbiased(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+
+typedef int k_way_two_locus_count_stat_method(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t num_index_tuples,
+    const tsk_id_t *index_tuples, tsk_size_t num_rows, const tsk_id_t *row_sites,
+    const double *row_positions, tsk_size_t num_cols, const tsk_id_t *col_sites,
+    const double *col_positions, tsk_flags_t options, double *result);
+
+/* Two way sample set stats */
 
 int tsk_treeseq_divergence(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
     const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets,
@@ -986,6 +1154,24 @@ int tsk_treeseq_genetic_relatedness(const tsk_treeseq_t *self,
     const tsk_id_t *sample_sets, tsk_size_t num_index_tuples,
     const tsk_id_t *index_tuples, tsk_size_t num_windows, const double *windows,
     tsk_flags_t options, double *result);
+int tsk_treeseq_D2_ij(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets,
+    tsk_size_t num_index_tuples, const tsk_id_t *index_tuples, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_D2_ij_unbiased(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets,
+    tsk_size_t num_index_tuples, const tsk_id_t *index_tuples, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_r2_ij(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets,
+    tsk_size_t num_index_tuples, const tsk_id_t *index_tuples, tsk_size_t num_rows,
+    const tsk_id_t *row_sites, const double *row_positions, tsk_size_t num_cols,
+    const tsk_id_t *col_sites, const double *col_positions, tsk_flags_t options,
+    double *result);
 
 /* Three way sample set stats */
 int tsk_treeseq_Y3(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
@@ -1002,6 +1188,38 @@ int tsk_treeseq_f4(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
     const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets,
     tsk_size_t num_index_tuples, const tsk_id_t *index_tuples, tsk_size_t num_windows,
     const double *windows, tsk_flags_t options, double *result);
+
+int tsk_treeseq_divergence_matrix(const tsk_treeseq_t *self, tsk_size_t num_sample_sets,
+    const tsk_size_t *sample_set_sizes, const tsk_id_t *sample_sets,
+    tsk_size_t num_windows, const double *windows, tsk_flags_t options, double *result);
+
+/* Coalescence rates */
+typedef int pair_coalescence_stat_func_t(tsk_size_t input_dim, const double *atoms,
+    const double *weights, tsk_size_t result_dim, double *result, void *params);
+int tsk_treeseq_pair_coalescence_stat(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t num_set_indexes, const tsk_id_t *set_indexes,
+    tsk_size_t num_windows, const double *windows, tsk_size_t num_bins,
+    const tsk_id_t *node_bin_map, pair_coalescence_stat_func_t *summary_func,
+    tsk_size_t summary_func_dim, void *summary_func_args, tsk_flags_t options,
+    double *result);
+int tsk_treeseq_pair_coalescence_counts(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t num_set_indexes, const tsk_id_t *set_indexes,
+    tsk_size_t num_windows, const double *windows, tsk_size_t num_bins,
+    const tsk_id_t *node_bin_map, tsk_flags_t options, double *result);
+int tsk_treeseq_pair_coalescence_quantiles(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t num_set_indexes, const tsk_id_t *set_indexes,
+    tsk_size_t num_windows, const double *windows, tsk_size_t num_bins,
+    const tsk_id_t *node_bin_map, tsk_size_t num_quantiles, double *quantiles,
+    tsk_flags_t options, double *result);
+int tsk_treeseq_pair_coalescence_rates(const tsk_treeseq_t *self,
+    tsk_size_t num_sample_sets, const tsk_size_t *sample_set_sizes,
+    const tsk_id_t *sample_sets, tsk_size_t num_set_indexes, const tsk_id_t *set_indexes,
+    tsk_size_t num_windows, const double *windows, tsk_size_t num_time_windows,
+    const tsk_id_t *node_time_window, double *time_windows, tsk_flags_t options,
+    double *result);
 
 /****************************************************************************/
 /* Tree */
@@ -1086,6 +1304,13 @@ int tsk_tree_copy(const tsk_tree_t *self, tsk_tree_t *dest, tsk_flags_t options)
 @defgroup TREE_API_SEEKING_GROUP Seeking along the sequence
 @{
 */
+
+/** @brief Option to seek by skipping to the target tree, adding and removing as few
+   edges as possible. If not specified, a linear time algorithm is used instead.
+
+    @ingroup TREE_API_SEEKING_GROUP
+*/
+#define TSK_SEEK_SKIP (1 << 0)
 
 /**
 @brief Seek to the first tree in the sequence.
@@ -1192,12 +1417,22 @@ we will have ``position < tree.interval.right``.
 
 Seeking to a position currently covered by the tree is
 a constant time operation.
+
+Seeking to a position from a non-null tree uses a linear time
+algorithm by default, unless the option :c:macro:`TSK_SEEK_SKIP`
+is specified. In this case, a faster algorithm is employed which skips
+to the target tree by removing and adding the minimal number of edges
+possible. However, this approach does not guarantee that edges are
+inserted and removed in time-sorted order.
+
+.. warning:: Using the :c:macro:`TSK_SEEK_SKIP` option
+    may lead to edges not being inserted or removed in time-sorted order.
+
 @endrst
 
 @param self A pointer to an initialised tsk_tree_t object.
 @param position The position in genome coordinates
-@param options Seek options. Currently unused. Set to 0 for compatibility
-    with future versions of tskit.
+@param options Seek options. See the notes above for details.
 @return Return 0 on success or a negative value on failure.
 */
 int tsk_tree_seek(tsk_tree_t *self, double position, tsk_flags_t options);
@@ -1721,8 +1956,14 @@ bool tsk_tree_is_sample(const tsk_tree_t *self, tsk_id_t u);
  */
 bool tsk_tree_equals(const tsk_tree_t *self, const tsk_tree_t *other);
 
-int tsk_diff_iter_init_from_ts(
-    tsk_diff_iter_t *self, const tsk_treeseq_t *tree_sequence, tsk_flags_t options);
+int tsk_tree_position_init(
+    tsk_tree_position_t *self, const tsk_treeseq_t *tree_sequence, tsk_flags_t options);
+int tsk_tree_position_free(tsk_tree_position_t *self);
+int tsk_tree_position_print_state(const tsk_tree_position_t *self, FILE *out);
+bool tsk_tree_position_next(tsk_tree_position_t *self);
+bool tsk_tree_position_prev(tsk_tree_position_t *self);
+int tsk_tree_position_seek_forward(tsk_tree_position_t *self, tsk_id_t index);
+int tsk_tree_position_seek_backward(tsk_tree_position_t *self, tsk_id_t index);
 
 #ifdef __cplusplus
 }
