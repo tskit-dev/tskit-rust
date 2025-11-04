@@ -150,7 +150,7 @@ impl private::NewTypeMarker for crate::ProvenanceId {}
 /// The `C` programming language allows implicit casts between
 /// integer types.
 /// This implicit behavior allows one to index a table column
-/// using a row id type ([`crate::bindings::tsk_id_t`]) because
+/// using a row id type (`tsk_id_t`) because
 /// the compiler will cast it to `size_t`.
 ///
 /// `rust` does not allow implicit casts, which makes working
