@@ -17,7 +17,7 @@ fn main() {
     ts.dump("with_json_metadata.trees", 0).unwrap();
 }
 
-fn make_tables() -> anyhow::Result<tskit::TableCollection> {
+fn make_tables() -> Result<tskit::TableCollection, tskit::TskitError> {
     let mut tables = tskit::TableCollection::new(100.0)?;
     let pop0 = tables.add_population()?;
     let ind0 = tables.add_individual_with_metadata(
@@ -46,6 +46,6 @@ fn make_tables() -> anyhow::Result<tskit::TableCollection> {
     Ok(tables)
 }
 
-fn make_treeseq() -> anyhow::Result<tskit::TreeSequence> {
-    Ok(make_tables()?.tree_sequence(0)?)
+fn make_treeseq() -> Result<tskit::TreeSequence, tskit::TskitError> {
+    make_tables()?.tree_sequence(0)
 }

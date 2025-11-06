@@ -107,14 +107,4 @@ mod test {
             panic!();
         }
     }
-
-    #[test]
-    fn test_anyhow_compatability() {
-        fn foo() -> anyhow::Result<crate::TableCollection> {
-            let tables = crate::TableCollection::new(1.0)?;
-            Ok(tables)
-        }
-
-        let _ = foo().unwrap();
-    }
 }
