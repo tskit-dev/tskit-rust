@@ -1,12 +1,34 @@
 // This is a rust implementation of the example
 // found in tskit-c
 
-use anyhow::Result;
 use clap::Parser;
 #[cfg(test)]
 use rand::distributions::Distribution;
 use rand::prelude::*;
 use rand::SeedableRng;
+
+#[derive(Debug)]
+enum Error {
+    Tskit(tskit::TskitError),
+    Message(String),
+}
+
+impl From<tskit::TskitError> for Error {
+    fn from(value: tskit::TskitError) -> Self {
+        Self::Tskit(value)
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Tskit(e) => write!(f, "{e}"),
+            Self::Message(m) => write!(f, "{m}"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 fn rotate_edges(bookmark: &tskit::types::Bookmark, tables: &mut tskit::TableCollection) {
     let num_edges = tables.edges().num_rows().as_usize();
@@ -32,15 +54,15 @@ fn simulate(
     num_generations: i32,
     simplify_interval: i32,
     update_bookmark: bool,
-) -> Result<tskit::TreeSequence> {
+) -> Result<tskit::TreeSequence, Error> {
     if popsize == 0 {
-        return Err(anyhow::Error::msg("popsize must be > 0"));
+        return Err(Error::Message("popsize must be > 0".to_string()));
     }
     if num_generations == 0 {
-        return Err(anyhow::Error::msg("num_generations must be > 0"));
+        return Err(Error::Message("num_generations must be > 0".to_string()));
     }
     if simplify_interval == 0 {
-        return Err(anyhow::Error::msg("simplify_interval must be > 0"));
+        return Err(Error::Message("simplify_interval must be > 0".to_string()));
     }
     let mut tables = tskit::TableCollection::new(1.0)?;
 
@@ -72,10 +94,10 @@ fn simulate(
             let child = tables.add_node(0, bt, -1, -1)?;
             let left_parent = parents
                 .get(parent_picker.sample(&mut rng))
-                .ok_or_else(|| anyhow::Error::msg("invalid left_parent index"))?;
+                .ok_or_else(|| Error::Message("invalid left_parent index".to_string()))?;
             let right_parent = parents
                 .get(parent_picker.sample(&mut rng))
-                .ok_or_else(|| anyhow::Error::msg("invalid right_parent index"))?;
+                .ok_or_else(|| Error::Message("invalid right_parent index".to_string()))?;
             let breakpoint = breakpoint_generator.sample(&mut rng);
             tables.add_edge(0., breakpoint, *left_parent, child)?;
             tables.add_edge(breakpoint, 1.0, *right_parent, child)?;
@@ -120,7 +142,7 @@ struct SimParams {
     bookmark: bool,
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Error> {
     let params = SimParams::parse();
     let treeseq = simulate(
         params.seed,
