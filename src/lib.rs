@@ -54,8 +54,8 @@
 //!     * [`crate::metadata::MigrationMetadata`]
 //!     * [`crate::metadata::PopulationMetadata`]
 //!
-//!     To see these derive macros in action, take a look
-//!     [`here`](metadata).
+//!   To see these derive macros in action, take a look
+//!   [`here`](metadata).
 //!         
 //! To add features to your `Cargo.toml` file:
 //!
@@ -81,6 +81,9 @@
 
 #[cfg(feature = "bindings")]
 pub use sys::bindings;
+
+pub use streaming_iterator::DoubleEndedStreamingIterator;
+pub use streaming_iterator::StreamingIterator;
 
 mod _macros; // Starts w/_ to be sorted at front by rustfmt!
 mod edge_differences;
@@ -117,9 +120,9 @@ pub use site_table::{SiteTable, SiteTableRow};
 pub use sys::flags::*;
 pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
-pub use table_column::{EdgeTableColumn, NodeTableColumn};
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
+pub use traits::TableColumn;
 pub use trees::{Tree, TreeSequence};
 
 // Optional features

@@ -119,3 +119,111 @@ impl_individual_parents!(
 );
 impl_individual_parents!(N, usize, &[crate::IndividualId; N], self, self.as_slice());
 impl_individual_parents!(N, usize, [crate::IndividualId; N], self, self.as_slice());
+
+mod private {
+    pub trait NewTypeMarker: TryInto<usize, Error = crate::TskitError> {}
+    pub trait TableColumnMarker {}
+}
+
+impl private::NewTypeMarker for crate::EdgeId {}
+impl private::NewTypeMarker for crate::NodeId {}
+impl private::NewTypeMarker for crate::SiteId {}
+impl private::NewTypeMarker for crate::MutationId {}
+impl private::NewTypeMarker for crate::MigrationId {}
+impl private::NewTypeMarker for crate::IndividualId {}
+impl private::NewTypeMarker for crate::PopulationId {}
+#[cfg(feature = "provenance")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+impl private::NewTypeMarker for crate::ProvenanceId {}
+
+/// Interface of a non-ragged table column.
+///
+/// Unlike slice views of table columns, this API
+/// allows indexed via row id types and [`crate::SizeType`].
+///
+/// # Notes
+///
+/// * This trait is sealed.
+///
+/// # For C programmers
+///
+/// The `C` programming language allows implicit casts between
+/// integer types.
+/// This implicit behavior allows one to index a table column
+/// using a row id type (`tsk_id_t`) because
+/// the compiler will cast it to `size_t`.
+///
+/// `rust` does not allow implicit casts, which makes working
+/// with table columns as slices awkward.
+/// One has to manually cast the id type and the resulting code isn't
+/// nice to read.
+///
+/// This trait solves that problem by requiring that [`std::ops::Index`]
+/// by implemented for types that one would like to use as indexes
+/// in the `tskit` world.
+pub trait TableColumn<I, T>:
+    std::ops::Index<I, Output = T>
+    + std::ops::Index<usize, Output = T>
+    + std::ops::Index<crate::SizeType, Output = T>
+    + private::TableColumnMarker
+{
+    /// Get the underlying slice
+    fn as_slice(&self) -> &[T];
+
+    /// Get with a table row identifier such as [`crate::NodeId`]
+    fn get_with_id(&self, at: I) -> Option<&T>;
+
+    /// The "standard" get function
+    fn get(&self, at: usize) -> Option<&T> {
+        self.as_slice().get(at)
+    }
+
+    /// Get with [`crate::SizeType`]
+    fn get_with_size_type(&self, at: crate::SizeType) -> Option<&T> {
+        self.as_slice().get(usize::try_from(at).ok()?)
+    }
+
+    /// Iterator over the data.
+    fn iter<'a, 'b>(&'a self) -> impl Iterator<Item = &'b T>
+    where
+        'a: 'b,
+        T: 'b,
+    {
+        self.as_slice().iter()
+    }
+
+    /// Column length
+    fn len(&self) -> usize {
+        self.as_slice().len()
+    }
+
+    /// Query if column is empty
+    fn is_empty(&self) -> bool {
+        self.as_slice().is_empty()
+    }
+}
+
+impl<T> private::TableColumnMarker for crate::table_column::OpaqueTableColumn<'_, T> {}
+
+impl<I, T> std::ops::Index<I> for crate::table_column::OpaqueTableColumn<'_, T>
+where
+    I: private::NewTypeMarker,
+{
+    type Output = T;
+    fn index(&self, index: I) -> &Self::Output {
+        &self.0[index.try_into().unwrap()]
+    }
+}
+
+impl<I, T> TableColumn<I, T> for crate::table_column::OpaqueTableColumn<'_, T>
+where
+    I: private::NewTypeMarker,
+{
+    fn as_slice(&self) -> &[T] {
+        self.0
+    }
+
+    fn get_with_id(&self, at: I) -> Option<&T> {
+        self.0.get(at.try_into().ok()?)
+    }
+}

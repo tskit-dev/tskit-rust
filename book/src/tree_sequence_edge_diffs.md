@@ -1,6 +1,6 @@
 ## Iterating over edge differences
 
-As with [trees](tree_sequence_iterate_trees.md), the API provides a *lending* iterator over edge differences.
+The API provides an iterator over edge differences.
 Each step of the iterator advances to the next tree in the tree sequence.
 For each tree, a standard `Iterator` over removals and insertions is available:
 

@@ -142,7 +142,7 @@ impl PartialEq<MigrationTableRowView<'_>> for MigrationTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for MigrationTableRowView<'_> {
+impl crate::StreamingIterator for MigrationTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();

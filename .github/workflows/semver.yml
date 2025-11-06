@@ -20,8 +20,12 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy
       - name: Install cargo-semver-checks
-        uses: baptiste0928/cargo-install@v3.1.1
+        uses: baptiste0928/cargo-install@v3.3.2
         with:
           crate: cargo-semver-checks
+          version: '0.43.0'
       - name: run check-release
-        run: cargo semver-checks check-release
+      # We set the cargo version here to dodge ecosystem
+      # issues that can arise b/c semver-checks doesnt'
+      # respect our Cargo.lock
+        run: cargo +1.90.0 semver-checks check-release

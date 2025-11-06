@@ -204,10 +204,10 @@ impl TreeSequence {
     /// ```
     /// // You must include streaming_iterator as a dependency
     /// // and import this type.
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     /// // Import this to allow .next_back() for reverse
     /// // iteration over trees.
-    /// use streaming_iterator::DoubleEndedStreamingIterator;
+    /// use tskit::DoubleEndedStreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// tables.build_index();
@@ -222,8 +222,8 @@ impl TreeSequence {
     /// A `Tree`'s lifetime is tied to that of its tree sequence:
     ///
     /// ```compile_fail
-    /// # use streaming_iterator::StreamingIterator;
-    /// # use streaming_iterator::DoubleEndedStreamingIterator;
+    /// # use tskit::StreamingIterator;
+    /// # use tskit::DoubleEndedStreamingIterator;
     /// # let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// # tables.build_index();
     /// let tree_sequence = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
@@ -238,7 +238,7 @@ impl TreeSequence {
     /// Be sure to note the difference from the previous example.
     ///
     /// ```no_run
-    /// use streaming_iterator::StreamingIterator;
+    /// use tskit::StreamingIterator;
     ///
     /// let mut tables = tskit::TableCollection::new(1000.).unwrap();
     /// tables.build_index();
@@ -366,10 +366,10 @@ impl TreeSequence {
     /// # Return value
     /// - `Ok(None)`: when truncation leads to empty edge table.
     /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
-    ///    and results in non-empty edge table. The tables are sorted.
+    ///   and results in non-empty edge table. The tables are sorted.
     /// - `Error(TskitError)`: Any errors from the C API propagate. An
-    ///    [TskitError::RangeError] will occur when `intervals` are not
-    ///    sorted.
+    ///   [TskitError::RangeError] will occur when `intervals` are not
+    ///   sorted.
     ///
     /// # Notes
     ///
@@ -477,16 +477,9 @@ impl TreeSequence {
         handle_tsk_return_value!(rv, crate::ProvenanceId::from(rv))
     }
 
-    /// Build a lending iterator over edge differences.
-    ///
-    /// # Errors
-    ///
-    /// * [`TskitError`] if the `C` back end is unable to allocate
-    ///   needed memory
-    pub fn edge_differences_iter(
-        &self,
-    ) -> Result<crate::edge_differences::EdgeDifferencesIterator, TskitError> {
-        crate::edge_differences::EdgeDifferencesIterator::new_from_treeseq(self, 0)
+    /// Build an iterator over edge differences.
+    pub fn edge_differences_iter(&self) -> crate::edge_differences::EdgeDifferencesIterator {
+        crate::edge_differences::EdgeDifferencesIterator::new(self)
     }
 
     /// Reference to the underlying table collection.
@@ -604,9 +597,9 @@ impl TreeSequence {
     /// # Parameters
     ///
     /// * `f`: a function.  The function is passed the current table
-    ///    collection and each [`crate::node_table::NodeTableRow`].
-    ///    If `f` returns `true`, the index of that row is included
-    ///    in the return value.
+    ///   collection and each [`crate::node_table::NodeTableRow`].
+    ///   If `f` returns `true`, the index of that row is included
+    ///   in the return value.
     ///
     /// # Examples
     ///
@@ -632,6 +625,30 @@ impl TreeSequence {
         f: impl FnMut(&crate::NodeTableRow) -> bool,
     ) -> Vec<crate::NodeId> {
         self.tables.create_node_id_vector(f)
+    }
+
+    #[doc(hidden)]
+    pub fn edge_insertion_order(&self) -> &[crate::EdgeId] {
+        self.inner.edge_insertion_order()
+    }
+
+    #[doc(hidden)]
+    pub fn edge_insertion_order_column(
+        &self,
+    ) -> impl crate::TableColumn<crate::EdgeId, crate::EdgeId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.edge_insertion_order())
+    }
+
+    #[doc(hidden)]
+    pub fn edge_removal_order(&self) -> &[crate::EdgeId] {
+        self.inner.edge_removal_order()
+    }
+
+    #[doc(hidden)]
+    pub fn edge_removal_order_column(
+        &self,
+    ) -> impl crate::TableColumn<crate::EdgeId, crate::EdgeId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.edge_removal_order())
     }
 }
 

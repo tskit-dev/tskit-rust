@@ -1540,9 +1540,9 @@ impl TableCollection {
     /// # Parameters
     ///
     /// * `f`: a function.  The function is passed the current table
-    ///    collection and each [`crate::node_table::NodeTableRow`].
-    ///    If `f` returns `true`, the index of that row is included
-    ///    in the return value.
+    ///   collection and each [`crate::node_table::NodeTableRow`].
+    ///   If `f` returns `true`, the index of that row is included
+    ///   in the return value.
     ///
     /// # Examples
     ///
@@ -1585,10 +1585,10 @@ impl TableCollection {
     /// # Return value
     /// - `Ok(None)`: when truncation leads to empty edge table.
     /// - `Ok(Some(TableCollection))`: when trunction is successfully performed
-    ///    and results in non-empty edge table. The table collection is sorted.
+    ///   and results in non-empty edge table. The table collection is sorted.
     /// - `Error(TskitError)`: Any errors from the C API propagate. An
-    ///    [TskitError::RangeError] will occur when `intervals` are not
-    ///    sorted.
+    ///   [TskitError::RangeError] will occur when `intervals` are not
+    ///   sorted.
     ///
     /// # Notes
     ///
@@ -1631,7 +1631,7 @@ impl TableCollection {
     where
         P: Into<Position>,
     {
-        use streaming_iterator::StreamingIterator;
+        use crate::StreamingIterator;
         let mut tables = self;
         // use tables from sys to allow easier process with metadata
         let options = 0;

@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 mod macros;
 
 #[allow(dead_code)]
@@ -47,51 +45,75 @@ pub use treeseq::TreeSequence;
 
 use traits::TskTeardown;
 
-#[derive(Error, Debug)]
 #[non_exhaustive]
+#[derive(Debug)]
 pub enum TskitError {
     /// Returned when conversion attempts fail
-    #[error("range error: {}", *.0)]
     RangeError(String),
     /// Used when bad input is encountered.
-    #[error("we received {} but expected {}",*got, *expected)]
     ValueError { got: String, expected: String },
     /// Used when array access is out of range.
     /// Typically, this is used when accessing
     /// arrays allocated on the C side.
-    #[error("Invalid index")]
     IndexError,
     /// Raised when samples are requested from
     /// [`crate::Tree`] objects, but sample lists are
     /// not being updated.
-    #[error("Not tracking samples in Trees")]
     NotTrackingSamples,
     /// Wrapper around tskit C API error codes.
-    #[error("{}", get_tskit_error_message(*code))]
     ErrorCode { code: i32 },
     /// A redirection of [``crate::metadata::MetadataError``]
-    #[error("{value:?}")]
     MetadataError {
         /// The redirected error
-        #[from]
         value: MetadataError,
     },
     /// General error variant
-    #[error("{}", *.0)]
     LibraryError(String),
 }
 
-#[derive(Error, Debug)]
+impl std::fmt::Display for TskitError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RangeError(msg) => write!(f, "range error: {}", msg),
+            Self::ValueError { got, expected } => {
+                write!(f, "we received {} but expected {}", got, expected)
+            }
+            Self::IndexError => write!(f, "Invalid index"),
+            Self::NotTrackingSamples => write!(f, "Not tracking samples in Trees"),
+            Self::ErrorCode { code } => write!(f, "{}", get_tskit_error_message(*code)),
+            Self::MetadataError { value } => write!(f, "meta data error: {}", value),
+            Self::LibraryError(msg) => write!(f, "library error: {msg}"),
+        }
+    }
+}
+
+impl From<MetadataError> for TskitError {
+    fn from(value: MetadataError) -> Self {
+        Self::MetadataError { value }
+    }
+}
+
+impl std::error::Error for TskitError {}
+
+#[derive(Debug)]
 #[non_exhaustive]
 pub enum MetadataError {
     /// Error related to types implementing
     /// metadata serialization.
-    #[error("{}", *value)]
     RoundtripError {
-        #[from]
         value: Box<dyn std::error::Error + Send + Sync>,
     },
 }
+
+impl std::fmt::Display for MetadataError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RoundtripError { value } => write!(f, "metadata round trip error: {value:?}"),
+        }
+    }
+}
+
+impl std::error::Error for MetadataError {}
 
 //#[non_exhaustive]
 //#[derive(Error, Debug)]

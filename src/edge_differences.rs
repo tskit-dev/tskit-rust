@@ -1,40 +1,7 @@
+use crate::EdgeId;
 use crate::NodeId;
 use crate::Position;
 use crate::TreeSequence;
-
-use crate::sys::bindings;
-
-#[repr(transparent)]
-struct LLEdgeDifferenceIterator(bindings::tsk_diff_iter_t);
-
-impl Drop for LLEdgeDifferenceIterator {
-    fn drop(&mut self) {
-        unsafe { bindings::tsk_diff_iter_free(&mut self.0) };
-    }
-}
-
-impl LLEdgeDifferenceIterator {
-    pub fn new_from_treeseq(
-        treeseq: &TreeSequence,
-        flags: bindings::tsk_flags_t,
-    ) -> Result<Self, crate::TskitError> {
-        let mut inner = std::mem::MaybeUninit::<bindings::tsk_diff_iter_t>::uninit();
-        let treeseq_ptr = treeseq.as_ptr();
-        assert!(!treeseq_ptr.is_null());
-        // SAFETY: treeseq_ptr is not null
-        let tables_ptr =
-            unsafe { (*treeseq_ptr).tables } as *const bindings::tsk_table_collection_t;
-        assert!(!tables_ptr.is_null());
-        // SAFETY: tables_ptr is not null,
-        // init of inner will be handled by tsk_diff_iter_init
-        let num_trees: i32 = treeseq.num_trees().try_into()?;
-        let code = unsafe {
-            bindings::tsk_diff_iter_init(inner.as_mut_ptr(), tables_ptr, num_trees, flags)
-        };
-        // SAFETY: tsk_diff_iter_init has initialized our object
-        handle_tsk_return_value!(code, Self(unsafe { inner.assume_init() }))
-    }
-}
 
 /// Marker type for edge insertion.
 pub struct Insertion {}
@@ -47,49 +14,6 @@ mod private {
 
     impl EdgeDifferenceIteration for super::Insertion {}
     impl EdgeDifferenceIteration for super::Removal {}
-}
-
-struct LLEdgeList<T: private::EdgeDifferenceIteration> {
-    inner: bindings::tsk_edge_list_t,
-    marker: std::marker::PhantomData<T>,
-}
-
-macro_rules! build_lledgelist {
-    ($name: ident, $generic: ty) => {
-        type $name = LLEdgeList<$generic>;
-
-        impl Default for $name {
-            fn default() -> Self {
-                Self {
-                    inner: bindings::tsk_edge_list_t {
-                        head: std::ptr::null_mut(),
-                        tail: std::ptr::null_mut(),
-                    },
-                    marker: std::marker::PhantomData::<$generic> {},
-                }
-            }
-        }
-    };
-}
-
-build_lledgelist!(LLEdgeInsertionList, Insertion);
-build_lledgelist!(LLEdgeRemovalList, Removal);
-
-/// Concrete type implementing [`Iterator`] over [`EdgeInsertion`] or [`EdgeRemoval`].
-/// Created by [`EdgeDifferencesIterator::edge_insertions`] or
-/// [`EdgeDifferencesIterator::edge_removals`], respectively.
-pub struct EdgeDifferences<'a, T: private::EdgeDifferenceIteration> {
-    inner: &'a LLEdgeList<T>,
-    current: *mut bindings::tsk_edge_list_node_t,
-}
-
-impl<'a, T: private::EdgeDifferenceIteration> EdgeDifferences<'a, T> {
-    fn new(inner: &'a LLEdgeList<T>) -> Self {
-        Self {
-            inner,
-            current: std::ptr::null_mut(),
-        }
-    }
 }
 
 /// An edge difference. Edge insertions and removals are differentiated by
@@ -149,103 +73,170 @@ pub type EdgeInsertion = EdgeDifference<Insertion>;
 /// Type alias for [`EdgeDifference<Removal>`]
 pub type EdgeRemoval = EdgeDifference<Removal>;
 
-impl<T> Iterator for EdgeDifferences<'_, T>
-where
-    T: private::EdgeDifferenceIteration,
-{
-    type Item = EdgeDifference<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current.is_null() {
-            self.current = self.inner.inner.head;
-        } else {
-            self.current = unsafe { *self.current }.next;
-        }
-        if self.current.is_null() {
-            None
-        } else {
-            let left = unsafe { (*self.current).edge.left };
-            let right = unsafe { (*self.current).edge.right };
-            let parent = unsafe { (*self.current).edge.parent };
-            let child = unsafe { (*self.current).edge.child };
-            Some(Self::Item::new(left, right, parent, child))
-        }
-    }
-}
-
 /// Manages iteration over trees to obtain
 /// edge differences.
-pub struct EdgeDifferencesIterator {
-    inner: LLEdgeDifferenceIterator,
-    insertion: LLEdgeInsertionList,
-    removal: LLEdgeRemovalList,
+pub struct EdgeDifferencesIterator<'ts> {
+    edges_left: &'ts [Position],
+    edges_right: &'ts [Position],
+    edges_parent: &'ts [NodeId],
+    edges_child: &'ts [NodeId],
+    insertion_order: &'ts [EdgeId],
+    removal_order: &'ts [EdgeId],
     left: f64,
-    right: f64,
-    advanced: i32,
+    sequence_length: f64,
+    insertion_index: usize,
+    removal_index: usize,
 }
 
-impl EdgeDifferencesIterator {
-    // NOTE: will return None if tskit-c cannot
-    // allocate memory for internal structures.
-    pub(crate) fn new_from_treeseq(
-        treeseq: &TreeSequence,
-        flags: bindings::tsk_flags_t,
-    ) -> Result<Self, crate::TskitError> {
-        LLEdgeDifferenceIterator::new_from_treeseq(treeseq, flags).map(|inner| Self {
-            inner,
-            insertion: LLEdgeInsertionList::default(),
-            removal: LLEdgeRemovalList::default(),
-            left: f64::default(),
-            right: f64::default(),
-            advanced: 0,
-        })
+impl<'ts> EdgeDifferencesIterator<'ts> {
+    pub(crate) fn new(treeseq: &'ts TreeSequence) -> Self {
+        Self {
+            edges_left: treeseq.tables().edges().left_slice(),
+            edges_right: treeseq.tables().edges().right_slice(),
+            edges_parent: treeseq.tables().edges().parent_slice(),
+            edges_child: treeseq.tables().edges().child_slice(),
+            insertion_order: treeseq.edge_insertion_order(),
+            removal_order: treeseq.edge_removal_order(),
+            left: 0.,
+            sequence_length: treeseq.tables().sequence_length().into(),
+            insertion_index: 0,
+            removal_index: 0,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct CurrentTreeEdgeDifferences<'ts> {
+    edges_left: &'ts [Position],
+    edges_right: &'ts [Position],
+    edges_parent: &'ts [NodeId],
+    edges_child: &'ts [NodeId],
+    insertion_order: &'ts [EdgeId],
+    removal_order: &'ts [EdgeId],
+    removals: (usize, usize),
+    insertions: (usize, usize),
+    left: f64,
+    right: f64,
+}
+
+#[repr(transparent)]
+pub struct EdgeRemovalsIterator<'ts>(CurrentTreeEdgeDifferences<'ts>);
+
+#[repr(transparent)]
+pub struct EdgeInsertionsIterator<'ts>(CurrentTreeEdgeDifferences<'ts>);
+
+impl<'ts> Iterator for EdgeRemovalsIterator<'ts> {
+    type Item = EdgeDifference<Removal>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0.removals.0 < self.0.removals.1 {
+            let index = self.0.removals.0;
+            self.0.removals.0 += 1;
+            Some(Self::Item::new(
+                self.0.edges_left[self.0.removal_order[index].as_usize()],
+                self.0.edges_right[self.0.removal_order[index].as_usize()],
+                self.0.edges_parent[self.0.removal_order[index].as_usize()],
+                self.0.edges_child[self.0.removal_order[index].as_usize()],
+            ))
+        } else {
+            None
+        }
+    }
+}
+
+impl<'ts> Iterator for EdgeInsertionsIterator<'ts> {
+    type Item = EdgeDifference<Insertion>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0.insertions.0 < self.0.insertions.1 {
+            let index = self.0.insertions.0;
+            self.0.insertions.0 += 1;
+            Some(Self::Item::new(
+                self.0.edges_left[self.0.insertion_order[index].as_usize()],
+                self.0.edges_right[self.0.insertion_order[index].as_usize()],
+                self.0.edges_parent[self.0.insertion_order[index].as_usize()],
+                self.0.edges_child[self.0.insertion_order[index].as_usize()],
+            ))
+        } else {
+            None
+        }
+    }
+}
+
+impl<'ts> CurrentTreeEdgeDifferences<'ts> {
+    pub fn removals(&self) -> impl Iterator<Item = EdgeRemoval> + '_ {
+        EdgeRemovalsIterator(self.clone())
     }
 
-    fn advance_tree(&mut self) {
-        // SAFETY: our tree sequence is guaranteed
-        // to be valid and own its tables.
-        self.advanced = unsafe {
-            bindings::tsk_diff_iter_next(
-                &mut self.inner.0,
-                &mut self.left,
-                &mut self.right,
-                &mut self.removal.inner,
-                &mut self.insertion.inner,
-            )
-        };
-    }
-
-    pub fn left(&self) -> Position {
-        self.left.into()
-    }
-
-    pub fn right(&self) -> Position {
-        self.right.into()
+    pub fn insertions(&self) -> impl Iterator<Item = EdgeInsertion> + '_ {
+        EdgeInsertionsIterator(self.clone())
     }
 
     pub fn interval(&self) -> (Position, Position) {
-        (self.left(), self.right())
-    }
-
-    pub fn edge_removals(&self) -> impl Iterator<Item = EdgeRemoval> + '_ {
-        EdgeDifferences::<Removal>::new(&self.removal)
-    }
-
-    pub fn edge_insertions(&self) -> impl Iterator<Item = EdgeInsertion> + '_ {
-        EdgeDifferences::<Insertion>::new(&self.insertion)
+        (self.left.into(), self.right.into())
     }
 }
 
-impl streaming_iterator::StreamingIterator for EdgeDifferencesIterator {
-    type Item = EdgeDifferencesIterator;
-
-    fn advance(&mut self) {
-        self.advance_tree()
+fn update_right(
+    right: f64,
+    index: usize,
+    position_slice: &[Position],
+    diff_slice: &[EdgeId],
+) -> f64 {
+    if index < diff_slice.len() {
+        let temp = position_slice[diff_slice[index].as_usize()];
+        if temp < right {
+            temp.into()
+        } else {
+            right
+        }
+    } else {
+        right
     }
+}
 
-    fn get(&self) -> Option<&Self::Item> {
-        if self.advanced > 0 {
-            Some(self)
+impl<'ts> Iterator for EdgeDifferencesIterator<'ts> {
+    type Item = CurrentTreeEdgeDifferences<'ts>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.insertion_index < self.insertion_order.len() && self.left < self.sequence_length {
+            let removals_start = self.removal_index;
+            while self.removal_index < self.removal_order.len()
+                && self.edges_right[self.removal_order[self.removal_index].as_usize()] == self.left
+            {
+                self.removal_index += 1;
+            }
+            let insertions_start = self.insertion_index;
+            while self.insertion_index < self.insertion_order.len()
+                && self.edges_left[self.insertion_order[self.insertion_index].as_usize()]
+                    == self.left
+            {
+                self.insertion_index += 1;
+            }
+            let right = update_right(
+                self.sequence_length,
+                self.insertion_index,
+                self.edges_left,
+                self.insertion_order,
+            );
+            let right = update_right(
+                right,
+                self.removal_index,
+                self.edges_right,
+                self.removal_order,
+            );
+            let diffs = CurrentTreeEdgeDifferences {
+                edges_left: self.edges_left,
+                edges_right: self.edges_right,
+                edges_parent: self.edges_parent,
+                edges_child: self.edges_child,
+                insertion_order: self.insertion_order,
+                removal_order: self.removal_order,
+                removals: (removals_start, self.removal_index),
+                insertions: (insertions_start, self.insertion_index),
+                left: self.left,
+                right,
+            };
+            self.left = right;
+            Some(diffs)
         } else {
             None
         }

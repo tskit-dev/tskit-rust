@@ -88,6 +88,12 @@ impl TreeSequence {
         unsafe { (*(self.as_ref()).tables).nodes.num_rows }
     }
 
+    fn num_edges_raw(&self) -> bindings::tsk_size_t {
+        assert!(!self.as_ref().tables.is_null());
+        // SAFETY: none of the pointers are null
+        unsafe { (*(self.as_ref()).tables).edges.num_rows }
+    }
+
     pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
         let mut kc: f64 = f64::NAN;
         let kcp: *mut f64 = &mut kc;
@@ -102,5 +108,31 @@ impl TreeSequence {
 
     pub fn num_samples(&self) -> super::newtypes::SizeType {
         unsafe { bindings::tsk_treeseq_get_num_samples(self.as_ref()) }.into()
+    }
+
+    pub fn edge_insertion_order(&self) -> &[super::newtypes::EdgeId] {
+        assert!(!self.as_ref().tables.is_null());
+        // SAFETY: all array lengths are the number of rows in the table
+        // SAFETY: no pointers can be null
+        // SAFETY: tables are indexed in order to create a treeseq
+        unsafe {
+            super::generate_slice(
+                (*self.as_ref().tables).indexes.edge_insertion_order,
+                self.num_edges_raw(),
+            )
+        }
+    }
+
+    pub fn edge_removal_order(&self) -> &[super::newtypes::EdgeId] {
+        assert!(!self.as_ref().tables.is_null());
+        // SAFETY: all array lengths are the number of rows in the table
+        // SAFETY: no pointers can be null
+        // SAFETY: tables are indexed in order to create a treeseq
+        unsafe {
+            super::generate_slice(
+                (*self.as_ref().tables).indexes.edge_removal_order,
+                self.num_edges_raw(),
+            )
+        }
     }
 }

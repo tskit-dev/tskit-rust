@@ -109,7 +109,7 @@ impl PartialEq<SiteTableRowView<'_>> for SiteTableRow {
     }
 }
 
-impl streaming_iterator::StreamingIterator for SiteTableRowView<'_> {
+impl crate::StreamingIterator for SiteTableRowView<'_> {
     type Item = Self;
 
     row_lending_iterator_get!();
