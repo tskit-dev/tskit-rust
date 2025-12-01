@@ -1,7 +1,6 @@
 [book]
 authors = ["Kevin R. Thornton"]
 language = "en"
-multilingual = false
 src = "src"
 title = "The tskit (rust) book"
 
