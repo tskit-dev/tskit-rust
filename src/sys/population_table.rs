@@ -1,3 +1,4 @@
+use std::ffi::c_char;
 use std::ptr::NonNull;
 
 use super::bindings::tsk_id_t;
@@ -44,7 +45,7 @@ impl PopulationTable {
         unsafe {
             Ok(tsk_population_table_add_row(
                 self.as_mut(),
-                metadata.as_ptr().cast::<i8>(),
+                metadata.as_ptr().cast::<c_char>(),
                 metadata.len() as u64,
             ))
         }
