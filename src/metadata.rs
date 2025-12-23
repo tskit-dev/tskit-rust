@@ -239,13 +239,14 @@ pub use crate::sys::MetadataError;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::c_char;
 
     #[test]
     fn test_vec8_cast_to_c_string() {
         let v: Vec<u8> = vec![0, 1, b'\0', 2, 3];
         let c = v.as_ptr() as *const libc::c_char;
         for (i, vi) in v.iter().enumerate() {
-            assert_eq!(*vi as i8, unsafe { *c.add(i) });
+            assert_eq!(*vi as c_char, unsafe { *c.add(i) });
         }
 
         let _ = match Some(&v) {

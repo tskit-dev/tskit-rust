@@ -18,6 +18,9 @@ use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use sys::bindings as ll_bindings;
 
+#[cfg(feature = "provenance")]
+use std::ffi::c_char;
+
 use super::Tree;
 
 /// A tree sequence.
@@ -468,9 +471,9 @@ impl TreeSequence {
         let rv = unsafe {
             ll_bindings::tsk_provenance_table_add_row(
                 &mut (*self.inner.as_ref().tables).provenances,
-                timestamp.as_ptr() as *mut i8,
+                timestamp.as_ptr() as *const c_char,
                 timestamp.len() as ll_bindings::tsk_size_t,
-                record.as_ptr() as *mut i8,
+                record.as_ptr() as *const c_char,
                 record.len() as ll_bindings::tsk_size_t,
             )
         };

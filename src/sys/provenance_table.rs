@@ -10,6 +10,7 @@ use super::bindings::tsk_provenance_table_t;
 use super::bindings::tsk_size_t;
 use super::tskbox::TskBox;
 use super::TskitError;
+use std::ffi::c_char;
 
 #[derive(Debug)]
 pub struct ProvenanceTable(TskBox<tsk_provenance_table_t>);
@@ -49,9 +50,9 @@ impl ProvenanceTable {
         let rv = unsafe {
             tsk_provenance_table_add_row(
                 self.as_mut(),
-                timestamp.as_ptr() as *mut i8,
+                timestamp.as_ptr() as *const c_char,
                 timestamp.len() as tsk_size_t,
-                record.as_ptr() as *mut i8,
+                record.as_ptr() as *const c_char,
                 record.len() as tsk_size_t,
             )
         };
