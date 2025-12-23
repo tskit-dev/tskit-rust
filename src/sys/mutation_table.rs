@@ -1,3 +1,4 @@
+use std::ffi::c_char;
 use std::ptr::NonNull;
 
 use super::newtypes::MutationId;
@@ -70,14 +71,14 @@ impl MutationTable {
                 parent,
                 time,
                 match derived_state {
-                    Some(d) => d.as_ptr() as *const i8,
+                    Some(d) => d.as_ptr() as *const c_char,
                     None => std::ptr::null(),
                 },
                 match derived_state {
                     Some(d) => d.len() as u64,
                     None => 0,
                 },
-                metadata.as_ptr().cast::<i8>(),
+                metadata.as_ptr().cast::<c_char>(),
                 metadata.len() as u64,
             ))
         }

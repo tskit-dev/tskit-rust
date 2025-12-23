@@ -1,3 +1,4 @@
+use std::ffi::c_char;
 use std::ptr::NonNull;
 
 use super::bindings::tsk_size_t;
@@ -65,7 +66,7 @@ impl IndividualTable {
                 location.len() as u64,
                 parents.as_ptr(),
                 parents.len() as u64,
-                metadata.as_ptr().cast::<i8>(),
+                metadata.as_ptr().cast::<c_char>(),
                 metadata.len() as u64,
             ))
         }

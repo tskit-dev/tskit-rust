@@ -1,3 +1,4 @@
+use std::ffi::c_char;
 use std::ptr::NonNull;
 
 use super::newtypes::EdgeId;
@@ -64,7 +65,7 @@ impl EdgeTable {
                 right,
                 parent,
                 child,
-                metadata.as_ptr().cast::<i8>(),
+                metadata.as_ptr().cast::<c_char>(),
                 metadata.len() as u64,
             ))
         }
