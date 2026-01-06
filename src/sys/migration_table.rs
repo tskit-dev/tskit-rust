@@ -1,3 +1,4 @@
+use std::ffi::c_char;
 use std::ptr::NonNull;
 
 use super::newtypes::MigrationId;
@@ -71,7 +72,7 @@ impl MigrationTable {
                 source,
                 dest,
                 time,
-                metadata.as_ptr().cast::<i8>(),
+                metadata.as_ptr().cast::<c_char>(),
                 metadata.len() as u64,
             ))
         }

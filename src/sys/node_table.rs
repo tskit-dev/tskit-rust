@@ -1,3 +1,4 @@
+use std::ffi::c_char;
 use std::ptr::NonNull;
 
 use super::flags::NodeFlags;
@@ -80,7 +81,7 @@ impl NodeTable {
                 time.into().into(),
                 population.into().into(),
                 individual.into().into(),
-                metadata.as_ptr().cast::<i8>(),
+                metadata.as_ptr().cast::<c_char>(),
                 metadata.len() as u64,
             )
         } {
