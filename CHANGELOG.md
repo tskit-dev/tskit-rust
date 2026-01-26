@@ -2,6 +2,83 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0-alpha.3] - 2026-01-26
+
+### Bug Fixes
+
+- Use c_char instead of i8 when handling C strings ([#804](https://github.com/tskit-dev/tskit-rust/pull/804))
+
+### Documentation
+
+- Update book on metadata + Python ([#754](https://github.com/tskit-dev/tskit-rust/pull/754))
+
+### Features
+
+- Add From/TryFrom impls for references types involving newtypes ([#634](https://github.com/tskit-dev/tskit-rust/pull/634))
+- Impl PartialOrd for newtypes to reference ([#725](https://github.com/tskit-dev/tskit-rust/pull/725))
+- Ergonomic access to immutable NodeTable columns ([#726](https://github.com/tskit-dev/tskit-rust/pull/726))
+- Get fns for table column types ([#729](https://github.com/tskit-dev/tskit-rust/pull/729))
+- Access to ergonomic edge table columns ([#730](https://github.com/tskit-dev/tskit-rust/pull/730))
+
+### Miscellaneous Tasks
+
+- Add tskit-derive/Cargo.lock ([#756](https://github.com/tskit-dev/tskit-rust/pull/756))
+- Add rust-toolchain.toml ([#771](https://github.com/tskit-dev/tskit-rust/pull/771))
+- Bump baptiste0928/cargo-install from 3.1.1 to 3.3.2 ([#775](https://github.com/tskit-dev/tskit-rust/pull/775))
+- [**breaking**] Bump to tskit C API 1.2.0 ([#789](https://github.com/tskit-dev/tskit-rust/pull/789))
+- Bump actions/checkout from 4.2.2 to 6.0.0 ([#800](https://github.com/tskit-dev/tskit-rust/pull/800))
+- Bump Swatinem/rust-cache from 2.7.5 to 2.8.2 ([#801](https://github.com/tskit-dev/tskit-rust/pull/801))
+
+### Refactor
+
+- Make low level ragged access fns private to sys ([#720](https://github.com/tskit-dev/tskit-rust/pull/720))
+- Internal fn for ragged access is now safe ([#721](https://github.com/tskit-dev/tskit-rust/pull/721))
+- TreeSequence no longer stores table types ([#722](https://github.com/tskit-dev/tskit-rust/pull/722))
+- TableCollection now stores internal tables directly ([#723](https://github.com/tskit-dev/tskit-rust/pull/723))
+- Mark functions to create borrowed tables as unsafe ([#724](https://github.com/tskit-dev/tskit-rust/pull/724))
+- Use chrono for provenance time stamps ([#728](https://github.com/tskit-dev/tskit-rust/pull/728))
+- [**breaking**] TableColumn trait for column access ([#759](https://github.com/tskit-dev/tskit-rust/pull/759))
+- Properly re-export streaming_iterator types ([#763](https://github.com/tskit-dev/tskit-rust/pull/763))
+- [**breaking**] Write edge differences iterator in safe rust. ([#791](https://github.com/tskit-dev/tskit-rust/pull/791))
+- Manually implement Error ([#796](https://github.com/tskit-dev/tskit-rust/pull/796))
+
+### Styling
+
+- Fix doc indentation ([#742](https://github.com/tskit-dev/tskit-rust/pull/742))
+
+### Testing
+
+- Add tests of Python consuming JSON metadata from rust ([#749](https://github.com/tskit-dev/tskit-rust/pull/749))
+- Roundtrip bincode metadata into Python ([#750](https://github.com/tskit-dev/tskit-rust/pull/750))
+- Metadata without serde ([#753](https://github.com/tskit-dev/tskit-rust/pull/753))
+
+## [0.15.0-alpha.2] - 2025-03-06
+
+### Bug Fixes
+
+- Error during construction if sequence_length is not finite ([#707](https://github.com/tskit-dev/tskit-rust/pull/707))
+
+### Documentation
+
+- Add links to the manual ([#705](https://github.com/tskit-dev/tskit-rust/pull/705))
+
+### Features
+
+- TableCollection::compute_mutation_parents ([#714](https://github.com/tskit-dev/tskit-rust/pull/714))
+
+### Refactor
+
+- [**breaking**] Redo Tree internals ([#711](https://github.com/tskit-dev/tskit-rust/pull/711))
+- (correctly) mark an internal fn as unsafe ([#708](https://github.com/tskit-dev/tskit-rust/pull/708))
+- Mark internal fn for column access unsafe ([#712](https://github.com/tskit-dev/tskit-rust/pull/712))
+- Make column access fn in sys private ([#713](https://github.com/tskit-dev/tskit-rust/pull/713))
+- [**breaking**] NodeFlags no longer based on bitflags ([#715](https://github.com/tskit-dev/tskit-rust/pull/715))
+- [**breaking**] Implement flags types manually ([#716](https://github.com/tskit-dev/tskit-rust/pull/716))
+
+### Styling
+
+- Deny broken intradoc links ([#718](https://github.com/tskit-dev/tskit-rust/pull/718))
+
 ## [0.15.0-alpha.1] - 2025-01-23
 
 ### Features
