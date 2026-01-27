@@ -614,7 +614,7 @@ dependencies = [
 
 [[package]]
 name = "tskit"
-version = "0.15.0-alpha.3"
+version = "0.15.0-alpha.4"
 dependencies = [
  "bincode",
  "bindgen",
