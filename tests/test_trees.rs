@@ -484,3 +484,31 @@ fn test_simplify_treeseq() {
         assert_ne!(idmap[usize::try_from(i).unwrap()], NodeId::NULL);
     }
 }
+
+
+#[test]
+fn test_need_mutation_parents() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let n0 = tables.add_node(0, 0.0, -1, -1).unwrap();
+    let n1 = tables.add_node(0, 1.0, -1, -1).unwrap();
+    let n2 = tables.add_node(0, 2.0, -1, -1).unwrap();
+    let _ = tables.add_edge(0., 100., n1, n0).unwrap();
+    let _ = tables.add_edge(0., 100., n2, n1).unwrap();
+    tables.build_index().unwrap();
+    assert!(tables.deepcopy().unwrap().tree_sequence(0).is_ok());
+    let s0 = tables.add_site(10.0, None).unwrap();
+    let _ = tables.add_mutation(s0, n1, -1, 1.0, None).unwrap();
+    let _ = tables.add_mutation(s0, n0, -1, 0.0, None).unwrap();
+    tables.build_index().unwrap();
+    // Error code 511 is the "bad mutation parents error".
+    // (Yes, testing against internal constants is ugly,
+    // but we want to make sure we hit this case.)
+    match tables.deepcopy().unwrap().tree_sequence(0) {
+        Ok(_) => panic!("expected Error"),
+        Err(e) => assert!(matches!(e, tskit::TskitError::ErrorCode { code: -511 })),
+    }
+    tables
+        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+        .unwrap();
+    assert!(tables.tree_sequence(0).is_ok());
+}
