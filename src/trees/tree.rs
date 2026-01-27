@@ -313,6 +313,12 @@ impl<'treeseq> Tree<'treeseq> {
         self.inner.traverse_nodes(order)
     }
 
+    pub fn nodes(
+        &self,
+        order: crate::NodeTraversalOrder,
+    ) -> Result<Box<[NodeId]>, TskitError> {
+    }
+
     /// Return an [`Iterator`] over the children of node `u`.
     /// # Returns
     ///
