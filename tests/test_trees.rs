@@ -485,7 +485,6 @@ fn test_simplify_treeseq() {
     }
 }
 
-
 #[test]
 fn test_need_mutation_parents() {
     let mut tables = tskit::TableCollection::new(100.).unwrap();
