@@ -275,7 +275,7 @@ pub mod simulation {
     where
         P: Into<Position> + Copy + PartialOrd,
     {
-        let rng = &mut StdRng::seed_from_u64(seed);
+        let mut rng = StdRng::seed_from_u64(seed);
         let intervals: Vec<(Position, Position)> = intervals
             .iter()
             .map(|(a, b)| ((*a).into(), (*b).into()))
@@ -330,8 +330,8 @@ pub mod simulation {
         for t in (0..start_time).rev() {
             for i in 0..pop_size {
                 // select breakpoints
-                let breakpoint1 = find_breakpoint(rng, seqlen.into());
-                let breakpoint2 = find_breakpoint(rng, seqlen.into());
+                let breakpoint1 = find_breakpoint(&mut rng, seqlen.into());
+                let breakpoint2 = find_breakpoint(&mut rng, seqlen.into());
 
                 // find child pop
                 let mut child_pop = pop_anc;
@@ -340,8 +340,8 @@ pub mod simulation {
                 }
 
                 // find parents
-                let (parent1, _parent1_pop) = find_parent(rng, &parents, child_pop);
-                let (parent2, _parent2_pop) = find_parent(rng, &parents, child_pop);
+                let (parent1, _parent1_pop) = find_parent(&mut rng, &parents, child_pop);
+                let (parent2, _parent2_pop) = find_parent(&mut rng, &parents, child_pop);
 
                 // add individual
                 let child_ind = add_ind(&mut tables, parent1, parent2);
@@ -367,7 +367,7 @@ pub mod simulation {
                 ] {
                     add_edge(&mut tables, s, e, p, c);
 
-                    let mut_pos = find_mutation_pos(rng, s, e);
+                    let mut_pos = find_mutation_pos(&mut rng, s, e);
                     let mut mut_prob = f64::from(e - s) * mu;
                     if mut_prob > 1.0 {
                         mut_prob = 1.0;
