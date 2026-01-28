@@ -220,7 +220,7 @@ impl TreeSequence {
     /// }
     /// ```
     ///
-    /// ## Coupled liftimes
+    /// ## Coupled lifetimes
     ///
     /// A `Tree`'s lifetime is tied to that of its tree sequence:
     ///
