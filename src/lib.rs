@@ -79,8 +79,17 @@
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![deny(rustdoc::broken_intra_doc_links)]
 
+use std::ffi::c_char;
+
 #[cfg(feature = "bindings")]
 pub use sys::bindings;
+
+// We have to cast between raw pointers involving these types when handling metadata.
+// These compile-time assertions help prevent undefined behavior in case we run into
+// something unexpected on a specific platform.
+const _: () = const { assert!(std::mem::size_of::<u8>() == std::mem::size_of::<c_char>()) };
+const _: () =
+    const { assert!(std::mem::size_of::<u8>() == std::mem::size_of::<std::ffi::c_char>()) };
 
 pub use streaming_iterator::DoubleEndedStreamingIterator;
 pub use streaming_iterator::StreamingIterator;
