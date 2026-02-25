@@ -94,8 +94,12 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: taiki-e/install-action@cargo-hack
+      - run: rustc +${{ matrix.rust }} --version
       - name: cargo check msrv
-        run: cargo hack check --feature-powerset 
+        # The rust-toolchain file will override the matrix.rust
+        # version!  So we force cargo to use the (claimed) MSRV
+        # for the build tests
+        run: cargo +${{ matrix.rust }} hack check --verbose --feature-powerset 
 
   doc:
     name: Build docs
