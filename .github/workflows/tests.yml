@@ -7,7 +7,7 @@ name: 64 bit CI
 
 jobs:
   test-64bit:
-    name: Run tests (64 bit)
+    name: Run tests on toolchain-version (64 bit)
     runs-on: ${{ matrix.os }}
     #container:
     #  image: ubuntu:20.10
@@ -45,6 +45,44 @@ jobs:
       - name: run doc tests (powerset)
         run: |
             cargo hack test --doc --feature-powerset
+
+  test-64bit-stable:
+    name: Run tests on stable (64 bit)
+    runs-on: ${{ matrix.os }}
+    #container:
+    #  image: ubuntu:20.10
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+        rust:
+          - stable
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/checkout@v6.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2.8.2
+      - uses: taiki-e/install-action@cargo-hack
+      - run: sudo apt-get update -y
+        if: (matrix.os == 'ubuntu-24.04') || (matrix.os == 'ubuntu-24.04-arm')
+      - name: cargo check (powerset)
+        run: cargo +stable hack check --feature-powerset --no-dev-deps --verbose
+      - name: cargo check examples (powerset)
+        run: cargo +stable hack check --examples --feature-powerset
+      - name: run tests (powerset)
+        run: |
+            cargo +stable hack test --all-targets --feature-powerset
+      - name: run doc tests (powerset)
+        run: |
+            cargo +stable hack test --doc --feature-powerset
 
   fmt:
     name: rust fmt
