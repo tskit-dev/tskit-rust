@@ -87,7 +87,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.75.0
+          - 1.79.0
     steps:
       - uses: actions/checkout@v6.0.0
       - uses: dtolnay/rust-toolchain@v1
