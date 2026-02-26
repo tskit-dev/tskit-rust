@@ -99,7 +99,7 @@ jobs:
         # The rust-toolchain file will override the matrix.rust
         # version!  So we force cargo to use the (claimed) MSRV
         # for the build tests
-        run: cargo +${{ matrix.rust }} hack check --verbose --feature-powerset 
+        run: cargo +${{ matrix.rust }} hack check --verbose --feature-powerset --all-targets
 
   doc:
     name: Build docs
