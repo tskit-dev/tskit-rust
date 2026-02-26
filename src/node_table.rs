@@ -607,7 +607,7 @@ impl NodeTable {
         crate::table_iterator::make_table_iterator::<&NodeTable>(self)
     }
 
-    pub fn lending_iter(&self) -> NodeTableRowView {
+    pub fn lending_iter(&'_ self) -> NodeTableRowView<'_> {
         NodeTableRowView::new(self)
     }
 
@@ -636,7 +636,7 @@ impl NodeTable {
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<N: Into<NodeId> + Copy>(&self, r: N) -> Option<NodeTableRowView> {
+    pub fn row_view<N: Into<NodeId> + Copy>(&'_ self, r: N) -> Option<NodeTableRowView<'_>> {
         let view = NodeTableRowView {
             table: self,
             id: r.into(),

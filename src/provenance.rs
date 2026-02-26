@@ -242,7 +242,10 @@ impl ProvenanceTable {
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<ProvenanceTableRowView> {
+    pub fn row_view<P: Into<ProvenanceId> + Copy>(
+        &'_ self,
+        row: P,
+    ) -> Option<ProvenanceTableRowView<'_>> {
         match row.into().to_usize() {
             Some(x) if (x as u64) < self.num_rows() => {
                 let view = ProvenanceTableRowView {
@@ -263,7 +266,7 @@ impl ProvenanceTable {
         crate::table_iterator::make_table_iterator::<&ProvenanceTable>(self)
     }
 
-    pub fn lending_iter(&self) -> ProvenanceTableRowView {
+    pub fn lending_iter(&'_ self) -> ProvenanceTableRowView<'_> {
         ProvenanceTableRowView::new(self)
     }
 

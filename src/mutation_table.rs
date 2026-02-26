@@ -315,7 +315,7 @@ impl MutationTable {
         crate::table_iterator::make_table_iterator::<&MutationTable>(self)
     }
 
-    pub fn lending_iter(&self) -> MutationTableRowView {
+    pub fn lending_iter(&'_ self) -> MutationTableRowView<'_> {
         MutationTableRowView::new(self)
     }
 
@@ -344,7 +344,10 @@ impl MutationTable {
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<M: Into<MutationId> + Copy>(&self, r: M) -> Option<MutationTableRowView> {
+    pub fn row_view<M: Into<MutationId> + Copy>(
+        &'_ self,
+        r: M,
+    ) -> Option<MutationTableRowView<'_>> {
         let view = MutationTableRowView {
             table: self,
             id: r.into(),

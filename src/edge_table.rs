@@ -292,7 +292,7 @@ impl EdgeTable {
         crate::table_iterator::make_table_iterator::<&EdgeTable>(self)
     }
 
-    pub fn lending_iter(&self) -> EdgeTableRowView {
+    pub fn lending_iter<'table>(&'table self) -> EdgeTableRowView<'table> {
         EdgeTableRowView::new(self)
     }
 
@@ -320,7 +320,10 @@ impl EdgeTable {
     ///
     /// * `Some(row_view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<EdgeTableRowView> {
+    pub fn row_view<'table, E: Into<EdgeId> + Copy>(
+        &'table self,
+        r: E,
+    ) -> Option<EdgeTableRowView<'table>> {
         let view = EdgeTableRowView {
             table: self,
             id: r.into(),
