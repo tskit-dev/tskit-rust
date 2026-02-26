@@ -43,9 +43,10 @@ jobs:
           cargo run --example bincode_metadata --features derive
       - name: setup Python and run tests
         run: |
-          uv venv -p ${{ matrix.python }}
-          source .venv/bin/activate
+          uv venv -p ${{ matrix.python }} test_venv
+          source test_venv/bin/activate
           uv pip install -r python/requirements_locked_3_13.txt
           uv pip install python/tskit_glue
           python -m pytest python
+          rm -rf test_venv
 
