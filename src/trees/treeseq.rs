@@ -249,7 +249,10 @@ impl TreeSequence {
     /// while let Some(tree) = tree_sequence.tree_iterator(tskit::TreeFlags::default()).unwrap().next() {
     /// }
     /// ```
-    pub fn tree_iterator<F: Into<TreeFlags>>(&self, flags: F) -> Result<Tree, TskitError> {
+    pub fn tree_iterator<'ts, F: Into<TreeFlags>>(
+        &'ts self,
+        flags: F,
+    ) -> Result<Tree<'ts>, TskitError> {
         let tree = Tree::new(&self.inner, flags)?;
 
         Ok(tree)
@@ -262,11 +265,11 @@ impl TreeSequence {
     /// # Errors
     ///
     /// * [`TskitError`] if `at` is not valid
-    pub fn tree_iterator_at_position<F: Into<TreeFlags>, P: Into<Position>>(
-        &self,
+    pub fn tree_iterator_at_position<'ts, F: Into<TreeFlags>, P: Into<Position>>(
+        &'ts self,
         flags: F,
         at: P,
-    ) -> Result<Tree, TskitError> {
+    ) -> Result<Tree<'ts>, TskitError> {
         Tree::new_at_position(&self.inner, flags, at)
     }
 
@@ -277,11 +280,11 @@ impl TreeSequence {
     /// # Errors
     ///
     /// * [`TskitError`] if `at` is not valid
-    pub fn tree_iterator_at_index<F: Into<TreeFlags>>(
-        &self,
+    pub fn tree_iterator_at_index<'ts, F: Into<TreeFlags>>(
+        &'ts self,
         flags: F,
         at: i32,
-    ) -> Result<Tree, TskitError> {
+    ) -> Result<Tree<'ts>, TskitError> {
         Tree::new_at_index(&self.inner, flags, at)
     }
 
@@ -481,7 +484,9 @@ impl TreeSequence {
     }
 
     /// Build an iterator over edge differences.
-    pub fn edge_differences_iter(&self) -> crate::edge_differences::EdgeDifferencesIterator {
+    pub fn edge_differences_iter<'ts>(
+        &'ts self,
+    ) -> crate::edge_differences::EdgeDifferencesIterator<'ts> {
         crate::edge_differences::EdgeDifferencesIterator::new(self)
     }
 

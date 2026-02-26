@@ -28,5 +28,5 @@
 //! This module contains the same types/functions with the same names.
 
 #![allow(clippy::all)]
-
+#![allow(unnecessary_transmutes)]
 include!(concat!(env!("OUT_DIR"), "/auto_bindings.rs"));

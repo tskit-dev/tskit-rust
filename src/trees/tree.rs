@@ -77,7 +77,7 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// # Failing examples
     ///
-    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    /// An error will be returned if ['TreeFlags::SAMPLE_LISTS`](crate::TreeFlags::SAMPLE_LISTS) is not used:
     ///
     /// ```should_panic
     /// use tskit::StreamingIterator;
@@ -337,7 +337,7 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// # Failing examples
     ///
-    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    /// An error will be returned if ['TreeFlags::SAMPLE_LISTS`](crate::TreeFlags::SAMPLE_LISTS) is not used:
     ///
     /// ```should_panic
     /// use tskit::StreamingIterator;
@@ -371,7 +371,7 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// # Failing examples
     ///
-    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    /// An error will be returned if ['TreeFlags::SAMPLE_LISTS`](crate::TreeFlags::SAMPLE_LISTS) is not used:
     ///
     /// ```should_panic
     /// use tskit::StreamingIterator;
@@ -405,7 +405,7 @@ impl<'treeseq> Tree<'treeseq> {
 
     /// # Failing examples
     ///
-    /// An error will be returned if ['crate::TreeFlags::SAMPLE_LISTS`] is not used:
+    /// An error will be returned if ['TreeFlags::SAMPLE_LISTS`](crate::TreeFlags::SAMPLE_LISTS) is not used:
     ///
     /// ```should_panic
     /// use tskit::StreamingIterator;

@@ -325,7 +325,7 @@ impl MigrationTable {
         crate::table_iterator::make_table_iterator::<&MigrationTable>(self)
     }
 
-    pub fn lending_iter(&self) -> MigrationTableRowView {
+    pub fn lending_iter(&'_ self) -> MigrationTableRowView<'_> {
         MigrationTableRowView::new(self)
     }
 
@@ -354,7 +354,10 @@ impl MigrationTable {
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<M: Into<MigrationId> + Copy>(&self, r: M) -> Option<MigrationTableRowView> {
+    pub fn row_view<M: Into<MigrationId> + Copy>(
+        &'_ self,
+        r: M,
+    ) -> Option<MigrationTableRowView<'_>> {
         let view = MigrationTableRowView {
             table: self,
             id: r.into(),

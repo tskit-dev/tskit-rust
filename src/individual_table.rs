@@ -422,7 +422,7 @@ match tables.individuals().metadata::<MutationMetadata>(0)
         crate::table_iterator::make_table_iterator::<&IndividualTable>(self)
     }
 
-    pub fn lending_iter(&self) -> IndividualTableRowView {
+    pub fn lending_iter(&'_ self) -> IndividualTableRowView<'_> {
         IndividualTableRowView::new(self)
     }
 
@@ -451,7 +451,10 @@ match tables.individuals().metadata::<MutationMetadata>(0)
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<I: Into<IndividualId> + Copy>(&self, r: I) -> Option<IndividualTableRowView> {
+    pub fn row_view<I: Into<IndividualId> + Copy>(
+        &'_ self,
+        r: I,
+    ) -> Option<IndividualTableRowView<'_>> {
         let view = IndividualTableRowView {
             table: self,
             id: r.into(),

@@ -211,7 +211,7 @@ impl PopulationTable {
         crate::table_iterator::make_table_iterator::<&PopulationTable>(self)
     }
 
-    pub fn lending_iter(&self) -> PopulationTableRowView {
+    pub fn lending_iter(&'_ self) -> PopulationTableRowView<'_> {
         PopulationTableRowView::new(self)
     }
 
@@ -240,7 +240,10 @@ impl PopulationTable {
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<PopulationTableRowView> {
+    pub fn row_view<P: Into<PopulationId> + Copy>(
+        &'_ self,
+        r: P,
+    ) -> Option<PopulationTableRowView<'_>> {
         match SizeType::try_from(r.into()).ok() {
             Some(row) if row < self.num_rows() => {
                 let view = PopulationTableRowView {

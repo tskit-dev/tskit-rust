@@ -250,7 +250,7 @@ impl SiteTable {
         crate::table_iterator::make_table_iterator::<&SiteTable>(self)
     }
 
-    pub fn lending_iter(&self) -> SiteTableRowView {
+    pub fn lending_iter(&'_ self) -> SiteTableRowView<'_> {
         SiteTableRowView::new(self)
     }
 
@@ -279,7 +279,7 @@ impl SiteTable {
     ///
     /// * `Some(row view)` if `r` is valid
     /// * `None` otherwise
-    pub fn row_view<S: Into<SiteId> + Copy>(&self, r: S) -> Option<SiteTableRowView> {
+    pub fn row_view<S: Into<SiteId> + Copy>(&'_ self, r: S) -> Option<SiteTableRowView<'_>> {
         let view = SiteTableRowView {
             table: self,
             id: r.into(),
