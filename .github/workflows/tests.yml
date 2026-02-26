@@ -87,19 +87,18 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.79.0
+          - stable
     steps:
       - uses: actions/checkout@v6.0.0
       - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
       - uses: taiki-e/install-action@cargo-hack
-      - run: rustc +${{ matrix.rust }} --version
       - name: cargo check msrv
         # The rust-toolchain file will override the matrix.rust
         # version!  So we force cargo to use the (claimed) MSRV
         # for the build tests
-        run: cargo +${{ matrix.rust }} hack check --verbose --feature-powerset --all-targets
+        run: cargo +${{ matrix.rust }} hack check --rust-version --verbose --feature-powerset --all-targets
 
   doc:
     name: Build docs
