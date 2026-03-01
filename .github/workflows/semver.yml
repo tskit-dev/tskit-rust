@@ -20,7 +20,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy
       - name: Install cargo-semver-checks
-        uses: baptiste0928/cargo-install@v3.3.2
+        uses: baptiste0928/cargo-install@v3.4.0
         with:
           crate: cargo-semver-checks
           version: '0.43.0'
