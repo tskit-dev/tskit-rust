@@ -49,7 +49,6 @@ use ll_bindings::tsk_size_t;
 /// # Examples
 ///
 /// ```
-///
 /// let mut tables = tskit::TableCollection::new(100.).unwrap();
 /// assert_eq!(tables.sequence_length(), 100.);
 ///
@@ -235,7 +234,6 @@ impl TableCollection {
     ///
     /// ```
     /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
-    ///
     /// // left, right, parent, child
     /// match tables.add_edge(0., 53., 1, 11) {
     ///     // This is the first edge, so its id will be
@@ -379,7 +377,6 @@ impl TableCollection {
     ///
     /// ```
     /// # #[cfg(feature = "derive")] {
-    ///
     /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
     /// # #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::IndividualMetadata)]
     /// # #[serializer("serde_json")]
@@ -764,7 +761,7 @@ impl TableCollection {
         }
     }
 
-    /// Sort the tables.  
+    /// Sort the tables.
     /// The [``bookmark``](crate::types::Bookmark) can
     /// be used to affect where sorting starts from for each table.
     ///
