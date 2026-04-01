@@ -1844,4 +1844,53 @@ impl TableCollection {
     pub fn into_mut_ptr(self) -> Option<std::ptr::NonNull<ll_bindings::tsk_table_collection_t>> {
         std::ptr::NonNull::new(self.inner.into_raw())
     }
+
+    /// Create a table collection backed by a pointer from an arbitrary memory allocator.
+    /// This function facilitates using table collections in environments where `malloc`
+    /// is not the primary allocator.
+    /// For example, one can create a table collection from a pointer returned by
+    /// `PyMem_Malloc`.
+    ///
+    /// This function represents advanced usage and it is fully expected that people calling
+    /// it have a good working understanding of both the tskit C API and the allocator system
+    /// they are using!
+    ///
+    /// # Safety
+    ///
+    /// * The pointee must be initialized via the tskit-C API.
+    /// * The memory allocated to `ptr` **must** be freed by converting the returned tables
+    ///   back to a pointer via [``TableCollection::into_mut_ptr``], tearing down the table
+    ///   collection, and then calling the appropriate method to free the allocation.
+    /// * The returned tables **must not** be used to initialize a [``crate::TreeSequence``] that is
+    ///   then allowed to `drop` on its own!
+    ///   Rather, the tables must be dumped, converted into a pointer, etc., as described above.
+    ///
+    /// Note that various forms of encapsulation can be used to handle the safety requirements.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[cfg(feature = "bindings")] {
+    /// # use tskit::bindings::tsk_table_collection_t;
+    /// # use tskit::bindings::tsk_table_collection_init;
+    /// # use tskit::bindings::tsk_table_collection_free;
+    /// // Pretend that malloc is actually some other allocator
+    /// let ptr = unsafe {
+    /// libc::malloc(std::mem::size_of::<tsk_table_collection_t>()).cast::<tsk_table_collection_t>() };
+    /// let rv = unsafe { tsk_table_collection_init(ptr, 0) };
+    /// assert_eq!(rv, 0);
+    /// let ptr = unsafe{ std::ptr::NonNull::new(ptr) }.unwrap();
+    /// let tables = unsafe { tskit::TableCollection::new_from_raw(ptr) }.unwrap();
+    /// let ptr = tables.into_mut_ptr().unwrap();
+    /// let rv = unsafe { tsk_table_collection_free(ptr.as_ptr()) };
+    /// assert_eq!(rv, 0);
+    /// unsafe { libc::free(ptr.as_ptr() as *mut libc::c_void) };
+    /// # }
+    /// ```
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_from_raw(
+        ptr: std::ptr::NonNull<ll_bindings::tsk_table_collection_t>,
+    ) -> Result<Self, TskitError> {
+        Self::new_from_ll(LLTableCollection::new_owning_from_nonnull(ptr))
+    }
 }
