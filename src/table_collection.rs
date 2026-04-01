@@ -1786,4 +1786,62 @@ impl TableCollection {
     ) -> Result<(), TskitError> {
         self.inner.compute_mutation_parents(options)
     }
+
+    /// Convert the tables into a raw pointer.
+    ///
+    /// # Returns
+    ///
+    /// A pointer to a [`crate::bindings::tsk_table_collection_t`].
+    /// The pointer has been allocated by `malloc` and
+    /// wrapped in [`std::ptr::NonNull`] to enforce the invariant
+    /// that the pointer is not `NULL`.
+    ///
+    ///
+    /// # Notes
+    ///
+    /// To avoid memory leaks, the caller assumes
+    /// responsiblity for teardown and deallocation
+    /// of the pointer.
+    /// See the examples below.
+    ///
+    /// These operations will require the `bindings` feature.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # #[cfg(feature="bindings")]
+    /// # {
+    /// let t = tskit::TableCollection::new(10.).unwrap();
+    /// let ptr = t.into_mut_ptr().unwrap();
+    /// // SAFETY:
+    /// // * ptr is not NULL
+    /// // * ptr has been initialized by rust
+    /// let rv = unsafe {
+    ///     tskit::bindings::tsk_table_collection_free(ptr.as_ptr())
+    /// };
+    /// assert_eq!(rv, 0);
+    /// // SAFETY:
+    /// // * ptr is not NULL
+    /// // * tskit-rust allocates all pointers using malloc
+    /// unsafe {
+    ///     libc::free(ptr.as_ptr().cast::<libc::c_void>());
+    /// }
+    /// # }
+    /// ```
+    ///
+    /// To get a pointer from the table collection underlying
+    /// a tree sequence, call [`crate::TreeSequence::dump_tables`] first.
+    /// Working through the underlying table reference will not
+    /// compile:
+    ///
+    /// ```rust, compile_fail
+    /// # let t = tskit::TableCollection::new(10.).unwrap();
+    /// let ts = t.tree_sequence(0).unwrap();
+    /// // Fails because .tables() returns a non-owning
+    /// // reference.
+    /// ts.tables().into_mut_ptr();
+    /// ```
+    pub fn into_mut_ptr(self) -> Option<std::ptr::NonNull<ll_bindings::tsk_table_collection_t>> {
+        std::ptr::NonNull::new(self.inner.into_raw())
+    }
 }
