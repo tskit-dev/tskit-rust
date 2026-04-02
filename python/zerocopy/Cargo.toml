@@ -1,0 +1,12 @@
+[package]
+name = "zerocopy"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "zerocopy"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = {version = "0.28.0", features = ["auto-initialize"] }
+tskit = {path = "../..", features = ["bindings", "unsafe_init"]}

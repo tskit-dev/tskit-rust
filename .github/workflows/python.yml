@@ -50,4 +50,7 @@ jobs:
         run: |
           cargo build --manifest-path python/tskit_glue/Cargo.toml
           LD_LIBRARY_PATH=$(dirname "$(realpath "$(uv python find)")")/../lib uv run ldd python/tskit_glue/target/debug/libtskit_glue.so
+      - name: Test zerocopy
+        run: |
+          LD_LIBRARY_PATH=$(dirname "$(realpath "$(uv python find)")")/../lib uv run cargo test --manifest-path python/zerocopy/Cargo.toml
 
