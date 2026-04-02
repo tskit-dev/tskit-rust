@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0-alpha.4] - 2026-04-02
+
+### Features
+
+- Consume TableCollection, returning pointer ([#830](https://github.com/tskit-dev/tskit-rust/pull/830))
+- TableCollection.new_from_raw ([#833](https://github.com/tskit-dev/tskit-rust/pull/833))
+
+### Miscellaneous Tasks
+
+- Update to tskit-c 1.3.0 ([#811](https://github.com/tskit-dev/tskit-rust/pull/811))
+- Bump rust-toolchain version ([#823](https://github.com/tskit-dev/tskit-rust/pull/823))
+
+### Styling
+
+- Fix rng declaration in test ([#814](https://github.com/tskit-dev/tskit-rust/pull/814))
+- Static assert sizeof u8 == that of C char ([#817](https://github.com/tskit-dev/tskit-rust/pull/817))
+- Minor formatting fixes ([#828](https://github.com/tskit-dev/tskit-rust/pull/828))
+
+### Testing
+
+- Explicitly test mutation parent requirement for tree sequence creation. ([#809](https://github.com/tskit-dev/tskit-rust/pull/809))
+- Add python/zerocopy to test tables, etc., with Python allocator ([#835](https://github.com/tskit-dev/tskit-rust/pull/835))
+
 ## [0.15.0-alpha.3] - 2026-01-26
 
 ### Bug Fixes
