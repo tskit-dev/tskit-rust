@@ -14,7 +14,7 @@ jobs:
         os: [ubuntu-24.04]
         rust:
           - stable
-        python: [ "3.13" ]
+        python: [ "3.13d" ]
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.12.1
@@ -43,10 +43,11 @@ jobs:
           cargo run --example bincode_metadata --features derive
       - name: setup Python and run tests
         run: |
-          uv venv -p ${{ matrix.python }} test_venv
-          source test_venv/bin/activate
           uv pip install -r python/requirements_locked_3_13.txt
           uv pip install python/tskit_glue
-          python -m pytest python
-          rm -rf test_venv
+          LD_LIBRARY_PATH=$(dirname "$(realpath "$(uv python find)")")/../lib uv run python -m pytest python
+      - name: Confirm linkage to python-debug
+        run: |
+          cargo build --manifest-path python/tskit_glue/Cargo.toml
+          LD_LIBRARY_PATH=$(dirname "$(realpath "$(uv python find)")")/../lib uv run ldd python/tskit_glue/target/debug/libtskit_glue.so
 
