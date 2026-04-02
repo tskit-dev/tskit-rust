@@ -56,6 +56,7 @@
 //!
 //!   To see these derive macros in action, take a look
 //!   [`here`](metadata).
+//! * `unsafe_init` enables [`crate::TableCollection::new_from_raw`]
 //!         
 //! To add features to your `Cargo.toml` file:
 //!
