@@ -409,6 +409,30 @@ impl MigrationTable {
         /// Get the dest column as a slice
         => dest, dest_slice_raw, ll_bindings::tsk_id_t);
 
+    pub fn left_column(&self) -> impl crate::TableColumn<MigrationId, Position> + '_ {
+        crate::table_column::OpaqueTableColumn(self.left_slice())
+    }
+
+    pub fn right_column(&self) -> impl crate::TableColumn<MigrationId, Position> + '_ {
+        crate::table_column::OpaqueTableColumn(self.right_slice())
+    }
+
+    pub fn node_column(&self) -> impl crate::TableColumn<MigrationId, NodeId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.node_slice())
+    }
+
+    pub fn time_column(&self) -> impl crate::TableColumn<MigrationId, Time> + '_ {
+        crate::table_column::OpaqueTableColumn(self.time_slice())
+    }
+
+    pub fn source_column(&self) -> impl crate::TableColumn<MigrationId, PopulationId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.source_slice())
+    }
+
+    pub fn dest_column(&self) -> impl crate::TableColumn<MigrationId, PopulationId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.dest_slice())
+    }
+
     /// Clear all data from the table
     pub fn clear(&mut self) -> Result<i32, TskitError> {
         handle_tsk_return_value!(self.table_.clear())

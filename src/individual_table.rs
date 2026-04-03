@@ -473,6 +473,10 @@ match tables.individuals().metadata::<MutationMetadata>(0)
         /// Get the flags column as a slice
         => flags, flags_slice_raw, ll_bindings::tsk_flags_t);
 
+    pub fn flags_column(&self) -> impl crate::TableColumn<IndividualId, IndividualFlags> + '_ {
+        crate::table_column::OpaqueTableColumn(self.flags_slice())
+    }
+
     /// Clear all data from the table
     pub fn clear(&mut self) -> Result<i32, TskitError> {
         handle_tsk_return_value!(self.table_.clear())
