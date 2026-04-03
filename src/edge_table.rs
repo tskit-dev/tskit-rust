@@ -361,35 +361,18 @@ impl EdgeTable {
         /// Get the child column as a slice of the underlying integer type
         => child, child_slice_raw, ll_bindings::tsk_id_t);
 
-    /// Table column with ergonomic indexing.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use tskit::TableColumn;
-    /// let mut edges = tskit::EdgeTable::new().unwrap();
-    /// // left, right, parent, child
-    /// let edge: tskit::EdgeId = edges.add_row(0., 10., 1, 0).unwrap();
-    /// let p = edges.parent_column();
-    /// assert_eq!(p[edge], 1);
-    /// assert_eq!(p.get_with_id(edge), Some(&tskit::NodeId::from(1)));
-    /// assert!(p.get_with_id(tskit::EdgeId::NULL).is_none())
-    /// ```
     pub fn parent_column(&self) -> impl crate::TableColumn<EdgeId, NodeId> + '_ {
         crate::table_column::OpaqueTableColumn(self.parent_slice())
     }
 
-    /// Table column with ergonomic indexing.
     pub fn child_column(&self) -> impl crate::TableColumn<EdgeId, NodeId> + '_ {
         crate::table_column::OpaqueTableColumn(self.child_slice())
     }
 
-    /// Table column with ergonomic indexing.
     pub fn left_column(&self) -> impl crate::TableColumn<EdgeId, Position> + '_ {
         crate::table_column::OpaqueTableColumn(self.left_slice())
     }
 
-    /// Table column with ergonomic indexing.
     pub fn right_column(&self) -> impl crate::TableColumn<EdgeId, Position> + '_ {
         crate::table_column::OpaqueTableColumn(self.right_slice())
     }
