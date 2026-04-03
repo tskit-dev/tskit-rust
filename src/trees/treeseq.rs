@@ -205,8 +205,6 @@ impl TreeSequence {
     /// # Examples
     ///
     /// ```
-    /// // You must include streaming_iterator as a dependency
-    /// // and import this type.
     /// use tskit::StreamingIterator;
     /// // Import this to allow .next_back() for reverse
     /// // iteration over trees.
