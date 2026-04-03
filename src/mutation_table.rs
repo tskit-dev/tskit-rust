@@ -386,6 +386,22 @@ impl MutationTable {
         /// Get the parent column as a slice
         => parent, parent_slice_raw, crate::sys::bindings::tsk_id_t);
 
+    pub fn node_column(&self) -> impl crate::TableColumn<MutationId, NodeId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.node_slice())
+    }
+
+    pub fn site_column(&self) -> impl crate::TableColumn<MutationId, SiteId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.site_slice())
+    }
+
+    pub fn time_column(&self) -> impl crate::TableColumn<MutationId, Time> + '_ {
+        crate::table_column::OpaqueTableColumn(self.time_slice())
+    }
+
+    pub fn parent_column(&self) -> impl crate::TableColumn<MutationId, MutationId> + '_ {
+        crate::table_column::OpaqueTableColumn(self.parent_slice())
+    }
+
     /// Clear all data from the table
     pub fn clear(&mut self) -> Result<i32, TskitError> {
         handle_tsk_return_value!(self.table_.clear())
