@@ -622,3 +622,11 @@ fn test_edge_table_column_access() {
         assert_eq!(column[edge], tskit::NodeId::from(0));
     }
 }
+
+#[test]
+fn test_site_table_column_access() {
+    let mut table = tskit::SiteTable::default();
+    let site = table.add_row(1.0, None).unwrap();
+    let col = table.position_column();
+    assert_eq!(col[site], 1.0);
+}

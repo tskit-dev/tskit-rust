@@ -297,6 +297,10 @@ impl SiteTable {
         /// Get the position column as a slice
         => position, position_slice_raw, f64);
 
+    pub fn position_column(&self) -> impl crate::TableColumn<SiteId, Position> + '_ {
+        crate::table_column::OpaqueTableColumn(self.position_slice())
+    }
+
     /// Clear all data from the table
     pub fn clear(&mut self) -> Result<i32, TskitError> {
         handle_tsk_return_value!(self.table_.clear())
