@@ -582,7 +582,7 @@ impl NodeTable {
     /// # Returns
     ///
     /// * `Some(Ok(T))` if `row` is valid and decoding succeeded.
-    /// * `Some(Err(_))` if `row` is not valid and decoding failed.
+    /// * `Some(Err(_))` if `row` is valid and decoding failed.
     /// * `None` if `row` is not valid or the row has no metadata.
     ///
     /// # Errors
