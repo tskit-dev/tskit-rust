@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Error handling - The tskit (rust) book</title>
+        <title>Metadata processing with Python - The tskit (rust) book</title>
 
 
         <!-- Custom HTML head -->
@@ -174,26 +174,136 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="error-handling"><a class="header" href="#error-handling">Error handling <img align="right" width="73" height="45" src="https://raw.githubusercontent.com/tskit-dev/administrative/main/logos/svg/tskit-rust/Tskit_rust_logo.eps.svg"></a></h1>
-<p>The error type is <a href="https://docs.rs/tskit/latest/tskit/error/enum.TskitError.html#"><code>tskit::error::TskitError</code></a>.</p>
-<p>This type implements <code>Display</code> and may thus be printed via:</p>
-<pre><code class="language-rust noplayground ignore">let x = match operation() {
-    Ok(y) =&gt; y,
-    Err(e) =&gt; panic("{}", e);
-};</code></pre>
-<p>The enum variant <code>TskitError::ErrorCode</code> represents integer return values from <code>tskit-c</code>.
-When printed via <code>Display</code>, the detailed error message is fetched.
-When printed via <code>Debug</code>, the numerical error code is shown.</p>
+                        <h1 id="metadata-processing-with-python"><a class="header" href="#metadata-processing-with-python">Metadata processing with Python</a></h1>
+<h2 id="json-metadata"><a class="header" href="#json-metadata"><code>JSON</code> metadata</a></h2>
+<p>If your metadata are generated in <code>JSON</code> format via <code>serde</code> (see <a href="metadata_derive.html">here</a>), then the metadata are simple to access from Python.
+The code repository for <code>tskit-rust</code> contains examples in the <code>python/</code> subdirectory.</p>
+<p>You may work with <code>JSON</code> metadata with or without a metadata schema (see <a href="https://tskit.dev/tskit/docs/stable/metadata.html">here</a>).
+A schema is useful for data validation but there is an unfortunate inefficiency if your input to Python is a tree sequence rather than a table collection.
+You will have to copy the tables, add the metadata schema, and regenerate a tree sequence.
+See the examples mentioned above.</p>
+<h2 id="other-formats"><a class="header" href="#other-formats">Other formats</a></h2>
+<p>The <code>tskit-python</code> API only supports <code>JSON</code> and Python’s <code>struct</code> data formats.
+It is useful to use a format other than <code>JSON</code> in order to minimize storage requirements.
+However, doing so will require that you provide a method to covert the data into a valid Python object.</p>
+<p>An easy way to provide conversion methods is to use <a href="https://pyo3.rs">pyo3</a> to create a small Python module to deserialize your metadata into Python objects.
+The <code>tskit-rust</code> code repository contains an example of this in the <code>python/</code> subdirectory.
+The module is shown in its entirety below:</p>
+<pre><code class="language-rust noplaygound ignore">// NOTES:
+// This code shows how to decode metadata generated in rust
+// using a format that tskit-python does NOT support.
+//
+// This example works by creating rust structs that exactly mimic
+// our metadata types and are exposed to Python.
+// For production code, it would be wiser to reuse the rust types
+// that first generated the metadata.
+// We cannot do that here, else we'd have to publish the crates
+// defining those types to crates.io/PyPi, which is just
+// ecosystem pollution.
+//
+// Importantly, deserialization does not require that our
+// input/output types be identical!
+// Rather, they simply have to have the same fields.
+// We exploit this fact here, which allows us to make
+// new types with the same fields as our metadata.
+
+use pyo3::prelude::*;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[pyclass]
+struct MutationMetadata {
+    effect_size: f64,
+    dominance: f64,
+}
+
+#[pymethods]
+impl MutationMetadata {
+    fn effect_size(&amp;self) -&gt; f64 {
+        self.effect_size
+    }
+    fn dominance(&amp;self) -&gt; f64 {
+        self.dominance
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[pyclass]
+struct IndividualMetadata {
+    name: String,
+    phenotypes: Vec&lt;i32&gt;,
+}
+
+#[pymethods]
+impl IndividualMetadata {
+    fn name(&amp;self) -&gt; String {
+        self.name.clone()
+    }
+    fn phenotypes(&amp;self) -&gt; Vec&lt;i32&gt; {
+        self.phenotypes.clone()
+    }
+}
+
+/// Decode mutation metadata generated in rust via the `bincode` crate.
+#[pyfunction]
+fn decode_bincode_mutation_metadata(md: Vec&lt;u8&gt;) -&gt; PyResult&lt;MutationMetadata&gt; {
+    bincode::deserialize_from(md.as_slice())
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("error decoding mutation metadata"))
+}
+
+/// Decode individual metadata generated in rust via the `bincode` crate.
+#[pyfunction]
+fn decode_bincode_individual_metadata(md: Vec&lt;u8&gt;) -&gt; PyResult&lt;IndividualMetadata&gt; {
+    bincode::deserialize_from(md.as_slice())
+        .map_err(|_| pyo3::exceptions::PyValueError::new_err("error decoding individual metadata"))
+}
+
+/// A Python module implemented in Rust.
+#[pymodule]
+fn tskit_glue(m: &amp;Bound&lt;'_, PyModule&gt;) -&gt; PyResult&lt;()&gt; {
+    m.add_function(wrap_pyfunction!(decode_bincode_mutation_metadata, m)?)?;
+    m.add_function(wrap_pyfunction!(decode_bincode_individual_metadata, m)?)?;
+    Ok(())
+}</code></pre>
+<p>Using it in Python is just a matter of importing the module:</p>
+<pre><code class="language-python">import tskit
+import tskit_glue
+import numpy as np
+
+
+def setup_ts_without_schema():
+    ts = tskit.TreeSequence.load("with_bincode_metadata.trees")
+    return ts
+
+
+def test_individual_metadata():
+    # NOTE: the assertions here rely on knowing
+    # what examples/json_metadata.rs put into the
+    # metadata!
+    ts = setup_ts_without_schema()
+    md = tskit_glue.decode_bincode_individual_metadata(ts.individual(0).metadata)
+    assert md.name() == "Jerome"
+    assert md.phenotypes() == [0, 1, 2, 0]
+
+
+def test_mutation_metadata():
+    # NOTE: the assertions here rely on knowing
+    # what examples/json_metadata.rs put into the
+    # metadata!
+    ts = setup_ts_without_schema()
+    md = tskit_glue.decode_bincode_mutation_metadata(ts.mutation(0).metadata)
+    assert np.isclose(md.effect_size(), -1e-3)
+    assert np.isclose(md.dominance(), 0.1)
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="python.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="metadata_tables.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="examples.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="metadata_advanced.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -203,11 +313,11 @@ When printed via <code>Debug</code>, the numerical error code is shown.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="python.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="metadata_tables.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="examples.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="metadata_advanced.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
