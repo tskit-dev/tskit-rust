@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2026-04-06
+
+### Documentation
+
+- Fix error re: need to declare a dependency ([#837](https://github.com/tskit-dev/tskit-rust/pull/837))
+- Fix metadata docs for tables ([#841](https://github.com/tskit-dev/tskit-rust/pull/841))
+- Data transfer to Python ([#843](https://github.com/tskit-dev/tskit-rust/pull/843))
+
+### Features
+
+- Ergonomic access to site table position column ([#839](https://github.com/tskit-dev/tskit-rust/pull/839))
+- Ergonomic column access for remaining tables ([#840](https://github.com/tskit-dev/tskit-rust/pull/840))
+
 ## [0.15.0-alpha.4] - 2026-04-02
 
 ### Features
