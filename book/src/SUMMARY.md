@@ -22,6 +22,8 @@
   - [Metadata processing with Python](./metadata_python.md)
   - [Advanced topics](./metadata_advanced.md)
 
+* [Data transfer to Python](./python.md)
+
 * [Error handling](./error_handling.md)
 
 * [Example programs](./examples.md)
