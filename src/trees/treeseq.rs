@@ -41,7 +41,7 @@ use super::Tree;
 /// tables.add_edge(0., 1000., 0, 2).unwrap();
 ///
 /// // index
-/// tables.build_index();
+/// tables.build_index().unwrap();
 ///
 /// // tables gets moved into our treeseq variable:
 /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::default()).unwrap();
