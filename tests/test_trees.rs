@@ -511,3 +511,66 @@ fn test_need_mutation_parents() {
         .unwrap();
     assert!(tables.tree_sequence(0).is_ok());
 }
+
+#[test]
+fn test_iterate_mutations_at_site() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let n0 = tables.add_node(0, 0.0, -1, -1).unwrap();
+    let n1 = tables.add_node(0, 1.0, -1, -1).unwrap();
+    let n2 = tables.add_node(0, 2.0, -1, -1).unwrap();
+    let _ = tables.add_edge(0., 100., n1, n0).unwrap();
+    let _ = tables.add_edge(0., 100., n2, n1).unwrap();
+    let s0 = tables.add_site(10.0, None).unwrap();
+    let m0 = tables.add_mutation(s0, n1, -1, 1.0, None).unwrap();
+    let m1 = tables.add_mutation(s0, n0, -1, 0.0, None).unwrap();
+    let s1 = tables.add_site(11.0, None).unwrap();
+    let _ = tables.add_mutation(s1, n0, -1, 0.0, None).unwrap();
+    tables.build_index().unwrap();
+    tables
+        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+        .unwrap();
+    let ts = tables.tree_sequence(0).unwrap();
+    let muts_at_site = ts.mutations_at_site_iter(s0).unwrap().collect::<Vec<_>>();
+    assert_eq!(muts_at_site.len(), 2);
+    assert!(muts_at_site.contains(&m0));
+    assert!(muts_at_site.contains(&m1));
+}
+
+#[test]
+fn test_site_mutation_co_iteration() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let n0 = tables.add_node(0, 0.0, -1, -1).unwrap();
+    let n1 = tables.add_node(0, 1.0, -1, -1).unwrap();
+    let n2 = tables.add_node(0, 2.0, -1, -1).unwrap();
+    let _ = tables.add_edge(0., 100., n1, n0).unwrap();
+    let _ = tables.add_edge(0., 100., n2, n1).unwrap();
+    let s0 = tables.add_site(5.0, None).unwrap();
+    let m0 = tables.add_mutation(s0, n1, -1, 1.0, None).unwrap();
+    let m1 = tables.add_mutation(s0, n0, -1, 0.0, None).unwrap();
+    // Site with no mutations!
+    let _ = tables.add_site(10.0, None).unwrap();
+    let s1 = tables.add_site(11.0, None).unwrap();
+    let m2 = tables.add_mutation(s1, n0, -1, 0.0, None).unwrap();
+    tables.build_index().unwrap();
+    assert_eq!(tables.sites().num_rows(), 3);
+    assert_eq!(tables.mutations().num_rows(), 3);
+    tables
+        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+        .unwrap();
+    let ts = tables.tree_sequence(0).unwrap();
+
+    let contents = ts
+        .site_and_mutation_iter()
+        .flat_map(|c| {
+            // we take id() here...
+            let id = c.id();
+            // ...because we consume c here, making
+            // c.id() inaccesible via the closure
+            c.into_mutation_iter().map(move |m| (id, m))
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(contents.len(), 3, "{contents:?}");
+    for t in [(s0, m0), (s0, m1), (s1, m2)] {
+        assert!(contents.contains(&t), "{contents:?} does not contain {t:?}")
+    }
+}
