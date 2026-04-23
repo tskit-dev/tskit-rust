@@ -530,7 +530,12 @@ fn test_iterate_mutations_at_site() {
         .compute_mutation_parents(tskit::MutationParentsFlags::default())
         .unwrap();
     let ts = tables.tree_sequence(0).unwrap();
-    let muts_at_site = ts.mutations_at_site_iter(s0).unwrap().collect::<Vec<_>>();
+    let muts_at_site = ts
+        .site(s0)
+        .unwrap()
+        .mutations()
+        .map(|m| m.id())
+        .collect::<Vec<_>>();
     assert_eq!(muts_at_site.len(), 2);
     assert!(muts_at_site.contains(&m0));
     assert!(muts_at_site.contains(&m1));
@@ -560,17 +565,108 @@ fn test_site_mutation_co_iteration() {
     let ts = tables.tree_sequence(0).unwrap();
 
     let contents = ts
-        .site_and_mutation_iter()
-        .flat_map(|c| {
+        .site_iter()
+        .flat_map(|site| {
             // we take id() here...
-            let id = c.id();
-            // ...because we consume c here, making
-            // c.id() inaccesible via the closure
-            c.into_mutation_iter().map(move |m| (id, m))
+            let id = site.id();
+            // ...because we consume site here, making
+            // site.id() inaccesible via the closure
+            site.mutations().map(move |m| (id, m.id()))
         })
         .collect::<Vec<_>>();
     assert_eq!(contents.len(), 3, "{contents:?}");
     for t in [(s0, m0), (s0, m1), (s1, m2)] {
         assert!(contents.contains(&t), "{contents:?} does not contain {t:?}")
+    }
+
+    for site in ts.site_iter() {
+        assert!(site.ancestral_state().is_none());
+        assert!(site.metadata().is_none());
+    }
+
+    for m in ts.site_iter().flat_map(|site| site.mutations()) {
+        assert!(m.metadata().is_none());
+        assert!(m.inherited_state().is_none());
+        assert!(!m.edge().is_null());
+        assert!(!m.site().is_null());
+        assert!(m.time() >= ts.nodes().time(m.node()).unwrap());
+    }
+}
+
+#[test]
+fn test_site_mutation_co_iteration_fully_loaded() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let parent = tables.add_node(0, 1., -1, -1).unwrap();
+    let child = tables
+        .add_node(tskit::NodeFlags::IS_SAMPLE, 0., -1, -1)
+        .unwrap();
+    let e = tables.add_edge(0., 100., parent, child).unwrap();
+    struct RawMetadata {
+        md: Vec<u8>,
+    }
+
+    impl tskit::metadata::MetadataRoundtrip for RawMetadata {
+        fn encode(&self) -> Result<Vec<u8>, tskit::metadata::MetadataError> {
+            Ok(self.md.clone())
+        }
+        fn decode(md: &[u8]) -> Result<Self, tskit::metadata::MetadataError>
+        where
+            Self: Sized,
+        {
+            Ok(Self { md: md.to_vec() })
+        }
+    }
+    impl tskit::metadata::SiteMetadata for RawMetadata {}
+    impl tskit::metadata::MutationMetadata for RawMetadata {}
+    let s = tables
+        .add_site_with_metadata(
+            10.,
+            Some("ancestral".as_bytes()),
+            &RawMetadata {
+                md: "site_md".as_bytes().to_vec(),
+            },
+        )
+        .unwrap();
+    let _m0 = tables
+        .add_mutation_with_metadata(
+            s,
+            child,
+            -1,
+            0.5,
+            Some("derived_state".as_bytes()),
+            &RawMetadata {
+                md: "site_md".as_bytes().to_vec(),
+            },
+        )
+        .unwrap();
+    let _m1 = tables
+        .add_mutation_with_metadata(
+            s,
+            child,
+            -1,
+            0.5,
+            Some("another_derived_state".as_bytes()),
+            &RawMetadata {
+                md: "site_md".as_bytes().to_vec(),
+            },
+        )
+        .unwrap();
+    tables.full_sort(0).unwrap();
+    tables.build_index().unwrap();
+    tables
+        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+        .unwrap();
+    let ts = tables.tree_sequence(0).unwrap();
+    for site in ts.site_iter() {
+        assert!(site.ancestral_state().is_some());
+        assert!(site.metadata().is_some());
+    }
+
+    for m in ts.site_iter().flat_map(|site| site.mutations()) {
+        assert!(m.metadata().is_some());
+        assert!(m.inherited_state().is_some());
+        assert_eq!(m.edge(), e);
+        assert_eq!(m.site(), s);
+        assert!(m.time() >= ts.nodes().time(m.node()).unwrap());
     }
 }
