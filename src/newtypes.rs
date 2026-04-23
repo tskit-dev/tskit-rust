@@ -188,3 +188,42 @@ pub use crate::sys::newtypes::Location;
 /// A `Time` can be multiplied and divided by a [`Position`]
 ///
 pub use crate::sys::newtypes::Time;
+
+#[test]
+fn test_node_id_add() {
+    let f = NodeId::from(10);
+    let g: NodeId = f + 1;
+    assert_eq!(g, 11);
+    let mut g = g;
+    g += -100;
+    // the ops are clamped null to max
+    assert!(g.is_null());
+    g += 5;
+    assert_eq!(g, 4);
+
+    // now, newtype w/newtype
+    let f = NodeId::from(10);
+    let f = f + f;
+    assert_eq!(f, 20);
+    let mut f = f;
+    f += NodeId::from(5);
+    assert_eq!(f, 25);
+}
+
+#[test]
+fn test_node_id_sub() {
+    let f = NodeId::from(10);
+    let g: NodeId = f - 1;
+    assert_eq!(g, 9);
+    let mut g = g;
+    g -= 1;
+    assert_eq!(g, 8);
+    g -= 200;
+    assert!(g.is_null(), "{g:?}");
+    // now, newtype w/newtype
+    let f = NodeId::from(10);
+    assert_eq!(f - NodeId::from(1), 9);
+    let mut f = f;
+    f -= NodeId::from(1);
+    assert_eq!(f, 9);
+}
