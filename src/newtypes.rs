@@ -227,3 +227,19 @@ fn test_node_id_sub() {
     f -= NodeId::from(1);
     assert_eq!(f, 9);
 }
+
+#[test]
+fn test_compare_to_usize() {
+    let f = NodeId::from(10);
+    assert_eq!(10_usize, f);
+    assert_eq!(f, 10_usize);
+    assert!(11_usize > f);
+    assert!(f < 11_usize);
+    assert!(f <= 10_usize);
+    assert!(f >= 10_usize);
+    assert!(f >= 9_usize);
+    assert!(11_usize > f);
+    assert!(10_usize >= f);
+    assert!(10_usize <= f);
+    assert!(9_usize <= f);
+}
