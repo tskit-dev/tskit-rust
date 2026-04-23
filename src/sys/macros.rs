@@ -158,6 +158,30 @@ macro_rules! impl_id_traits {
             }
         }
 
+        impl PartialEq<$idtype> for usize {
+            fn eq(&self, other: &$idtype) -> bool {
+                self.eq(&usize::try_from(other).unwrap())
+            }
+        }
+
+        impl PartialEq<usize> for $idtype {
+            fn eq(&self, other: &usize) -> bool {
+                self.as_usize().eq(other)
+            }
+        }
+
+        impl PartialOrd<$idtype> for usize {
+            fn partial_cmp(&self, other: &$idtype) -> Option<std::cmp::Ordering> {
+                self.partial_cmp(&(usize::try_from(other.0).unwrap()))
+            }
+        }
+
+        impl PartialOrd<usize> for $idtype {
+            fn partial_cmp(&self, other: &usize) -> Option<std::cmp::Ordering> {
+                self.as_usize().partial_cmp(other)
+            }
+        }
+
         impl Default for $idtype {
             fn default() -> Self {
                 Self::NULL
