@@ -28,12 +28,12 @@ use super::Tree;
 struct MutationIdIterator<'treeseq> {
     ts: &'treeseq TreeSequence,
     current_site: SiteId,
-    current_mutation: usize,
+    current_mutation: MutationId,
 }
 
 impl<'treeseq> MutationIdIterator<'treeseq> {
     fn new(ts: &'treeseq TreeSequence, site: SiteId) -> Option<Self> {
-        if site.as_usize() < ts.sites().num_rows().as_usize() {
+        if site < ts.sites().num_rows().as_usize() {
             ts.mutations()
                 .site_slice()
                 .iter()
@@ -45,14 +45,14 @@ impl<'treeseq> MutationIdIterator<'treeseq> {
                         Some(Self {
                             ts,
                             current_site: site,
-                            current_mutation: ts.mutations().num_rows().as_usize(),
+                            current_mutation: i32::MAX.into(),
                         })
                     },
                     |index| {
                         Some(Self {
                             ts,
                             current_site: site,
-                            current_mutation: index,
+                            current_mutation: (index as i32).into(),
                         })
                     },
                 )
@@ -66,12 +66,12 @@ impl<'treeseq> MutationIdIterator<'treeseq> {
 impl<'treeseq> Iterator for MutationIdIterator<'treeseq> {
     type Item = MutationId;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_mutation < self.ts.mutations().num_rows().as_usize() {
+        if self.current_mutation.as_usize() < self.ts.mutations().num_rows().as_usize() {
             let site = self.ts.mutations().site_slice();
-            if site[self.current_mutation] == self.current_site {
+            if site[self.current_mutation.as_usize()] == self.current_site {
                 let rv = self.current_mutation;
                 self.current_mutation += 1;
-                Some((rv as i32).into())
+                Some(rv)
             } else {
                 None
             }
@@ -83,16 +83,16 @@ impl<'treeseq> Iterator for MutationIdIterator<'treeseq> {
 
 struct SiteMutationCoIterator<'treeseq> {
     ts: &'treeseq TreeSequence,
-    current_site_table_row: usize,
-    current_mutation_table_row: usize,
+    current_site_table_row: SiteId,
+    current_mutation_table_row: MutationId,
 }
 
 impl<'treeseq> SiteMutationCoIterator<'treeseq> {
     pub fn new(ts: &'treeseq TreeSequence) -> Self {
         Self {
             ts,
-            current_site_table_row: 0,
-            current_mutation_table_row: 0,
+            current_site_table_row: 0.into(),
+            current_mutation_table_row: 0.into(),
         }
     }
 }
@@ -122,33 +122,35 @@ impl<'treeseq> CurrentSite<'treeseq> {
 impl<'treeseq> Iterator for SiteMutationCoIterator<'treeseq> {
     type Item = CurrentSite<'treeseq>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_site_table_row < self.ts.sites().num_rows().as_usize() {
+        if self.current_site_table_row < self.ts.sites().num_rows() {
             let site = self.ts.mutations().site_slice();
             if self.current_mutation_table_row < site.len() {
                 let mutation = self.current_mutation_table_row;
-                if let Some(site_index) =
-                    site.iter().skip(mutation).position(|s| s == site[mutation])
+                if let Some(site_index) = site
+                    .iter()
+                    .skip(mutation.as_usize())
+                    .position(|s| s == site[mutation.as_usize()])
                 {
                     let rv = CurrentSite {
-                        id: site[mutation + site_index],
+                        id: site[mutation.as_usize() + site_index],
                         mutations: MutationIdIterator {
                             ts: self.ts,
-                            current_site: site[mutation + site_index],
+                            current_site: site[mutation.as_usize() + site_index],
                             current_mutation: mutation,
                         },
                     };
                     self.current_site_table_row = site
                         .iter()
-                        .skip(self.current_mutation_table_row)
-                        .find(|s| s.as_usize() != self.current_site_table_row)
-                        .map_or_else(|| self.ts.sites().num_rows().as_usize(), |s| s.as_usize());
+                        .skip(self.current_mutation_table_row.as_usize())
+                        .find(|&&s| s != self.current_site_table_row)
+                        .map_or_else(|| i32::MAX.into(), |s| *s);
                     self.current_mutation_table_row = site
                         .iter()
-                        .skip(self.current_mutation_table_row)
-                        .position(|s| s.as_usize() == self.current_site_table_row)
+                        .skip(self.current_mutation_table_row.as_usize())
+                        .position(|&s| s == self.current_site_table_row)
                         .map_or_else(
-                            || self.ts.mutations().num_rows().as_usize(),
-                            |x| self.current_mutation_table_row + x,
+                            || i32::MAX.into(),
+                            |x| self.current_mutation_table_row + x as i32,
                         );
                     Some(rv)
                 } else {
