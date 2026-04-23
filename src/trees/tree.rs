@@ -1,7 +1,9 @@
 use crate::sys::bindings as ll_bindings;
 use crate::sys::{LLTree, TreeSequence};
+use crate::MutationId;
 use crate::NodeId;
 use crate::Position;
+use crate::SiteId;
 use crate::SizeType;
 use crate::Time;
 use crate::TreeFlags;
@@ -451,6 +453,17 @@ impl<'treeseq> Tree<'treeseq> {
     ///   If `lambda` is 1, we only consider branch lengths.
     pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
         self.inner.kc_distance(&other.inner, lambda)
+    }
+
+    pub fn mutations_at_site_iter<S: Into<SiteId>>(
+        &self,
+        site: S,
+    ) -> Option<impl Iterator<Item = MutationId> + '_> {
+        todo!()
+    }
+
+    pub fn site_and_mutation_iter(&self) -> impl Iterator<Item = CurrentSite<'_>> {
+        todo!()
     }
 }
 
