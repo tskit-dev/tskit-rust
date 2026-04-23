@@ -163,6 +163,59 @@ macro_rules! impl_id_traits {
                 Self::NULL
             }
         }
+
+        impl std::ops::Add for $idtype {
+            type Output = Self;
+            fn add(self, rhs: Self) -> Self::Output {
+                self + rhs.0
+            }
+        }
+
+        impl std::ops::AddAssign for $idtype {
+            fn add_assign(&mut self, rhs: Self) {
+                *self += rhs.0
+            }
+        }
+
+        impl std::ops::Add<tsk_id_t> for $idtype {
+            type Output = Self;
+            fn add(self, rhs: tsk_id_t) -> Self::Output {
+                Self((self.0 + rhs).clamp(-1, tsk_id_t::MAX))
+            }
+        }
+
+        impl std::ops::AddAssign<tsk_id_t> for $idtype {
+            fn add_assign(&mut self, rhs: tsk_id_t) {
+                self.0 = (self.0 + rhs).clamp(-1, tsk_id_t::MAX)
+            }
+        }
+
+        impl std::ops::Sub for $idtype {
+            type Output = Self;
+            fn sub(self, rhs: Self) -> Self::Output {
+                Self((self.0 - rhs.0).clamp(-1, tsk_id_t::MAX))
+            }
+        }
+
+        impl std::ops::SubAssign for $idtype {
+            fn sub_assign(&mut self, rhs: Self) {
+                let inner = (self.0 - rhs.0).clamp(-1, tsk_id_t::MAX);
+                self.0 = inner
+            }
+        }
+
+        impl std::ops::Sub<tsk_id_t> for $idtype {
+            type Output = Self;
+            fn sub(self, rhs: tsk_id_t) -> Self::Output {
+                Self((self.0 - rhs).clamp(-1, tsk_id_t::MAX))
+            }
+        }
+
+        impl std::ops::SubAssign<tsk_id_t> for $idtype {
+            fn sub_assign(&mut self, rhs: tsk_id_t) {
+                self.0 = (self.0 - rhs).clamp(-1, tsk_id_t::MAX)
+            }
+        }
     };
 }
 
