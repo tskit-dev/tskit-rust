@@ -16,6 +16,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct SiteTable(TskBox<tsk_site_table_t>);
 
+pub struct SiteTableIter<'table> {
+    table: &'table SiteTable,
+    current_row: SiteId,
+}
+
+impl<'table> Iterator for SiteTableIter<'table> {
+    type Item = super::Site<'table, SiteTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl SiteTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk =
@@ -102,6 +117,33 @@ impl SiteTable {
             self.ancestral_state_column(),
             self.ancestral_state_offset_raw(),
         )
+    }
+
+    pub fn row<'table>(&self, row: SiteId) -> Option<super::Site<'table, Self>> {
+        let mut site =
+            unsafe { std::mem::MaybeUninit::<super::bindings::tsk_site_t>::zeroed().assume_init() };
+        let rv = unsafe {
+            super::bindings::tsk_site_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut site as *mut super::bindings::tsk_site_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Site {
+                row: site,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Site<'_, Self>> {
+        SiteTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
     }
 }
 

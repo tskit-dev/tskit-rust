@@ -16,6 +16,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct EdgeTable(TskBox<tsk_edge_table_t>);
 
+pub struct EdgeTableIter<'table> {
+    table: &'table EdgeTable,
+    current_row: EdgeId,
+}
+
+impl<'table> Iterator for EdgeTableIter<'table> {
+    type Item = super::Edge<'table, EdgeTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl EdgeTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk =
@@ -88,6 +103,33 @@ impl EdgeTable {
     }
 
     raw_metadata_getter_for_tables!(EdgeId);
+
+    pub fn row<'table>(&self, row: EdgeId) -> Option<super::Edge<'table, Self>> {
+        let mut edge =
+            unsafe { std::mem::MaybeUninit::<super::bindings::tsk_edge_t>::zeroed().assume_init() };
+        let rv = unsafe {
+            super::bindings::tsk_edge_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut edge as *mut super::bindings::tsk_edge_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Edge {
+                row: edge,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Edge<'_, Self>> {
+        EdgeTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
+    }
 }
 
 impl Default for EdgeTable {

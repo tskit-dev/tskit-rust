@@ -452,11 +452,11 @@ impl TreeSequence {
     ///
     /// let prov_ref = treeseq.provenances();
     /// let row_0 = prov_ref.row(0).unwrap();
-    /// assert_eq!(row_0.record, "All your provenance r belong 2 us.");
+    /// assert_eq!(row_0.record(), "All your provenance r belong 2 us.");
     /// let record_0 = prov_ref.record(0).unwrap();
-    /// assert_eq!(record_0, row_0.record);
+    /// assert_eq!(record_0, row_0.record());
     /// let timestamp = prov_ref.timestamp(0).unwrap();
-    /// assert_eq!(timestamp, row_0.timestamp);
+    /// assert_eq!(timestamp, row_0.timestamp());
     /// use core::str::FromStr;
     /// let dt_utc = chrono::DateTime::<chrono::Utc>::from_str(&timestamp).unwrap();
     /// println!("utc = {}", dt_utc);
@@ -547,33 +547,41 @@ impl TreeSequence {
     }
 
     /// Return an iterator over the individuals.
-    pub fn individuals_iter(&self) -> impl Iterator<Item = crate::IndividualTableRow> + '_ {
-        self.individuals().iter()
+    pub fn individual_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Individual<'_, crate::sys::TreeSequence>> {
+        self.inner.individual_iter()
     }
 
     /// Return an iterator over the nodes.
-    pub fn nodes_iter(&self) -> impl Iterator<Item = crate::NodeTableRow> + '_ {
+    pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_, crate::sys::NodeTable>> {
         self.nodes().iter()
     }
+
     /// Return an iterator over the edges.
-    pub fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
+    pub fn edge_iter(&self) -> impl Iterator<Item = crate::Edge<'_, crate::sys::EdgeTable>> {
         self.edges().iter()
     }
+
     /// Return an iterator over the migrations.
-    pub fn migrations_iter(&self) -> impl Iterator<Item = crate::MigrationTableRow> + '_ {
+    pub fn migration_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Migration<'_, crate::sys::MigrationTable>> {
         self.migrations().iter()
     }
+
     /// Return an iterator over the mutations.
-    pub fn mutations_iter(&self) -> impl Iterator<Item = crate::MutationTableRow> + '_ {
+    pub fn mutation_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Mutation<'_, crate::sys::MutationTable>> {
         self.mutations().iter()
     }
+
     /// Return an iterator over the populations.
-    pub fn populations_iter(&self) -> impl Iterator<Item = crate::PopulationTableRow> + '_ {
+    pub fn population_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Population<'_, crate::sys::PopulationTable>> {
         self.populations().iter()
-    }
-    /// Return an iterator over the sites.
-    pub fn sites_iter(&self) -> impl Iterator<Item = crate::SiteTableRow> + '_ {
-        self.sites().iter()
     }
 
     #[cfg(feature = "provenance")]
@@ -581,7 +589,7 @@ impl TreeSequence {
     /// Return an iterator over provenances
     pub fn provenances_iter(
         &self,
-    ) -> impl Iterator<Item = crate::provenance::ProvenanceTableRow> + '_ {
+    ) -> impl Iterator<Item = crate::Provenance<'_, crate::sys::ProvenanceTable>> + '_ {
         self.provenances().iter()
     }
 
@@ -604,32 +612,16 @@ impl TreeSequence {
     /// # Parameters
     ///
     /// * `f`: a function.  The function is passed the current table
-    ///   collection and each [`crate::node_table::NodeTableRow`].
+    ///   collection and each [`crate::Node`].
     ///   If `f` returns `true`, the index of that row is included
     ///   in the return value.
     ///
     /// # Examples
     ///
-    /// Get all nodes with time > 0.0:
-    ///
-    /// ```
-    /// let mut tables = tskit::TableCollection::new(100.).unwrap();
-    /// tables
-    ///     .add_node(tskit::NodeFlags::new_sample(), 0.0, tskit::PopulationId::NULL,
-    ///     tskit::IndividualId::NULL)
-    ///     .unwrap();
-    /// tables
-    ///     .add_node(tskit::NodeFlags::new_sample(), 1.0, tskit::PopulationId::NULL,
-    ///     tskit::IndividualId::NULL)
-    ///     .unwrap();
-    /// let samples = tables.create_node_id_vector(
-    ///     |row: &tskit::NodeTableRow| row.time > 0.,
-    /// );
-    /// assert_eq!(samples[0], 1);
-    /// ```
-    pub fn create_node_id_vector(
-        &self,
-        f: impl FnMut(&crate::NodeTableRow) -> bool,
+    /// See [`crate::TableCollection::create_node_id_vector`].
+    pub fn create_node_id_vector<'ts>(
+        &'ts self,
+        f: impl FnMut(&crate::Node<'ts, crate::sys::NodeTable>) -> bool,
     ) -> Vec<crate::NodeId> {
         self.tables.create_node_id_vector(f)
     }

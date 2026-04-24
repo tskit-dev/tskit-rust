@@ -17,6 +17,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct IndividualTable(TskBox<tsk_individual_table_t>);
 
+pub struct IndividualTableIter<'table> {
+    table: &'table IndividualTable,
+    current_row: IndividualId,
+}
+
+impl<'table> Iterator for IndividualTableIter<'table> {
+    type Item = super::Individual<'table, IndividualTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl IndividualTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_individual_table_t| unsafe {
@@ -132,6 +147,34 @@ impl IndividualTable {
             self.parents_column(),
             self.parents_offset_column_raw(),
         )
+    }
+
+    pub fn row<'table>(&self, row: IndividualId) -> Option<super::Individual<'table, Self>> {
+        let mut individual = unsafe {
+            std::mem::MaybeUninit::<super::bindings::tsk_individual_t>::zeroed().assume_init()
+        };
+        let rv = unsafe {
+            super::bindings::tsk_individual_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut individual as *mut super::bindings::tsk_individual_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Individual {
+                row: individual,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Individual<'_, Self>> {
+        IndividualTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
     }
 }
 

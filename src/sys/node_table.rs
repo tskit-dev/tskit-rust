@@ -17,6 +17,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct NodeTable(TskBox<tsk_node_table_t>);
 
+pub struct NodeTableIter<'table> {
+    table: &'table NodeTable,
+    current_row: NodeId,
+}
+
+impl<'table> Iterator for NodeTableIter<'table> {
+    type Item = super::Node<'table, NodeTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl NodeTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk =
@@ -107,6 +122,33 @@ impl NodeTable {
     }
 
     raw_metadata_getter_for_tables!(NodeId);
+
+    pub fn row<'table>(&self, row: NodeId) -> Option<super::Node<'table, Self>> {
+        let mut node =
+            unsafe { std::mem::MaybeUninit::<super::bindings::tsk_node_t>::zeroed().assume_init() };
+        let rv = unsafe {
+            super::bindings::tsk_node_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut node as *mut super::bindings::tsk_node_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Node {
+                row: node,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Node<'_, Self>> {
+        NodeTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
+    }
 }
 
 impl Default for NodeTable {

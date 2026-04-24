@@ -43,16 +43,6 @@ macro_rules! err_if_not_tracking_samples {
     };
 }
 
-// This macro assumes that table row access helper
-// functions have a standard interface.
-// Here, we convert the None type to an Error,
-// as it implies $row is out of range.
-macro_rules! table_row_access {
-    ($row: expr, $table: expr, $row_fn: ident) => {
-        $row_fn($table, $row)
-    };
-}
-
 /// Convenience macro to handle implementing
 /// [`crate::metadata::MetadataRoundtrip`]
 #[macro_export]
@@ -61,41 +51,6 @@ macro_rules! handle_metadata_return {
         match $e {
             Ok(x) => Ok(x),
             Err(e) => Err($crate::metadata::MetadataError::RoundtripError { value: Box::new(e) }),
-        }
-    };
-}
-
-macro_rules! row_lending_iterator_get {
-    () => {
-        fn get(&self) -> Option<&Self::Item> {
-            if crate::SizeType::try_from(self.id).ok()? < self.table.num_rows() {
-                Some(self)
-            } else {
-                None
-            }
-        }
-    };
-}
-
-macro_rules! optional_container_comparison {
-    ($lhs: expr, $rhs: expr) => {
-        if let Some(value) = &$lhs {
-            if let Some(ovalue) = &$rhs {
-                if value.len() != ovalue.len() {
-                    return false;
-                }
-                if value.iter().zip(ovalue.iter()).any(|(a, b)| a != b) {
-                    false
-                } else {
-                    true
-                }
-            } else {
-                false
-            }
-        } else if $rhs.is_some() {
-            false
-        } else {
-            true
         }
     };
 }

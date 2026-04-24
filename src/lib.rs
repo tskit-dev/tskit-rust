@@ -111,22 +111,20 @@ mod site_table;
 mod sys;
 mod table_collection;
 mod table_column;
-mod table_iterator;
 mod traits;
 mod trees;
 pub mod types;
-mod util;
 
 pub use edge_differences::*;
-pub use edge_table::{EdgeTable, EdgeTableRow};
+pub use edge_table::EdgeTable;
 pub use error::TskitError;
-pub use individual_table::{IndividualTable, IndividualTableRow};
-pub use migration_table::{MigrationTable, MigrationTableRow};
-pub use mutation_table::{MutationTable, MutationTableRow};
+pub use individual_table::IndividualTable;
+pub use migration_table::MigrationTable;
+pub use mutation_table::MutationTable;
 pub use newtypes::*;
-pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable, NodeTableRow};
-pub use population_table::{PopulationTable, PopulationTableRow};
-pub use site_table::{SiteTable, SiteTableRow};
+pub use node_table::{NodeDefaults, NodeDefaultsWithMetadata, NodeTable};
+pub use population_table::PopulationTable;
+pub use site_table::SiteTable;
 pub use sys::flags::*;
 pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
@@ -135,7 +133,17 @@ pub use traits::IndividualParents;
 pub use traits::TableColumn;
 pub use trees::{Tree, TreeSequence};
 
+pub use sys::Edge;
+pub use sys::Individual;
+pub use sys::Migration;
+pub use sys::Mutation;
 pub use sys::MutationRef;
+pub use sys::Node;
+pub use sys::Population;
+#[cfg(feature = "provenance")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
+pub use sys::Provenance;
+pub use sys::Site;
 pub use sys::SiteRef;
 
 // Optional features

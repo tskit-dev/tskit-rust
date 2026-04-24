@@ -18,6 +18,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct MigrationTable(TskBox<tsk_migration_table_t>);
 
+pub struct MigrationTableIter<'table> {
+    table: &'table MigrationTable,
+    current_row: MigrationId,
+}
+
+impl<'table> Iterator for MigrationTableIter<'table> {
+    type Item = super::Migration<'table, MigrationTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl MigrationTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_migration_table_t| unsafe {
@@ -103,6 +118,34 @@ impl MigrationTable {
     }
 
     raw_metadata_getter_for_tables!(MigrationId);
+
+    pub fn row<'table>(&self, row: MigrationId) -> Option<super::Migration<'table, Self>> {
+        let mut migration = unsafe {
+            std::mem::MaybeUninit::<super::bindings::tsk_migration_t>::zeroed().assume_init()
+        };
+        let rv = unsafe {
+            super::bindings::tsk_migration_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut migration as *mut super::bindings::tsk_migration_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Migration {
+                row: migration,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Migration<'_, Self>> {
+        MigrationTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
+    }
 }
 
 impl Default for MigrationTable {

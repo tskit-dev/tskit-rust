@@ -18,6 +18,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct MutationTable(TskBox<tsk_mutation_table_t>);
 
+pub struct MutationTableIter<'table> {
+    table: &'table MutationTable,
+    current_row: MutationId,
+}
+
+impl<'table> Iterator for MutationTableIter<'table> {
+    type Item = super::Mutation<'table, MutationTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl MutationTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_mutation_table_t| unsafe {
@@ -126,6 +141,34 @@ impl MutationTable {
             self.derived_state_column(),
             self.derived_state_offset_raw(),
         )
+    }
+
+    pub fn row<'table>(&self, row: MutationId) -> Option<super::Mutation<'table, Self>> {
+        let mut mutation = unsafe {
+            std::mem::MaybeUninit::<super::bindings::tsk_mutation_t>::zeroed().assume_init()
+        };
+        let rv = unsafe {
+            super::bindings::tsk_mutation_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut mutation as *mut super::bindings::tsk_mutation_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Mutation {
+                row: mutation,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Mutation<'_, Self>> {
+        MutationTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
     }
 }
 

@@ -455,8 +455,8 @@ fn build_arc() {
 fn test_simplify_tables() {
     let mut tables = make_small_table_collection_two_trees();
     let mut samples: Vec<NodeId> = vec![];
-    for (i, row) in tables.nodes_iter().enumerate() {
-        if row.flags.contains(NodeFlags::IS_SAMPLE) {
+    for (i, row) in tables.node_iter().enumerate() {
+        if row.flags().contains(NodeFlags::IS_SAMPLE) {
             samples.push((i as i32).into());
         }
     }

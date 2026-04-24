@@ -6,158 +6,7 @@ use crate::SizeType;
 use crate::Time;
 use crate::TskitError;
 use crate::{MigrationId, NodeId, PopulationId};
-use ll_bindings::tsk_id_t;
 use sys::bindings as ll_bindings;
-
-/// Row of a [`MigrationTable`]
-#[derive(Debug)]
-pub struct MigrationTableRow {
-    pub id: MigrationId,
-    pub left: Position,
-    pub right: Position,
-    pub node: NodeId,
-    pub source: PopulationId,
-    pub dest: PopulationId,
-    pub time: Time,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for MigrationTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.node == other.node
-            && self.source == other.source
-            && self.dest == other.dest
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && self.metadata == other.metadata
-    }
-}
-
-fn make_migration_table_row(table: &MigrationTable, pos: tsk_id_t) -> Option<MigrationTableRow> {
-    Some(MigrationTableRow {
-        id: pos.into(),
-        left: table.left(pos)?,
-        right: table.right(pos)?,
-        node: table.node(pos)?,
-        source: table.source(pos)?,
-        dest: table.dest(pos)?,
-        time: table.time(pos)?,
-        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
-    })
-}
-
-pub(crate) type MigrationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a MigrationTable>;
-pub(crate) type MigrationTableIterator = crate::table_iterator::TableIterator<MigrationTable>;
-
-impl Iterator for MigrationTableRefIterator<'_> {
-    type Item = MigrationTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_migration_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for MigrationTableIterator {
-    type Item = crate::migration_table::MigrationTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_migration_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-#[derive(Debug)]
-pub struct MigrationTableRowView<'a> {
-    table: &'a MigrationTable,
-    pub id: MigrationId,
-    pub left: Position,
-    pub right: Position,
-    pub node: NodeId,
-    pub source: PopulationId,
-    pub dest: PopulationId,
-    pub time: Time,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> MigrationTableRowView<'a> {
-    fn new(table: &'a MigrationTable) -> Self {
-        Self {
-            table,
-            id: MigrationId::NULL,
-            left: Position::from(f64::NAN),
-            right: Position::from(f64::NAN),
-            node: NodeId::NULL,
-            source: PopulationId::NULL,
-            dest: PopulationId::NULL,
-            time: Time::from(f64::NAN),
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for MigrationTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.node == other.node
-            && self.source == other.source
-            && self.dest == other.dest
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && self.metadata == other.metadata
-    }
-}
-
-impl Eq for MigrationTableRowView<'_> {}
-
-impl PartialEq<MigrationTableRow> for MigrationTableRowView<'_> {
-    fn eq(&self, other: &MigrationTableRow) -> bool {
-        self.id == other.id
-            && self.node == other.node
-            && self.source == other.source
-            && self.dest == other.dest
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl PartialEq<MigrationTableRowView<'_>> for MigrationTableRow {
-    fn eq(&self, other: &MigrationTableRowView) -> bool {
-        self.id == other.id
-            && self.node == other.node
-            && self.source == other.source
-            && self.dest == other.dest
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl crate::StreamingIterator for MigrationTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.left = self.table.left(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.right = self.table.right(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.node = self.table.node(self.id).unwrap_or(NodeId::NULL);
-        self.source = self.table.source(self.id).unwrap_or(PopulationId::NULL);
-        self.dest = self.table.dest(self.id).unwrap_or(PopulationId::NULL);
-        self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
 
 /// A migration table.
 ///
@@ -320,13 +169,9 @@ impl MigrationTable {
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`MigrationTableRow`].
-    pub fn iter(&self) -> impl Iterator<Item = MigrationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&MigrationTable>(self)
-    }
-
-    pub fn lending_iter(&'_ self) -> MigrationTableRowView<'_> {
-        MigrationTableRowView::new(self)
+    /// The value of the iterator is [`crate::Migration`].
+    pub fn iter(&self) -> impl Iterator<Item = crate::Migration<'_, crate::sys::MigrationTable>> {
+        self.table_.iter()
     }
 
     /// Return row `r` of the table.
@@ -339,37 +184,11 @@ impl MigrationTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<M: Into<MigrationId> + Copy>(&self, r: M) -> Option<MigrationTableRow> {
-        let ri = r.into().into();
-        table_row_access!(ri, self, make_migration_table_row)
-    }
-
-    /// Return a view of `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<M: Into<MigrationId> + Copy>(
-        &'_ self,
+    pub fn row<M: Into<MigrationId> + Copy>(
+        &self,
         r: M,
-    ) -> Option<MigrationTableRowView<'_>> {
-        let view = MigrationTableRowView {
-            table: self,
-            id: r.into(),
-            left: self.left(r)?,
-            right: self.right(r)?,
-            node: self.node(r)?,
-            source: self.source(r)?,
-            dest: self.dest(r)?,
-            time: self.time(r)?,
-            metadata: self.table_.raw_metadata(r.into()),
-        };
-        Some(view)
+    ) -> Option<crate::Migration<'_, crate::sys::MigrationTable>> {
+        self.table_.row(r.into())
     }
 
     build_table_column_slice_getter!(

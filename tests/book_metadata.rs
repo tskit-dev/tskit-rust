@@ -2,7 +2,6 @@
 #[test]
 fn book_mutation_metadata() {
     use tskit::metadata::MetadataRoundtrip;
-    use tskit::StreamingIterator;
 
     // ANCHOR: metadata_derive
     #[derive(serde::Serialize, serde::Deserialize, tskit::metadata::MutationMetadata)]
@@ -48,15 +47,15 @@ fn book_mutation_metadata() {
     // ANCHOR: validate_metadata_row_contents
     assert_eq!(
         tables
-            .mutations_iter()
-            .filter(|m| m.metadata.is_some())
+            .mutation_iter()
+            .filter(|m| m.metadata().is_some())
             .count(),
         1
     );
     assert_eq!(
         tables
-            .mutations_iter()
-            .filter(|m| m.metadata.is_none())
+            .mutation_iter()
+            .filter(|m| m.metadata().is_none())
             .count(),
         1
     );
@@ -91,10 +90,9 @@ fn book_mutation_metadata() {
     // ANCHOR_END: metadata_retrieval_none
 
     // ANCHOR: metadata_bulk_decode_lending_iter
-    let mut mutation_row_lending_iterator = tables.mutations().lending_iter();
     let mut decoded_md = vec![];
-    while let Some(row_view) = mutation_row_lending_iterator.next() {
-        match row_view.metadata {
+    for row in tables.mutations().iter() {
+        match row.metadata() {
             Some(slice) => decoded_md.push(Some(MutationMetadata::decode(slice).unwrap())),
             None => decoded_md.push(None),
         }
@@ -102,16 +100,12 @@ fn book_mutation_metadata() {
     // ANCHOR_END: metadata_bulk_decode_lending_iter
 
     // ANCHOR: metadata_bulk_decode_lending_iter_with_filter
-    let mut mutation_row_lending_iterator = tables.mutations().lending_iter();
     let mut decoded_md = vec![];
-    while let Some(row_view) = mutation_row_lending_iterator
-        .next()
-        .filter(|rv| rv.metadata.is_some())
-    {
+    for row in tables.mutation_iter().filter(|rv| rv.metadata().is_some()) {
         decoded_md.push((
-            row_view.id,
+            row.id(),
             // The unwrap will never panic because of our filter
-            MutationMetadata::decode(row_view.metadata.unwrap()).unwrap(),
+            MutationMetadata::decode(row.metadata().unwrap()).unwrap(),
         ));
     }
     // ANCHOR_END: metadata_bulk_decode_lending_iter_with_filter

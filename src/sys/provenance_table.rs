@@ -15,6 +15,21 @@ use std::ffi::c_char;
 #[derive(Debug)]
 pub struct ProvenanceTable(TskBox<tsk_provenance_table_t>);
 
+pub struct ProvenanceTableIter<'table> {
+    table: &'table ProvenanceTable,
+    current_row: ProvenanceId,
+}
+
+impl<'table> Iterator for ProvenanceTableIter<'table> {
+    type Item = super::Provenance<'table, ProvenanceTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl ProvenanceTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_provenance_table_t| unsafe {
@@ -113,6 +128,34 @@ impl ProvenanceTable {
         match record_slice {
             Some(rec) => std::str::from_utf8(rec).ok(),
             None => None,
+        }
+    }
+
+    pub fn row<'table>(&self, row: ProvenanceId) -> Option<super::Provenance<'table, Self>> {
+        let mut provenance = unsafe {
+            std::mem::MaybeUninit::<super::bindings::tsk_provenance_t>::zeroed().assume_init()
+        };
+        let rv = unsafe {
+            super::bindings::tsk_provenance_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut provenance as *mut super::bindings::tsk_provenance_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Provenance {
+                row: provenance,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Provenance<'_, Self>> {
+        ProvenanceTableIter {
+            table: self,
+            current_row: 0.into(),
         }
     }
 }
