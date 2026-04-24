@@ -135,8 +135,8 @@ pub use traits::IndividualParents;
 pub use traits::TableColumn;
 pub use trees::{Tree, TreeSequence};
 
-pub use sys::Mutation;
-pub use sys::Site;
+pub use sys::MutationRef;
+pub use sys::SiteRef;
 
 // Optional features
 #[cfg(feature = "provenance")]

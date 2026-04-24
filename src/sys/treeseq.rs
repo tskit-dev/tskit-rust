@@ -9,171 +9,6 @@ use super::TskitError;
 #[repr(transparent)]
 pub struct TreeSequence(TskBox<bindings::tsk_treeseq_t>);
 
-/// The representation of a mutation as stored in a tree sequence.
-#[repr(transparent)]
-pub struct Mutation<'treeseq>(&'treeseq bindings::tsk_mutation_t);
-
-impl<'treeseq> Mutation<'treeseq> {
-    /// Mutation id
-    pub fn id(&self) -> crate::MutationId {
-        self.0.id.into()
-    }
-    /// Site id of this mutation
-    pub fn site(&self) -> crate::SiteId {
-        self.0.site.into()
-    }
-
-    /// Node id of this mutation
-    pub fn node(&self) -> crate::NodeId {
-        self.0.node.into()
-    }
-
-    /// Parent mutation of this mutation
-    pub fn parent(&self) -> crate::MutationId {
-        self.0.parent.into()
-    }
-
-    /// Origin time of mutation
-    pub fn time(&self) -> crate::Time {
-        self.0.time.into()
-    }
-
-    /// Edge of mutation
-    // NOTE: this will be NULL when populated
-    // by tsk_mutation_table_get_row_unsafe
-    pub fn edge(&self) -> crate::EdgeId {
-        self.0.edge.into()
-    }
-
-    /// Metadata
-    ///
-    /// # Return
-    ///
-    /// * `None` if the mutation has no metadata
-    /// * `Some(data)` if metadata are present
-    pub fn metadata(&self) -> Option<&[u8]> {
-        if self.0.metadata_length > 0 {
-            let metadata_size = usize::try_from(self.0.metadata_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.0.metadata.cast::<u8>(),
-                    metadata_size,
-                ))
-            }
-        } else {
-            None
-        }
-    }
-
-    /// Derived state
-    ///
-    /// # Return
-    ///
-    /// * `None` if the mutation has no derived state
-    /// * `Some(data)` if derived state is present
-    pub fn derived_state(&self) -> Option<&[u8]> {
-        if self.0.derived_state_length > 0 {
-            let derived_state_size = usize::try_from(self.0.derived_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.0.derived_state.cast::<u8>(),
-                    derived_state_size,
-                ))
-            }
-        } else {
-            None
-        }
-    }
-
-    /// Inherited state
-    ///
-    /// # Return
-    ///
-    /// * `None` if the mutation has no inherited state
-    /// * `Some(data)` if inherited state is present
-    // NOTE: not populated by tsk_mutation_table_get_row_unsafe
-    pub fn inherited_state(&self) -> Option<&[u8]> {
-        if self.0.inherited_state_length > 0 {
-            let inherited_state_size = usize::try_from(self.0.inherited_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.0.inherited_state.cast::<u8>(),
-                    inherited_state_size,
-                ))
-            }
-        } else {
-            None
-        }
-    }
-}
-
-/// The representation of a site as stored in a tree sequence.
-#[repr(transparent)]
-pub struct Site<'treeseq>(&'treeseq bindings::tsk_site_t);
-
-impl<'treeseq> Site<'treeseq> {
-    /// Row id
-    pub fn id(&self) -> crate::SiteId {
-        self.0.id.into()
-    }
-    /// Position
-    pub fn position(&self) -> crate::Position {
-        self.0.position.into()
-    }
-
-    /// Return iterator over [`Mutation`] at this site.
-    /// Iteration order is identical to internal storage order.
-    // NOTE: not populated by tsk_site_table_get_row,
-    // which leaves the pointer NULL!
-    pub fn mutations(&self) -> impl Iterator<Item = Mutation<'treeseq>> {
-        assert!(!self.0.mutations.is_null());
-        let mslice = unsafe {
-            std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
-        };
-        mslice.iter().map(Mutation)
-    }
-
-    /// Ancestral state
-    ///
-    /// # Return
-    ///
-    /// * `None` if the mutation has no ancestral state
-    /// * `Some(data)` if ancestral state is present
-    pub fn ancestral_state(&self) -> Option<&[u8]> {
-        if self.0.ancestral_state_length > 0 {
-            let ancestral_state_size = usize::try_from(self.0.ancestral_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.0.ancestral_state.cast::<u8>(),
-                    ancestral_state_size,
-                ))
-            }
-        } else {
-            None
-        }
-    }
-
-    /// Metadata
-    ///
-    /// # Return
-    ///
-    /// * `None` if the site has no metadata
-    /// * `Some(data)` if metadata are present
-    pub fn metadata(&self) -> Option<&[u8]> {
-        if self.0.metadata_length > 0 {
-            let metadata_size = usize::try_from(self.0.metadata_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.0.metadata.cast::<u8>(),
-                    metadata_size,
-                ))
-            }
-        } else {
-            None
-        }
-    }
-}
-
 impl TreeSequence {
     pub fn new(
         tables: super::TableCollection,
@@ -301,21 +136,23 @@ impl TreeSequence {
         }
     }
 
-    pub fn site<'ts>(&'ts self, site: bindings::tsk_id_t) -> Option<Site<'ts>> {
+    pub fn site<'ts>(&'ts self, site: bindings::tsk_id_t) -> Option<crate::SiteRef<'ts, Self>> {
         let num_sites = unsafe { (*(self.as_ref()).tables).sites.num_rows };
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        sites.get(site as usize).map(Site)
+        sites
+            .get(site as usize)
+            .map(|s| crate::sys::new_site_ref(self, s))
     }
 
-    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = Site<'ts>> {
+    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts, Self>> {
         assert!(!self.as_ref().tables.is_null());
         // SAFETY: none of the pointers are null
         let num_sites = unsafe { (*(self.as_ref()).tables).sites.num_rows };
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        sites.iter().map(Site)
+        sites.iter().map(|s| crate::sys::new_site_ref(self, s))
     }
 }
