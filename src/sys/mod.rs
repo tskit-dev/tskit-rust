@@ -22,6 +22,7 @@ mod traits;
 mod tree;
 mod treeseq;
 mod tskbox;
+mod types;
 
 // tskit defines this via a type cast
 // in a macro. bindgen thus misses it.
@@ -41,9 +42,8 @@ pub use site_table::SiteTable;
 pub use table_collection::*;
 pub use tree::LLTree;
 pub use tree::NodeTraversalOrder;
-pub use treeseq::Mutation;
-pub use treeseq::Site;
 pub use treeseq::TreeSequence;
+pub use types::*;
 
 use traits::TskTeardown;
 

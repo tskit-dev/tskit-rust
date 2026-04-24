@@ -662,7 +662,7 @@ fn test_site_mutation_co_iteration_fully_loaded() {
         assert!(site.metadata().is_some());
     }
 
-    for m in ts.site_iter().flat_map(|site| site.mutations()) {
+    for m in ts.site_iter().flat_map(move |site| site.mutations()) {
         assert!(m.metadata().is_some());
         assert!(m.inherited_state().is_some());
         assert_eq!(m.edge(), e);

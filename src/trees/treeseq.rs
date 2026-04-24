@@ -634,7 +634,7 @@ impl TreeSequence {
         self.tables.create_node_id_vector(f)
     }
 
-    /// Obtain a [`crate::Site`].
+    /// Obtain a [`crate::SiteRef`].
     ///
     /// # Return
     ///
@@ -644,13 +644,58 @@ impl TreeSequence {
     /// # Complexity
     ///
     /// `O(1)`
-    pub fn site<'ts, S: Into<SiteId>>(&'ts self, site: S) -> Option<crate::Site<'ts>> {
+    pub fn site<'ts, S: Into<SiteId>>(
+        &'ts self,
+        site: S,
+    ) -> Option<crate::SiteRef<'ts, crate::sys::TreeSequence>> {
         self.inner.site(site.into().into())
     }
 
-    /// Obtain an iterator over sites ([`crate::Site`]) in the tree sequence.
-    /// The iteration order is the same as the storage order in `self`.
-    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::Site<'ts>> {
+    /// Obtain an iterator over references to sites ([`crate::SiteRef`])
+    /// in the tree sequence. The iteration order is the same as the
+    /// storage order in `self`.
+    ///
+    /// # Examples
+    ///
+    /// Output lifetimes depend on the parent object:
+    ///
+    /// ```compile_fail
+    /// # let mut tables = tskit::TableCollection::new(100.).unwrap();
+    /// # let n0 = tables.add_node(0, 0.0, -1, -1).unwrap();
+    /// # let n1 = tables.add_node(0, 1.0, -1, -1).unwrap();
+    /// # let n2 = tables.add_node(0, 2.0, -1, -1).unwrap();
+    /// # let _ = tables.add_edge(0., 100., n1, n0).unwrap();
+    /// # let _ = tables.add_edge(0., 100., n2, n1).unwrap();
+    /// # let s0 = tables.add_site(5.0, None).unwrap();
+    /// # let m0 = tables.add_mutation(s0, n1, -1, 1.0, None).unwrap();
+    /// # let m1 = tables.add_mutation(s0, n0, -1, 0.0, None).unwrap();
+    /// # tables.build_index().unwrap();
+    /// # assert_eq!(tables.sites().num_rows(), 3);
+    /// # assert_eq!(tables.mutations().num_rows(), 3);
+    /// # tables
+    /// #     .compute_mutation_parents(tskit::MutationParentsFlags::default())
+    /// #     .unwrap();
+    /// # let ts = tables.tree_sequence(0).unwrap();
+    /// // Extract all MutationRef from the
+    /// // tree sequence and store in a vector
+    /// let contents = ts
+    ///     .site_iter()
+    ///     .flat_map(|site| {
+    ///         site.mutations()
+    ///     })
+    ///     .collect::<Vec<_>>();
+    /// for _ in contents.iter() {
+    ///     // Fine -- the parent
+    ///     // tree seq i alive
+    /// }
+    /// drop(ts); // tear down the parent tree sequence
+    /// // Compilation fails below because
+    /// // the child data cannot outlive the parent
+    /// for _ in contents.iter() { }
+    /// ```
+    pub fn site_iter<'ts>(
+        &'ts self,
+    ) -> impl Iterator<Item = crate::SiteRef<'ts, crate::sys::TreeSequence>> {
         self.inner.site_iter()
     }
 
