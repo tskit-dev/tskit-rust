@@ -143,7 +143,7 @@ impl TreeSequence {
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
         sites
             .get(site as usize)
-            .map(|s| crate::sys::new_site_ref(self, s))
+            .map(|s| super::new_site_ref(self, s))
     }
 
     pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts, Self>> {
@@ -153,6 +153,6 @@ impl TreeSequence {
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        sites.iter().map(|s| crate::sys::new_site_ref(self, s))
+        sites.iter().map(|s| super::new_site_ref(self, s))
     }
 }
