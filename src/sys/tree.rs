@@ -71,14 +71,6 @@ impl<'treeseq> LLTree<'treeseq> {
         unsafe { crate::sys::bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence) }
     }
 
-    pub fn samples_array(&self) -> Result<&[super::newtypes::NodeId], TskitError> {
-        err_if_not_tracking_samples!(
-            self.flags,
-            // SAFETY: num_samples is the correct value
-            unsafe { super::generate_slice(self.as_ll_ref().samples, self.num_samples()) }
-        )
-    }
-
     /// Return the virtual root of the tree.
     pub fn virtual_root(&self) -> NodeId {
         self.as_ll_ref().virtual_root.into()
@@ -166,16 +158,6 @@ impl<'treeseq> LLTree<'treeseq> {
 
     pub fn roots(&self) -> impl Iterator<Item = NodeId> + '_ {
         NodeIteratorAdapter(RootIterator::new(self))
-    }
-
-    pub fn sample_nodes(&self) -> &[NodeId] {
-        assert!(!self.as_ptr().is_null());
-        unsafe {
-            // SAFETY: self ptr is not null and the tree is initialized
-            // num_samples is the correct array length
-            let num_samples = bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence);
-            super::generate_slice(self.as_ll_ref().samples, num_samples)
-        }
     }
 
     pub fn parent_array(&self) -> &[NodeId] {

@@ -137,10 +137,12 @@ fn test_iterate_tree_seq_with_one_tree() {
     let tables = make_small_table_collection();
     let treeseq = tables.tree_sequence(TreeSequenceFlags::default()).unwrap();
     let mut ntrees = 0;
-    let mut tree_iter = treeseq.tree_iterator(TreeFlags::default()).unwrap();
+    let mut tree_iter = treeseq
+        .tree_iterator(TreeFlags::default().sample_lists())
+        .unwrap();
     while let Some(tree) = tree_iter.next() {
         ntrees += 1;
-        let samples = tree.sample_nodes();
+        let samples = tree.samples_iter().unwrap().collect::<Vec<_>>();
         assert_eq!(samples.len(), 2);
         for i in 1_i32..3 {
             assert_eq!(samples[(i - 1) as usize], NodeId::from(i));
@@ -716,4 +718,20 @@ fn test_tree_site_iter() {
         .iter()
         .filter(|(t, _)| t == &1)
         .any(|(_, m)| m == m2));
+}
+
+#[test]
+fn test_tree_samples_iter() {
+    let tables = make_small_table_collection_two_trees();
+    let ts = tables.tree_sequence(0).unwrap();
+    let mut tree_iter = ts
+        .tree_iterator(tskit::TreeFlags::default().sample_lists())
+        .unwrap();
+    while let Some(tree) = tree_iter.next() {
+        let samples = tree.samples_iter().unwrap().collect::<Vec<_>>();
+        assert_eq!(samples.len(), 4);
+        for i in [2, 3, 4, 5] {
+            assert!(samples.contains(&(i.into())))
+        }
+    }
 }

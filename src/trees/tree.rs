@@ -75,40 +75,6 @@ impl<'treeseq> Tree<'treeseq> {
         self.inner.total_branch_length(by_span)
     }
 
-    /// # Failing examples
-    ///
-    /// An error will be returned if [`TreeFlags::SAMPLE_LISTS`] is not used:
-    ///
-    /// ```should_panic
-    /// use tskit::StreamingIterator;
-    /// let tables = tskit::TableCollection::new(1.).unwrap();
-    /// let treeseq =
-    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
-    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap(); // ERROR
-    /// while let Some(tree) = tree_iter.next() {
-    ///     let s = tree.samples_array().unwrap();
-    ///     for _ in s {}
-    /// }
-    /// ```
-    ///
-    /// The lifetime of the slice is tied to the parent object:
-    ///
-    /// ```compile_fail
-    /// use tskit::StreamingIterator;
-    /// let tables = tskit::TableCollection::new(1.).unwrap();
-    /// let treeseq =
-    /// tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
-    /// let mut tree_iter = treeseq.tree_iterator(tskit::TreeFlags::SAMPLE_LISTS).unwrap();
-    /// while let Some(tree) = tree_iter.next() {
-    ///     let s = tree.samples_array().unwrap();
-    ///     drop(tree_iter);
-    ///     for _ in s {} // ERROR
-    /// }
-    /// ```
-    pub fn samples_array(&self) -> Result<&[NodeId], TskitError> {
-        self.inner.samples_array()
-    }
-
     /// Return the virtual root of the tree.
     pub fn virtual_root(&self) -> NodeId {
         self.inner.virtual_root()
@@ -194,9 +160,16 @@ impl<'treeseq> Tree<'treeseq> {
         self.roots().collect::<Vec<_>>()
     }
 
-    /// Get the list of sample nodes as a slice.
-    pub fn sample_nodes(&self) -> &[NodeId] {
-        self.inner.sample_nodes()
+    /// Return an iterator over [`NodeId`] in the current tree.
+    /// The iterator proceeds from the tree roots and, for each root,
+    /// consumes the iterator given by [`Tree::samples`].
+    pub fn samples_iter(&self) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+        err_if_not_tracking_samples!(
+            self.flags(),
+            // NOTE: we unwrap here because we are already
+            // checking that sample tracking is enabled.
+            self.roots().flat_map(|root| self.samples(root).unwrap())
+        )
     }
 
     /// # Failing examples
