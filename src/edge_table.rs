@@ -4,140 +4,7 @@ use crate::sys;
 use crate::Position;
 use crate::TskitError;
 use crate::{EdgeId, NodeId};
-use ll_bindings::tsk_id_t;
 use sys::bindings as ll_bindings;
-
-/// Row of an [`EdgeTable`]
-#[derive(Debug)]
-pub struct EdgeTableRow {
-    pub id: EdgeId,
-    pub left: Position,
-    pub right: Position,
-    pub parent: NodeId,
-    pub child: NodeId,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for EdgeTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.parent == other.parent
-            && self.child == other.child
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && self.metadata == other.metadata
-    }
-}
-
-fn make_edge_table_row(table: &EdgeTable, pos: tsk_id_t) -> Option<EdgeTableRow> {
-    Some(EdgeTableRow {
-        id: pos.into(),
-        left: table.left(pos)?,
-        right: table.right(pos)?,
-        parent: table.parent(pos)?,
-        child: table.child(pos)?,
-        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
-    })
-}
-
-pub(crate) type EdgeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a EdgeTable>;
-pub(crate) type EdgeTableIterator = crate::table_iterator::TableIterator<EdgeTable>;
-
-impl Iterator for EdgeTableRefIterator<'_> {
-    type Item = EdgeTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_edge_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for EdgeTableIterator {
-    type Item = EdgeTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_edge_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-/// Row of an [`EdgeTable`]
-#[derive(Debug)]
-pub struct EdgeTableRowView<'a> {
-    table: &'a EdgeTable,
-    pub id: EdgeId,
-    pub left: Position,
-    pub right: Position,
-    pub parent: NodeId,
-    pub child: NodeId,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> EdgeTableRowView<'a> {
-    fn new(table: &'a EdgeTable) -> Self {
-        Self {
-            table,
-            id: (-1).into(),
-            left: f64::NAN.into(),
-            right: f64::NAN.into(),
-            parent: NodeId::NULL,
-            child: NodeId::NULL,
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for EdgeTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.parent == other.parent
-            && self.child == other.child
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && self.metadata == other.metadata
-    }
-}
-
-impl Eq for EdgeTableRowView<'_> {}
-
-impl PartialEq<EdgeTableRow> for EdgeTableRowView<'_> {
-    fn eq(&self, other: &EdgeTableRow) -> bool {
-        self.id == other.id
-            && self.parent == other.parent
-            && self.child == other.child
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl PartialEq<EdgeTableRowView<'_>> for EdgeTableRow {
-    fn eq(&self, other: &EdgeTableRowView) -> bool {
-        self.id == other.id
-            && self.parent == other.parent
-            && self.child == other.child
-            && crate::util::partial_cmp_equal(&self.left, &other.left)
-            && crate::util::partial_cmp_equal(&self.right, &other.right)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl crate::StreamingIterator for EdgeTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.left = self.table.left(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.right = self.table.right(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.parent = self.table.parent(self.id).unwrap_or(NodeId::NULL);
-        self.child = self.table.child(self.id).unwrap_or(NodeId::NULL);
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
 
 /// An edge table.
 ///
@@ -286,14 +153,10 @@ impl EdgeTable {
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`EdgeTableRow`].
+    /// The value of the iterator is [`crate::Edge`].
     ///
-    pub fn iter(&self) -> impl Iterator<Item = EdgeTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&EdgeTable>(self)
-    }
-
-    pub fn lending_iter<'table>(&'table self) -> EdgeTableRowView<'table> {
-        EdgeTableRowView::new(self)
+    pub fn iter(&self) -> impl Iterator<Item = crate::Edge<'_, crate::sys::EdgeTable>> {
+        self.table_.iter()
     }
 
     /// Return row `r` of the table.
@@ -306,34 +169,11 @@ impl EdgeTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<EdgeTableRow> {
-        table_row_access!(r.into().into(), self, make_edge_table_row)
-    }
-
-    /// Return a view of row `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row_view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<'table, E: Into<EdgeId> + Copy>(
-        &'table self,
+    pub fn row<E: Into<EdgeId> + Copy>(
+        &self,
         r: E,
-    ) -> Option<EdgeTableRowView<'table>> {
-        let view = EdgeTableRowView {
-            table: self,
-            id: r.into(),
-            left: self.left(r)?,
-            right: self.right(r)?,
-            parent: self.parent(r)?,
-            child: self.child(r)?,
-            metadata: self.table_.raw_metadata(r.into()),
-        };
-        Some(view)
+    ) -> Option<crate::Edge<'_, crate::sys::EdgeTable>> {
+        self.table_.row(r.into())
     }
 
     build_table_column_slice_getter!(

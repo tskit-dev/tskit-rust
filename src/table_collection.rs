@@ -1063,25 +1063,32 @@ impl TableCollection {
     /// // Get the first row
     /// let row_0 = prov_ref.row(0).unwrap();
     ///
-    /// assert_eq!(row_0.record, "Some provenance");
+    /// assert_eq!(row_0.record(), "Some provenance");
     ///
     /// // Get the first record
     /// let record_0 = prov_ref.record(0).unwrap();
-    /// assert_eq!(record_0, row_0.record);
+    /// assert_eq!(record_0, row_0.record());
     ///
     /// // Get the first time stamp
     /// let timestamp = prov_ref.timestamp(0).unwrap();
-    /// assert_eq!(timestamp, row_0.timestamp);
+    /// assert_eq!(timestamp, row_0.timestamp());
     ///
     /// // You can get the `chrono` object back from the `String`:
     /// use core::str::FromStr;
     /// let timestamp_string = chrono::DateTime::<chrono::Utc>::from_str(&timestamp).unwrap();
     ///
+    /// // NOTE: we want to keep the record value to compare to what
+    /// // is in the tree sequence. To do so we need to make a deep
+    /// // copy b/c the borrow checker will recognize that the
+    /// // lifetime of the table collection (the parent of the record object)
+    /// // ends once we create the tree sequence
+    /// let row_0_record = row_0.record().to_string();
+    ///
     /// // Provenance transfers to the tree sequences
     /// let treeseq = tables.tree_sequence(tskit::TreeSequenceFlags::BUILD_INDEXES).unwrap();
     /// assert_eq!(treeseq.provenances().record(0).unwrap(), "Some provenance");
     /// // We can still compare to row_0 because it is a copy of the row data:
-    /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0.record);
+    /// assert_eq!(treeseq.provenances().record(0).unwrap(), row_0_record);
     /// # }
     /// ```
     pub fn add_provenance(&mut self, record: &str) -> Result<crate::ProvenanceId, TskitError> {
@@ -1475,46 +1482,54 @@ impl TableCollection {
     }
 
     /// Return an iterator over the edges.
-    pub fn edges_iter(&self) -> impl Iterator<Item = crate::EdgeTableRow> + '_ {
+    pub fn edge_iter(&self) -> impl Iterator<Item = crate::Edge<'_, crate::sys::EdgeTable>> {
         self.edges.iter()
     }
 
     /// Return an iterator over the nodes.
-    pub fn nodes_iter(&self) -> impl Iterator<Item = crate::NodeTableRow> + '_ {
+    pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_, crate::sys::NodeTable>> {
         self.nodes.iter()
     }
 
     /// Return an iterator over the sites.
-    pub fn sites_iter(&self) -> impl Iterator<Item = crate::SiteTableRow> + '_ {
+    pub fn site_iter(&self) -> impl Iterator<Item = crate::Site<'_, crate::sys::SiteTable>> {
         self.sites.iter()
     }
 
     /// Return an iterator over the mutations.
-    pub fn mutations_iter(&self) -> impl Iterator<Item = crate::MutationTableRow> + '_ {
+    pub fn mutation_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Mutation<'_, crate::sys::MutationTable>> {
         self.mutations.iter()
     }
 
     /// Return an iterator over the individuals.
-    pub fn individuals_iter(&self) -> impl Iterator<Item = crate::IndividualTableRow> + '_ {
+    pub fn individual_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Individual<'_, crate::sys::IndividualTable>> {
         self.individuals.iter()
     }
 
     /// Return an iterator over the populations.
-    pub fn populations_iter(&self) -> impl Iterator<Item = crate::PopulationTableRow> + '_ {
+    pub fn population_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Population<'_, crate::sys::PopulationTable>> {
         self.populations.iter()
     }
 
     /// Return an iterator over the migrations.
-    pub fn migrations_iter(&self) -> impl Iterator<Item = crate::MigrationTableRow> + '_ {
+    pub fn migration_iter(
+        &self,
+    ) -> impl Iterator<Item = crate::Migration<'_, crate::sys::MigrationTable>> {
         self.migrations.iter()
     }
 
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Return an iterator over provenances
-    pub fn provenances_iter(
+    pub fn provenance_iter(
         &self,
-    ) -> impl Iterator<Item = crate::provenance::ProvenanceTableRow> + '_ {
+    ) -> impl Iterator<Item = crate::Provenance<'_, crate::sys::ProvenanceTable>> {
         self.provenances.iter()
     }
 
@@ -1537,7 +1552,7 @@ impl TableCollection {
     /// # Parameters
     ///
     /// * `f`: a function.  The function is passed the current table
-    ///   collection and each [`crate::node_table::NodeTableRow`].
+    ///   collection and each [`crate::Node`].
     ///   If `f` returns `true`, the index of that row is included
     ///   in the return value.
     ///
@@ -1556,13 +1571,13 @@ impl TableCollection {
     ///     tskit::IndividualId::NULL)
     ///     .unwrap();
     /// let samples = tables.create_node_id_vector(
-    ///     |row: &tskit::NodeTableRow| row.time > 0.,
+    ///     |row| row.time() > 0.,
     /// );
     /// assert_eq!(samples[0], 1);
     /// ```
-    pub fn create_node_id_vector(
-        &self,
-        f: impl FnMut(&crate::NodeTableRow) -> bool,
+    pub fn create_node_id_vector<'t>(
+        &'t self,
+        f: impl FnMut(&crate::Node<'t, crate::sys::NodeTable>) -> bool,
     ) -> Vec<crate::NodeId> {
         self.nodes().create_node_id_vector(f)
     }
@@ -1628,7 +1643,6 @@ impl TableCollection {
     where
         P: Into<Position>,
     {
-        use crate::StreamingIterator;
         let mut tables = self;
         // use tables from sys to allow easier process with metadata
         let options = 0;
@@ -1654,59 +1668,56 @@ impl TableCollection {
             }
             keep_sites
                 .iter_mut()
-                .zip(tables.sites_iter())
+                .zip(tables.site_iter())
                 .for_each(|(k, site_row)| {
-                    *k = *k || ((site_row.position >= s) && (site_row.position < e));
+                    *k = *k || ((site_row.position() >= s) && (site_row.position() < e));
                 });
 
-            // use stream_iter and while-let pattern for easier ? operator within a loop
-            let mut edge_iter = tables
+            for edge_row in tables
                 .edges()
-                .lending_iter()
-                .filter(|edge_row| !((edge_row.right <= s) || (edge_row.left >= e)));
-
-            while let Some(edge_row) = edge_iter.next() {
+                .iter()
+                .filter(|edge_row| !((edge_row.right() <= s) || (edge_row.left() >= e)))
+            {
                 new_edges.add_row_with_metadata(
-                    if edge_row.left < s { s } else { edge_row.left }.into(),
-                    if edge_row.right > e {
-                        e
+                    if edge_row.left() < s {
+                        s
                     } else {
-                        edge_row.right
+                        edge_row.left()
                     }
                     .into(),
-                    edge_row.parent.into(),
-                    edge_row.child.into(),
-                    edge_row.metadata.unwrap_or(&[0u8; 0]),
+                    if edge_row.right() > e {
+                        e
+                    } else {
+                        edge_row.right()
+                    }
+                    .into(),
+                    edge_row.parent().into(),
+                    edge_row.child().into(),
+                    edge_row.metadata().unwrap_or(&[0u8; 0]),
                 )?;
             }
 
-            let mut migration_iter = tables
-                .migrations()
-                .lending_iter()
-                .filter(|mrow| !((mrow.right <= s) || (mrow.left >= e)));
-
-            while let Some(migration_row) = migration_iter.next() {
+            for migration_row in tables.migrations().iter() {
                 new_migrations.add_row_with_metadata(
-                    (migration_row.left.into(), migration_row.right.into()),
-                    migration_row.node.into(),
-                    migration_row.source.into(),
-                    migration_row.dest.into(),
-                    migration_row.time.into(),
-                    migration_row.metadata.unwrap_or(&[0u8; 0]),
+                    (migration_row.left().into(), migration_row.right().into()),
+                    migration_row.node().into(),
+                    migration_row.source().into(),
+                    migration_row.dest().into(),
+                    migration_row.time().into(),
+                    migration_row.metadata().unwrap_or(&[0u8; 0]),
                 )?;
             }
             last_interval = (s, e);
         }
 
         let mut running_site_id = 0;
-        let mut site_iter = tables.sites().lending_iter();
-        while let Some(site_row) = site_iter.next() {
-            let old_id = site_row.id.to_usize().unwrap();
+        for site_row in tables.sites().iter() {
+            let old_id = site_row.id().to_usize().unwrap();
             if keep_sites[old_id] {
                 new_sites.add_row_with_metadata(
-                    site_row.position.into(),
-                    site_row.ancestral_state,
-                    site_row.metadata.unwrap_or(&[0u8; 0]),
+                    site_row.position().into(),
+                    site_row.ancestral_state(),
+                    site_row.metadata().unwrap_or(&[0u8; 0]),
                 )?;
                 site_map[old_id] = running_site_id;
                 running_site_id += 1;
@@ -1729,25 +1740,24 @@ impl TableCollection {
                 .collect()
         };
 
-        let mut mutations_iter = tables.mutations().lending_iter();
-        while let Some(mutation_row) = mutations_iter.next() {
-            let old_id = mutation_row.site.to_usize().unwrap();
+        for mutation_row in tables.mutations().iter() {
+            let old_id = mutation_row.site().to_usize().unwrap();
             if keep_sites[old_id] {
                 let new_site = site_map[old_id];
                 let new_parent = {
-                    if mutation_row.parent.is_null() {
-                        mutation_row.parent.into()
+                    if mutation_row.parent().is_null() {
+                        mutation_row.parent().into()
                     } else {
-                        mutation_map[mutation_row.parent.as_usize()]
+                        mutation_map[mutation_row.parent().as_usize()]
                     }
                 };
                 new_mutations.add_row_with_metadata(
                     new_site,
-                    mutation_row.node.into(),
+                    mutation_row.node().into(),
                     new_parent,
-                    mutation_row.time.into(),
-                    mutation_row.derived_state,
-                    mutation_row.metadata.unwrap_or(&[0u8; 0]),
+                    mutation_row.time().into(),
+                    mutation_row.derived_state(),
+                    mutation_row.metadata().unwrap_or(&[0u8; 0]),
                 )?;
             }
         }

@@ -7,95 +7,6 @@ use crate::TskitError;
 use ll_bindings::tsk_id_t;
 use sys::bindings as ll_bindings;
 
-/// Row of a [`IndividualTable`]
-#[derive(Debug)]
-pub struct IndividualTableRow {
-    pub id: IndividualId,
-    pub flags: IndividualFlags,
-    pub location: Option<Vec<Location>>,
-    pub parents: Option<Vec<IndividualId>>,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for IndividualTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && self.parents == other.parents
-            && self.metadata == other.metadata
-            && self.location == other.location
-    }
-}
-
-#[derive(Debug)]
-pub struct IndividualTableRowView<'a> {
-    table: &'a IndividualTable,
-    pub id: IndividualId,
-    pub flags: IndividualFlags,
-    pub location: Option<&'a [Location]>,
-    pub parents: Option<&'a [IndividualId]>,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> IndividualTableRowView<'a> {
-    fn new(table: &'a IndividualTable) -> Self {
-        Self {
-            table,
-            id: (-1_i32).into(),
-            flags: 0.into(),
-            location: None,
-            parents: None,
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for IndividualTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && self.parents == other.parents
-            && self.metadata == other.metadata
-            && self.location == other.location
-    }
-}
-
-impl Eq for IndividualTableRowView<'_> {}
-
-impl PartialEq<IndividualTableRow> for IndividualTableRowView<'_> {
-    fn eq(&self, other: &IndividualTableRow) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && optional_container_comparison!(self.parents, other.parents)
-            && optional_container_comparison!(self.metadata, other.metadata)
-            && optional_container_comparison!(self.location, other.location)
-    }
-}
-
-impl PartialEq<IndividualTableRowView<'_>> for IndividualTableRow {
-    fn eq(&self, other: &IndividualTableRowView) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && optional_container_comparison!(self.parents, other.parents)
-            && optional_container_comparison!(self.metadata, other.metadata)
-            && optional_container_comparison!(self.location, other.location)
-    }
-}
-
-impl crate::StreamingIterator for IndividualTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.flags = self.table.flags(self.id).unwrap_or_else(|| 0.into());
-        self.location = self.table.location(self.id);
-        self.parents = self.table.parents(self.id);
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
-
 /// An individual table.
 ///
 /// # Examples
@@ -146,40 +57,6 @@ impl crate::StreamingIterator for IndividualTableRowView<'_> {
 #[repr(transparent)]
 pub struct IndividualTable {
     table_: sys::IndividualTable,
-}
-
-fn make_individual_table_row(table: &IndividualTable, pos: tsk_id_t) -> Option<IndividualTableRow> {
-    Some(IndividualTableRow {
-        id: pos.into(),
-        flags: table.flags(pos)?,
-        location: table.location(pos).map(|s| s.to_vec()),
-        parents: table.parents(pos).map(|s| s.to_vec()),
-        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
-    })
-}
-
-pub(crate) type IndividualTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a IndividualTable>;
-pub(crate) type IndividualTableIterator = crate::table_iterator::TableIterator<IndividualTable>;
-
-impl Iterator for IndividualTableRefIterator<'_> {
-    type Item = IndividualTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_individual_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for IndividualTableIterator {
-    type Item = IndividualTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_individual_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
 }
 
 impl IndividualTable {
@@ -416,14 +293,10 @@ match tables.individuals().metadata::<MutationMetadata>(0)
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`IndividualTableRow`].
+    /// The value of the iterator is [`crate::Individual`].
     ///
-    pub fn iter(&self) -> impl Iterator<Item = IndividualTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&IndividualTable>(self)
-    }
-
-    pub fn lending_iter(&'_ self) -> IndividualTableRowView<'_> {
-        IndividualTableRowView::new(self)
+    pub fn iter(&self) -> impl Iterator<Item = crate::Individual<'_, crate::sys::IndividualTable>> {
+        self.table_.iter()
     }
 
     /// Return row `r` of the table.
@@ -436,34 +309,11 @@ match tables.individuals().metadata::<MutationMetadata>(0)
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<I: Into<IndividualId> + Copy>(&self, r: I) -> Option<IndividualTableRow> {
-        let ri = r.into().into();
-        table_row_access!(ri, self, make_individual_table_row)
-    }
-
-    /// Return a view of `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<I: Into<IndividualId> + Copy>(
-        &'_ self,
+    pub fn row<I: Into<IndividualId> + Copy>(
+        &self,
         r: I,
-    ) -> Option<IndividualTableRowView<'_>> {
-        let view = IndividualTableRowView {
-            table: self,
-            id: r.into(),
-            flags: self.flags(r)?,
-            location: self.location(r),
-            parents: self.parents(r),
-            metadata: self.table_.raw_metadata(r.into()),
-        };
-        Some(view)
+    ) -> Option<crate::Individual<'_, crate::sys::IndividualTable>> {
+        self.table_.row(r.into())
     }
 
     build_table_column_slice_getter!(

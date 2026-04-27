@@ -3,108 +3,7 @@ use crate::sys;
 use crate::PopulationId;
 use crate::SizeType;
 use crate::TskitError;
-use ll_bindings::tsk_id_t;
 use sys::bindings as ll_bindings;
-
-/// Row of a [`PopulationTable`]
-#[derive(Eq, Debug)]
-pub struct PopulationTableRow {
-    pub id: PopulationId,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for PopulationTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.metadata == other.metadata
-    }
-}
-
-fn make_population_table_row(table: &PopulationTable, pos: tsk_id_t) -> Option<PopulationTableRow> {
-    let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
-
-    match index {
-        i if i < table.num_rows() => {
-            let metadata = table.table_.raw_metadata(pos).map(|m| m.to_vec());
-            Some(PopulationTableRow {
-                id: pos.into(),
-                metadata,
-            })
-        }
-        _ => None,
-    }
-}
-
-pub(crate) type PopulationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a PopulationTable>;
-pub(crate) type PopulationTableIterator = crate::table_iterator::TableIterator<PopulationTable>;
-
-impl Iterator for PopulationTableRefIterator<'_> {
-    type Item = PopulationTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_population_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for PopulationTableIterator {
-    type Item = PopulationTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_population_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-#[derive(Debug)]
-pub struct PopulationTableRowView<'a> {
-    table: &'a PopulationTable,
-    pub id: PopulationId,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> PopulationTableRowView<'a> {
-    fn new(table: &'a PopulationTable) -> Self {
-        Self {
-            table,
-            id: PopulationId::NULL,
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for PopulationTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.metadata == other.metadata
-    }
-}
-
-impl Eq for PopulationTableRowView<'_> {}
-
-impl PartialEq<PopulationTableRow> for PopulationTableRowView<'_> {
-    fn eq(&self, other: &PopulationTableRow) -> bool {
-        self.id == other.id && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl PartialEq<PopulationTableRowView<'_>> for PopulationTableRow {
-    fn eq(&self, other: &PopulationTableRowView) -> bool {
-        self.id == other.id && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl crate::StreamingIterator for PopulationTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
 
 /// A population table
 ///
@@ -206,16 +105,11 @@ impl PopulationTable {
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`PopulationTableRow`].
-    pub fn iter(&self) -> impl Iterator<Item = PopulationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&PopulationTable>(self)
+    /// The value of the iterator is [`crate::Population`].
+    pub fn iter(&self) -> impl Iterator<Item = crate::Population<'_, crate::sys::PopulationTable>> {
+        self.table_.iter()
     }
 
-    pub fn lending_iter(&'_ self) -> PopulationTableRowView<'_> {
-        PopulationTableRowView::new(self)
-    }
-
-    /// Return row `r` of the table.
     ///
     /// # Parameters
     ///
@@ -225,36 +119,11 @@ impl PopulationTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<PopulationTableRow> {
-        let ri = r.into().into();
-        table_row_access!(ri, self, make_population_table_row)
-    }
-
-    /// Return a view of row `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<P: Into<PopulationId> + Copy>(
-        &'_ self,
+    pub fn row<P: Into<PopulationId> + Copy>(
+        &self,
         r: P,
-    ) -> Option<PopulationTableRowView<'_>> {
-        match SizeType::try_from(r.into()).ok() {
-            Some(row) if row < self.num_rows() => {
-                let view = PopulationTableRowView {
-                    table: self,
-                    id: r.into(),
-                    metadata: self.table_.raw_metadata(r.into()),
-                };
-                Some(view)
-            }
-            _ => None,
-        }
+    ) -> Option<crate::Population<'_, crate::sys::PopulationTable>> {
+        self.table_.row(r.into())
     }
 
     pub fn add_row(&mut self) -> Result<PopulationId, TskitError> {

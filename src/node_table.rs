@@ -7,138 +7,6 @@ use crate::SizeType;
 use crate::Time;
 use crate::TskitError;
 use crate::{IndividualId, NodeId, PopulationId};
-use ll_bindings::tsk_id_t;
-
-/// Row of a [`NodeTable`]
-#[derive(Debug)]
-pub struct NodeTableRow {
-    pub id: NodeId,
-    pub time: Time,
-    pub flags: NodeFlags,
-    pub population: PopulationId,
-    pub individual: IndividualId,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for NodeTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && self.population == other.population
-            && self.individual == other.individual
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && self.metadata == other.metadata
-    }
-}
-
-fn make_node_table_row(table: &NodeTable, pos: tsk_id_t) -> Option<NodeTableRow> {
-    Some(NodeTableRow {
-        id: pos.into(),
-        time: table.time(pos)?,
-        flags: table.flags(pos)?,
-        population: table.population(pos)?,
-        individual: table.individual(pos)?,
-        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
-    })
-}
-
-pub(crate) type NodeTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a NodeTable>;
-pub(crate) type NodeTableIterator = crate::table_iterator::TableIterator<NodeTable>;
-
-impl Iterator for NodeTableRefIterator<'_> {
-    type Item = NodeTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_node_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for NodeTableIterator {
-    type Item = crate::node_table::NodeTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_node_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-#[derive(Debug)]
-pub struct NodeTableRowView<'a> {
-    table: &'a NodeTable,
-    pub id: NodeId,
-    pub time: Time,
-    pub flags: NodeFlags,
-    pub population: PopulationId,
-    pub individual: IndividualId,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> NodeTableRowView<'a> {
-    fn new(table: &'a NodeTable) -> Self {
-        Self {
-            table,
-            id: NodeId::NULL,
-            time: f64::NAN.into(),
-            flags: 0.into(),
-            population: PopulationId::NULL,
-            individual: IndividualId::NULL,
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for NodeTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && self.population == other.population
-            && self.individual == other.individual
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && self.metadata == other.metadata
-    }
-}
-
-impl Eq for NodeTableRowView<'_> {}
-
-impl PartialEq<NodeTableRow> for NodeTableRowView<'_> {
-    fn eq(&self, other: &NodeTableRow) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && self.population == other.population
-            && self.individual == other.individual
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl PartialEq<NodeTableRowView<'_>> for NodeTableRow {
-    fn eq(&self, other: &NodeTableRowView) -> bool {
-        self.id == other.id
-            && self.flags == other.flags
-            && self.population == other.population
-            && self.individual == other.individual
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl crate::StreamingIterator for NodeTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.flags = self.table.flags(self.id).unwrap_or_else(|| 0.into());
-        self.population = self.table.population(self.id).unwrap_or(PopulationId::NULL);
-        self.individual = self.table.individual(self.id).unwrap_or(IndividualId::NULL);
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
 
 /// Defaults for node table rows without metadata
 ///
@@ -602,13 +470,9 @@ impl NodeTable {
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`NodeTableRow`].
-    pub fn iter(&self) -> impl Iterator<Item = NodeTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&NodeTable>(self)
-    }
-
-    pub fn lending_iter(&'_ self) -> NodeTableRowView<'_> {
-        NodeTableRowView::new(self)
+    /// The value of the iterator is [`crate::Node`].
+    pub fn iter(&self) -> impl Iterator<Item = crate::Node<'_, crate::sys::NodeTable>> {
+        self.table_.iter()
     }
 
     /// Return row `r` of the table.
@@ -621,46 +485,29 @@ impl NodeTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<N: Into<NodeId> + Copy>(&self, r: N) -> Option<NodeTableRow> {
-        let ri = r.into().into();
-        table_row_access!(ri, self, make_node_table_row)
+    pub fn row<N: Into<NodeId> + Copy>(
+        &self,
+        r: N,
+    ) -> Option<crate::Node<'_, crate::sys::NodeTable>> {
+        self.table_.row(r.into())
     }
 
-    /// Return a view of row `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<N: Into<NodeId> + Copy>(&'_ self, r: N) -> Option<NodeTableRowView<'_>> {
-        let view = NodeTableRowView {
-            table: self,
-            id: r.into(),
-            time: self.time(r)?,
-            flags: self.flags(r)?,
-            population: self.population(r)?,
-            individual: self.individual(r)?,
-            metadata: self.table_.raw_metadata(r.into()),
-        };
-        Some(view)
-    }
     /// Obtain a vector containing the indexes ("ids")
     /// of all nodes for which [`crate::NodeFlags::is_sample`]
     /// is `true`.
     pub fn samples_as_vector(&self) -> Vec<NodeId> {
-        self.create_node_id_vector(|row| row.flags.contains(NodeFlags::IS_SAMPLE))
+        self.create_node_id_vector(|row| row.flags().contains(NodeFlags::IS_SAMPLE))
     }
 
     /// Obtain a vector containing the indexes ("ids") of all nodes
     /// satisfying a certain criterion.
-    pub fn create_node_id_vector(&self, mut f: impl FnMut(&NodeTableRow) -> bool) -> Vec<NodeId> {
+    pub fn create_node_id_vector<'t>(
+        &'t self,
+        mut f: impl FnMut(&crate::Node<'t, crate::sys::NodeTable>) -> bool,
+    ) -> Vec<NodeId> {
         self.iter()
             .filter(|row| f(row))
-            .map(|row| row.id)
+            .map(|row| row.id())
             .collect::<Vec<_>>()
     }
 

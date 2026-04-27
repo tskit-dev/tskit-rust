@@ -12,6 +12,21 @@ use super::TskitError;
 #[derive(Debug)]
 pub struct PopulationTable(TskBox<tsk_population_table_t>);
 
+pub struct PopulationTableIter<'table> {
+    table: &'table PopulationTable,
+    current_row: super::newtypes::PopulationId,
+}
+
+impl<'table> Iterator for PopulationTableIter<'table> {
+    type Item = super::Population<'table, PopulationTable>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let c = self.current_row;
+        self.current_row += 1;
+        self.table.row(c)
+    }
+}
+
 impl PopulationTable {
     pub fn new(options: u32) -> Result<Self, TskitError> {
         let tsk = TskBox::new(|e: *mut tsk_population_table_t| unsafe {
@@ -52,6 +67,37 @@ impl PopulationTable {
     }
 
     raw_metadata_getter_for_tables!(super::newtypes::PopulationId);
+
+    pub fn row<'table>(
+        &self,
+        row: super::newtypes::PopulationId,
+    ) -> Option<super::Population<'table, Self>> {
+        let mut population = unsafe {
+            std::mem::MaybeUninit::<super::bindings::tsk_population_t>::zeroed().assume_init()
+        };
+        let rv = unsafe {
+            super::bindings::tsk_population_table_get_row(
+                self.as_ref(),
+                row.into(),
+                &mut population as *mut super::bindings::tsk_population_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Population {
+                row: population,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = super::Population<'_, Self>> {
+        PopulationTableIter {
+            table: self,
+            current_row: 0.into(),
+        }
+    }
 }
 
 impl Default for PopulationTable {

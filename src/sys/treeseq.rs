@@ -9,6 +9,20 @@ use super::TskitError;
 #[repr(transparent)]
 pub struct TreeSequence(TskBox<bindings::tsk_treeseq_t>);
 
+pub struct TreeSeqIndividualIter<'ts> {
+    treeseq: &'ts TreeSequence,
+    current_row: bindings::tsk_id_t,
+}
+
+impl<'ts> Iterator for TreeSeqIndividualIter<'ts> {
+    type Item = super::Individual<'ts, TreeSequence>;
+    fn next(&mut self) -> Option<Self::Item> {
+        let r = self.current_row;
+        self.current_row += 1;
+        self.treeseq.individual(r)
+    }
+}
+
 impl TreeSequence {
     pub fn new(
         tables: super::TableCollection,
@@ -154,5 +168,38 @@ impl TreeSequence {
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
         sites.iter().map(|s| super::new_site_ref(self, s))
+    }
+
+    pub fn individual<'ts>(
+        &'ts self,
+        row: bindings::tsk_id_t,
+    ) -> Option<crate::Individual<'ts, Self>> {
+        let mut individual = unsafe {
+            std::mem::MaybeUninit::<super::bindings::tsk_individual_t>::zeroed().assume_init()
+        };
+        let rv = unsafe {
+            super::bindings::tsk_treeseq_get_individual(
+                self.as_ref(),
+                row,
+                &mut individual as *mut super::bindings::tsk_individual_t,
+            )
+        };
+        if rv == 0 {
+            Some(super::Individual {
+                row: individual,
+                marker: std::marker::PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn individual_iter<'ts>(
+        &'ts self,
+    ) -> impl Iterator<Item = super::types::Individual<'ts, Self>> {
+        TreeSeqIndividualIter {
+            treeseq: self,
+            current_row: 0,
+        }
     }
 }

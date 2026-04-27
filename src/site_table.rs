@@ -6,124 +6,6 @@ use crate::Position;
 use crate::SiteId;
 use crate::SizeType;
 use crate::TskitError;
-use ll_bindings::tsk_id_t;
-
-/// Row of a [`SiteTable`]
-#[derive(Debug)]
-pub struct SiteTableRow {
-    pub id: SiteId,
-    pub position: Position,
-    pub ancestral_state: Option<Vec<u8>>,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for SiteTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && crate::util::partial_cmp_equal(&self.position, &other.position)
-            && self.ancestral_state == other.ancestral_state
-            && self.metadata == other.metadata
-    }
-}
-
-fn make_site_table_row(table: &SiteTable, pos: tsk_id_t) -> Option<SiteTableRow> {
-    let ancestral_state = table.ancestral_state(pos).map(|s| s.to_vec());
-    Some(SiteTableRow {
-        id: pos.into(),
-        position: table.position(pos)?,
-        ancestral_state,
-        metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
-    })
-}
-
-pub(crate) type SiteTableRefIterator<'a> = crate::table_iterator::TableIterator<&'a SiteTable>;
-pub(crate) type SiteTableIterator = crate::table_iterator::TableIterator<SiteTable>;
-
-impl Iterator for SiteTableRefIterator<'_> {
-    type Item = SiteTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_site_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for SiteTableIterator {
-    type Item = SiteTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_site_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-#[derive(Debug)]
-pub struct SiteTableRowView<'a> {
-    table: &'a SiteTable,
-    pub id: SiteId,
-    pub position: Position,
-    pub ancestral_state: Option<&'a [u8]>,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> SiteTableRowView<'a> {
-    fn new(table: &'a SiteTable) -> Self {
-        Self {
-            table,
-            id: SiteId::NULL,
-            position: f64::NAN.into(),
-            ancestral_state: None,
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for SiteTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && crate::util::partial_cmp_equal(&self.position, &other.position)
-            && self.ancestral_state == other.ancestral_state
-            && self.metadata == other.metadata
-    }
-}
-
-impl Eq for SiteTableRowView<'_> {}
-
-impl PartialEq<SiteTableRow> for SiteTableRowView<'_> {
-    fn eq(&self, other: &SiteTableRow) -> bool {
-        self.id == other.id
-            && crate::util::partial_cmp_equal(&self.position, &other.position)
-            && optional_container_comparison!(self.ancestral_state, other.ancestral_state)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl PartialEq<SiteTableRowView<'_>> for SiteTableRow {
-    fn eq(&self, other: &SiteTableRowView) -> bool {
-        self.id == other.id
-            && crate::util::partial_cmp_equal(&self.position, &other.position)
-            && optional_container_comparison!(self.ancestral_state, other.ancestral_state)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl crate::StreamingIterator for SiteTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.position = self
-            .table
-            .position(self.id)
-            .unwrap_or_else(|| f64::NAN.into());
-        self.ancestral_state = self.table.ancestral_state(self.id);
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
 
 /// A site table.
 ///
@@ -245,13 +127,9 @@ impl SiteTable {
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`SiteTableRow`].
-    pub fn iter(&self) -> impl Iterator<Item = SiteTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&SiteTable>(self)
-    }
-
-    pub fn lending_iter(&'_ self) -> SiteTableRowView<'_> {
-        SiteTableRowView::new(self)
+    /// The value of the iterator is [`crate::Site`].
+    pub fn iter(&self) -> impl Iterator<Item = crate::Site<'_, crate::sys::SiteTable>> {
+        self.table_.iter()
     }
 
     /// Return row `r` of the table.
@@ -264,30 +142,11 @@ impl SiteTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<S: Into<SiteId> + Copy>(&self, r: S) -> Option<SiteTableRow> {
-        let ri = r.into().into();
-        table_row_access!(ri, self, make_site_table_row)
-    }
-
-    /// Return a view of row `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<S: Into<SiteId> + Copy>(&'_ self, r: S) -> Option<SiteTableRowView<'_>> {
-        let view = SiteTableRowView {
-            table: self,
-            id: r.into(),
-            position: self.position(r)?,
-            ancestral_state: self.ancestral_state(r),
-            metadata: self.table_.raw_metadata(r.into()),
-        };
-        Some(view)
+    pub fn row<S: Into<SiteId> + Copy>(
+        &self,
+        r: S,
+    ) -> Option<super::Site<'_, crate::sys::SiteTable>> {
+        self.table_.row(r.into())
     }
 
     build_table_column_slice_getter!(

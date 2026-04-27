@@ -5,156 +5,7 @@ use crate::SizeType;
 use crate::Time;
 use crate::TskitError;
 use crate::{MutationId, NodeId, SiteId};
-use ll_bindings::tsk_id_t;
 use sys::bindings as ll_bindings;
-
-/// Row of a [`MutationTable`]
-#[derive(Debug)]
-pub struct MutationTableRow {
-    pub id: MutationId,
-    pub site: SiteId,
-    pub node: NodeId,
-    pub parent: MutationId,
-    pub time: Time,
-    pub derived_state: Option<Vec<u8>>,
-    pub metadata: Option<Vec<u8>>,
-}
-
-impl PartialEq for MutationTableRow {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.site == other.site
-            && self.node == other.node
-            && self.parent == other.parent
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && self.derived_state == other.derived_state
-            && self.metadata == other.metadata
-    }
-}
-
-fn make_mutation_table_row(table: &MutationTable, pos: tsk_id_t) -> Option<MutationTableRow> {
-    let index = ll_bindings::tsk_size_t::try_from(pos).ok()?;
-    match index {
-        i if i < table.num_rows() => {
-            let derived_state = table.derived_state(pos).map(|s| s.to_vec());
-            Some(MutationTableRow {
-                id: pos.into(),
-                site: table.site(pos)?,
-                node: table.node(pos)?,
-                parent: table.parent(pos)?,
-                time: table.time(pos)?,
-                derived_state,
-                metadata: table.table_.raw_metadata(pos).map(|m| m.to_vec()),
-            })
-        }
-        _ => None,
-    }
-}
-
-pub(crate) type MutationTableRefIterator<'a> =
-    crate::table_iterator::TableIterator<&'a MutationTable>;
-pub(crate) type MutationTableIterator = crate::table_iterator::TableIterator<MutationTable>;
-
-impl Iterator for MutationTableRefIterator<'_> {
-    type Item = MutationTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_mutation_table_row(self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-impl Iterator for MutationTableIterator {
-    type Item = MutationTableRow;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let rv = make_mutation_table_row(&self.table, self.pos);
-        self.pos += 1;
-        rv
-    }
-}
-
-#[derive(Debug)]
-pub struct MutationTableRowView<'a> {
-    table: &'a MutationTable,
-    pub id: MutationId,
-    pub site: SiteId,
-    pub node: NodeId,
-    pub parent: MutationId,
-    pub time: Time,
-    pub derived_state: Option<&'a [u8]>,
-    pub metadata: Option<&'a [u8]>,
-}
-
-impl<'a> MutationTableRowView<'a> {
-    fn new(table: &'a MutationTable) -> Self {
-        Self {
-            table,
-            id: MutationId::NULL,
-            site: SiteId::NULL,
-            node: NodeId::NULL,
-            parent: MutationId::NULL,
-            time: f64::NAN.into(),
-            derived_state: None,
-            metadata: None,
-        }
-    }
-}
-
-impl PartialEq for MutationTableRowView<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-            && self.site == other.site
-            && self.node == other.node
-            && self.parent == other.parent
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && self.derived_state == other.derived_state
-            && self.metadata == other.metadata
-    }
-}
-
-impl Eq for MutationTableRowView<'_> {}
-
-impl PartialEq<MutationTableRow> for MutationTableRowView<'_> {
-    fn eq(&self, other: &MutationTableRow) -> bool {
-        self.id == other.id
-            && self.site == other.site
-            && self.node == other.node
-            && self.parent == other.parent
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && optional_container_comparison!(self.derived_state, other.derived_state)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl PartialEq<MutationTableRowView<'_>> for MutationTableRow {
-    fn eq(&self, other: &MutationTableRowView) -> bool {
-        self.id == other.id
-            && self.site == other.site
-            && self.node == other.node
-            && self.parent == other.parent
-            && crate::util::partial_cmp_equal(&self.time, &other.time)
-            && optional_container_comparison!(self.derived_state, other.derived_state)
-            && optional_container_comparison!(self.metadata, other.metadata)
-    }
-}
-
-impl crate::StreamingIterator for MutationTableRowView<'_> {
-    type Item = Self;
-
-    row_lending_iterator_get!();
-
-    fn advance(&mut self) {
-        self.id = (i32::from(self.id) + 1).into();
-        self.site = self.table.site(self.id).unwrap_or(SiteId::NULL);
-        self.node = self.table.node(self.id).unwrap_or(NodeId::NULL);
-        self.parent = self.table.parent(self.id).unwrap_or(MutationId::NULL);
-        self.time = self.table.time(self.id).unwrap_or_else(|| f64::NAN.into());
-        self.derived_state = self.table.derived_state(self.id);
-        self.metadata = self.table.table_.raw_metadata(self.id);
-    }
-}
 
 /// An immutable view of site table.
 ///
@@ -310,13 +161,9 @@ impl MutationTable {
     }
 
     /// Return an iterator over rows of the table.
-    /// The value of the iterator is [`MutationTableRow`].
-    pub fn iter(&self) -> impl Iterator<Item = MutationTableRow> + '_ {
-        crate::table_iterator::make_table_iterator::<&MutationTable>(self)
-    }
-
-    pub fn lending_iter(&'_ self) -> MutationTableRowView<'_> {
-        MutationTableRowView::new(self)
+    /// The value of the iterator is [`crate::Mutation`].
+    pub fn iter(&self) -> impl Iterator<Item = crate::Mutation<'_, crate::sys::MutationTable>> {
+        self.table_.iter()
     }
 
     /// Return row `r` of the table.
@@ -329,36 +176,11 @@ impl MutationTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<M: Into<MutationId> + Copy>(&self, r: M) -> Option<MutationTableRow> {
-        let ri = r.into().into();
-        table_row_access!(ri, self, make_mutation_table_row)
-    }
-
-    /// Return a view of row `r` of the table.
-    ///
-    /// # Parameters
-    ///
-    /// * `r`: the row id.
-    ///
-    /// # Returns
-    ///
-    /// * `Some(row view)` if `r` is valid
-    /// * `None` otherwise
-    pub fn row_view<M: Into<MutationId> + Copy>(
-        &'_ self,
+    pub fn row<M: Into<MutationId> + Copy>(
+        &self,
         r: M,
-    ) -> Option<MutationTableRowView<'_>> {
-        let view = MutationTableRowView {
-            table: self,
-            id: r.into(),
-            site: self.site(r)?,
-            node: self.node(r)?,
-            parent: self.parent(r)?,
-            time: self.time(r)?,
-            derived_state: self.derived_state(r),
-            metadata: self.table_.raw_metadata(r.into()),
-        };
-        Some(view)
+    ) -> Option<crate::Mutation<'_, crate::sys::MutationTable>> {
+        self.table_.row(r.into())
     }
 
     build_table_column_slice_getter!(
