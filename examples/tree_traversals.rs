@@ -3,7 +3,7 @@ use tskit::prelude::*;
 
 // "Manual" traversal from samples to root
 fn traverse_upwards(tree: &tskit::Tree) {
-    for &s in tree.sample_nodes() {
+    for s in tree.samples_iter().unwrap() {
         let mut u = s;
         while u != tskit::NodeId::NULL {
             u = tree.parent(u).unwrap();
@@ -13,7 +13,7 @@ fn traverse_upwards(tree: &tskit::Tree) {
 
 // Iterate from each node up to its root.
 fn traverse_upwards_with_iterator(tree: &tskit::Tree) {
-    for &s in tree.sample_nodes() {
+    for s in tree.samples_iter().unwrap() {
         // _steps_to_root counts the number of steps,
         // including the starting node s.
         let _steps_to_root = tree.parents(s).count();
