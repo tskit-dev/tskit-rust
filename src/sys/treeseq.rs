@@ -6,6 +6,7 @@ use super::bindings;
 use super::TskitError;
 
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct TreeSequence(bindings::tsk_treeseq_t);
 
 impl Drop for TreeSequence {
