@@ -691,17 +691,15 @@ fn test_tree_site_iter() {
     tables.build_index().unwrap();
     let ts = tables.tree_sequence(0).unwrap();
     let mut tree_iter = ts.tree_iterator(0).unwrap();
-    let mut tree_id = 0;
     let mut sites = vec![];
     let mut mutations = vec![];
     while let Some(tree) = tree_iter.next() {
         for s in tree.site_iter() {
-            sites.push((tree_id, s.id()));
+            sites.push((tree.index(), s.id()));
             for m in s.mutations() {
-                mutations.push((tree_id, m.id()));
+                mutations.push((tree.index(), m.id()));
             }
         }
-        tree_id += 1;
     }
     assert_eq!(sites.len(), 2);
     assert_eq!(mutations.len(), 3);

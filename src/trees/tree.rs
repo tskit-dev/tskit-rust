@@ -32,7 +32,7 @@ impl<'treeseq> Tree<'treeseq> {
     ) -> Result<Self, TskitError> {
         let mut tree = Self::new(ts, flags)?;
         assert!(!tree.inner.as_ptr().is_null());
-        assert_eq!(unsafe { (*tree.inner.as_ptr()).index }, -1);
+        assert_eq!(tree.index(), -1);
         // SAFETY: tree is initialized and the pointer is not NULL
         match unsafe { ll_bindings::tsk_tree_seek(tree.inner.as_mut_ptr(), at.into().into(), 0) } {
             code if code < 0 => return Err(TskitError::ErrorCode { code }),
@@ -48,7 +48,7 @@ impl<'treeseq> Tree<'treeseq> {
     ) -> Result<Self, TskitError> {
         let mut tree = Self::new(ts, flags)?;
         assert!(!tree.inner.as_ptr().is_null());
-        assert_eq!(unsafe { (*tree.inner.as_ptr()).index }, -1);
+        assert_eq!(tree.index(), -1);
         // SAFETY: tree is initialized and the pointer is not NULL
         match unsafe { ll_bindings::tsk_tree_seek_index(tree.inner.as_mut_ptr(), at, 0) } {
             code if code < 0 => return Err(TskitError::ErrorCode { code }),
@@ -429,6 +429,11 @@ impl<'treeseq> Tree<'treeseq> {
     /// Iterator over sites in the current tree.
     pub fn site_iter(&self) -> impl Iterator<Item = crate::SiteRef<'_, crate::sys::LLTree<'_>>> {
         self.inner.site_iter()
+    }
+
+    /// Index of the current tree
+    pub fn index(&self) -> i32 {
+        self.inner.index()
     }
 }
 

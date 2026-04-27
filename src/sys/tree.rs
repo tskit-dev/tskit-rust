@@ -286,6 +286,10 @@ impl<'treeseq> LLTree<'treeseq> {
             unsafe { std::slice::from_raw_parts(self.as_ll_ref().sites, num_sites as usize) };
         sites.iter().map(|s| super::new_site_ref(self, s))
     }
+
+    pub fn index(&self) -> i32 {
+        self.as_ll_ref().index
+    }
 }
 
 // Trait defining iteration over nodes.
