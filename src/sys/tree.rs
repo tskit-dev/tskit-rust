@@ -296,6 +296,14 @@ impl<'treeseq> LLTree<'treeseq> {
             unsafe { bindings::tsk_tree_kc_distance(self.as_ptr(), other.as_ptr(), lambda, kcp) };
         handle_tsk_return_value!(code, kc)
     }
+
+    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts, Self>> {
+        let num_sites = self.as_ll_ref().sites_length;
+        assert!(!self.as_ll_ref().sites.is_null());
+        let sites =
+            unsafe { std::slice::from_raw_parts(self.as_ll_ref().sites, num_sites as usize) };
+        sites.iter().map(|s| super::new_site_ref(self, s))
+    }
 }
 
 // Trait defining iteration over nodes.

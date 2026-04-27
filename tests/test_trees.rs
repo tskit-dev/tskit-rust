@@ -670,3 +670,50 @@ fn test_site_mutation_co_iteration_fully_loaded() {
         assert!(m.time() >= ts.nodes().time(m.node()).unwrap());
     }
 }
+
+#[test]
+fn test_tree_site_iter() {
+    let mut tables = make_small_table_collection_two_trees();
+    let s0 = tables.add_site(250., Some("A".as_bytes())).unwrap();
+    let m0 = tables
+        .add_mutation(s0, 2, -1, 0.1, Some("G".as_bytes()))
+        .unwrap();
+    let m1 = tables
+        .add_mutation(s0, 3, -1, 0.1, Some("C".as_bytes()))
+        .unwrap();
+    let s1 = tables.add_site(750., Some("T".as_bytes())).unwrap();
+    let m2 = tables
+        .add_mutation(s1, 1, -1, 1.1, Some("G".as_bytes()))
+        .unwrap();
+    tables.full_sort(0).unwrap();
+    tables.build_index().unwrap();
+    let ts = tables.tree_sequence(0).unwrap();
+    let mut tree_iter = ts.tree_iterator(0).unwrap();
+    let mut tree_id = 0;
+    let mut sites = vec![];
+    let mut mutations = vec![];
+    while let Some(tree) = tree_iter.next() {
+        for s in tree.site_iter() {
+            sites.push((tree_id, s.id()));
+            for m in s.mutations() {
+                mutations.push((tree_id, m.id()));
+            }
+        }
+        tree_id += 1;
+    }
+    assert_eq!(sites.len(), 2);
+    assert_eq!(mutations.len(), 3);
+    assert_eq!(mutations.iter().filter(|(t, _)| t == &0).count(), 2);
+    assert!(mutations
+        .iter()
+        .filter(|(t, _)| t == &0)
+        .any(|(_, m)| m == m0));
+    assert!(mutations
+        .iter()
+        .filter(|(t, _)| t == &0)
+        .any(|(_, m)| m == m1));
+    assert!(mutations
+        .iter()
+        .filter(|(t, _)| t == &1)
+        .any(|(_, m)| m == m2));
+}

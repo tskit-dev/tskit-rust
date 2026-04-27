@@ -452,6 +452,11 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn kc_distance(&self, other: &Self, lambda: f64) -> Result<f64, TskitError> {
         self.inner.kc_distance(&other.inner, lambda)
     }
+
+    /// Iterator over sites in the current tree.
+    pub fn site_iter(&self) -> impl Iterator<Item = crate::SiteRef<'_, crate::sys::LLTree<'_>>> {
+        self.inner.site_iter()
+    }
 }
 
 impl<'ts> crate::StreamingIterator for Tree<'ts> {
