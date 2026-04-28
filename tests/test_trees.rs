@@ -733,3 +733,54 @@ fn test_tree_samples_iter() {
         }
     }
 }
+
+#[test]
+fn test_treeseq_individual_iter() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let i0 = tables.add_individual(0, [1., 2.], None).unwrap();
+    let i1 = tables.add_individual(0, [1., 2.], None).unwrap();
+    let i2 = tables.add_individual(0, [3., 4.], [i0, i1]).unwrap();
+
+    let n0 = tables
+        .add_node(tskit::NodeFlags::default(), 1., -1, i0)
+        .unwrap();
+    let n1 = tables
+        .add_node(tskit::NodeFlags::default(), 1., -1, i0)
+        .unwrap();
+    let n2 = tables
+        .add_node(tskit::NodeFlags::default(), 1., -1, i1)
+        .unwrap();
+    let n3 = tables
+        .add_node(tskit::NodeFlags::default(), 1., -1, i1)
+        .unwrap();
+    let n4 = tables
+        .add_node(tskit::NodeFlags::IS_SAMPLE, 0., -1, i2)
+        .unwrap();
+    let n5 = tables
+        .add_node(tskit::NodeFlags::IS_SAMPLE, 0., -1, i2)
+        .unwrap();
+
+    tables.add_edge(0., 50., n0, n4).unwrap();
+    tables.add_edge(50., 100., n1, n4).unwrap();
+    tables.add_edge(0., 25., n2, n5).unwrap();
+    tables.add_edge(25., 100., n3, n5).unwrap();
+
+    tables.full_sort(0).unwrap();
+    tables.topological_sort_individuals(0).unwrap();
+
+    let ts = tables
+        .tree_sequence(tskit::TreeSequenceFlags::default().build_indexes())
+        .unwrap();
+    for ind in ts.individual_iter() {
+        if let Some(parents) = ind.parents() {
+            for p in [i0, i1] {
+                assert!(parents.contains(&p))
+            }
+            let location = ind.location().unwrap();
+            assert_eq!(location, [3., 4.]);
+        } else {
+            let location = ind.location().unwrap();
+            assert_eq!(location, [1., 2.]);
+        }
+    }
+}
