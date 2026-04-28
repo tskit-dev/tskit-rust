@@ -15,6 +15,9 @@ impl Drop for TreeSequence {
     }
 }
 
+unsafe impl Send for TreeSequence {}
+unsafe impl Sync for TreeSequence {}
+
 pub struct TreeSeqIndividualIter<'ts> {
     treeseq: &'ts TreeSequence,
     current_row: bindings::tsk_id_t,
@@ -220,4 +223,17 @@ impl TreeSequence {
             current_row: 0,
         }
     }
+}
+
+#[test]
+fn test_send_sync() {
+    fn is_send_sync<T: Send + Sync>(_: &T) {}
+
+    let tables = super::TableCollection::new(100.).unwrap();
+    let ts = TreeSequence::new(
+        tables,
+        super::flags::TreeSequenceFlags::default().build_indexes(),
+    )
+    .unwrap();
+    is_send_sync(&ts);
 }
