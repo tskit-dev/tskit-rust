@@ -3,11 +3,17 @@ use std::ffi::CString;
 use super::bindings::tsk_treeseq_init;
 
 use super::bindings;
-use super::tskbox::TskBox;
 use super::TskitError;
 
 #[repr(transparent)]
-pub struct TreeSequence(TskBox<bindings::tsk_treeseq_t>);
+pub struct TreeSequence(bindings::tsk_treeseq_t);
+
+impl Drop for TreeSequence {
+    fn drop(&mut self) {
+        let code = unsafe { bindings::tsk_treeseq_free(&mut self.0) };
+        assert_eq!(code, 0)
+    }
+}
 
 pub struct TreeSeqIndividualIter<'ts> {
     treeseq: &'ts TreeSequence,
@@ -29,18 +35,29 @@ impl TreeSequence {
         flags: super::flags::TreeSequenceFlags,
     ) -> Result<Self, TskitError> {
         let tables = tables.into_raw();
-        let inner = TskBox::new(|t: *mut bindings::tsk_treeseq_t| unsafe {
-            tsk_treeseq_init(t, tables, flags.bits() | bindings::TSK_TAKE_OWNERSHIP)
-        })?;
-        Ok(Self(inner))
+        let mut inner = std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::zeroed();
+        let rv = unsafe {
+            tsk_treeseq_init(
+                inner.as_mut_ptr(),
+                tables,
+                flags.bits() | bindings::TSK_TAKE_OWNERSHIP,
+            )
+        };
+        if rv == 0 {
+            let inner = unsafe { inner.assume_init() };
+            Ok(Self(inner))
+        } else {
+            assert_eq!(unsafe { bindings::tsk_treeseq_free(inner.as_mut_ptr()) }, 0);
+            Err(TskitError::ErrorCode { code: rv })
+        }
     }
 
     pub fn as_ref(&self) -> &bindings::tsk_treeseq_t {
-        self.0.as_ref()
+        &self.0
     }
 
     pub fn as_mut(&mut self) -> &mut bindings::tsk_treeseq_t {
-        self.0.as_mut()
+        &mut self.0
     }
 
     pub fn simplify(
@@ -51,7 +68,8 @@ impl TreeSequence {
     ) -> Result<Self, TskitError> {
         // The output is an UNINITIALIZED treeseq,
         // else we leak memory.
-        let mut ts = unsafe { TskBox::new_uninit() };
+        let mut ts =
+            unsafe { std::mem::MaybeUninit::<bindings::tsk_treeseq_t>::zeroed().assume_init() };
         // SAFETY: samples is not null, idmap is allowed to be.
         // self.as_ptr() is not null
         let rv = unsafe {
@@ -61,7 +79,7 @@ impl TreeSequence {
                 samples.as_ptr().cast::<_>(),
                 samples.len().try_into().unwrap(),
                 options.bits(),
-                ts.as_mut_ptr(),
+                &mut ts,
                 match idmap {
                     Some(s) => s.as_mut_ptr().cast::<_>(),
                     None => std::ptr::null_mut(),
@@ -72,7 +90,7 @@ impl TreeSequence {
             // SAFETY: the ptr is not null
             // and tsk_treeseq_free uses safe methods
             // to clean up.
-            unsafe { bindings::tsk_treeseq_free(ts.as_mut_ptr()) };
+            unsafe { bindings::tsk_treeseq_free(&mut ts) };
             Err(TskitError::ErrorCode { code: rv })
         } else {
             Ok(Self(ts))
