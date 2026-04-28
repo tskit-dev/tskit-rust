@@ -251,6 +251,9 @@ fn test_iterate_samples() {
             }
         }
         assert_eq!(s.len(), 2);
+        assert!(s
+            .iter()
+            .all(|&n| treeseq.nodes().flags(n).unwrap().is_sample()));
         assert_eq!(
             s.len(),
             usize::try_from(tree.num_tracked_samples(0).unwrap()).unwrap()
