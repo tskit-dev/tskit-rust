@@ -1,17 +1,32 @@
-macro_rules! metadata_body {
-    ($self: expr) => {
-        if $self.row.metadata_length > 0 {
-            let metadata_size = usize::try_from($self.row.metadata_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    $self.row.metadata.cast::<u8>(),
-                    metadata_size,
-                ))
-            }
+macro_rules! general_data_body {
+    ($self: expr, $name: ident, $len: ident, $cast: ty) => {
+        if $self.row.$len > 0 {
+            let size = usize::try_from($self.row.$len).unwrap();
+            assert!(!$self.row.$name.is_null());
+            Some(unsafe { std::slice::from_raw_parts($self.row.$name.cast::<$cast>(), size) })
         } else {
             None
         }
     };
+}
+
+macro_rules! metadata_body {
+    ($self: expr) => {
+        general_data_body!($self, metadata, metadata_length, u8)
+    };
+}
+
+#[cfg(feature = "provenance")]
+macro_rules! data_to_str {
+    ($self: expr, $name: ident, $len: ident) => {{
+        assert!($self.row.$len > 0);
+        assert!(!$self.row.$name.is_null());
+        let len = usize::try_from($self.row.$len).unwrap();
+        // SAFETY: not NULL, char and u8 have same sizeof,
+        // and data owned by parent object w/liftetime 'p
+        let bytes = unsafe { std::slice::from_raw_parts($self.row.$name.cast::<u8>(), len) };
+        std::str::from_utf8(bytes).unwrap()
+    }};
 }
 
 /// Reference to a site stored in a tree sequence.
@@ -78,17 +93,7 @@ impl<'parent, P> SiteRef<'parent, P> {
     /// * `None` if the mutation has no ancestral state
     /// * `Some(data)` if ancestral state is present
     pub fn ancestral_state(&self) -> Option<&[u8]> {
-        if self.row.ancestral_state_length > 0 {
-            let ancestral_state_size = usize::try_from(self.row.ancestral_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.row.ancestral_state.cast::<u8>(),
-                    ancestral_state_size,
-                ))
-            }
-        } else {
-            None
-        }
+        general_data_body!(self, ancestral_state, ancestral_state_length, u8)
     }
 
     /// Metadata
@@ -178,17 +183,7 @@ impl<'parent, P> MutationRef<'parent, P> {
     /// * `None` if the mutation has no derived state
     /// * `Some(data)` if derived state is present
     pub fn derived_state(&self) -> Option<&[u8]> {
-        if self.row.derived_state_length > 0 {
-            let derived_state_size = usize::try_from(self.row.derived_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.row.derived_state.cast::<u8>(),
-                    derived_state_size,
-                ))
-            }
-        } else {
-            None
-        }
+        general_data_body!(self, derived_state, derived_state_length, u8)
     }
 
     /// Inherited state
@@ -199,17 +194,7 @@ impl<'parent, P> MutationRef<'parent, P> {
     /// * `Some(data)` if inherited state is present
     // NOTE: not populated by tsk_mutation_table_get_row_unsafe
     pub fn inherited_state(&self) -> Option<&[u8]> {
-        if self.row.inherited_state_length > 0 {
-            let inherited_state_size = usize::try_from(self.row.inherited_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.row.inherited_state.cast::<u8>(),
-                    inherited_state_size,
-                ))
-            }
-        } else {
-            None
-        }
+        general_data_body!(self, inherited_state, inherited_state_length, u8)
     }
 }
 
@@ -253,17 +238,7 @@ impl<'p, P> Site<'p, P> {
     /// * `None` if the mutation has no ancestral state
     /// * `Some(data)` if ancestral state is present
     pub fn ancestral_state(&self) -> Option<&[u8]> {
-        if self.row.ancestral_state_length > 0 {
-            let ancestral_state_size = usize::try_from(self.row.ancestral_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.row.ancestral_state.cast::<u8>(),
-                    ancestral_state_size,
-                ))
-            }
-        } else {
-            None
-        }
+        general_data_body!(self, ancestral_state, ancestral_state_length, u8)
     }
 
     /// Position
@@ -349,17 +324,7 @@ impl<'p, P> Mutation<'p, P> {
     /// * `None` if the mutation has no derived state
     /// * `Some(data)` if derived state is present
     pub fn derived_state(&self) -> Option<&[u8]> {
-        if self.row.derived_state_length > 0 {
-            let derived_state_size = usize::try_from(self.row.derived_state_length).unwrap();
-            unsafe {
-                Some(std::slice::from_raw_parts(
-                    self.row.derived_state.cast::<u8>(),
-                    derived_state_size,
-                ))
-            }
-        } else {
-            None
-        }
+        general_data_body!(self, derived_state, derived_state_length, u8)
     }
 }
 
@@ -539,47 +504,17 @@ impl<'p, P> Individual<'p, P> {
 
     /// Individual location
     pub fn location(&self) -> Option<&[super::newtypes::Location]> {
-        if self.row.location_length > 0 {
-            assert!(!self.row.location.is_null());
-            let len = usize::try_from(self.row.location_length).ok()?;
-            Some(unsafe {
-                std::slice::from_raw_parts(
-                    self.row.location.cast::<super::newtypes::Location>(),
-                    len,
-                )
-            })
-        } else {
-            None
-        }
+        general_data_body!(self, location, location_length, super::newtypes::Location)
     }
 
     /// Individual parents
     pub fn parents(&self) -> Option<&[super::newtypes::IndividualId]> {
-        if self.row.parents_length > 0 {
-            assert!(!self.row.parents.is_null());
-            let len = usize::try_from(self.row.parents_length).ok()?;
-            Some(unsafe {
-                std::slice::from_raw_parts(
-                    self.row.parents.cast::<super::newtypes::IndividualId>(),
-                    len,
-                )
-            })
-        } else {
-            None
-        }
+        general_data_body!(self, parents, parents_length, super::newtypes::IndividualId)
     }
 
     /// Individual nodes
     pub fn nodes(&self) -> Option<&[super::newtypes::NodeId]> {
-        if self.row.nodes_length > 0 {
-            assert!(!self.row.nodes.is_null());
-            let len = usize::try_from(self.row.nodes_length).ok()?;
-            Some(unsafe {
-                std::slice::from_raw_parts(self.row.nodes.cast::<super::newtypes::NodeId>(), len)
-            })
-        } else {
-            None
-        }
+        general_data_body!(self, nodes, nodes_length, super::newtypes::NodeId)
     }
 }
 
@@ -700,23 +635,11 @@ impl<'p, P> Provenance<'p, P> {
 
     /// Provenance time stamp
     pub fn timestamp(&self) -> &str {
-        assert!(self.row.timestamp_length > 0);
-        assert!(!self.row.timestamp.is_null());
-        let len = usize::try_from(self.row.timestamp_length).unwrap();
-        // SAFETY: not NULL, char and u8 have same sizeof,
-        // and data owned by parent object w/liftetime 'p
-        let bytes = unsafe { std::slice::from_raw_parts(self.row.timestamp.cast::<u8>(), len) };
-        std::str::from_utf8(bytes).unwrap()
+        data_to_str!(self, timestamp, timestamp_length)
     }
 
     /// Provenance record
     pub fn record(&self) -> &str {
-        assert!(self.row.record_length > 0);
-        assert!(!self.row.timestamp.is_null());
-        let len = usize::try_from(self.row.record_length).unwrap();
-        // SAFETY: not NULL, char and u8 have same sizeof,
-        // and data owned by parent object w/liftetime 'p
-        let bytes = unsafe { std::slice::from_raw_parts(self.row.record.cast::<u8>(), len) };
-        std::str::from_utf8(bytes).unwrap()
+        data_to_str!(self, record, record_length)
     }
 }
