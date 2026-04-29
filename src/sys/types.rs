@@ -1,9 +1,18 @@
 macro_rules! general_data_body {
+    ($self: expr, $field: ident, $name: ident, $len: ident, $cast: ty) => {
+        if $self.$field.$len > 0 {
+            let size = usize::try_from($self.$field.$len).unwrap();
+            assert!(!$self.$field.$name.is_null());
+            Some(unsafe { std::slice::from_raw_parts($self.$field.$name.cast::<$cast>(), size) })
+        } else {
+            None
+        }
+    };
     ($self: expr, $name: ident, $len: ident, $cast: ty) => {
-        if $self.row.$len > 0 {
-            let size = usize::try_from($self.row.$len).unwrap();
-            assert!(!$self.row.$name.is_null());
-            Some(unsafe { std::slice::from_raw_parts($self.row.$name.cast::<$cast>(), size) })
+        if $self.0.$len > 0 {
+            let size = usize::try_from($self.0.$len).unwrap();
+            assert!(!$self.0.$name.is_null());
+            Some(unsafe { std::slice::from_raw_parts($self.0.$name.cast::<$cast>(), size) })
         } else {
             None
         }
@@ -11,6 +20,9 @@ macro_rules! general_data_body {
 }
 
 macro_rules! metadata_body {
+    ($self: expr, $field: ident) => {
+        general_data_body!($self, $field, metadata, metadata_length, u8)
+    };
     ($self: expr) => {
         general_data_body!($self, metadata, metadata_length, u8)
     };
@@ -31,9 +43,8 @@ macro_rules! data_to_str {
 
 /// Reference to a site stored in a tree sequence.
 #[derive(Debug)]
-pub struct SiteRef<'p> {
-    row: &'p super::bindings::tsk_site_t,
-}
+#[repr(transparent)]
+pub struct SiteRef<'p>(&'p super::bindings::tsk_site_t);
 
 impl<'p> std::cmp::PartialEq for SiteRef<'p> {
     fn eq(&self, other: &Self) -> bool {
@@ -47,19 +58,19 @@ impl<'p> std::cmp::PartialEq for SiteRef<'p> {
 }
 
 pub(super) fn new_site_ref<'p>(site: &'p super::bindings::tsk_site_t) -> SiteRef<'p> {
-    SiteRef { row: site }
+    SiteRef(site)
 }
 
 impl<'parent> SiteRef<'parent> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::SiteId {
-        self.row.id.into()
+        self.0.id.into()
     }
     /// Position
     #[inline(always)]
     pub fn position(&self) -> super::newtypes::Position {
-        self.row.position.into()
+        self.0.position.into()
     }
 
     /// Return iterator over [`MutationRef`] at this site.
@@ -67,11 +78,11 @@ impl<'parent> SiteRef<'parent> {
     // NOTE: not populated by tsk_site_table_get_row,
     // which leaves the pointer NULL!
     pub fn mutations(&self) -> impl Iterator<Item = MutationRef<'parent>> {
-        assert!(!self.row.mutations.is_null());
+        assert!(!self.0.mutations.is_null());
         let mslice = unsafe {
-            std::slice::from_raw_parts(self.row.mutations, self.row.mutations_length as usize)
+            std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
         };
-        mslice.iter().map(|m| MutationRef { row: m })
+        mslice.iter().map(MutationRef)
     }
 
     /// Ancestral state
@@ -97,9 +108,8 @@ impl<'parent> SiteRef<'parent> {
 
 /// Reference to a mutation stored in a tree sequence.
 #[derive(Debug)]
-pub struct MutationRef<'p> {
-    row: &'p super::bindings::tsk_mutation_t,
-}
+#[repr(transparent)]
+pub struct MutationRef<'p>(&'p super::bindings::tsk_mutation_t);
 
 impl<'p> std::cmp::PartialEq for MutationRef<'p> {
     fn eq(&self, other: &Self) -> bool {
@@ -119,30 +129,30 @@ impl<'parent> MutationRef<'parent> {
     /// Mutation id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::MutationId {
-        self.row.id.into()
+        self.0.id.into()
     }
     /// Site id of this mutation
     #[inline(always)]
     pub fn site(&self) -> super::newtypes::SiteId {
-        self.row.site.into()
+        self.0.site.into()
     }
 
     /// Node id of this mutation
     #[inline(always)]
     pub fn node(&self) -> super::newtypes::NodeId {
-        self.row.node.into()
+        self.0.node.into()
     }
 
     /// Parent mutation of this mutation
     #[inline(always)]
     pub fn parent(&self) -> super::newtypes::MutationId {
-        self.row.parent.into()
+        self.0.parent.into()
     }
 
     /// Origin time of mutation
     #[inline(always)]
     pub fn time(&self) -> super::newtypes::Time {
-        self.row.time.into()
+        self.0.time.into()
     }
 
     /// Edge of mutation
@@ -150,7 +160,7 @@ impl<'parent> MutationRef<'parent> {
     // by tsk_mutation_table_get_row_unsafe
     #[inline(always)]
     pub fn edge(&self) -> super::newtypes::EdgeId {
-        self.row.edge.into()
+        self.0.edge.into()
     }
 
     /// Metadata
@@ -215,7 +225,7 @@ impl<'p, P> Site<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 
     /// Ancestral state
@@ -225,7 +235,7 @@ impl<'p, P> Site<'p, P> {
     /// * `None` if the mutation has no ancestral state
     /// * `Some(data)` if ancestral state is present
     pub fn ancestral_state(&self) -> Option<&[u8]> {
-        general_data_body!(self, ancestral_state, ancestral_state_length, u8)
+        general_data_body!(self, row, ancestral_state, ancestral_state_length, u8)
     }
 
     /// Position
@@ -301,7 +311,7 @@ impl<'p, P> Mutation<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 
     /// Derived state
@@ -311,7 +321,7 @@ impl<'p, P> Mutation<'p, P> {
     /// * `None` if the mutation has no derived state
     /// * `Some(data)` if derived state is present
     pub fn derived_state(&self) -> Option<&[u8]> {
-        general_data_body!(self, derived_state, derived_state_length, u8)
+        general_data_body!(self, row, derived_state, derived_state_length, u8)
     }
 }
 
@@ -371,7 +381,7 @@ impl<'p, P> Edge<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 }
 
@@ -444,7 +454,7 @@ impl<'p, P> Migration<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 }
 
@@ -486,22 +496,34 @@ impl<'p, P> Individual<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 
     /// Individual location
     pub fn location(&self) -> Option<&[super::newtypes::Location]> {
-        general_data_body!(self, location, location_length, super::newtypes::Location)
+        general_data_body!(
+            self,
+            row,
+            location,
+            location_length,
+            super::newtypes::Location
+        )
     }
 
     /// Individual parents
     pub fn parents(&self) -> Option<&[super::newtypes::IndividualId]> {
-        general_data_body!(self, parents, parents_length, super::newtypes::IndividualId)
+        general_data_body!(
+            self,
+            row,
+            parents,
+            parents_length,
+            super::newtypes::IndividualId
+        )
     }
 
     /// Individual nodes
     pub fn nodes(&self) -> Option<&[super::newtypes::NodeId]> {
-        general_data_body!(self, nodes, nodes_length, super::newtypes::NodeId)
+        general_data_body!(self, row, nodes, nodes_length, super::newtypes::NodeId)
     }
 }
 
@@ -561,7 +583,7 @@ impl<'p, P> Node<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 }
 
@@ -592,7 +614,7 @@ impl<'p, P> Population<'p, P> {
     /// * `None` if the object has no metadata
     /// * `Some(data)` if metadata are present
     pub fn metadata(&self) -> Option<&[u8]> {
-        metadata_body!(self)
+        metadata_body!(self, row)
     }
 }
 
@@ -698,9 +720,7 @@ mod test_row_type_wrappers {
         }
 
         fn mutation_ref(&self) -> super::MutationRef<'_> {
-            super::MutationRef {
-                row: &self.mutation,
-            }
+            super::MutationRef(&self.mutation)
         }
     }
 
