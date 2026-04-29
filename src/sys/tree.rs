@@ -64,13 +64,6 @@ impl<'treeseq> LLTree<'treeseq> {
         })
     }
 
-    pub fn num_samples(&self) -> tsk_size_t {
-        assert!(self.as_ll_ref().tree_sequence.is_null());
-        // SAFETY: tree_sequence is not NULL
-        // the tree_sequence is also initialized (unless unsafe code was used previously?)
-        unsafe { crate::sys::bindings::tsk_treeseq_get_num_samples(self.as_ll_ref().tree_sequence) }
-    }
-
     /// Return the virtual root of the tree.
     pub fn virtual_root(&self) -> NodeId {
         self.as_ll_ref().virtual_root.into()
