@@ -272,12 +272,12 @@ impl<'treeseq> LLTree<'treeseq> {
         handle_tsk_return_value!(code, kc)
     }
 
-    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts, Self>> {
+    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts>> {
         let num_sites = self.as_ll_ref().sites_length;
         assert!(!self.as_ll_ref().sites.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ll_ref().sites, num_sites as usize) };
-        sites.iter().map(|s| super::new_site_ref(self, s))
+        sites.iter().map(|s| super::new_site_ref(s))
     }
 
     pub fn index(&self) -> i32 {
