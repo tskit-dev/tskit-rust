@@ -538,7 +538,7 @@ fn test_iterate_mutations_at_site() {
     let muts_at_site = ts
         .site(s0)
         .unwrap()
-        .mutations()
+        .mutation_iter()
         .map(|m| m.id())
         .collect::<Vec<_>>();
     assert_eq!(muts_at_site.len(), 2);
@@ -576,7 +576,7 @@ fn test_site_mutation_co_iteration() {
             let id = site.id();
             // ...because we consume site here, making
             // site.id() inaccesible via the closure
-            site.mutations().map(move |m| (id, m.id()))
+            site.mutation_iter().map(move |m| (id, m.id()))
         })
         .collect::<Vec<_>>();
     assert_eq!(contents.len(), 3, "{contents:?}");
@@ -591,7 +591,7 @@ fn test_site_mutation_co_iteration() {
             let id = site.id();
             // ...because we consume site here, making
             // site.id() inaccesible via the closure
-            site.mutations().map(move |m| (id, m.id()))
+            site.mutation_iter().map(move |m| (id, m.id()))
         })
         .collect::<Vec<_>>();
     assert_eq!(contents.len(), 1, "{contents:?}");
@@ -604,7 +604,7 @@ fn test_site_mutation_co_iteration() {
         assert!(site.metadata().is_none());
     }
 
-    for m in ts.site_iter().flat_map(|site| site.mutations()) {
+    for m in ts.site_iter().flat_map(|site| site.mutation_iter()) {
         assert!(m.metadata().is_none());
         assert!(m.inherited_state().is_none());
         assert!(!m.edge().is_null());
@@ -682,7 +682,7 @@ fn test_site_mutation_co_iteration_fully_loaded() {
         assert!(site.metadata().is_some());
     }
 
-    for m in ts.site_iter().flat_map(move |site| site.mutations()) {
+    for m in ts.site_iter().flat_map(move |site| site.mutation_iter()) {
         assert!(m.metadata().is_some());
         assert!(m.inherited_state().is_some());
         assert_eq!(m.edge(), e);
@@ -714,7 +714,7 @@ fn test_tree_site_iter() {
     while let Some(tree) = tree_iter.next() {
         for s in tree.site_iter() {
             sites.push((tree.index(), s.id()));
-            for m in s.mutations() {
+            for m in s.mutation_iter() {
                 mutations.push((tree.index(), m.id()));
             }
         }
