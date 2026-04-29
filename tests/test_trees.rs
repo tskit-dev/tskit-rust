@@ -583,6 +583,21 @@ fn test_site_mutation_co_iteration() {
     for t in [(s0, m0), (s0, m1), (s1, m2)] {
         assert!(contents.contains(&t), "{contents:?} does not contain {t:?}")
     }
+    let contents = ts
+        .site_iter()
+        .skip(1)
+        .flat_map(|site| {
+            // we take id() here...
+            let id = site.id();
+            // ...because we consume site here, making
+            // site.id() inaccesible via the closure
+            site.mutations().map(move |m| (id, m.id()))
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(contents.len(), 1, "{contents:?}");
+    for t in [(s1, m2)] {
+        assert!(contents.contains(&t), "{contents:?} does not contain {t:?}")
+    }
 
     for site in ts.site_iter() {
         assert!(site.ancestral_state().is_none());
