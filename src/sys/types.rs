@@ -61,6 +61,25 @@ pub(super) fn new_site_ref<'p>(site: &'p super::bindings::tsk_site_t) -> SiteRef
     SiteRef(site)
 }
 
+pub struct MutationRefIterator<'ts> {
+    mutations: &'ts [super::bindings::tsk_mutation_t],
+    current: usize,
+}
+
+impl<'ts> Iterator for MutationRefIterator<'ts> {
+    type Item = super::MutationRef<'ts>;
+    fn next(&mut self) -> Option<Self::Item> {
+        let n = self.mutations.get(self.current).map(MutationRef);
+        self.current += 1;
+        n
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.current = n;
+        self.mutations.get(self.current).map(MutationRef)
+    }
+}
+
 impl<'parent> SiteRef<'parent> {
     /// Row id
     #[inline(always)]
@@ -82,7 +101,10 @@ impl<'parent> SiteRef<'parent> {
         let mslice = unsafe {
             std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
         };
-        mslice.iter().map(MutationRef)
+        MutationRefIterator {
+            mutations: mslice,
+            current: 0,
+        }
     }
 
     /// Ancestral state
