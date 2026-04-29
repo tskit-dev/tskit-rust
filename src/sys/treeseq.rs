@@ -172,24 +172,22 @@ impl TreeSequence {
         }
     }
 
-    pub fn site<'ts>(&'ts self, site: bindings::tsk_id_t) -> Option<crate::SiteRef<'ts, Self>> {
+    pub fn site<'ts>(&'ts self, site: bindings::tsk_id_t) -> Option<crate::SiteRef<'ts>> {
         let num_sites = unsafe { (*(self.as_ref()).tables).sites.num_rows };
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        sites
-            .get(site as usize)
-            .map(|s| super::new_site_ref(self, s))
+        sites.get(site as usize).map(|s| super::new_site_ref(s))
     }
 
-    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts, Self>> {
+    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts>> {
         assert!(!self.as_ref().tables.is_null());
         // SAFETY: none of the pointers are null
         let num_sites = unsafe { (*(self.as_ref()).tables).sites.num_rows };
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        sites.iter().map(|s| super::new_site_ref(self, s))
+        sites.iter().map(|s| super::new_site_ref(s))
     }
 
     pub fn individual<'ts>(

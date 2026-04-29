@@ -31,12 +31,11 @@ macro_rules! data_to_str {
 
 /// Reference to a site stored in a tree sequence.
 #[derive(Debug)]
-pub struct SiteRef<'p, P> {
+pub struct SiteRef<'p> {
     row: &'p super::bindings::tsk_site_t,
-    marker: std::marker::PhantomData<&'p P>,
 }
 
-impl<'p, P> std::cmp::PartialEq for SiteRef<'p, P> {
+impl<'p> std::cmp::PartialEq for SiteRef<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.position().eq(&other.position())
@@ -47,17 +46,11 @@ impl<'p, P> std::cmp::PartialEq for SiteRef<'p, P> {
     }
 }
 
-pub(super) fn new_site_ref<'p, P>(
-    _parent: &'p P,
-    site: &'p super::bindings::tsk_site_t,
-) -> SiteRef<'p, P> {
-    SiteRef {
-        row: site,
-        marker: std::marker::PhantomData,
-    }
+pub(super) fn new_site_ref<'p>(site: &'p super::bindings::tsk_site_t) -> SiteRef<'p> {
+    SiteRef { row: site }
 }
 
-impl<'parent, P> SiteRef<'parent, P> {
+impl<'parent> SiteRef<'parent> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::SiteId {
@@ -73,17 +66,12 @@ impl<'parent, P> SiteRef<'parent, P> {
     /// Iteration order is identical to internal storage order.
     // NOTE: not populated by tsk_site_table_get_row,
     // which leaves the pointer NULL!
-    pub fn mutations(
-        &self,
-    ) -> impl Iterator<Item = MutationRef<'parent, super::bindings::tsk_mutation_t>> {
+    pub fn mutations(&self) -> impl Iterator<Item = MutationRef<'parent>> {
         assert!(!self.row.mutations.is_null());
         let mslice = unsafe {
             std::slice::from_raw_parts(self.row.mutations, self.row.mutations_length as usize)
         };
-        mslice.iter().map(|m| MutationRef {
-            row: m,
-            marker: std::marker::PhantomData,
-        })
+        mslice.iter().map(|m| MutationRef { row: m })
     }
 
     /// Ancestral state
@@ -109,12 +97,11 @@ impl<'parent, P> SiteRef<'parent, P> {
 
 /// Reference to a mutation stored in a tree sequence.
 #[derive(Debug)]
-pub struct MutationRef<'p, P> {
+pub struct MutationRef<'p> {
     row: &'p super::bindings::tsk_mutation_t,
-    marker: std::marker::PhantomData<&'p P>,
 }
 
-impl<'p, P> std::cmp::PartialEq for MutationRef<'p, P> {
+impl<'p> std::cmp::PartialEq for MutationRef<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.site().eq(&other.site())
@@ -128,7 +115,7 @@ impl<'p, P> std::cmp::PartialEq for MutationRef<'p, P> {
     }
 }
 
-impl<'parent, P> MutationRef<'parent, P> {
+impl<'parent> MutationRef<'parent> {
     /// Mutation id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::MutationId {
@@ -710,10 +697,9 @@ mod test_row_type_wrappers {
             }
         }
 
-        fn mutation_ref(&self) -> super::MutationRef<'_, Self> {
+        fn mutation_ref(&self) -> super::MutationRef<'_> {
             super::MutationRef {
                 row: &self.mutation,
-                marker: std::marker::PhantomData,
             }
         }
     }

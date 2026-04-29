@@ -636,10 +636,7 @@ impl TreeSequence {
     /// # Complexity
     ///
     /// `O(1)`
-    pub fn site<'ts, S: Into<SiteId>>(
-        &'ts self,
-        site: S,
-    ) -> Option<crate::SiteRef<'ts, crate::sys::TreeSequence>> {
+    pub fn site<'ts, S: Into<SiteId>>(&'ts self, site: S) -> Option<crate::SiteRef<'ts>> {
         self.inner.site(site.into().into())
     }
 
@@ -687,7 +684,7 @@ impl TreeSequence {
     /// ```
     pub fn site_iter<'ts>(
         &'ts self,
-    ) -> impl Iterator<Item = crate::SiteRef<'ts, crate::sys::TreeSequence>> {
+    ) -> impl Iterator<Item = crate::SiteRef<'ts>> {
         self.inner.site_iter()
     }
 
