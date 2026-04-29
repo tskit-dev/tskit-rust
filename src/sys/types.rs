@@ -53,7 +53,7 @@ impl<'p> std::cmp::PartialEq for SiteRef<'p> {
             && self.ancestral_state().eq(&other.ancestral_state())
             && self.metadata().eq(&other.metadata())
             // NOTE: the .eq() below is Iterator::eq
-            && self.mutations().eq(other.mutations())
+            && self.mutation_iter().eq(other.mutation_iter())
     }
 }
 
@@ -96,7 +96,7 @@ impl<'parent> SiteRef<'parent> {
     /// Iteration order is identical to internal storage order.
     // NOTE: not populated by tsk_site_table_get_row,
     // which leaves the pointer NULL!
-    pub fn mutations(&self) -> impl Iterator<Item = MutationRef<'parent>> {
+    pub fn mutation_iter(&self) -> impl Iterator<Item = MutationRef<'parent>> {
         assert!(!self.0.mutations.is_null());
         let mslice = unsafe {
             std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
