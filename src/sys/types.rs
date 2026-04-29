@@ -794,3 +794,19 @@ mod test_row_type_wrappers {
         assert_eq!(mutation_ref.inherited_state(), Some("C".as_bytes()));
     }
 }
+
+#[test]
+fn test_transmute() {
+    let mut mutation =
+        unsafe { std::mem::MaybeUninit::<super::bindings::tsk_mutation_t>::zeroed().assume_init() };
+    mutation.site = 11;
+    mutation.edge = -1;
+    let mref = unsafe {
+        std::mem::transmute::<super::bindings::tsk_mutation_t, Mutation<'_, super::SiteTable>>(
+            mutation,
+        )
+    };
+    assert_eq!(mref.id(), 0);
+    assert_eq!(mref.site(), 11);
+    assert_eq!(mref.edge(), -1);
+}
