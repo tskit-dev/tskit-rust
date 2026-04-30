@@ -547,49 +547,39 @@ impl TreeSequence {
     }
 
     /// Return an iterator over the individuals.
-    pub fn individual_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Individual<'_, crate::sys::TreeSequence>> {
+    pub fn individual_iter(&self) -> impl Iterator<Item = crate::Individual<'_>> {
         self.inner.individual_iter()
     }
 
     /// Return an iterator over the nodes.
-    pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_, crate::sys::NodeTable>> {
+    pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_>> {
         self.nodes().iter()
     }
 
     /// Return an iterator over the edges.
-    pub fn edge_iter(&self) -> impl Iterator<Item = crate::Edge<'_, crate::sys::EdgeTable>> {
+    pub fn edge_iter(&self) -> impl Iterator<Item = crate::Edge<'_>> {
         self.edges().iter()
     }
 
     /// Return an iterator over the migrations.
-    pub fn migration_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Migration<'_, crate::sys::MigrationTable>> {
+    pub fn migration_iter(&self) -> impl Iterator<Item = crate::Migration<'_>> {
         self.migrations().iter()
     }
 
     /// Return an iterator over the mutations.
-    pub fn mutation_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Mutation<'_, crate::sys::MutationTable>> {
+    pub fn mutation_iter(&self) -> impl Iterator<Item = crate::Mutation<'_>> {
         self.mutations().iter()
     }
 
     /// Return an iterator over the populations.
-    pub fn population_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Population<'_, crate::sys::PopulationTable>> {
+    pub fn population_iter(&self) -> impl Iterator<Item = crate::Population<'_>> {
         self.populations().iter()
     }
 
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Return an iterator over provenances
-    pub fn provenances_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Provenance<'_, crate::sys::ProvenanceTable>> + '_ {
+    pub fn provenances_iter(&self) -> impl Iterator<Item = crate::Provenance<'_>> + '_ {
         self.provenances().iter()
     }
 
@@ -621,7 +611,7 @@ impl TreeSequence {
     /// See [`crate::TableCollection::create_node_id_vector`].
     pub fn create_node_id_vector<'ts>(
         &'ts self,
-        f: impl FnMut(&crate::Node<'ts, crate::sys::NodeTable>) -> bool,
+        f: impl FnMut(&crate::Node<'ts>) -> bool,
     ) -> Vec<crate::NodeId> {
         self.tables.create_node_id_vector(f)
     }
@@ -667,10 +657,10 @@ impl TreeSequence {
     /// # let ts = tables.tree_sequence(0).unwrap();
     /// // Extract all MutationRef from the
     /// // tree sequence and store in a vector
-    /// let contents = ts
+    /// let contents: Vec<tskit::MutationRef<'_>> = ts
     ///     .site_iter()
     ///     .flat_map(|site| {
-    ///         site.mutations()
+    ///         site.mutation_iter()
     ///     })
     ///     .collect::<Vec<_>>();
     /// for _ in contents.iter() {

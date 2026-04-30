@@ -295,7 +295,7 @@ match tables.individuals().metadata::<MutationMetadata>(0)
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Individual`].
     ///
-    pub fn iter(&self) -> impl Iterator<Item = crate::Individual<'_, crate::sys::IndividualTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Individual<'_>> {
         self.table_.iter()
     }
 
@@ -309,10 +309,7 @@ match tables.individuals().metadata::<MutationMetadata>(0)
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<I: Into<IndividualId> + Copy>(
-        &self,
-        r: I,
-    ) -> Option<crate::Individual<'_, crate::sys::IndividualTable>> {
+    pub fn row<I: Into<IndividualId> + Copy>(&self, r: I) -> Option<crate::Individual<'_>> {
         self.table_.row(r.into())
     }
 

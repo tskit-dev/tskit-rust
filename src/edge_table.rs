@@ -155,7 +155,7 @@ impl EdgeTable {
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Edge`].
     ///
-    pub fn iter(&self) -> impl Iterator<Item = crate::Edge<'_, crate::sys::EdgeTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Edge<'_>> {
         self.table_.iter()
     }
 
@@ -169,10 +169,7 @@ impl EdgeTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<E: Into<EdgeId> + Copy>(
-        &self,
-        r: E,
-    ) -> Option<crate::Edge<'_, crate::sys::EdgeTable>> {
+    pub fn row<E: Into<EdgeId> + Copy>(&self, r: E) -> Option<crate::Edge<'_>> {
         self.table_.row(r.into())
     }
 

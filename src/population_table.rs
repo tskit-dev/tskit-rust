@@ -106,7 +106,7 @@ impl PopulationTable {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Population`].
-    pub fn iter(&self) -> impl Iterator<Item = crate::Population<'_, crate::sys::PopulationTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Population<'_>> {
         self.table_.iter()
     }
 
@@ -119,10 +119,7 @@ impl PopulationTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<P: Into<PopulationId> + Copy>(
-        &self,
-        r: P,
-    ) -> Option<crate::Population<'_, crate::sys::PopulationTable>> {
+    pub fn row<P: Into<PopulationId> + Copy>(&self, r: P) -> Option<crate::Population<'_>> {
         self.table_.row(r.into())
     }
 

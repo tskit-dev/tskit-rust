@@ -1482,54 +1482,55 @@ impl TableCollection {
     }
 
     /// Return an iterator over the edges.
-    pub fn edge_iter(&self) -> impl Iterator<Item = crate::Edge<'_, crate::sys::EdgeTable>> {
+    pub fn edge_iter(&self) -> impl Iterator<Item = crate::Edge<'_>> {
         self.edges.iter()
     }
 
     /// Return an iterator over the nodes.
-    pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_, crate::sys::NodeTable>> {
+    ///
+    /// # Examples
+    ///
+    /// ## Failing examples
+    ///
+    /// ```compile_fail
+    /// let tables = tskit::TableCollection::new(100.).unwrap();
+    /// let nodes: Vec<tskit::Node<'_>> = tables.node_iter().collect::<Vec<_>>();
+    /// drop(tables);
+    /// for _ in nodes.iter() {} // Parent lifetime has ended
+    /// ```
+    pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_>> {
         self.nodes.iter()
     }
 
     /// Return an iterator over the sites.
-    pub fn site_iter(&self) -> impl Iterator<Item = crate::Site<'_, crate::sys::SiteTable>> {
+    pub fn site_iter(&self) -> impl Iterator<Item = crate::Site<'_>> {
         self.sites.iter()
     }
 
     /// Return an iterator over the mutations.
-    pub fn mutation_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Mutation<'_, crate::sys::MutationTable>> {
+    pub fn mutation_iter(&self) -> impl Iterator<Item = crate::Mutation<'_>> {
         self.mutations.iter()
     }
 
     /// Return an iterator over the individuals.
-    pub fn individual_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Individual<'_, crate::sys::IndividualTable>> {
+    pub fn individual_iter(&self) -> impl Iterator<Item = crate::Individual<'_>> {
         self.individuals.iter()
     }
 
     /// Return an iterator over the populations.
-    pub fn population_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Population<'_, crate::sys::PopulationTable>> {
+    pub fn population_iter(&self) -> impl Iterator<Item = crate::Population<'_>> {
         self.populations.iter()
     }
 
     /// Return an iterator over the migrations.
-    pub fn migration_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Migration<'_, crate::sys::MigrationTable>> {
+    pub fn migration_iter(&self) -> impl Iterator<Item = crate::Migration<'_>> {
         self.migrations.iter()
     }
 
     #[cfg(feature = "provenance")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "provenance")))]
     /// Return an iterator over provenances
-    pub fn provenance_iter(
-        &self,
-    ) -> impl Iterator<Item = crate::Provenance<'_, crate::sys::ProvenanceTable>> {
+    pub fn provenance_iter(&self) -> impl Iterator<Item = crate::Provenance<'_>> {
         self.provenances.iter()
     }
 
@@ -1577,7 +1578,7 @@ impl TableCollection {
     /// ```
     pub fn create_node_id_vector<'t>(
         &'t self,
-        f: impl FnMut(&crate::Node<'t, crate::sys::NodeTable>) -> bool,
+        f: impl FnMut(&crate::Node<'t>) -> bool,
     ) -> Vec<crate::NodeId> {
         self.nodes().create_node_id_vector(f)
     }

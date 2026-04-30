@@ -471,7 +471,7 @@ impl NodeTable {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Node`].
-    pub fn iter(&self) -> impl Iterator<Item = crate::Node<'_, crate::sys::NodeTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Node<'_>> {
         self.table_.iter()
     }
 
@@ -485,10 +485,7 @@ impl NodeTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<N: Into<NodeId> + Copy>(
-        &self,
-        r: N,
-    ) -> Option<crate::Node<'_, crate::sys::NodeTable>> {
+    pub fn row<N: Into<NodeId> + Copy>(&self, r: N) -> Option<crate::Node<'_>> {
         self.table_.row(r.into())
     }
 
@@ -503,7 +500,7 @@ impl NodeTable {
     /// satisfying a certain criterion.
     pub fn create_node_id_vector<'t>(
         &'t self,
-        mut f: impl FnMut(&crate::Node<'t, crate::sys::NodeTable>) -> bool,
+        mut f: impl FnMut(&crate::Node<'t>) -> bool,
     ) -> Vec<NodeId> {
         self.iter()
             .filter(|row| f(row))

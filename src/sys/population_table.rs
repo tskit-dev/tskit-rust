@@ -18,7 +18,7 @@ pub struct PopulationTableIter<'table> {
 }
 
 impl<'table> Iterator for PopulationTableIter<'table> {
-    type Item = super::Population<'table, PopulationTable>;
+    type Item = super::Population<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -71,7 +71,7 @@ impl PopulationTable {
     pub fn row<'table>(
         &self,
         row: super::newtypes::PopulationId,
-    ) -> Option<super::Population<'table, Self>> {
+    ) -> Option<super::Population<'table>> {
         let mut population = unsafe {
             std::mem::MaybeUninit::<super::bindings::tsk_population_t>::zeroed().assume_init()
         };
@@ -92,7 +92,7 @@ impl PopulationTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Population<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Population<'_>> {
         PopulationTableIter {
             table: self,
             current_row: 0.into(),

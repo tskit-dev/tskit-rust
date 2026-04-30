@@ -22,7 +22,7 @@ pub struct SiteTableIter<'table> {
 }
 
 impl<'table> Iterator for SiteTableIter<'table> {
-    type Item = super::Site<'table, SiteTable>;
+    type Item = super::Site<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -119,7 +119,7 @@ impl SiteTable {
         )
     }
 
-    pub fn row<'table>(&self, row: SiteId) -> Option<super::Site<'table, Self>> {
+    pub fn row<'table>(&self, row: SiteId) -> Option<super::Site<'table>> {
         let mut site =
             unsafe { std::mem::MaybeUninit::<super::bindings::tsk_site_t>::zeroed().assume_init() };
         let rv = unsafe {
@@ -139,7 +139,7 @@ impl SiteTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Site<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Site<'_>> {
         SiteTableIter {
             table: self,
             current_row: 0.into(),

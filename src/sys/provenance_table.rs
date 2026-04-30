@@ -21,7 +21,7 @@ pub struct ProvenanceTableIter<'table> {
 }
 
 impl<'table> Iterator for ProvenanceTableIter<'table> {
-    type Item = super::Provenance<'table, ProvenanceTable>;
+    type Item = super::Provenance<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -131,7 +131,7 @@ impl ProvenanceTable {
         }
     }
 
-    pub fn row<'table>(&self, row: ProvenanceId) -> Option<super::Provenance<'table, Self>> {
+    pub fn row<'table>(&self, row: ProvenanceId) -> Option<super::Provenance<'table>> {
         let mut provenance = unsafe {
             std::mem::MaybeUninit::<super::bindings::tsk_provenance_t>::zeroed().assume_init()
         };
@@ -152,7 +152,7 @@ impl ProvenanceTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Provenance<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Provenance<'_>> {
         ProvenanceTableIter {
             table: self,
             current_row: 0.into(),

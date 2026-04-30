@@ -25,7 +25,7 @@ pub struct TreeSeqIndividualIter<'ts> {
 }
 
 impl<'ts> Iterator for TreeSeqIndividualIter<'ts> {
-    type Item = super::Individual<'ts, TreeSequence>;
+    type Item = super::Individual<'ts>;
     fn next(&mut self) -> Option<Self::Item> {
         let r = self.current_row;
         self.current_row += 1;
@@ -190,10 +190,7 @@ impl TreeSequence {
         super::iter::SiteRefIterator { sites, current: 0 }
     }
 
-    pub fn individual<'ts>(
-        &'ts self,
-        row: bindings::tsk_id_t,
-    ) -> Option<crate::Individual<'ts, Self>> {
+    pub fn individual<'ts>(&'ts self, row: bindings::tsk_id_t) -> Option<crate::Individual<'ts>> {
         let mut individual = unsafe {
             std::mem::MaybeUninit::<super::bindings::tsk_individual_t>::zeroed().assume_init()
         };
@@ -214,9 +211,7 @@ impl TreeSequence {
         }
     }
 
-    pub fn individual_iter<'ts>(
-        &'ts self,
-    ) -> impl Iterator<Item = super::types::Individual<'ts, Self>> {
+    pub fn individual_iter<'ts>(&'ts self) -> impl Iterator<Item = super::types::Individual<'ts>> {
         TreeSeqIndividualIter {
             treeseq: self,
             current_row: 0,

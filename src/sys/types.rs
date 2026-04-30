@@ -219,12 +219,12 @@ impl<'parent> MutationRef<'parent> {
 
 /// A lifetime-bound site.
 #[derive(Debug)]
-pub struct Site<'p, P> {
+pub struct Site<'p> {
     pub(super) row: super::bindings::tsk_site_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Site<'p, P> {
+impl<'p> std::cmp::PartialEq for Site<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.position().eq(&other.position())
@@ -233,7 +233,7 @@ impl<'p, P> std::cmp::PartialEq for Site<'p, P> {
     }
 }
 
-impl<'p, P> Site<'p, P> {
+impl<'p> Site<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::SiteId {
@@ -269,12 +269,12 @@ impl<'p, P> Site<'p, P> {
 
 /// A lifetime-bound Mutation.
 #[derive(Debug)]
-pub struct Mutation<'p, P> {
+pub struct Mutation<'p> {
     pub(super) row: super::bindings::tsk_mutation_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Mutation<'p, P> {
+impl<'p> std::cmp::PartialEq for Mutation<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.site().eq(&other.site())
@@ -287,7 +287,7 @@ impl<'p, P> std::cmp::PartialEq for Mutation<'p, P> {
     }
 }
 
-impl<'p, P> Mutation<'p, P> {
+impl<'p> Mutation<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::MutationId {
@@ -349,12 +349,12 @@ impl<'p, P> Mutation<'p, P> {
 
 /// A lifetime-bound Edge.
 #[derive(Debug)]
-pub struct Edge<'p, P> {
+pub struct Edge<'p> {
     pub(super) row: super::bindings::tsk_edge_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Edge<'p, P> {
+impl<'p> std::cmp::PartialEq for Edge<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.parent().eq(&other.parent())
@@ -365,7 +365,7 @@ impl<'p, P> std::cmp::PartialEq for Edge<'p, P> {
     }
 }
 
-impl<'p, P> Edge<'p, P> {
+impl<'p> Edge<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::EdgeId {
@@ -409,12 +409,12 @@ impl<'p, P> Edge<'p, P> {
 
 /// A lifetime-bound Migration.
 #[derive(Debug)]
-pub struct Migration<'p, P> {
+pub struct Migration<'p> {
     pub(super) row: super::bindings::tsk_migration_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Migration<'p, P> {
+impl<'p> std::cmp::PartialEq for Migration<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.source().eq(&other.source())
@@ -426,7 +426,7 @@ impl<'p, P> std::cmp::PartialEq for Migration<'p, P> {
     }
 }
 
-impl<'p, P> Migration<'p, P> {
+impl<'p> Migration<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::MigrationId {
@@ -482,12 +482,12 @@ impl<'p, P> Migration<'p, P> {
 
 /// A lifetime-bound Individual.
 #[derive(Debug)]
-pub struct Individual<'p, P> {
+pub struct Individual<'p> {
     pub(super) row: super::bindings::tsk_individual_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Individual<'p, P> {
+impl<'p> std::cmp::PartialEq for Individual<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.flags().eq(&other.flags())
@@ -498,7 +498,7 @@ impl<'p, P> std::cmp::PartialEq for Individual<'p, P> {
     }
 }
 
-impl<'p, P> Individual<'p, P> {
+impl<'p> Individual<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::IndividualId {
@@ -551,12 +551,12 @@ impl<'p, P> Individual<'p, P> {
 
 /// A lifetime-bound Node.
 #[derive(Debug)]
-pub struct Node<'p, P> {
+pub struct Node<'p> {
     pub(super) row: super::bindings::tsk_node_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Node<'p, P> {
+impl<'p> std::cmp::PartialEq for Node<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.flags().eq(&other.flags())
@@ -567,7 +567,7 @@ impl<'p, P> std::cmp::PartialEq for Node<'p, P> {
     }
 }
 
-impl<'p, P> Node<'p, P> {
+impl<'p> Node<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::NodeId {
@@ -611,18 +611,18 @@ impl<'p, P> Node<'p, P> {
 
 /// A lifetime-bound Population.
 #[derive(Debug)]
-pub struct Population<'p, P> {
+pub struct Population<'p> {
     pub(super) row: super::bindings::tsk_population_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
-impl<'p, P> std::cmp::PartialEq for Population<'p, P> {
+impl<'p> std::cmp::PartialEq for Population<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id()) && self.metadata().eq(&other.metadata())
     }
 }
 
-impl<'p, P> Population<'p, P> {
+impl<'p> Population<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::PopulationId {
@@ -642,13 +642,13 @@ impl<'p, P> Population<'p, P> {
 
 #[derive(Debug)]
 #[cfg(feature = "provenance")]
-pub struct Provenance<'p, P> {
+pub struct Provenance<'p> {
     pub(super) row: super::bindings::tsk_provenance_t,
-    pub(super) marker: std::marker::PhantomData<&'p P>,
+    pub(super) marker: std::marker::PhantomData<&'p ()>,
 }
 
 #[cfg(feature = "provenance")]
-impl<'p, P> std::cmp::PartialEq for Provenance<'p, P> {
+impl<'p> std::cmp::PartialEq for Provenance<'p> {
     fn eq(&self, other: &Self) -> bool {
         self.id().eq(&other.id())
             && self.timestamp().eq(other.timestamp())
@@ -657,7 +657,7 @@ impl<'p, P> std::cmp::PartialEq for Provenance<'p, P> {
 }
 
 #[cfg(feature = "provenance")]
-impl<'p, P> Provenance<'p, P> {
+impl<'p> Provenance<'p> {
     /// Row id
     #[inline(always)]
     pub fn id(&self) -> super::newtypes::ProvenanceId {
@@ -681,15 +681,12 @@ fn test_transmute() {
         unsafe { std::mem::MaybeUninit::<super::bindings::tsk_mutation_t>::zeroed().assume_init() };
     mutation.site = 11;
     mutation.edge = -1;
-    let mref = unsafe {
-        std::mem::transmute::<super::bindings::tsk_mutation_t, Mutation<'_, super::SiteTable>>(
-            mutation,
-        )
-    };
+    let mref =
+        unsafe { std::mem::transmute::<super::bindings::tsk_mutation_t, Mutation<'_>>(mutation) };
     assert_eq!(mref.id(), 0);
     assert_eq!(mref.site(), 11);
     assert_eq!(mref.edge(), -1);
-    let mref2 = super::Mutation::<'_, super::SiteTable> {
+    let mref2 = super::Mutation::<'_> {
         row: mutation,
         marker: std::marker::PhantomData,
     };
@@ -740,30 +737,18 @@ mod test_row_type_wrappers {
 
     #[test]
     fn test_size_of_and_layout() {
-        sizeof_and_layout!(tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>);
+        sizeof_and_layout!(tsk_mutation_t, super::Mutation<'_>);
         // NOTE: the generic "parent" type has no effect
-        sizeof_and_layout!(
-            tsk_mutation_t,
-            super::Mutation<'_, super::super::TreeSequence>
-        );
+        sizeof_and_layout!(tsk_mutation_t, super::Mutation<'_>);
         sizeof_and_layout!(&tsk_mutation_t, super::MutationRef<'_>);
-        sizeof_and_layout!(tsk_site_t, super::Site<'_, super::super::SiteTable>);
+        sizeof_and_layout!(tsk_site_t, super::Site<'_>);
         sizeof_and_layout!(&tsk_site_t, super::SiteRef<'_>);
-        sizeof_and_layout!(tsk_edge_t, super::Edge<'_, super::super::EdgeTable>);
-        sizeof_and_layout!(tsk_node_t, super::Node<'_, super::super::NodeTable>);
-        sizeof_and_layout!(
-            tsk_individual_t,
-            super::Individual<'_, super::super::IndividualTable>
-        );
-        sizeof_and_layout!(
-            tsk_migration_t,
-            super::Migration<'_, super::super::MigrationTable>
-        );
+        sizeof_and_layout!(tsk_edge_t, super::Edge<'_>);
+        sizeof_and_layout!(tsk_node_t, super::Node<'_>);
+        sizeof_and_layout!(tsk_individual_t, super::Individual<'_>);
+        sizeof_and_layout!(tsk_migration_t, super::Migration<'_>);
         #[cfg(feature = "provenance")]
-        sizeof_and_layout!(
-            tsk_provenance_t,
-            super::Provenance<'_, super::super::ProvenanceTable>
-        );
+        sizeof_and_layout!(tsk_provenance_t, super::Provenance<'_>);
     }
 
     #[test]
@@ -771,11 +756,8 @@ mod test_row_type_wrappers {
         let mut ll_mutation =
             unsafe { std::mem::MaybeUninit::<tsk_mutation_t>::zeroed().assume_init() };
         set_scalar_field!(ll_mutation, id, site, node, edge, time ; 10, 11, 12, -1, 50.);
-        let mutation = unsafe {
-            std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
-                ll_mutation,
-            )
-        };
+        let mutation =
+            unsafe { std::mem::transmute::<tsk_mutation_t, super::Mutation<'_>>(ll_mutation) };
         assert_eq!(mutation, mutation);
         assert_eq!(mutation.id(), MutationId::from(10));
         assert_eq!(mutation.site(), SiteId::from(11));
@@ -789,11 +771,8 @@ mod test_row_type_wrappers {
         {
             let mut ll_mutation2 = ll_mutation;
             set_scalar_field!(ll_mutation2, site; 100);
-            let mutation2 = unsafe {
-                std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
-                    ll_mutation2,
-                )
-            };
+            let mutation2 =
+                unsafe { std::mem::transmute::<tsk_mutation_t, super::Mutation<'_>>(ll_mutation2) };
             assert_ne!(mutation, mutation2);
         }
 
@@ -805,11 +784,8 @@ mod test_row_type_wrappers {
             set_pointer_field!(ll_mutation, metadata, derived_state, inherited_state ;
                 metadata_length, derived_state_length, inherited_state_length ;
                 libc::c_char, libc::c_char, libc::c_char);
-            let mutation = unsafe {
-                std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
-                    ll_mutation,
-                )
-            };
+            let mutation =
+                unsafe { std::mem::transmute::<tsk_mutation_t, super::Mutation<'_>>(ll_mutation) };
             assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
             assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
 

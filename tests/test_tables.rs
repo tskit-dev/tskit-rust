@@ -612,7 +612,7 @@ fn test_derived_state_collection() {
             .unwrap();
     }
 
-    let retrieved: Vec<tskit::Mutation<'_, _>> = tables.mutation_iter().collect::<Vec<_>>();
+    let retrieved: Vec<tskit::Mutation<'_>> = tables.mutation_iter().collect::<Vec<_>>();
     for (i, j) in derived_states.iter().zip(retrieved.iter()) {
         assert_eq!(i.as_bytes(), j.derived_state().unwrap());
         assert_eq!(i, &std::str::from_utf8(j.derived_state().unwrap()).unwrap())
