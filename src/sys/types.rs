@@ -675,126 +675,6 @@ impl<'p, P> Provenance<'p, P> {
     }
 }
 
-// TODO: use comments to document
-// the testing strategy
-
-#[cfg(test)]
-mod test_row_type_wrappers {
-    use super::super::bindings::*;
-    use super::super::newtypes::*;
-
-    #[derive(Clone, Default)]
-    struct MutationMockData {
-        id: Option<tsk_id_t>,
-        site: Option<tsk_id_t>,
-        node: Option<tsk_id_t>,
-        time: Option<f64>,
-        edge: Option<tsk_id_t>,
-        metadata: Option<Vec<u8>>,
-        derived_state: Option<Vec<u8>>,
-        inherited_state: Option<Vec<u8>>,
-    }
-
-    struct MutationMock {
-        _metadata: Vec<u8>,
-        _derived_state: Vec<u8>,
-        _inherited_state: Vec<u8>,
-        mutation: tsk_mutation_t,
-    }
-
-    impl MutationMock {
-        fn new(input: MutationMockData) -> Self {
-            let mut mutation =
-                unsafe { std::mem::MaybeUninit::<tsk_mutation_t>::zeroed().assume_init() };
-            mutation.id = input.id.unwrap_or_default();
-            mutation.site = input.site.unwrap_or_default();
-            mutation.edge = input.edge.unwrap_or_default();
-            mutation.node = input.node.unwrap_or_default();
-            mutation.time = input.time.unwrap_or_default();
-            let _metadata = input.metadata.unwrap_or_default();
-            let _inherited_state = input.inherited_state.unwrap_or_default();
-            let _derived_state = input.derived_state.unwrap_or_default();
-            if !_metadata.is_empty() {
-                mutation.metadata = _metadata.as_ptr().cast::<libc::c_char>();
-                mutation.metadata_length = _metadata.len() as tsk_size_t;
-            }
-            if !_derived_state.is_empty() {
-                mutation.derived_state = _derived_state.as_ptr().cast::<libc::c_char>();
-                mutation.derived_state_length = _derived_state.len() as tsk_size_t;
-            }
-            if !_inherited_state.is_empty() {
-                mutation.inherited_state = _inherited_state.as_ptr().cast::<libc::c_char>();
-                mutation.inherited_state_length = _inherited_state.len() as tsk_size_t;
-            }
-            MutationMock {
-                _metadata,
-                _derived_state,
-                _inherited_state,
-                mutation,
-            }
-        }
-
-        fn mutation(&self) -> super::Mutation<'_, Self> {
-            super::Mutation {
-                row: self.mutation,
-                marker: std::marker::PhantomData,
-            }
-        }
-
-        fn mutation_ref(&self) -> super::MutationRef<'_> {
-            super::MutationRef(&self.mutation)
-        }
-    }
-
-    #[test]
-    fn test_mutation_with_arrays_null() {
-        let mutation_test = MutationMock::new(MutationMockData {
-            id: Some(10),
-            site: Some(11),
-            node: Some(12),
-            edge: Some(-1),
-            time: Some(50.),
-            ..Default::default()
-        });
-        let mutation = mutation_test.mutation();
-        assert_eq!(mutation.id(), MutationId::from(10));
-        assert_eq!(mutation.site(), SiteId::from(11));
-        assert_eq!(mutation.node(), NodeId::from(12));
-        assert_eq!(mutation.edge(), EdgeId::NULL);
-        assert_eq!(mutation.time(), Time::from(50.));
-        assert!(mutation.metadata().is_none());
-        assert!(mutation.derived_state().is_none());
-
-        let mutation_ref = mutation_test.mutation_ref();
-        assert_eq!(mutation_ref.id(), MutationId::from(10));
-        assert_eq!(mutation_ref.site(), SiteId::from(11));
-        assert_eq!(mutation_ref.node(), NodeId::from(12));
-        assert_eq!(mutation_ref.edge(), EdgeId::NULL);
-        assert_eq!(mutation_ref.time(), Time::from(50.));
-        assert!(mutation_ref.metadata().is_none());
-        assert!(mutation_ref.derived_state().is_none());
-        assert!(mutation_ref.inherited_state().is_none());
-    }
-
-    #[test]
-    fn test_mutation_with_arrays() {
-        let mutation_test = MutationMock::new(MutationMockData {
-            metadata: Some("I is metadatum".as_bytes().to_vec()),
-            derived_state: Some("G".as_bytes().to_vec()),
-            inherited_state: Some("C".as_bytes().to_vec()),
-            ..Default::default()
-        });
-        let mutation = mutation_test.mutation();
-        assert_eq!(mutation.metadata(), Some("I is metadatum".as_bytes()));
-        assert_eq!(mutation.derived_state(), Some("G".as_bytes()));
-
-        let mutation_ref = mutation_test.mutation_ref();
-        assert_eq!(mutation.metadata(), Some("I is metadatum".as_bytes()));
-        assert_eq!(mutation.derived_state(), Some("G".as_bytes()));
-        assert_eq!(mutation_ref.inherited_state(), Some("C".as_bytes()));
-    }
-}
-
 #[test]
 fn test_transmute() {
     let mut mutation =
@@ -809,4 +689,127 @@ fn test_transmute() {
     assert_eq!(mref.id(), 0);
     assert_eq!(mref.site(), 11);
     assert_eq!(mref.edge(), -1);
+}
+
+// NOTE: the tests below accomplish a lot.
+// The use of transmute check that our wrapper types
+// compile down to the same layout as the C types.
+// (If not, we'd get segfaults, failing asserts, etc.,
+// during testing.)
+// Calling the member functions and asserting equality
+// to specific new types makes sure that we are calling
+// the correct internal field AND converting to the correct type.
+
+#[cfg(test)]
+mod test_row_type_wrappers {
+    use super::super::bindings::*;
+    use super::super::newtypes::*;
+
+    macro_rules! _sizeof {
+        ($a: ty, $b: ty) => {
+            assert_eq!(std::mem::size_of::<$a>(), std::mem::size_of::<$b>())
+        };
+    }
+
+    macro_rules! set_scalar_field {
+        ($x: ident, $($field: ident),* ; $($id: literal),*)=> {
+            $($x.$field = $id;)*
+        };
+    }
+
+    // NOTE: for this macro to work,
+    // x.field must be set equal to the pointer
+    // in a local variable ALSO called field
+    macro_rules! set_pointer_field {
+        ($x: ident, $($field: ident),* ; $($length: ident),* ; $($cast: ident),*) => {
+            $(
+                $x.$field = $field.as_ptr().cast::<$cast>();
+                $x.$length = $field.len() as u64;
+            )*
+        };
+    }
+
+    #[test]
+    fn test_size_of() {
+        _sizeof!(tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>);
+        // NOTE: the generic "parent" type has no effect
+        _sizeof!(
+            tsk_mutation_t,
+            super::Mutation<'_, super::super::TreeSequence>
+        );
+        _sizeof!(&tsk_mutation_t, super::MutationRef<'_>);
+        _sizeof!(tsk_site_t, super::Site<'_, super::super::SiteTable>);
+        _sizeof!(&tsk_site_t, super::SiteRef<'_>);
+        _sizeof!(tsk_edge_t, super::Edge<'_, super::super::EdgeTable>);
+        _sizeof!(tsk_node_t, super::Node<'_, super::super::NodeTable>);
+        _sizeof!(
+            tsk_individual_t,
+            super::Individual<'_, super::super::IndividualTable>
+        );
+        _sizeof!(
+            tsk_migration_t,
+            super::Migration<'_, super::super::MigrationTable>
+        );
+        #[cfg(feature = "provenance")]
+        _sizeof!(
+            tsk_provenance_t,
+            super::Provenance<'_, super::super::ProvenanceTable>
+        );
+    }
+
+    #[test]
+    fn test_mutation_with_arrays_null() {
+        let mut ll_mutation =
+            unsafe { std::mem::MaybeUninit::<tsk_mutation_t>::zeroed().assume_init() };
+        set_scalar_field!(ll_mutation, id, site, node, edge, time ; 10, 11, 12, -1, 50.);
+        let mutation = unsafe {
+            std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
+                ll_mutation,
+            )
+        };
+        assert_eq!(mutation, mutation);
+        assert_eq!(mutation.id(), MutationId::from(10));
+        assert_eq!(mutation.site(), SiteId::from(11));
+        assert_eq!(mutation.node(), NodeId::from(12));
+        assert_eq!(mutation.edge(), EdgeId::NULL);
+        assert_eq!(mutation.time(), Time::from(50.));
+        assert!(mutation.metadata().is_none());
+        assert!(mutation.derived_state().is_none());
+
+        let mut ll_mutation2 = ll_mutation;
+        set_scalar_field!(ll_mutation2, site; 100);
+        let mutation2 = unsafe {
+            std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
+                ll_mutation2,
+            )
+        };
+        assert_ne!(mutation, mutation2);
+    }
+
+    #[test]
+    fn test_mutation_with_arrays() {
+        use libc::c_char;
+        let mut ll_mutation =
+            unsafe { std::mem::MaybeUninit::<tsk_mutation_t>::zeroed().assume_init() };
+        let metadata = b"I is metadatum".to_vec();
+        let derived_state = b"G".to_vec();
+        let inherited_state = b"C".to_vec();
+        set_pointer_field!(ll_mutation, metadata, derived_state, inherited_state ;
+            metadata_length, derived_state_length, inherited_state_length ; c_char, c_char, c_char);
+        let mutation = unsafe {
+            std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
+                ll_mutation,
+            )
+        };
+        assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
+        assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
+
+        let mutation_ref = super::MutationRef(&ll_mutation);
+        assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
+        assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
+        assert_eq!(
+            mutation_ref.inherited_state(),
+            Some(inherited_state.as_slice())
+        );
+    }
 }
