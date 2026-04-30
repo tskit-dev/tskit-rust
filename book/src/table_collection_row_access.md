@@ -28,23 +28,6 @@ To generate a row view using a row id:
 {{#include ../../tests/book_table_collection.rs:get_edge_table_row_by_id}}
 ```
 
-To iterate over all views we use *lending* iterators:
-
-```rust, noplaygound, ignore
-{{#include ../../tests/book_table_collection.rs:get_edge_table_rows_by_lending_iterator}}
-```
-
-#### Lending iterators
-
-The lending iterators are implemented using the [`streaming_iterator`](https://docs.rs/streaming-iterator/latest/streaming_iterator/) crate.
-(The community now prefers the term "lending" over "streaming" for this concept.)
-The `tskit` prelude includes the trait declarations that allow the code shown above to compile.
-
-rust 1.65.0 stabilized Generic Associated Types, or GATs.
-GATs allows lending iterators to be implemented directly without the workarounds used in the `streaming_iterator` crate.
-We have decided not to implement our own lending iterator using GATs.
-Rather, we will see what the community settles on and will decide in the future whether or not to adopt it.
-
 ### Row objects
 
 We may access entire table rows by a row id:
