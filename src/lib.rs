@@ -65,6 +65,85 @@
 //! tskit = {version = "0.2.0", features=["feature0", "feature1"]}
 //! ```
 //!
+//! # Table rows and iterators over rows
+//!
+//! ## Background: what is going on at the `C` level
+//!
+//! The `C` API represents a row as a `struct` containing
+//! various fields.
+//! For example, a "mutation" (row of a mutation table) is
+//! represented by [`crate::bindings::tsk_mutation_t`].
+//!
+//! These low-level types contain pointers into ragged arrays
+//! such as metadata.
+//! These pointers do *not* point to new allocations.
+//! Rather, they point to subsets of the ragged arrays
+//! found in the parent objects (tables).
+//!
+//! The API to populate the row types is to first allocate one
+//! (either on the stack or on the heap) and then call a function.
+//! For example, [`crate::bindings::tsk_mutation_table_get_row`]
+//! will fill in the fields of a [`crate::bindings::tsk_mutation_t`].
+//!
+//! The challenge on the rust side is how to specify the lifetime
+//! relationship between a row object and its parent object.
+//!
+//! ### Differences between table collections and tree sequences
+//!
+//! The row types mentioned above can be accessed from table collections
+//! and from tree sequences.
+//!
+//! However, tree sequence initialization pre-computes site and mutation
+//! objects as well as the nodes associated with individuals.
+//! Therefore, we can obtain constant-time access to references to site
+//! and mutation objects from a tree sequence.
+//!
+//! The situation for objects directly from table collections poses
+//! a challenge.
+//! We could re-use an instance of a row object for, say,
+//! a "mutation table row iterator" type, but doing so
+//! would result in incorrect data if the output values were stored.
+//! (Re-use would mean that the pointers to metadata, etc., would get
+//! re-written at each "turn" of the iterator.)
+//! Therefore, when accessing from *tables*, we return new instances
+//! of the low level types.
+//!
+//! ## The relevant rust types
+//!
+//! For tables:
+//!
+//! * [`Node`] is returned by [`NodeTable::row`] and is the iterator value of [`NodeTable::iter`]
+//!   and [`TableCollection::node_iter`].
+//! * [`Edge`] is returned by [`EdgeTable::row`] and is the iterator value of [`EdgeTable::iter`]
+//!   and [`TableCollection::edge_iter`].
+//! * [`Individual`] is returned by [`IndividualTable::row`] and is the iterator value of [`IndividualTable::iter`]
+//!   and [`TableCollection::individual_iter`].
+//! * [`Site`] is returned by [`SiteTable::row`] and is the iterator value of [`SiteTable::iter`]
+//!   and [`TableCollection::site_iter`].
+//! * [`Mutation`] is returned by [`MutationTable::row`] and is the iterator value of [`MutationTable::iter`]
+//!   and [`TableCollection::mutation_iter`].
+//! * [`Population`] is returned by [`PopulationTable::row`] and is the iterator value of [`PopulationTable::iter`]
+//!   and [`TableCollection::population_iter`].
+//! * [`Migration`] is returned by [`MigrationTable::row`] and is the iterator value of [`MigrationTable::iter`]
+//!   and [`TableCollection::migration_iter`].
+//! * [`Provenance`] is returned by [`provenance::ProvenanceTable::row`] and is the iterator value of [`provenance::ProvenanceTable::iter`]
+//!   and [`TableCollection::provenance_iter`].
+//!
+//! These types are thin wrappers around the `C` types and have the same `sizeof` and alignment.
+//!
+//! For table collections and trees:
+//!
+//! * [`SiteRef`] and [`MutationRef`] replace [`Site`] and [`Mutation`], respectively.
+//! * [`SiteRef`] is the output of [`TreeSequence::site_iter`] and [`Tree::site_iter`].
+//! * [`MutationRef`] is the output of [`SiteRef::mutation_iter`].
+//!
+//! These "`Ref`" types are thin wrappers around shared references to the underlying `C` types.
+//!
+//! Further,
+//!  
+//! * [`TreeSequence::individual_iter`] outputs [`Individual`] objects whose `nodes` field is
+//!   populated (if the individual is associated w/any nodes).
+//!
 //! # What is missing?
 //!
 //! * A lot of wrappers to the C functions.
