@@ -23,7 +23,7 @@ pub struct NodeTableIter<'table> {
 }
 
 impl<'table> Iterator for NodeTableIter<'table> {
-    type Item = super::Node<'table, NodeTable>;
+    type Item = super::Node<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -123,7 +123,7 @@ impl NodeTable {
 
     raw_metadata_getter_for_tables!(NodeId);
 
-    pub fn row<'table>(&self, row: NodeId) -> Option<super::Node<'table, Self>> {
+    pub fn row<'table>(&self, row: NodeId) -> Option<super::Node<'table>> {
         let mut node =
             unsafe { std::mem::MaybeUninit::<super::bindings::tsk_node_t>::zeroed().assume_init() };
         let rv = unsafe {
@@ -143,7 +143,7 @@ impl NodeTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Node<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Node<'_>> {
         NodeTableIter {
             table: self,
             current_row: 0.into(),

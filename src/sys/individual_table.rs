@@ -23,7 +23,7 @@ pub struct IndividualTableIter<'table> {
 }
 
 impl<'table> Iterator for IndividualTableIter<'table> {
-    type Item = super::Individual<'table, IndividualTable>;
+    type Item = super::Individual<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -149,7 +149,7 @@ impl IndividualTable {
         )
     }
 
-    pub fn row<'table>(&self, row: IndividualId) -> Option<super::Individual<'table, Self>> {
+    pub fn row<'table>(&self, row: IndividualId) -> Option<super::Individual<'table>> {
         let mut individual = unsafe {
             std::mem::MaybeUninit::<super::bindings::tsk_individual_t>::zeroed().assume_init()
         };
@@ -170,7 +170,7 @@ impl IndividualTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Individual<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Individual<'_>> {
         IndividualTableIter {
             table: self,
             current_row: 0.into(),

@@ -119,16 +119,13 @@ impl ProvenanceTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<P: Into<ProvenanceId> + Copy>(
-        &self,
-        row: P,
-    ) -> Option<crate::Provenance<'_, crate::sys::ProvenanceTable>> {
+    pub fn row<P: Into<ProvenanceId> + Copy>(&self, row: P) -> Option<crate::Provenance<'_>> {
         self.table_.row(row.into())
     }
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Provenance`].
-    pub fn iter(&self) -> impl Iterator<Item = crate::Provenance<'_, crate::sys::ProvenanceTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Provenance<'_>> {
         self.table_.iter()
     }
 

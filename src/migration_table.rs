@@ -170,7 +170,7 @@ impl MigrationTable {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Migration`].
-    pub fn iter(&self) -> impl Iterator<Item = crate::Migration<'_, crate::sys::MigrationTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Migration<'_>> {
         self.table_.iter()
     }
 
@@ -184,10 +184,7 @@ impl MigrationTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<M: Into<MigrationId> + Copy>(
-        &self,
-        r: M,
-    ) -> Option<crate::Migration<'_, crate::sys::MigrationTable>> {
+    pub fn row<M: Into<MigrationId> + Copy>(&self, r: M) -> Option<crate::Migration<'_>> {
         self.table_.row(r.into())
     }
 

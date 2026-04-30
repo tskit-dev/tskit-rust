@@ -24,7 +24,7 @@ pub struct MutationTableIter<'table> {
 }
 
 impl<'table> Iterator for MutationTableIter<'table> {
-    type Item = super::Mutation<'table, MutationTable>;
+    type Item = super::Mutation<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -143,7 +143,7 @@ impl MutationTable {
         )
     }
 
-    pub fn row<'table>(&self, row: MutationId) -> Option<super::Mutation<'table, Self>> {
+    pub fn row<'table>(&self, row: MutationId) -> Option<super::Mutation<'table>> {
         let mut mutation = unsafe {
             std::mem::MaybeUninit::<super::bindings::tsk_mutation_t>::zeroed().assume_init()
         };
@@ -164,7 +164,7 @@ impl MutationTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Mutation<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Mutation<'_>> {
         MutationTableIter {
             table: self,
             current_row: 0.into(),

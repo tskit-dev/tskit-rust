@@ -162,7 +162,7 @@ impl MutationTable {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Mutation`].
-    pub fn iter(&self) -> impl Iterator<Item = crate::Mutation<'_, crate::sys::MutationTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Mutation<'_>> {
         self.table_.iter()
     }
 
@@ -176,10 +176,7 @@ impl MutationTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<M: Into<MutationId> + Copy>(
-        &self,
-        r: M,
-    ) -> Option<crate::Mutation<'_, crate::sys::MutationTable>> {
+    pub fn row<M: Into<MutationId> + Copy>(&self, r: M) -> Option<crate::Mutation<'_>> {
         self.table_.row(r.into())
     }
 

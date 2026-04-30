@@ -128,7 +128,7 @@ impl SiteTable {
 
     /// Return an iterator over rows of the table.
     /// The value of the iterator is [`crate::Site`].
-    pub fn iter(&self) -> impl Iterator<Item = crate::Site<'_, crate::sys::SiteTable>> {
+    pub fn iter(&self) -> impl Iterator<Item = crate::Site<'_>> {
         self.table_.iter()
     }
 
@@ -142,10 +142,7 @@ impl SiteTable {
     ///
     /// * `Some(row)` if `r` is valid
     /// * `None` otherwise
-    pub fn row<S: Into<SiteId> + Copy>(
-        &self,
-        r: S,
-    ) -> Option<super::Site<'_, crate::sys::SiteTable>> {
+    pub fn row<S: Into<SiteId> + Copy>(&self, r: S) -> Option<super::Site<'_>> {
         self.table_.row(r.into())
     }
 

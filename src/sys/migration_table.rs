@@ -24,7 +24,7 @@ pub struct MigrationTableIter<'table> {
 }
 
 impl<'table> Iterator for MigrationTableIter<'table> {
-    type Item = super::Migration<'table, MigrationTable>;
+    type Item = super::Migration<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -119,7 +119,7 @@ impl MigrationTable {
 
     raw_metadata_getter_for_tables!(MigrationId);
 
-    pub fn row<'table>(&self, row: MigrationId) -> Option<super::Migration<'table, Self>> {
+    pub fn row<'table>(&self, row: MigrationId) -> Option<super::Migration<'table>> {
         let mut migration = unsafe {
             std::mem::MaybeUninit::<super::bindings::tsk_migration_t>::zeroed().assume_init()
         };
@@ -140,7 +140,7 @@ impl MigrationTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Migration<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Migration<'_>> {
         MigrationTableIter {
             table: self,
             current_row: 0.into(),

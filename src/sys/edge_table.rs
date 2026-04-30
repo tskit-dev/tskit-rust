@@ -22,7 +22,7 @@ pub struct EdgeTableIter<'table> {
 }
 
 impl<'table> Iterator for EdgeTableIter<'table> {
-    type Item = super::Edge<'table, EdgeTable>;
+    type Item = super::Edge<'table>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.current_row;
@@ -104,7 +104,7 @@ impl EdgeTable {
 
     raw_metadata_getter_for_tables!(EdgeId);
 
-    pub fn row<'table>(&self, row: EdgeId) -> Option<super::Edge<'table, Self>> {
+    pub fn row<'table>(&self, row: EdgeId) -> Option<super::Edge<'table>> {
         let mut edge =
             unsafe { std::mem::MaybeUninit::<super::bindings::tsk_edge_t>::zeroed().assume_init() };
         let rv = unsafe {
@@ -124,7 +124,7 @@ impl EdgeTable {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = super::Edge<'_, Self>> {
+    pub fn iter(&self) -> impl Iterator<Item = super::Edge<'_>> {
         EdgeTableIter {
             table: self,
             current_row: 0.into(),
