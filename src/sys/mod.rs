@@ -8,6 +8,7 @@ pub mod bindings;
 mod edge_table;
 pub mod flags;
 mod individual_table;
+mod iter;
 mod migration_table;
 mod mutation_table;
 pub mod newtypes;

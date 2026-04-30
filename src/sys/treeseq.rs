@@ -33,25 +33,6 @@ impl<'ts> Iterator for TreeSeqIndividualIter<'ts> {
     }
 }
 
-pub struct SiteRefIterator<'ts> {
-    sites: &'ts [bindings::tsk_site_t],
-    current: usize,
-}
-
-impl<'ts> Iterator for SiteRefIterator<'ts> {
-    type Item = super::SiteRef<'ts>;
-    fn next(&mut self) -> Option<Self::Item> {
-        let n = self.sites.get(self.current).map(|s| super::new_site_ref(s));
-        self.current += 1;
-        n
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.current = n;
-        self.sites.get(self.current).map(|s| super::new_site_ref(s))
-    }
-}
-
 impl TreeSequence {
     pub fn new(
         tables: super::TableCollection,
@@ -206,7 +187,7 @@ impl TreeSequence {
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        SiteRefIterator { sites, current: 0 }
+        super::iter::SiteRefIterator { sites, current: 0 }
     }
 
     pub fn individual<'ts>(
