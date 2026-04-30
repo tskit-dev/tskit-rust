@@ -689,6 +689,11 @@ fn test_transmute() {
     assert_eq!(mref.id(), 0);
     assert_eq!(mref.site(), 11);
     assert_eq!(mref.edge(), -1);
+    let mref2 = super::Mutation::<'_, super::SiteTable> {
+        row: mutation,
+        marker: std::marker::PhantomData,
+    };
+    assert_eq!(mref, mref2);
 }
 
 // NOTE: the tests below accomplish a lot.
@@ -700,14 +705,18 @@ fn test_transmute() {
 // to specific new types makes sure that we are calling
 // the correct internal field AND converting to the correct type.
 
+// TODO: we need to add tests for all of the wrappers.
 #[cfg(test)]
 mod test_row_type_wrappers {
     use super::super::bindings::*;
     use super::super::newtypes::*;
 
-    macro_rules! _sizeof {
+    macro_rules! sizeof_and_layout {
         ($a: ty, $b: ty) => {
-            assert_eq!(std::mem::size_of::<$a>(), std::mem::size_of::<$b>())
+            assert_eq!(std::mem::size_of::<$a>(), std::mem::size_of::<$b>());
+            let ll_layout = std::alloc::Layout::new::<$a>();
+            let wrapper_layout = std::alloc::Layout::new::<$b>();
+            assert_eq!(ll_layout, wrapper_layout);
         };
     }
 
@@ -721,44 +730,44 @@ mod test_row_type_wrappers {
     // x.field must be set equal to the pointer
     // in a local variable ALSO called field
     macro_rules! set_pointer_field {
-        ($x: ident, $($field: ident),* ; $($length: ident),* ; $($cast: ident),*) => {
+        ($x: ident, $($field: ident),* ; $($length: ident),* ; $($cast: ty),*) => {
             $(
                 $x.$field = $field.as_ptr().cast::<$cast>();
-                $x.$length = $field.len() as u64;
+                $x.$length = u64::try_from($field.len()).unwrap();
             )*
         };
     }
 
     #[test]
-    fn test_size_of() {
-        _sizeof!(tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>);
+    fn test_size_of_and_layout() {
+        sizeof_and_layout!(tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>);
         // NOTE: the generic "parent" type has no effect
-        _sizeof!(
+        sizeof_and_layout!(
             tsk_mutation_t,
             super::Mutation<'_, super::super::TreeSequence>
         );
-        _sizeof!(&tsk_mutation_t, super::MutationRef<'_>);
-        _sizeof!(tsk_site_t, super::Site<'_, super::super::SiteTable>);
-        _sizeof!(&tsk_site_t, super::SiteRef<'_>);
-        _sizeof!(tsk_edge_t, super::Edge<'_, super::super::EdgeTable>);
-        _sizeof!(tsk_node_t, super::Node<'_, super::super::NodeTable>);
-        _sizeof!(
+        sizeof_and_layout!(&tsk_mutation_t, super::MutationRef<'_>);
+        sizeof_and_layout!(tsk_site_t, super::Site<'_, super::super::SiteTable>);
+        sizeof_and_layout!(&tsk_site_t, super::SiteRef<'_>);
+        sizeof_and_layout!(tsk_edge_t, super::Edge<'_, super::super::EdgeTable>);
+        sizeof_and_layout!(tsk_node_t, super::Node<'_, super::super::NodeTable>);
+        sizeof_and_layout!(
             tsk_individual_t,
             super::Individual<'_, super::super::IndividualTable>
         );
-        _sizeof!(
+        sizeof_and_layout!(
             tsk_migration_t,
             super::Migration<'_, super::super::MigrationTable>
         );
         #[cfg(feature = "provenance")]
-        _sizeof!(
+        sizeof_and_layout!(
             tsk_provenance_t,
             super::Provenance<'_, super::super::ProvenanceTable>
         );
     }
 
     #[test]
-    fn test_mutation_with_arrays_null() {
+    fn test_tsk_mutation_t_wrappers() {
         let mut ll_mutation =
             unsafe { std::mem::MaybeUninit::<tsk_mutation_t>::zeroed().assume_init() };
         set_scalar_field!(ll_mutation, id, site, node, edge, time ; 10, 11, 12, -1, 50.);
@@ -776,40 +785,41 @@ mod test_row_type_wrappers {
         assert!(mutation.metadata().is_none());
         assert!(mutation.derived_state().is_none());
 
-        let mut ll_mutation2 = ll_mutation;
-        set_scalar_field!(ll_mutation2, site; 100);
-        let mutation2 = unsafe {
-            std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
-                ll_mutation2,
-            )
-        };
-        assert_ne!(mutation, mutation2);
-    }
+        // make a copy, modify it, make sure !=
+        {
+            let mut ll_mutation2 = ll_mutation;
+            set_scalar_field!(ll_mutation2, site; 100);
+            let mutation2 = unsafe {
+                std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
+                    ll_mutation2,
+                )
+            };
+            assert_ne!(mutation, mutation2);
+        }
 
-    #[test]
-    fn test_mutation_with_arrays() {
-        use libc::c_char;
-        let mut ll_mutation =
-            unsafe { std::mem::MaybeUninit::<tsk_mutation_t>::zeroed().assume_init() };
-        let metadata = b"I is metadatum".to_vec();
-        let derived_state = b"G".to_vec();
-        let inherited_state = b"C".to_vec();
-        set_pointer_field!(ll_mutation, metadata, derived_state, inherited_state ;
-            metadata_length, derived_state_length, inherited_state_length ; c_char, c_char, c_char);
-        let mutation = unsafe {
-            std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
-                ll_mutation,
-            )
-        };
-        assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
-        assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
+        // populate the array data types
+        {
+            let metadata = b"I is metadatum".to_vec();
+            let derived_state = b"G".to_vec();
+            let inherited_state = b"CAGT".to_vec();
+            set_pointer_field!(ll_mutation, metadata, derived_state, inherited_state ;
+                metadata_length, derived_state_length, inherited_state_length ;
+                libc::c_char, libc::c_char, libc::c_char);
+            let mutation = unsafe {
+                std::mem::transmute::<tsk_mutation_t, super::Mutation<'_, super::super::SiteTable>>(
+                    ll_mutation,
+                )
+            };
+            assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
+            assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
 
-        let mutation_ref = super::MutationRef(&ll_mutation);
-        assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
-        assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
-        assert_eq!(
-            mutation_ref.inherited_state(),
-            Some(inherited_state.as_slice())
-        );
+            let mutation_ref = super::MutationRef(&ll_mutation);
+            assert_eq!(mutation.metadata(), Some(metadata.as_slice()));
+            assert_eq!(mutation.derived_state(), Some(derived_state.as_slice()));
+            assert_eq!(
+                mutation_ref.inherited_state(),
+                Some(inherited_state.as_slice())
+            );
+        }
     }
 }
