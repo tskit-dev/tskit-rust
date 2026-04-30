@@ -141,6 +141,21 @@ impl<'treeseq> LLTree<'treeseq> {
         }
     }
 
+    pub fn traverse_nodes_from_root(
+        &self,
+        root: NodeId,
+        order: NodeTraversalOrder,
+    ) -> Result<Box<dyn Iterator<Item = NodeId> + '_>, TskitError> {
+        match order {
+            NodeTraversalOrder::Preorder => Ok(Box::new(NodeIteratorAdapter(
+                PreorderNodeIterator::new_from(self, root)?,
+            ))),
+            NodeTraversalOrder::Postorder => Ok(Box::new(NodeIteratorAdapter(
+                PostorderNodeIterator::new_from(self, root)?,
+            ))),
+        }
+    }
+
     pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
         NodeIteratorAdapter(ChildIterator::new(self, u))
     }
@@ -331,6 +346,25 @@ impl<'a> PreorderNodeIterator<'a> {
         }
         rv
     }
+
+    fn new_from(tree: &'a LLTree, root: NodeId) -> Result<Self, TskitError> {
+        if root != NodeId::NULL && root != tree.virtual_root() && root < tree.treeseq.num_samples()
+        {
+            Ok(PreorderNodeIterator {
+                current_root: tree
+                    .right_child(tree.virtual_root())
+                    .unwrap_or(NodeId::NULL),
+                node_stack: vec![root],
+                tree,
+                current_node: None,
+            })
+        } else {
+            Err(TskitError::ValueError {
+                got: format!("{root:?}"),
+                expected: "valid NodeId and node != virtual root of tree".to_string(),
+            })
+        }
+    }
 }
 
 impl NodeIterator for PreorderNodeIterator<'_> {
@@ -394,6 +428,38 @@ impl<'a> PostorderNodeIterator<'a> {
             num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap_or(0),
             _tree: tree,
         }
+    }
+
+    fn new_from(tree: &'a LLTree<'a>, root: NodeId) -> Result<Self, TskitError> {
+        let mut num_nodes_current_tree: tsk_size_t = 0;
+        let ptr = std::ptr::addr_of_mut!(num_nodes_current_tree);
+        let mut nodes = vec![
+            NodeId::NULL;
+            // NOTE: this fn does not return error codes
+            usize::try_from(unsafe {
+                bindings::tsk_tree_get_size_bound(tree.as_ptr())
+            }).unwrap_or(usize::MAX)
+        ];
+
+        let rv = unsafe {
+            bindings::tsk_tree_postorder_from(
+                tree.as_ptr(),
+                root.into(),
+                nodes.as_mut_ptr().cast::<tsk_id_t>(),
+                ptr,
+            )
+        };
+
+        handle_tsk_return_value!(
+            rv,
+            Self {
+                nodes,
+                current_node_index: 0,
+                current_node: None,
+                num_nodes_current_tree: usize::try_from(num_nodes_current_tree).unwrap_or(0),
+                _tree: tree,
+            }
+        )
     }
 }
 

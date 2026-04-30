@@ -286,6 +286,26 @@ impl<'treeseq> Tree<'treeseq> {
         self.inner.traverse_nodes(order)
     }
 
+    /// Return an [`Iterator`] over all nodes in the tree under a given
+    /// node, which is the root of a subtree.
+    ///
+    /// # Parameters
+    ///
+    /// * `rooit`: the subtree root
+    /// * `order`: A value from [`crate::NodeTraversalOrder`] specifying the
+    ///   iteration order.
+    ///
+    /// # Errors
+    ///
+    /// * [`TskitError`] if `node` is null or out of bounds.
+    pub fn traverse_nodes_from_root(
+        &self,
+        root: NodeId,
+        order: crate::NodeTraversalOrder,
+    ) -> Result<Box<dyn Iterator<Item = NodeId> + '_>, TskitError> {
+        self.inner.traverse_nodes_from_root(root, order)
+    }
+
     /// Return an [`Iterator`] over the children of node `u`.
     /// # Returns
     ///
