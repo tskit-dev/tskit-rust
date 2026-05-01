@@ -80,6 +80,21 @@ impl<'ts> Iterator for MutationRefIterator<'ts> {
     }
 }
 
+impl<'ts> DoubleEndedIterator for MutationRefIterator<'ts> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.current < self.mutations.len() {
+            let n = self
+                .mutations
+                .get(self.mutations.len() - self.current - 1)
+                .map(MutationRef);
+            self.current += 1;
+            n
+        } else {
+            None
+        }
+    }
+}
+
 impl<'parent> SiteRef<'parent> {
     /// Row id
     #[inline(always)]
@@ -96,7 +111,7 @@ impl<'parent> SiteRef<'parent> {
     /// Iteration order is identical to internal storage order.
     // NOTE: not populated by tsk_site_table_get_row,
     // which leaves the pointer NULL!
-    pub fn mutation_iter(&self) -> impl Iterator<Item = MutationRef<'parent>> {
+    pub fn mutation_iter(&self) -> impl DoubleEndedIterator<Item = MutationRef<'parent>> {
         assert!(!self.0.mutations.is_null());
         let mslice = unsafe {
             std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
