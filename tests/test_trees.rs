@@ -280,7 +280,6 @@ fn test_iterate_samples() {
     }
 }
 
-#[cfg(feature = "bindings")]
 #[test]
 fn test_iterate_samples_two_trees() {
     let treeseq = treeseq_from_small_table_collection_two_trees();
@@ -327,7 +326,19 @@ fn test_iterate_samples_two_trees() {
         }
         assert_eq!(preoder_nodes.len(), postoder_nodes.len());
 
+        let mut postorder_from_roots = vec![];
+        for root in tree.roots() {
+            for node in tree
+                .traverse_nodes_from_root(root, NodeTraversalOrder::Postorder)
+                .unwrap()
+            {
+                postorder_from_roots.push(node);
+            }
+        }
+        assert_eq!(postorder_from_roots, postoder_nodes);
+
         // Test our preorder against the tskit functions in 0.99.15
+        #[cfg(feature = "bindings")]
         {
             let mut nodes: Vec<NodeId> = vec![
                 NodeId::NULL;
@@ -347,7 +358,29 @@ fn test_iterate_samples_two_trees() {
             for i in 0..num_nodes as usize {
                 assert_eq!(preoder_nodes[i], nodes[i]);
             }
+
+            // For each root, traverse its subtree with a preorder
+            // traversal, collecting outputs as we go.
+            // Then, compare to what the C API preorder fn outputs
+            let mut nodes_from_roots = vec![];
+            for root in tree.roots() {
+                for node in tree
+                    .traverse_nodes_from_root(root, NodeTraversalOrder::Preorder)
+                    .unwrap()
+                {
+                    nodes_from_roots.push(node);
+                }
+            }
+            for &node in &nodes_from_roots {
+                assert!(nodes.contains(&node));
+            }
+            // This assert checks that we get the same order as the
+            // tskit-c preorder fn.  We need to take a slice of the
+            // vec where we store the tskit output b/c its allocation
+            // may be larger than the number of nodes in the tree.
+            assert_eq!(nodes_from_roots, nodes[0..nodes_from_roots.len()]);
         }
+
         current_tree += 1;
     }
 }
