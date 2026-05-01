@@ -577,6 +577,14 @@ fn test_iterate_mutations_at_site() {
     assert_eq!(muts_at_site.len(), 2);
     assert!(muts_at_site.contains(&m0));
     assert!(muts_at_site.contains(&m1));
+
+    for site in ts.site_iter() {
+        let muts = site.mutation_iter().collect::<Vec<_>>();
+        let rmuts = site.mutation_iter().rev().collect::<Vec<_>>();
+        for (i, j) in muts.iter().rev().zip(rmuts.iter()) {
+            assert_eq!(i, j)
+        }
+    }
 }
 
 #[test]
