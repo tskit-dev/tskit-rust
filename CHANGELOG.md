@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.0] - 2026-05-01
+
+### Documentation
+
+- Handle Result in example ([#845](https://github.com/tskit-dev/tskit-rust/pull/845))
+- Remove mention of lending iters from book ([#880](https://github.com/tskit-dev/tskit-rust/pull/880))
+- Crate-level docs on rows and row iteration ([#879](https://github.com/tskit-dev/tskit-rust/pull/879))
+
+### Features
+
+- Site/mutation co-iteration from TreeSequence ([#847](https://github.com/tskit-dev/tskit-rust/pull/847))
+- Add/Sub + Assign for row id newtypes ([#848](https://github.com/tskit-dev/tskit-rust/pull/848))
+- Compare row id newtypes to usize ([#850](https://github.com/tskit-dev/tskit-rust/pull/850))
+- Tree::site_iter ([#860](https://github.com/tskit-dev/tskit-rust/pull/860))
+- Tree::index ([#864](https://github.com/tskit-dev/tskit-rust/pull/864))
+- Node traversal from a given subtree root ([#882](https://github.com/tskit-dev/tskit-rust/pull/882))
+
+### Miscellaneous Tasks
+
+- Bump rand ([#851](https://github.com/tskit-dev/tskit-rust/pull/851))
+
+### Performance
+
+- Constant time skip for mut/site ref iterators ([#873](https://github.com/tskit-dev/tskit-rust/pull/873))
+- Tree/Treeseq site_iter share the same low-level implementation ([#878](https://github.com/tskit-dev/tskit-rust/pull/878))
+
+### Refactor
+
+- Interal iterators store row ids ([#849](https://github.com/tskit-dev/tskit-rust/pull/849))
+- Treeseq site/mutation access now uses C API directly. ([#853](https://github.com/tskit-dev/tskit-rust/pull/853))
+- Use PhantomData to uncouple row type references from parent tree sequence ([#855](https://github.com/tskit-dev/tskit-rust/pull/855))
+- Fix namespace paths ([#856](https://github.com/tskit-dev/tskit-rust/pull/856))
+- [**breaking**] Rewrite table row access and iteration ([#857](https://github.com/tskit-dev/tskit-rust/pull/857))
+- [**breaking**] Tree::samples_iter replaces methods returning slices ([#863](https://github.com/tskit-dev/tskit-rust/pull/863))
+- Use macros to reduce code duplication ([#867](https://github.com/tskit-dev/tskit-rust/pull/867))
+- Allocate tsk_treeseq_t on the stack ([#868](https://github.com/tskit-dev/tskit-rust/pull/868))
+- Remove dead code ([#872](https://github.com/tskit-dev/tskit-rust/pull/872))
+- Remove generic type from table row references ([#871](https://github.com/tskit-dev/tskit-rust/pull/871))
+- Rename SiteRef fn to return MutationRef iterator ([#874](https://github.com/tskit-dev/tskit-rust/pull/874))
+- Remove generic type from row wrapper types ([#881](https://github.com/tskit-dev/tskit-rust/pull/881))
+
+### Testing
+
+- Low level treeseq is send/sync ([#869](https://github.com/tskit-dev/tskit-rust/pull/869))
+- TreeSequence::individual_iter ([#865](https://github.com/tskit-dev/tskit-rust/pull/865))
+- Add a unit test src/sys/types.rs ([#866](https://github.com/tskit-dev/tskit-rust/pull/866))
+- Add assertion that all returned nodes are samples ([#870](https://github.com/tskit-dev/tskit-rust/pull/870))
+- Test transmute tsk_mutation_t to Mutation ([#875](https://github.com/tskit-dev/tskit-rust/pull/875))
+- Refactor unit test of tsk_mutation_t/Mutation/MutationRef ([#876](https://github.com/tskit-dev/tskit-rust/pull/876))
+- Some more work on mutation wrapper type tests ([#877](https://github.com/tskit-dev/tskit-rust/pull/877))
+
 ## [0.15.0] - 2026-04-06
 
 ### Documentation
