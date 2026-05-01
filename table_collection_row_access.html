@@ -35,7 +35,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "light";
-            window.path_to_searchindex_js = "searchindex-49a09f2a.js";
+            window.path_to_searchindex_js = "searchindex-6e4b37d8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-ed68240b.js"></script>
@@ -195,52 +195,33 @@ objects.</p>
 <h3 id="row-views"><a class="header" href="#row-views">Row views</a></h3>
 <p>To generate a row view using a row id:</p>
 <pre><code class="language-rust noplaygound ignore">    if let Some(row) = tables.edges().row(edge_id) {
-        assert_eq!(row.id, 0);
-        assert_eq!(row.left, left);
-        assert_eq!(row.right, right);
-        assert_eq!(row.parent, parent);
-        assert_eq!(row.child, child);
+        assert_eq!(row.id(), 0);
+        assert_eq!(row.left(), left);
+        assert_eq!(row.right(), right);
+        assert_eq!(row.parent(), parent);
+        assert_eq!(row.child(), child);
     } else {
         panic!("that should have worked...");
     }</code></pre>
-<p>To iterate over all views we use <em>lending</em> iterators:</p>
-<pre><code class="language-rust noplaygound ignore">    let mut edge_table_lending_iter = tables.edges().lending_iter();
-    while let Some(row_view) = edge_table_lending_iter.next() {
-        // there is only one row!
-        assert_eq!(row_view.id, 0);
-        assert_eq!(row_view.left, left);
-        assert_eq!(row_view.right, right);
-        assert_eq!(row_view.parent, parent);
-        assert_eq!(row_view.child, child);
-        assert!(row_view.metadata.is_none()); // no metadata in our table
-    }</code></pre>
-<h4 id="lending-iterators"><a class="header" href="#lending-iterators">Lending iterators</a></h4>
-<p>The lending iterators are implemented using the <a href="https://docs.rs/streaming-iterator/latest/streaming_iterator/"><code>streaming_iterator</code></a> crate.
-(The community now prefers the term “lending” over “streaming” for this concept.)
-The <code>tskit</code> prelude includes the trait declarations that allow the code shown above to compile.</p>
-<p>rust 1.65.0 stabilized Generic Associated Types, or GATs.
-GATs allows lending iterators to be implemented directly without the workarounds used in the <code>streaming_iterator</code> crate.
-We have decided not to implement our own lending iterator using GATs.
-Rather, we will see what the community settles on and will decide in the future whether or not to adopt it.</p>
 <h3 id="row-objects"><a class="header" href="#row-objects">Row objects</a></h3>
 <p>We may access entire table rows by a row id:</p>
 <pre><code class="language-rust noplaygound ignore">    if let Some(row) = tables.edges().row(edge_id) {
-        assert_eq!(row.id, 0);
-        assert_eq!(row.left, left);
-        assert_eq!(row.right, right);
-        assert_eq!(row.parent, parent);
-        assert_eq!(row.child, child);
+        assert_eq!(row.id(), 0);
+        assert_eq!(row.left(), left);
+        assert_eq!(row.right(), right);
+        assert_eq!(row.parent(), parent);
+        assert_eq!(row.child(), child);
     } else {
         panic!("that should have worked...");
     }</code></pre>
 <p>The row types are rust structures. The table data are <em>copied</em> into these structures, making them relatively more expensive to work with. We are looking into removing the copies and returning slices, but doing so currently impacts the design of table row iterators such as:</p>
-<pre><code class="language-rust noplaygound ignore">    for row in tables.edges_iter() {
+<pre><code class="language-rust noplaygound ignore">    for row in tables.edge_iter() {
         // there is only one row!
-        assert_eq!(row.id, 0);
-        assert_eq!(row.left, left);
-        assert_eq!(row.right, right);
-        assert_eq!(row.parent, parent);
-        assert_eq!(row.child, child);
+        assert_eq!(row.id(), 0);
+        assert_eq!(row.left(), left);
+        assert_eq!(row.right(), right);
+        assert_eq!(row.parent(), parent);
+        assert_eq!(row.child(), child);
     }</code></pre>
 <p>These iterators are rust iterator types–they <code>impl Iterator&lt;Item=X&gt;</code>, where <code>X</code> is a table row type.</p>
 

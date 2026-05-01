@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "light";
-            window.path_to_searchindex_js = "searchindex-49a09f2a.js";
+            window.path_to_searchindex_js = "searchindex-6e4b37d8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-ed68240b.js"></script>
@@ -448,52 +448,33 @@ objects.</p>
 <h3 id="row-views"><a class="header" href="#row-views">Row views</a></h3>
 <p>To generate a row view using a row id:</p>
 <pre><code class="language-rust noplaygound ignore">    if let Some(row) = tables.edges().row(edge_id) {
-        assert_eq!(row.id, 0);
-        assert_eq!(row.left, left);
-        assert_eq!(row.right, right);
-        assert_eq!(row.parent, parent);
-        assert_eq!(row.child, child);
+        assert_eq!(row.id(), 0);
+        assert_eq!(row.left(), left);
+        assert_eq!(row.right(), right);
+        assert_eq!(row.parent(), parent);
+        assert_eq!(row.child(), child);
     } else {
         panic!("that should have worked...");
     }</code></pre>
-<p>To iterate over all views we use <em>lending</em> iterators:</p>
-<pre><code class="language-rust noplaygound ignore">    let mut edge_table_lending_iter = tables.edges().lending_iter();
-    while let Some(row_view) = edge_table_lending_iter.next() {
-        // there is only one row!
-        assert_eq!(row_view.id, 0);
-        assert_eq!(row_view.left, left);
-        assert_eq!(row_view.right, right);
-        assert_eq!(row_view.parent, parent);
-        assert_eq!(row_view.child, child);
-        assert!(row_view.metadata.is_none()); // no metadata in our table
-    }</code></pre>
-<h4 id="lending-iterators"><a class="header" href="#lending-iterators">Lending iterators</a></h4>
-<p>The lending iterators are implemented using the <a href="https://docs.rs/streaming-iterator/latest/streaming_iterator/"><code>streaming_iterator</code></a> crate.
-(The community now prefers the term “lending” over “streaming” for this concept.)
-The <code>tskit</code> prelude includes the trait declarations that allow the code shown above to compile.</p>
-<p>rust 1.65.0 stabilized Generic Associated Types, or GATs.
-GATs allows lending iterators to be implemented directly without the workarounds used in the <code>streaming_iterator</code> crate.
-We have decided not to implement our own lending iterator using GATs.
-Rather, we will see what the community settles on and will decide in the future whether or not to adopt it.</p>
 <h3 id="row-objects"><a class="header" href="#row-objects">Row objects</a></h3>
 <p>We may access entire table rows by a row id:</p>
 <pre><code class="language-rust noplaygound ignore">    if let Some(row) = tables.edges().row(edge_id) {
-        assert_eq!(row.id, 0);
-        assert_eq!(row.left, left);
-        assert_eq!(row.right, right);
-        assert_eq!(row.parent, parent);
-        assert_eq!(row.child, child);
+        assert_eq!(row.id(), 0);
+        assert_eq!(row.left(), left);
+        assert_eq!(row.right(), right);
+        assert_eq!(row.parent(), parent);
+        assert_eq!(row.child(), child);
     } else {
         panic!("that should have worked...");
     }</code></pre>
 <p>The row types are rust structures. The table data are <em>copied</em> into these structures, making them relatively more expensive to work with. We are looking into removing the copies and returning slices, but doing so currently impacts the design of table row iterators such as:</p>
-<pre><code class="language-rust noplaygound ignore">    for row in tables.edges_iter() {
+<pre><code class="language-rust noplaygound ignore">    for row in tables.edge_iter() {
         // there is only one row!
-        assert_eq!(row.id, 0);
-        assert_eq!(row.left, left);
-        assert_eq!(row.right, right);
-        assert_eq!(row.parent, parent);
-        assert_eq!(row.child, child);
+        assert_eq!(row.id(), 0);
+        assert_eq!(row.left(), left);
+        assert_eq!(row.right(), right);
+        assert_eq!(row.parent(), parent);
+        assert_eq!(row.child(), child);
     }</code></pre>
 <p>These iterators are rust iterator types–they <code>impl Iterator&lt;Item=X&gt;</code>, where <code>X</code> is a table row type.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -812,15 +793,15 @@ The error is due to conflicting implementations for a <a href="https://doc.rust-
 <p>We can confirm that we have one row with, and one without, metadata:</p>
 <pre><code class="language-rust noplayground ignore">    assert_eq!(
         tables
-            .mutations_iter()
-            .filter(|m| m.metadata.is_some())
+            .mutation_iter()
+            .filter(|m| m.metadata().is_some())
             .count(),
         1
     );
     assert_eq!(
         tables
-            .mutations_iter()
-            .filter(|m| m.metadata.is_none())
+            .mutation_iter()
+            .filter(|m| m.metadata().is_none())
             .count(),
         1
     );</code></pre>
@@ -986,25 +967,20 @@ for some rows not having metadata:</p>
 <li>We can use a lending iterator over rows to avoid unnecessary copying.</li>
 </ul>
 <p>Therefore:</p>
-<pre><code class="language-rust noplayground ignore">    let mut mutation_row_lending_iterator = tables.mutations().lending_iter();
-    let mut decoded_md = vec![];
-    while let Some(row_view) = mutation_row_lending_iterator.next() {
-        match row_view.metadata {
+<pre><code class="language-rust noplayground ignore">    let mut decoded_md = vec![];
+    for row in tables.mutations().iter() {
+        match row.metadata() {
             Some(slice) =&gt; decoded_md.push(Some(MutationMetadata::decode(slice).unwrap())),
             None =&gt; decoded_md.push(None),
         }
     }</code></pre>
 <p>To filter out rows without metadata:</p>
-<pre><code class="language-rust noplayground ignore">    let mut mutation_row_lending_iterator = tables.mutations().lending_iter();
-    let mut decoded_md = vec![];
-    while let Some(row_view) = mutation_row_lending_iterator
-        .next()
-        .filter(|rv| rv.metadata.is_some())
-    {
+<pre><code class="language-rust noplayground ignore">    let mut decoded_md = vec![];
+    for row in tables.mutation_iter().filter(|rv| rv.metadata().is_some()) {
         decoded_md.push((
-            row_view.id,
+            row.id(),
             // The unwrap will never panic because of our filter
-            MutationMetadata::decode(row_view.metadata.unwrap()).unwrap(),
+            MutationMetadata::decode(row.metadata().unwrap()).unwrap(),
         ));
     }</code></pre>
 <p>The first method gives <code>Vec&lt;Option&lt;MutationMetadata&gt;&gt;</code>.
@@ -1133,25 +1109,75 @@ pub use {
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="changelog"><a class="header" href="#changelog">Changelog</a></h1>
 <p>All notable changes to this project will be documented in this file.</p>
-<h2 id="0150---2026-04-06"><a class="header" href="#0150---2026-04-06">[0.15.0] - 2026-04-06</a></h2>
+<h2 id="0160---2026-05-01"><a class="header" href="#0160---2026-05-01">[0.16.0] - 2026-05-01</a></h2>
 <h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
+<ul>
+<li>Handle Result in example (<a href="https://github.com/tskit-dev/tskit-rust/pull/845">#845</a>)</li>
+<li>Remove mention of lending iters from book (<a href="https://github.com/tskit-dev/tskit-rust/pull/880">#880</a>)</li>
+<li>Crate-level docs on rows and row iteration (<a href="https://github.com/tskit-dev/tskit-rust/pull/879">#879</a>)</li>
+</ul>
+<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<ul>
+<li>Site/mutation co-iteration from TreeSequence (<a href="https://github.com/tskit-dev/tskit-rust/pull/847">#847</a>)</li>
+<li>Add/Sub + Assign for row id newtypes (<a href="https://github.com/tskit-dev/tskit-rust/pull/848">#848</a>)</li>
+<li>Compare row id newtypes to usize (<a href="https://github.com/tskit-dev/tskit-rust/pull/850">#850</a>)</li>
+<li>Tree::site_iter (<a href="https://github.com/tskit-dev/tskit-rust/pull/860">#860</a>)</li>
+<li>Tree::index (<a href="https://github.com/tskit-dev/tskit-rust/pull/864">#864</a>)</li>
+<li>Node traversal from a given subtree root (<a href="https://github.com/tskit-dev/tskit-rust/pull/882">#882</a>)</li>
+</ul>
+<h3 id="miscellaneous-tasks"><a class="header" href="#miscellaneous-tasks">Miscellaneous Tasks</a></h3>
+<ul>
+<li>Bump rand (<a href="https://github.com/tskit-dev/tskit-rust/pull/851">#851</a>)</li>
+</ul>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<ul>
+<li>Constant time skip for mut/site ref iterators (<a href="https://github.com/tskit-dev/tskit-rust/pull/873">#873</a>)</li>
+<li>Tree/Treeseq site_iter share the same low-level implementation (<a href="https://github.com/tskit-dev/tskit-rust/pull/878">#878</a>)</li>
+</ul>
+<h3 id="refactor"><a class="header" href="#refactor">Refactor</a></h3>
+<ul>
+<li>Interal iterators store row ids (<a href="https://github.com/tskit-dev/tskit-rust/pull/849">#849</a>)</li>
+<li>Treeseq site/mutation access now uses C API directly. (<a href="https://github.com/tskit-dev/tskit-rust/pull/853">#853</a>)</li>
+<li>Use PhantomData to uncouple row type references from parent tree sequence (<a href="https://github.com/tskit-dev/tskit-rust/pull/855">#855</a>)</li>
+<li>Fix namespace paths (<a href="https://github.com/tskit-dev/tskit-rust/pull/856">#856</a>)</li>
+<li>[<strong>breaking</strong>] Rewrite table row access and iteration (<a href="https://github.com/tskit-dev/tskit-rust/pull/857">#857</a>)</li>
+<li>[<strong>breaking</strong>] Tree::samples_iter replaces methods returning slices (<a href="https://github.com/tskit-dev/tskit-rust/pull/863">#863</a>)</li>
+<li>Use macros to reduce code duplication (<a href="https://github.com/tskit-dev/tskit-rust/pull/867">#867</a>)</li>
+<li>Allocate tsk_treeseq_t on the stack (<a href="https://github.com/tskit-dev/tskit-rust/pull/868">#868</a>)</li>
+<li>Remove dead code (<a href="https://github.com/tskit-dev/tskit-rust/pull/872">#872</a>)</li>
+<li>Remove generic type from table row references (<a href="https://github.com/tskit-dev/tskit-rust/pull/871">#871</a>)</li>
+<li>Rename SiteRef fn to return MutationRef iterator (<a href="https://github.com/tskit-dev/tskit-rust/pull/874">#874</a>)</li>
+<li>Remove generic type from row wrapper types (<a href="https://github.com/tskit-dev/tskit-rust/pull/881">#881</a>)</li>
+</ul>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<ul>
+<li>Low level treeseq is send/sync (<a href="https://github.com/tskit-dev/tskit-rust/pull/869">#869</a>)</li>
+<li>TreeSequence::individual_iter (<a href="https://github.com/tskit-dev/tskit-rust/pull/865">#865</a>)</li>
+<li>Add a unit test src/sys/types.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/866">#866</a>)</li>
+<li>Add assertion that all returned nodes are samples (<a href="https://github.com/tskit-dev/tskit-rust/pull/870">#870</a>)</li>
+<li>Test transmute tsk_mutation_t to Mutation (<a href="https://github.com/tskit-dev/tskit-rust/pull/875">#875</a>)</li>
+<li>Refactor unit test of tsk_mutation_t/Mutation/MutationRef (<a href="https://github.com/tskit-dev/tskit-rust/pull/876">#876</a>)</li>
+<li>Some more work on mutation wrapper type tests (<a href="https://github.com/tskit-dev/tskit-rust/pull/877">#877</a>)</li>
+</ul>
+<h2 id="0150---2026-04-06"><a class="header" href="#0150---2026-04-06">[0.15.0] - 2026-04-06</a></h2>
+<h3 id="documentation-1"><a class="header" href="#documentation-1">Documentation</a></h3>
 <ul>
 <li>Fix error re: need to declare a dependency (<a href="https://github.com/tskit-dev/tskit-rust/pull/837">#837</a>)</li>
 <li>Fix metadata docs for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/841">#841</a>)</li>
 <li>Data transfer to Python (<a href="https://github.com/tskit-dev/tskit-rust/pull/843">#843</a>)</li>
 </ul>
-<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
 <ul>
 <li>Ergonomic access to site table position column (<a href="https://github.com/tskit-dev/tskit-rust/pull/839">#839</a>)</li>
 <li>Ergonomic column access for remaining tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/840">#840</a>)</li>
 </ul>
 <h2 id="0150-alpha4---2026-04-02"><a class="header" href="#0150-alpha4---2026-04-02">[0.15.0-alpha.4] - 2026-04-02</a></h2>
-<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
+<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
 <ul>
 <li>Consume TableCollection, returning pointer (<a href="https://github.com/tskit-dev/tskit-rust/pull/830">#830</a>)</li>
 <li>TableCollection.new_from_raw (<a href="https://github.com/tskit-dev/tskit-rust/pull/833">#833</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks"><a class="header" href="#miscellaneous-tasks">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-1"><a class="header" href="#miscellaneous-tasks-1">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Update to tskit-c 1.3.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/811">#811</a>)</li>
 <li>Bump rust-toolchain version (<a href="https://github.com/tskit-dev/tskit-rust/pull/823">#823</a>)</li>
@@ -1162,7 +1188,7 @@ pub use {
 <li>Static assert sizeof u8 == that of C char (<a href="https://github.com/tskit-dev/tskit-rust/pull/817">#817</a>)</li>
 <li>Minor formatting fixes (<a href="https://github.com/tskit-dev/tskit-rust/pull/828">#828</a>)</li>
 </ul>
-<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<h3 id="testing-1"><a class="header" href="#testing-1">Testing</a></h3>
 <ul>
 <li>Explicitly test mutation parent requirement for tree sequence creation. (<a href="https://github.com/tskit-dev/tskit-rust/pull/809">#809</a>)</li>
 <li>Add python/zerocopy to test tables, etc., with Python allocator (<a href="https://github.com/tskit-dev/tskit-rust/pull/835">#835</a>)</li>
@@ -1172,11 +1198,11 @@ pub use {
 <ul>
 <li>Use c_char instead of i8 when handling C strings (<a href="https://github.com/tskit-dev/tskit-rust/pull/804">#804</a>)</li>
 </ul>
-<h3 id="documentation-1"><a class="header" href="#documentation-1">Documentation</a></h3>
+<h3 id="documentation-2"><a class="header" href="#documentation-2">Documentation</a></h3>
 <ul>
 <li>Update book on metadata + Python (<a href="https://github.com/tskit-dev/tskit-rust/pull/754">#754</a>)</li>
 </ul>
-<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
+<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
 <ul>
 <li>Add From/TryFrom impls for references types involving newtypes (<a href="https://github.com/tskit-dev/tskit-rust/pull/634">#634</a>)</li>
 <li>Impl PartialOrd for newtypes to reference (<a href="https://github.com/tskit-dev/tskit-rust/pull/725">#725</a>)</li>
@@ -1184,7 +1210,7 @@ pub use {
 <li>Get fns for table column types (<a href="https://github.com/tskit-dev/tskit-rust/pull/729">#729</a>)</li>
 <li>Access to ergonomic edge table columns (<a href="https://github.com/tskit-dev/tskit-rust/pull/730">#730</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-1"><a class="header" href="#miscellaneous-tasks-1">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-2"><a class="header" href="#miscellaneous-tasks-2">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Add tskit-derive/Cargo.lock (<a href="https://github.com/tskit-dev/tskit-rust/pull/756">#756</a>)</li>
 <li>Add rust-toolchain.toml (<a href="https://github.com/tskit-dev/tskit-rust/pull/771">#771</a>)</li>
@@ -1193,7 +1219,7 @@ pub use {
 <li>Bump actions/checkout from 4.2.2 to 6.0.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/800">#800</a>)</li>
 <li>Bump Swatinem/rust-cache from 2.7.5 to 2.8.2 (<a href="https://github.com/tskit-dev/tskit-rust/pull/801">#801</a>)</li>
 </ul>
-<h3 id="refactor"><a class="header" href="#refactor">Refactor</a></h3>
+<h3 id="refactor-1"><a class="header" href="#refactor-1">Refactor</a></h3>
 <ul>
 <li>Make low level ragged access fns private to sys (<a href="https://github.com/tskit-dev/tskit-rust/pull/720">#720</a>)</li>
 <li>Internal fn for ragged access is now safe (<a href="https://github.com/tskit-dev/tskit-rust/pull/721">#721</a>)</li>
@@ -1210,7 +1236,7 @@ pub use {
 <ul>
 <li>Fix doc indentation (<a href="https://github.com/tskit-dev/tskit-rust/pull/742">#742</a>)</li>
 </ul>
-<h3 id="testing-1"><a class="header" href="#testing-1">Testing</a></h3>
+<h3 id="testing-2"><a class="header" href="#testing-2">Testing</a></h3>
 <ul>
 <li>Add tests of Python consuming JSON metadata from rust (<a href="https://github.com/tskit-dev/tskit-rust/pull/749">#749</a>)</li>
 <li>Roundtrip bincode metadata into Python (<a href="https://github.com/tskit-dev/tskit-rust/pull/750">#750</a>)</li>
@@ -1221,15 +1247,15 @@ pub use {
 <ul>
 <li>Error during construction if sequence_length is not finite (<a href="https://github.com/tskit-dev/tskit-rust/pull/707">#707</a>)</li>
 </ul>
-<h3 id="documentation-2"><a class="header" href="#documentation-2">Documentation</a></h3>
+<h3 id="documentation-3"><a class="header" href="#documentation-3">Documentation</a></h3>
 <ul>
 <li>Add links to the manual (<a href="https://github.com/tskit-dev/tskit-rust/pull/705">#705</a>)</li>
 </ul>
-<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
+<h3 id="features-4"><a class="header" href="#features-4">Features</a></h3>
 <ul>
 <li>TableCollection::compute_mutation_parents (<a href="https://github.com/tskit-dev/tskit-rust/pull/714">#714</a>)</li>
 </ul>
-<h3 id="refactor-1"><a class="header" href="#refactor-1">Refactor</a></h3>
+<h3 id="refactor-2"><a class="header" href="#refactor-2">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Redo Tree internals (<a href="https://github.com/tskit-dev/tskit-rust/pull/711">#711</a>)</li>
 <li>(correctly) mark an internal fn as unsafe (<a href="https://github.com/tskit-dev/tskit-rust/pull/708">#708</a>)</li>
@@ -1243,12 +1269,12 @@ pub use {
 <li>Deny broken intradoc links (<a href="https://github.com/tskit-dev/tskit-rust/pull/718">#718</a>)</li>
 </ul>
 <h2 id="0150-alpha1---2025-01-23"><a class="header" href="#0150-alpha1---2025-01-23">[0.15.0-alpha.1] - 2025-01-23</a></h2>
-<h3 id="features-4"><a class="header" href="#features-4">Features</a></h3>
+<h3 id="features-5"><a class="header" href="#features-5">Features</a></h3>
 <ul>
 <li>Added keep intervals for tables and tree sequences (<a href="https://github.com/tskit-dev/tskit-rust/pull/635">#635</a>)</li>
 <li>Add TreeSequence::tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/648">#648</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-2"><a class="header" href="#miscellaneous-tasks-2">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-3"><a class="header" href="#miscellaneous-tasks-3">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Bump serde from 1.0.199 to 1.0.203 (<a href="https://github.com/tskit-dev/tskit-rust/pull/639">#639</a>)</li>
 <li>Bump serde_json from 1.0.115 to 1.0.117 (<a href="https://github.com/tskit-dev/tskit-rust/pull/637">#637</a>)</li>
@@ -1260,7 +1286,7 @@ pub use {
 <li>Bump serde_json from 1.0.117 to 1.0.120 (<a href="https://github.com/tskit-dev/tskit-rust/pull/646">#646</a>)</li>
 <li>Bump cc from 1.0.98 to 1.0.104 (<a href="https://github.com/tskit-dev/tskit-rust/pull/643">#643</a>)</li>
 </ul>
-<h3 id="refactor-2"><a class="header" href="#refactor-2">Refactor</a></h3>
+<h3 id="refactor-3"><a class="header" href="#refactor-3">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Use Into<idtype> for metadata retrieval fns (<a href="https://github.com/tskit-dev/tskit-rust/pull/633">#633</a>)</idtype></li>
 <li>Separate keep_intervals from simplify (<a href="https://github.com/tskit-dev/tskit-rust/pull/647">#647</a>)</li>
@@ -1275,18 +1301,18 @@ pub use {
 <li>Clippy lints for rustc 1.84.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/699">#699</a>)</li>
 </ul>
 <h2 id="0150-alpha0---2024-05-07"><a class="header" href="#0150-alpha0---2024-05-07">[0.15.0-alpha.0] - 2024-05-07</a></h2>
-<h3 id="documentation-3"><a class="header" href="#documentation-3">Documentation</a></h3>
+<h3 id="documentation-4"><a class="header" href="#documentation-4">Documentation</a></h3>
 <ul>
 <li>Fix incomplete sentence in metadata_advanced.md (<a href="https://github.com/tskit-dev/tskit-rust/pull/529">#529</a>)</li>
 <li>Remove visible use of namespace from flags doc tests (<a href="https://github.com/tskit-dev/tskit-rust/pull/618">#618</a>)</li>
 <li>Fix lints from rustdoc (<a href="https://github.com/tskit-dev/tskit-rust/pull/631">#631</a>)</li>
 </ul>
-<h3 id="features-5"><a class="header" href="#features-5">Features</a></h3>
+<h3 id="features-6"><a class="header" href="#features-6">Features</a></h3>
 <ul>
 <li>Allow tree iteration to start at a given position/tree index (<a href="https://github.com/tskit-dev/tskit-rust/pull/613">#613</a>)</li>
 <li>Sys::NodeTable::raw_metadata (<a href="https://github.com/tskit-dev/tskit-rust/pull/628">#628</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-3"><a class="header" href="#miscellaneous-tasks-3">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-4"><a class="header" href="#miscellaneous-tasks-4">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Add cargo-semver checks + caching to CI (<a href="https://github.com/tskit-dev/tskit-rust/pull/493">#493</a>)</li>
 <li>Update bindgen requirement from 0.63.0 to 0.65.1 (<a href="https://github.com/tskit-dev/tskit-rust/pull/499">#499</a>)</li>
@@ -1342,7 +1368,7 @@ pub use {
 <li>Bump cc from 1.0.90 to 1.0.96 (<a href="https://github.com/tskit-dev/tskit-rust/pull/625">#625</a>)</li>
 <li>Bump libc from 0.2.153 to 0.2.154 (<a href="https://github.com/tskit-dev/tskit-rust/pull/627">#627</a>)</li>
 </ul>
-<h3 id="refactor-3"><a class="header" href="#refactor-3">Refactor</a></h3>
+<h3 id="refactor-4"><a class="header" href="#refactor-4">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Remove TSK_NODE_IS_SAMPLE (<a href="https://github.com/tskit-dev/tskit-rust/pull/505">#505</a>)</li>
 <li>[<strong>breaking</strong>] Remove tsk_flags_t from lib.rs and prelude (<a href="https://github.com/tskit-dev/tskit-rust/pull/506">#506</a>)</li>
@@ -1383,7 +1409,7 @@ pub use {
 <li>Fix lints from rustc 1.77.1 (<a href="https://github.com/tskit-dev/tskit-rust/pull/592">#592</a>)</li>
 <li>Fix lints from rust 1.78 (<a href="https://github.com/tskit-dev/tskit-rust/pull/629">#629</a>)</li>
 </ul>
-<h3 id="testing-2"><a class="header" href="#testing-2">Testing</a></h3>
+<h3 id="testing-3"><a class="header" href="#testing-3">Testing</a></h3>
 <ul>
 <li>Add explicit tests of empty bitflags types (<a href="https://github.com/tskit-dev/tskit-rust/pull/527">#527</a>)</li>
 <li>Rewrite test without proptest (<a href="https://github.com/tskit-dev/tskit-rust/pull/534">#534</a>)</li>
@@ -1395,16 +1421,16 @@ pub use {
 <ul>
 <li>Tree now tied to TreeSequence lifetime (<a href="https://github.com/tskit-dev/tskit-rust/pull/497">#497</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-4"><a class="header" href="#miscellaneous-tasks-4">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-5"><a class="header" href="#miscellaneous-tasks-5">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Update delegate requirement from 0.8.0 to 0.9.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/494">#494</a>)</li>
 </ul>
 <h2 id="0140---2023-03-17"><a class="header" href="#0140---2023-03-17">[0.14.0] - 2023-03-17</a></h2>
-<h3 id="documentation-4"><a class="header" href="#documentation-4">Documentation</a></h3>
+<h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
 <ul>
 <li>Book section on node defaults (<a href="https://github.com/tskit-dev/tskit-rust/pull/491">#491</a>)</li>
 </ul>
-<h3 id="features-6"><a class="header" href="#features-6">Features</a></h3>
+<h3 id="features-7"><a class="header" href="#features-7">Features</a></h3>
 <ul>
 <li>Allow use of bookmark in examples/haploid_wright_fisher (<a href="https://github.com/tskit-dev/tskit-rust/pull/479">#479</a>)</li>
 <li>Impl Default for row id types (<a href="https://github.com/tskit-dev/tskit-rust/pull/484">#484</a>)</li>
@@ -1412,11 +1438,11 @@ pub use {
 <li>Implement Builder pattern for flags (<a href="https://github.com/tskit-dev/tskit-rust/pull/487">#487</a>)</li>
 <li>Support adding nodes with defaults (<a href="https://github.com/tskit-dev/tskit-rust/pull/488">#488</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-5"><a class="header" href="#miscellaneous-tasks-5">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-6"><a class="header" href="#miscellaneous-tasks-6">Miscellaneous Tasks</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Bump MSRV to 1.60.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/478">#478</a>)</li>
 </ul>
-<h3 id="refactor-4"><a class="header" href="#refactor-4">Refactor</a></h3>
+<h3 id="refactor-5"><a class="header" href="#refactor-5">Refactor</a></h3>
 <ul>
 <li>Remove internal impl Deref/DerefMut for edge diff iterator. (<a href="https://github.com/tskit-dev/tskit-rust/pull/482">#482</a>)</li>
 <li>Mod table_view is no longer pub (<a href="https://github.com/tskit-dev/tskit-rust/pull/483">#483</a>)</li>
@@ -1425,24 +1451,24 @@ pub use {
 <li>Manually impl Default for NodeDefaultsWithMetadata (<a href="https://github.com/tskit-dev/tskit-rust/pull/490">#490</a>)</li>
 </ul>
 <h2 id="0120---2022-12-23"><a class="header" href="#0120---2022-12-23">[0.12.0] - 2022-12-23</a></h2>
-<h3 id="documentation-5"><a class="header" href="#documentation-5">Documentation</a></h3>
+<h3 id="documentation-6"><a class="header" href="#documentation-6">Documentation</a></h3>
 <ul>
 <li>Book section on lending row iterators (<a href="https://github.com/tskit-dev/tskit-rust/pull/406">#406</a>)</li>
 <li>Advanced metadata topics in book (<a href="https://github.com/tskit-dev/tskit-rust/pull/407">#407</a>)</li>
 <li>Book chapter on edge differences (<a href="https://github.com/tskit-dev/tskit-rust/pull/417">#417</a>)</li>
 </ul>
-<h3 id="features-7"><a class="header" href="#features-7">Features</a></h3>
+<h3 id="features-8"><a class="header" href="#features-8">Features</a></h3>
 <ul>
 <li>TreeSequence::edge_differences_iter (<a href="https://github.com/tskit-dev/tskit-rust/pull/410">#410</a>)</li>
 <li>Add convience functions to get usize from row ids. (<a href="https://github.com/tskit-dev/tskit-rust/pull/413">#413</a>)</li>
 <li>Tree::total_branch_length now works. (<a href="https://github.com/tskit-dev/tskit-rust/pull/429">#429</a>)</li>
 <li>Add getters/setters for Bookmark. (<a href="https://github.com/tskit-dev/tskit-rust/pull/437">#437</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-6"><a class="header" href="#miscellaneous-tasks-6">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-7"><a class="header" href="#miscellaneous-tasks-7">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Update bindgen requirement from 0.61.0 to 0.63.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/415">#415</a>)</li>
 </ul>
-<h3 id="refactor-5"><a class="header" href="#refactor-5">Refactor</a></h3>
+<h3 id="refactor-6"><a class="header" href="#refactor-6">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Replace Deref with delegation of TableViews API (<a href="https://github.com/tskit-dev/tskit-rust/pull/409">#409</a>)</li>
 <li>[<strong>breaking</strong>] Remove TskitTypeAccess trait (<a href="https://github.com/tskit-dev/tskit-rust/pull/411">#411</a>)</li>
@@ -1472,11 +1498,11 @@ pub use {
 <ul>
 <li>[<strong>breaking</strong>] MetadataError::RoundtripError now requires Send + Sync (<a href="https://github.com/tskit-dev/tskit-rust/pull/396">#396</a>)</li>
 </ul>
-<h3 id="documentation-6"><a class="header" href="#documentation-6">Documentation</a></h3>
+<h3 id="documentation-7"><a class="header" href="#documentation-7">Documentation</a></h3>
 <ul>
 <li>Add haploid WF example to book (<a href="https://github.com/tskit-dev/tskit-rust/pull/397">#397</a>)</li>
 </ul>
-<h3 id="features-8"><a class="header" href="#features-8">Features</a></h3>
+<h3 id="features-9"><a class="header" href="#features-9">Features</a></h3>
 <ul>
 <li>Add examples/haploid_wright_fisher.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/394">#394</a>)</li>
 <li>Add lending iterators over table row “views” (<a href="https://github.com/tskit-dev/tskit-rust/pull/398">#398</a>)</li>
@@ -1486,13 +1512,13 @@ pub use {
 <li>Add row_view() for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/402">#402</a>)</li>
 <li>Column slice getters for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/404">#404</a>)</li>
 </ul>
-<h3 id="refactor-6"><a class="header" href="#refactor-6">Refactor</a></h3>
+<h3 id="refactor-7"><a class="header" href="#refactor-7">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Return &amp;str from provenance table getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/403">#403</a>)</li>
 <li>Deprecate NodeTable::flags_array_mut and NodeTable::time_array_mut (<a href="https://github.com/tskit-dev/tskit-rust/pull/405">#405</a>)</li>
 </ul>
 <h2 id="0120-alpha0---2022-11-06"><a class="header" href="#0120-alpha0---2022-11-06">[0.12.0-alpha.0] - 2022-11-06</a></h2>
-<h3 id="documentation-7"><a class="header" href="#documentation-7">Documentation</a></h3>
+<h3 id="documentation-8"><a class="header" href="#documentation-8">Documentation</a></h3>
 <ul>
 <li>Add book sections on table data access (<a href="https://github.com/tskit-dev/tskit-rust/pull/379">#379</a>)</li>
 <li>Remove chapter number from book intro (<a href="https://github.com/tskit-dev/tskit-rust/pull/380">#380</a>)</li>
@@ -1505,17 +1531,17 @@ pub use {
 <li>Book sections on metadata (<a href="https://github.com/tskit-dev/tskit-rust/pull/391">#391</a>)</li>
 <li>Book section on error handling (<a href="https://github.com/tskit-dev/tskit-rust/pull/393">#393</a>)</li>
 </ul>
-<h3 id="refactor-7"><a class="header" href="#refactor-7">Refactor</a></h3>
+<h3 id="refactor-8"><a class="header" href="#refactor-8">Refactor</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Improve Tree iterator ergonomics (<a href="https://github.com/tskit-dev/tskit-rust/pull/384">#384</a>)</li>
 <li>[<strong>breaking</strong>] Improve Tree interface ergonomics (<a href="https://github.com/tskit-dev/tskit-rust/pull/388">#388</a>)</li>
 </ul>
 <h2 id="0111---2022-11-04"><a class="header" href="#0111---2022-11-04">[0.11.1] - 2022-11-04</a></h2>
-<h3 id="documentation-8"><a class="header" href="#documentation-8">Documentation</a></h3>
+<h3 id="documentation-9"><a class="header" href="#documentation-9">Documentation</a></h3>
 <ul>
 <li>Add mdbook (<a href="https://github.com/tskit-dev/tskit-rust/pull/378">#378</a>)</li>
 </ul>
-<h3 id="refactor-8"><a class="header" href="#refactor-8">Refactor</a></h3>
+<h3 id="refactor-9"><a class="header" href="#refactor-9">Refactor</a></h3>
 <ul>
 <li>Apply functional style for NodeTable fns (<a href="https://github.com/tskit-dev/tskit-rust/pull/377">#377</a>)</li>
 </ul>
@@ -1526,15 +1552,15 @@ pub use {
 <li>[<strong>breaking</strong>] Update generic bounds on metadata getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/370">#370</a>)</li>
 <li>Impl DerefMut for “owned” tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/371">#371</a>)</li>
 </ul>
-<h3 id="documentation-9"><a class="header" href="#documentation-9">Documentation</a></h3>
+<h3 id="documentation-10"><a class="header" href="#documentation-10">Documentation</a></h3>
 <ul>
 <li>Add migration guide (<a href="https://github.com/tskit-dev/tskit-rust/pull/376">#376</a>)</li>
 </ul>
-<h3 id="features-9"><a class="header" href="#features-9">Features</a></h3>
+<h3 id="features-10"><a class="header" href="#features-10">Features</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Add TskitError::LibraryError (<a href="https://github.com/tskit-dev/tskit-rust/pull/342">#342</a>)</li>
 </ul>
-<h3 id="refactor-9"><a class="header" href="#refactor-9">Refactor</a></h3>
+<h3 id="refactor-10"><a class="header" href="#refactor-10">Refactor</a></h3>
 <ul>
 <li>Streamline code for generating table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/340">#340</a>)</li>
 <li>Replace unwrap with expect in _macros.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/341">#341</a>)</li>
@@ -1557,17 +1583,17 @@ pub use {
 <li>Fix lints from rust 1.65.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/374">#374</a>)</li>
 <li>Fix lints from nightly (<a href="https://github.com/tskit-dev/tskit-rust/pull/375">#375</a>)</li>
 </ul>
-<h3 id="testing-3"><a class="header" href="#testing-3">Testing</a></h3>
+<h3 id="testing-4"><a class="header" href="#testing-4">Testing</a></h3>
 <ul>
 <li>Rewrite table API tests (<a href="https://github.com/tskit-dev/tskit-rust/pull/356">#356</a>)</li>
 <li>Add doc tests for node table (<a href="https://github.com/tskit-dev/tskit-rust/pull/359">#359</a>)</li>
 </ul>
 <h2 id="0100---2022-10-28"><a class="header" href="#0100---2022-10-28">[0.10.0] - 2022-10-28</a></h2>
-<h3 id="documentation-10"><a class="header" href="#documentation-10">Documentation</a></h3>
+<h3 id="documentation-11"><a class="header" href="#documentation-11">Documentation</a></h3>
 <ul>
 <li>Display feature flags in docs.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/338">#338</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-7"><a class="header" href="#miscellaneous-tasks-7">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-8"><a class="header" href="#miscellaneous-tasks-8">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Set msrv to 1.57.0 (result of cargo msrv) (<a href="https://github.com/tskit-dev/tskit-rust/pull/322">#322</a>)</li>
 <li>Fix tag_pattern in cliff.toml (<a href="https://github.com/tskit-dev/tskit-rust/pull/330">#330</a>)</li>
@@ -1576,11 +1602,11 @@ pub use {
 <li>Update bindgen requirement from 0.60.1 to 0.61.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/336">#336</a>)</li>
 <li>Bump styfle/cancel-workflow-action from 0.6.0 to 0.11.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/334">#334</a>)</li>
 </ul>
-<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<h3 id="performance-1"><a class="header" href="#performance-1">Performance</a></h3>
 <ul>
 <li>Use Bookmark in forward simulation example (<a href="https://github.com/tskit-dev/tskit-rust/pull/318">#318</a>)</li>
 </ul>
-<h3 id="refactor-10"><a class="header" href="#refactor-10">Refactor</a></h3>
+<h3 id="refactor-11"><a class="header" href="#refactor-11">Refactor</a></h3>
 <ul>
 <li>Streamline internal macros for adding nodes (<a href="https://github.com/tskit-dev/tskit-rust/pull/309">#309</a>)</li>
 <li>Remove internal ffi module (<a href="https://github.com/tskit-dev/tskit-rust/pull/310">#310</a>)</li>
@@ -1598,7 +1624,7 @@ pub use {
 <li>Use auto-deref for pointer deref. (<a href="https://github.com/tskit-dev/tskit-rust/pull/325">#325</a>)</li>
 <li>Fix +nightly clippy lints for all targets/features. (<a href="https://github.com/tskit-dev/tskit-rust/pull/326">#326</a>)</li>
 </ul>
-<h3 id="testing-4"><a class="header" href="#testing-4">Testing</a></h3>
+<h3 id="testing-5"><a class="header" href="#testing-5">Testing</a></h3>
 <ul>
 <li>Improve test work flow (<a href="https://github.com/tskit-dev/tskit-rust/pull/331">#331</a>)</li>
 </ul>
@@ -1607,7 +1633,7 @@ pub use {
 <ul>
 <li>Replace crate with $crate in macros (<a href="https://github.com/tskit-dev/tskit-rust/pull/287">#287</a>)</li>
 </ul>
-<h3 id="features-10"><a class="header" href="#features-10">Features</a></h3>
+<h3 id="features-11"><a class="header" href="#features-11">Features</a></h3>
 <ul>
 <li>Add tskit::OwnedMutationTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/281">#281</a>)</li>
 <li>Add tskit::OwnedSiteTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/283">#283</a>)</li>
@@ -1617,16 +1643,16 @@ pub use {
 <li>Set tables in collection from owned tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/288">#288</a>)</li>
 <li>[<strong>breaking</strong>] Impl Send/Sync for TreeSequence (<a href="https://github.com/tskit-dev/tskit-rust/pull/297">#297</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-8"><a class="header" href="#miscellaneous-tasks-8">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-9"><a class="header" href="#miscellaneous-tasks-9">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Update to C API 1.1.1 (<a href="https://github.com/tskit-dev/tskit-rust/pull/304">#304</a>)</li>
 </ul>
-<h3 id="performance-1"><a class="header" href="#performance-1">Performance</a></h3>
+<h3 id="performance-2"><a class="header" href="#performance-2">Performance</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Implement slice access to individual data (<a href="https://github.com/tskit-dev/tskit-rust/pull/292">#292</a>)</li>
 <li>[<strong>breaking</strong>] Eliminate several copies from C to rust (<a href="https://github.com/tskit-dev/tskit-rust/pull/293">#293</a>)</li>
 </ul>
-<h3 id="refactor-11"><a class="header" href="#refactor-11">Refactor</a></h3>
+<h3 id="refactor-12"><a class="header" href="#refactor-12">Refactor</a></h3>
 <ul>
 <li>Deduplicate code for adding node table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/278">#278</a>)</li>
 <li>Use macros to implement adding table rows. (<a href="https://github.com/tskit-dev/tskit-rust/pull/279">#279</a>)</li>
@@ -1643,30 +1669,30 @@ pub use {
 <li>Fix leak in TableCollection::deepcopy (<a href="https://github.com/tskit-dev/tskit-rust/pull/275">#275</a>)</li>
 <li>Fix leak in TreeSequence::dump_tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/276">#276</a>)</li>
 </ul>
-<h3 id="documentation-11"><a class="header" href="#documentation-11">Documentation</a></h3>
+<h3 id="documentation-12"><a class="header" href="#documentation-12">Documentation</a></h3>
 <ul>
 <li>Fix warnings from “cargo doc” (<a href="https://github.com/tskit-dev/tskit-rust/pull/255">#255</a>)</li>
 </ul>
-<h3 id="features-11"><a class="header" href="#features-11">Features</a></h3>
+<h3 id="features-12"><a class="header" href="#features-12">Features</a></h3>
 <ul>
 <li>Make load from file generic over AsRef<str> (<a href="https://github.com/tskit-dev/tskit-rust/pull/254">#254</a>)</str></li>
 <li>Add tskit::OwnedPopulationTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/267">#267</a>)</li>
 <li>Add tskit::OwnedEdgeTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/268">#268</a>)</li>
 <li>Add tskit::OwnedNodeTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/273">#273</a>)</li>
 </ul>
-<h3 id="miscellaneous-tasks-9"><a class="header" href="#miscellaneous-tasks-9">Miscellaneous Tasks</a></h3>
+<h3 id="miscellaneous-tasks-10"><a class="header" href="#miscellaneous-tasks-10">Miscellaneous Tasks</a></h3>
 <ul>
 <li>Add cliff.toml (config file for git-cliff) (<a href="https://github.com/tskit-dev/tskit-rust/pull/257">#257</a>)</li>
 <li>Prefix “chore: “ to dependabot.yml (<a href="https://github.com/tskit-dev/tskit-rust/pull/258">#258</a>)</li>
 <li>Use cargo-hack to streamline CI. (<a href="https://github.com/tskit-dev/tskit-rust/pull/259">#259</a>)</li>
 <li>Add cargo-valgrind CI workflow (<a href="https://github.com/tskit-dev/tskit-rust/pull/277">#277</a>)</li>
 </ul>
-<h3 id="refactor-12"><a class="header" href="#refactor-12">Refactor</a></h3>
+<h3 id="refactor-13"><a class="header" href="#refactor-13">Refactor</a></h3>
 <ul>
 <li>Macro metadata_to_vector intputs changed. (<a href="https://github.com/tskit-dev/tskit-rust/pull/263">#263</a>)</li>
 <li>Add macros to implement owned tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/269">#269</a>)</li>
 </ul>
-<h3 id="testing-5"><a class="header" href="#testing-5">Testing</a></h3>
+<h3 id="testing-6"><a class="header" href="#testing-6">Testing</a></h3>
 <ul>
 <li>Add another experimental trait idea for metadata. (<a href="https://github.com/tskit-dev/tskit-rust/pull/261">#261</a>)</li>
 <li>Redo doctest: TableCollection::new_from_file (<a href="https://github.com/tskit-dev/tskit-rust/pull/272">#272</a>)</li>
