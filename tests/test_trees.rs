@@ -843,3 +843,185 @@ fn test_treeseq_individual_iter() {
         }
     }
 }
+
+// The following tests are lifted
+// from another crate that identified
+// the bug in the impl of nth
+#[cfg(test)]
+mod from_popgen_oxide {
+    //   Tree for [0, 50)
+    //   --6-- <- time 30
+    //   |   |
+    //  -5-- | <- time 20
+    //  |  | |
+    // -4- | | <- time 10
+    // | | | |
+    // 0 1 2 3 <- time 0
+    // Tree for [50, 100)
+    //  --6---
+    //  |  | |
+    // -5- | |
+    // | | | |
+    // 4 | | |
+    // | | | |
+    // 0 1 2 3
+    fn make_two_different_four_sample_trees() -> tskit::TableCollection {
+        let mut tables = tskit::TableCollection::new(100.0).unwrap();
+
+        for _ in 0..4 {
+            tables
+                .add_node(
+                    tskit::NodeFlags::new_sample(),
+                    0.0,
+                    tskit::PopulationId::NULL,
+                    tskit::IndividualId::NULL,
+                )
+                .unwrap();
+        }
+
+        for (_, time) in (0..3).zip([10.0, 20.0, 30.0]) {
+            tables
+                .add_node(
+                    tskit::NodeFlags::default(),
+                    time,
+                    tskit::PopulationId::NULL,
+                    tskit::IndividualId::NULL,
+                )
+                .unwrap();
+        }
+
+        tables.add_edge(0., 50., 4, 0).unwrap();
+        tables.add_edge(0., 50., 4, 1).unwrap();
+        tables.add_edge(0., 50., 5, 4).unwrap();
+        tables.add_edge(0., 50., 5, 2).unwrap();
+        tables.add_edge(0., 50., 6, 5).unwrap();
+        tables.add_edge(0., 50., 6, 3).unwrap();
+
+        tables.add_edge(50., 100., 6, 5).unwrap();
+        tables.add_edge(50., 100., 6, 2).unwrap();
+        tables.add_edge(50., 100., 6, 3).unwrap();
+        tables.add_edge(50., 100., 5, 4).unwrap();
+        tables.add_edge(50., 100., 5, 1).unwrap();
+        tables.add_edge(50., 100., 4, 0).unwrap();
+
+        tables
+    }
+
+    struct MutationData {
+        node: tskit::NodeId,
+        time: tskit::Time,
+        derived_state: Vec<u8>,
+    }
+
+    impl MutationData {
+        fn new<N, T>(node: N, time: T, derived_state: &str) -> Self
+        where
+            N: Into<tskit::NodeId>,
+            T: Into<tskit::Time>,
+        {
+            Self {
+                node: node.into(),
+                time: time.into(),
+                derived_state: derived_state.as_bytes().to_owned(),
+            }
+        }
+    }
+
+    struct SiteData {
+        position: tskit::Position,
+        ancestral_state: Vec<u8>,
+        mutations: Vec<MutationData>,
+    }
+
+    impl SiteData {
+        fn new<P, M>(position: P, ancestral_state: &str, mutations: M) -> Self
+        where
+            P: Into<tskit::Position>,
+            M: IntoIterator<Item = MutationData>,
+        {
+            Self {
+                position: position.into(),
+                ancestral_state: ancestral_state.as_bytes().to_owned(),
+                mutations: mutations.into_iter().collect::<Vec<_>>(),
+            }
+        }
+    }
+    fn add_sites_and_mutations<S>(tables: &mut tskit::TableCollection, data: S)
+    where
+        S: IntoIterator<Item = SiteData>,
+    {
+        for s in data {
+            let site = tables
+                .add_site(s.position, Some(&s.ancestral_state))
+                .unwrap();
+            for m in &s.mutations {
+                tables
+                    .add_mutation(
+                        site,
+                        m.node,
+                        tskit::MutationId::NULL,
+                        m.time,
+                        Some(&m.derived_state),
+                    )
+                    .unwrap();
+            }
+        }
+    }
+
+    fn make_test_data<F, S>(make_tables: F, data: S) -> tskit::TreeSequence
+    where
+        F: Fn() -> tskit::TableCollection,
+        S: IntoIterator<Item = SiteData>,
+    {
+        let mut tables = make_tables();
+        add_sites_and_mutations(&mut tables, data);
+        tables
+            .full_sort(tskit::TableSortOptions::default())
+            .unwrap();
+        tables.build_index().unwrap();
+        assert!(!tables.as_mut_ptr().is_null());
+        tables
+            .compute_mutation_parents(tskit::MutationParentsFlags::default())
+            .unwrap();
+        tables
+            .tree_sequence(tskit::TreeSequenceFlags::default())
+            .unwrap()
+    }
+
+    #[test]
+    fn test_7() {
+        use tskit::StreamingIterator;
+
+        let site0 = SiteData::new(
+            60.0,
+            "G",
+            vec![
+                MutationData::new(5, 20.1, "A"),
+                MutationData::new(4, 10.1, "G"),
+                MutationData::new(1, 0.1, "C"),
+            ],
+        );
+        let site1 = SiteData::new(
+            40.0,
+            "T",
+            vec![
+                MutationData::new(3, 20.1, "T"),
+                MutationData::new(2, 0.1, "G"),
+                MutationData::new(4, 10.1, "G"),
+            ],
+        );
+        let ts = make_test_data(make_two_different_four_sample_trees, vec![site0, site1]);
+        let mut tree_iter = ts.tree_iterator(0).unwrap();
+        let mut site = 0_usize;
+        while let Some(tree) = tree_iter.next() {
+            for _ in ts
+                .site_iter()
+                .skip(site)
+                .take_while(|s| s.position() < tree.interval().1)
+            {
+                site += 1;
+            }
+        }
+        assert_eq!(site, ts.sites().num_rows().as_usize())
+    }
+}

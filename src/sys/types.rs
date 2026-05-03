@@ -75,8 +75,8 @@ impl<'ts> Iterator for MutationRefIterator<'ts> {
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.current = n;
-        self.mutations.get(self.current).map(MutationRef)
+        self.current = n + 1;
+        self.mutations.get(n).map(MutationRef)
     }
 }
 

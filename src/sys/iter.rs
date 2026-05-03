@@ -12,7 +12,7 @@ impl<'ts> Iterator for SiteRefIterator<'ts> {
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.current = n;
-        self.sites.get(self.current).map(|s| super::new_site_ref(s))
+        self.current = n + 1;
+        self.sites.get(n).map(|s| super::new_site_ref(s))
     }
 }
