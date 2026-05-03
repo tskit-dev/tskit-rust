@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.1] - 2026-05-03
+
+### Bug Fixes
+
+- Correct implementation of nth for SiteRef/MutationRef iteration ([#885](https://github.com/tskit-dev/tskit-rust/pull/885))
+
+### Features
+
+- SiteRef::mutation_iter now returns a double-ended iterator ([#884](https://github.com/tskit-dev/tskit-rust/pull/884))
+
 ## [0.16.0] - 2026-05-01
 
 ### Documentation
