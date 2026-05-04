@@ -63,32 +63,34 @@ pub(super) fn new_site_ref<'p>(site: &'p super::bindings::tsk_site_t) -> SiteRef
 
 pub struct MutationRefIterator<'ts> {
     mutations: &'ts [super::bindings::tsk_mutation_t],
-    current: usize,
 }
 
 impl<'ts> Iterator for MutationRefIterator<'ts> {
     type Item = super::MutationRef<'ts>;
     fn next(&mut self) -> Option<Self::Item> {
-        let n = self.mutations.get(self.current).map(MutationRef);
-        self.current += 1;
-        n
+        if let Some((l, r)) = self.mutations.split_first() {
+            self.mutations = r;
+            Some(MutationRef(l))
+        } else {
+            None
+        }
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.current = n + 1;
-        self.mutations.get(n).map(MutationRef)
+        self.mutations = if n < self.mutations.len() {
+            &self.mutations[n..]
+        } else {
+            &[]
+        };
+        self.next()
     }
 }
 
 impl<'ts> DoubleEndedIterator for MutationRefIterator<'ts> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.current < self.mutations.len() {
-            let n = self
-                .mutations
-                .get(self.mutations.len() - self.current - 1)
-                .map(MutationRef);
-            self.current += 1;
-            n
+        if let Some((l, r)) = self.mutations.split_last() {
+            self.mutations = r;
+            Some(MutationRef(l))
         } else {
             None
         }
@@ -116,10 +118,7 @@ impl<'parent> SiteRef<'parent> {
         let mslice = unsafe {
             std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
         };
-        MutationRefIterator {
-            mutations: mslice,
-            current: 0,
-        }
+        MutationRefIterator { mutations: mslice }
     }
 
     /// Ancestral state

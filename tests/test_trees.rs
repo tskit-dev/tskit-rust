@@ -586,6 +586,79 @@ fn test_iterate_mutations_at_site() {
         }
     }
 }
+#[test]
+fn test_site_mutation_iterators_nth() {
+    let mut tables = tskit::TableCollection::new(100.0).unwrap();
+    let n0 = tables
+        .add_node(tskit::NodeFlags::IS_SAMPLE, 0.0, -1, -1)
+        .unwrap();
+    let s0 = tables.add_site(50., None).unwrap();
+    let m0 = tables.add_mutation(s0, n0, -1, 20.0, None).unwrap();
+    let m1 = tables.add_mutation(s0, n0, -1, 10.0, None).unwrap();
+    let m2 = tables.add_mutation(s0, n0, -1, 5.0, None).unwrap();
+    let m3 = tables.add_mutation(s0, n0, -1, 2.0, None).unwrap();
+
+    tables.full_sort(0).unwrap();
+    tables.build_index().unwrap();
+    tables
+        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+        .unwrap();
+    let ts = tables.deepcopy().unwrap().tree_sequence(0).unwrap();
+
+    for (index, mutid) in [m0, m1, m2, m3].iter().enumerate() {
+        assert_eq!(
+            ts.site_iter()
+                .next()
+                .unwrap()
+                .mutation_iter()
+                .nth(index)
+                .unwrap()
+                .id(),
+            mutid
+        );
+    }
+    assert!(ts
+        .site_iter()
+        .next()
+        .unwrap()
+        .mutation_iter()
+        .nth(100)
+        .is_none());
+}
+
+#[test]
+fn test_site_mutation_iterators_meet_in_middle() {
+    let mut tables = tskit::TableCollection::new(100.0).unwrap();
+    let n0 = tables
+        .add_node(tskit::NodeFlags::IS_SAMPLE, 0.0, -1, -1)
+        .unwrap();
+    let s0 = tables.add_site(50., None).unwrap();
+    let m0 = tables.add_mutation(s0, n0, -1, 20.0, None).unwrap();
+    let m1 = tables.add_mutation(s0, n0, -1, 10.0, None).unwrap();
+    let m2 = tables.add_mutation(s0, n0, -1, 5.0, None).unwrap();
+    let m3 = tables.add_mutation(s0, n0, -1, 2.0, None).unwrap();
+
+    tables.full_sort(0).unwrap();
+    tables.build_index().unwrap();
+    tables
+        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+        .unwrap();
+    let ts = tables.deepcopy().unwrap().tree_sequence(0).unwrap();
+
+    // The following makes sure that our Iterator and DoubleEndedIterator
+    // over mutations do not result in infinite loops
+    let mut collected = vec![];
+    for site in ts.site_iter() {
+        let mut iterator = site.mutation_iter();
+        while let Some(mutation) = iterator.next() {
+            collected.push(mutation.id());
+            if let Some(mback) = iterator.next_back() {
+                collected.push(mback.id());
+            }
+        }
+    }
+    assert_eq!(&collected, &[m0, m3, m1, m2]);
+}
 
 #[test]
 fn test_site_mutation_co_iteration() {
