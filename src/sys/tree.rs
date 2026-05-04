@@ -156,8 +156,8 @@ impl<'treeseq> LLTree<'treeseq> {
         }
     }
 
-    pub fn children(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
-        NodeIteratorAdapter(ChildIterator::new(self, u))
+    pub fn children(&self, u: NodeId) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
+        DoubleEndedNodeIteratorAdapter(ChildIterator::new(self, u))
     }
 
     pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
@@ -306,6 +306,10 @@ pub trait NodeIterator {
     fn current_node(&mut self) -> Option<NodeId>;
 }
 
+pub trait DoubleEndedNodeIterator: NodeIterator {
+    fn prev_node(&mut self);
+}
+
 #[repr(transparent)]
 struct NodeIteratorAdapter<T: NodeIterator>(T);
 
@@ -316,6 +320,32 @@ where
     type Item = NodeId;
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next_node();
+        self.0.current_node()
+    }
+}
+
+#[repr(transparent)]
+struct DoubleEndedNodeIteratorAdapter<T: DoubleEndedNodeIterator>(T);
+
+// NOTE: this is an unfortunate code repetition!
+impl<T> Iterator for DoubleEndedNodeIteratorAdapter<T>
+where
+    T: DoubleEndedNodeIterator,
+{
+    type Item = NodeId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next_node();
+        self.0.current_node()
+    }
+}
+
+impl<T> DoubleEndedIterator for DoubleEndedNodeIteratorAdapter<T>
+where
+    T: DoubleEndedNodeIterator,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.prev_node();
         self.0.current_node()
     }
 }
@@ -375,12 +405,7 @@ impl NodeIterator for PreorderNodeIterator<'_> {
             // because we later pop them from a steck
             // to generate the expected left-to-right ordering.
             debug_assert!(self.tree.right_child(u).is_some());
-            let mut c = self.tree.right_child(u).unwrap_or(NodeId::NULL);
-            while c != NodeId::NULL {
-                self.node_stack.push(c);
-                debug_assert!(self.tree.right_child(c).is_some());
-                c = self.tree.left_sib(c).unwrap_or(NodeId::NULL);
-            }
+            self.node_stack.extend(self.tree.children(u).rev());
         };
     }
 
@@ -553,20 +578,19 @@ pub enum NodeTraversalOrder {
 
 struct ChildIterator<'a> {
     current_child: Option<NodeId>,
-    next_child: NodeId,
+    left_child: NodeId,
+    right_child: NodeId,
+    finished: bool,
     tree: &'a LLTree<'a>,
 }
 
 impl<'a> ChildIterator<'a> {
     fn new(tree: &'a LLTree<'a>, u: NodeId) -> Self {
-        let c = match tree.left_child(u) {
-            Some(x) => x,
-            None => NodeId::NULL,
-        };
-
         ChildIterator {
             current_child: None,
-            next_child: c,
+            left_child: tree.left_child(u).unwrap_or(NodeId::NULL),
+            right_child: tree.right_child(u).unwrap_or(NodeId::NULL),
+            finished: false,
             tree,
         }
     }
@@ -574,20 +598,49 @@ impl<'a> ChildIterator<'a> {
 
 impl NodeIterator for ChildIterator<'_> {
     fn next_node(&mut self) {
-        self.current_child = match self.next_child {
-            NodeId::NULL => None,
-            r => {
-                assert!(r >= 0);
-                let cr = Some(r);
-                debug_assert!(self.tree.right_sib(r).is_some());
-                self.next_child = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
-                cr
+        self.current_child = if !self.finished {
+            match self.left_child {
+                NodeId::NULL => None,
+                r => {
+                    assert!(r >= 0);
+                    let cr = Some(r);
+                    debug_assert!(self.tree.right_sib(r).is_some());
+                    self.left_child = self.tree.right_sib(r).unwrap_or(NodeId::NULL);
+                    cr
+                }
             }
+        } else {
+            None
         };
+        if self.current_child == Some(self.right_child) {
+            self.finished = true
+        }
     }
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_child
+    }
+}
+
+impl DoubleEndedNodeIterator for ChildIterator<'_> {
+    fn prev_node(&mut self) {
+        self.current_child = if !self.finished {
+            match self.right_child {
+                NodeId::NULL => None,
+                r => {
+                    assert!(r >= 0);
+                    let cr = Some(r);
+                    debug_assert!(self.tree.left_sib(r).is_some());
+                    self.right_child = self.tree.left_sib(r).unwrap_or(NodeId::NULL);
+                    cr
+                }
+            }
+        } else {
+            None
+        };
+        if self.current_child == Some(self.left_child) {
+            self.finished = true;
+        }
     }
 }
 
