@@ -917,6 +917,28 @@ fn test_treeseq_individual_iter() {
     }
 }
 
+#[test]
+fn test_site_iterator_double_ended() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let s0 = tables.add_site(10., None).unwrap();
+    let s1 = tables.add_site(20., None).unwrap();
+    let s2 = tables.add_site(30., None).unwrap();
+    let s3 = tables.add_site(40., None).unwrap();
+
+    let ts = tables
+        .tree_sequence(tskit::TreeSequenceFlags::default().build_indexes())
+        .unwrap();
+    let mut sites = vec![];
+    let mut iter = ts.site_iter();
+    while let Some(site) = iter.next() {
+        sites.push(site.id());
+        if let Some(site) = iter.next_back() {
+            sites.push(site.id())
+        }
+    }
+    assert_eq!(&sites, &[s0, s3, s1, s2])
+}
+
 // The following tests are lifted
 // from another crate that identified
 // the bug in the impl of nth

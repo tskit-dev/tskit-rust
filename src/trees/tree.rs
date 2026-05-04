@@ -447,7 +447,7 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     /// Iterator over sites in the current tree.
-    pub fn site_iter(&self) -> impl Iterator<Item = crate::SiteRef<'_>> {
+    pub fn site_iter(&self) -> impl DoubleEndedIterator<Item = crate::SiteRef<'_>> {
         self.inner.site_iter()
     }
 

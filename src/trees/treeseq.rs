@@ -679,7 +679,7 @@ impl TreeSequence {
     /// // the child data cannot outlive the parent
     /// for _ in contents.iter() { }
     /// ```
-    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts>> {
+    pub fn site_iter<'ts>(&'ts self) -> impl DoubleEndedIterator<Item = crate::SiteRef<'ts>> {
         self.inner.site_iter()
     }
 
