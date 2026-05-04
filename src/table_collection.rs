@@ -1576,11 +1576,18 @@ impl TableCollection {
     /// );
     /// assert_eq!(samples[0], 1);
     /// ```
+    #[deprecated(
+        since = "0.16.1",
+        note = "Prefer TableCollection::node_iter and iterator operations"
+    )]
     pub fn create_node_id_vector<'t>(
         &'t self,
         f: impl FnMut(&crate::Node<'t>) -> bool,
     ) -> Vec<crate::NodeId> {
-        self.nodes().create_node_id_vector(f)
+        self.node_iter()
+            .filter(f)
+            .map(|row| row.id())
+            .collect::<Vec<_>>()
     }
 
     /// Pointer to the low-level C type.

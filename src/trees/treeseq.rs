@@ -609,11 +609,18 @@ impl TreeSequence {
     /// # Examples
     ///
     /// See [`crate::TableCollection::create_node_id_vector`].
+    #[deprecated(
+        since = "0.16.1",
+        note = "Prefer TreeSequence::node_iter and iterator operations"
+    )]
     pub fn create_node_id_vector<'ts>(
         &'ts self,
         f: impl FnMut(&crate::Node<'ts>) -> bool,
     ) -> Vec<crate::NodeId> {
-        self.tables.create_node_id_vector(f)
+        self.node_iter()
+            .filter(f)
+            .map(|n| n.id())
+            .collect::<Vec<_>>()
     }
 
     /// Obtain a [`crate::SiteRef`].
