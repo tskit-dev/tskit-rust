@@ -311,7 +311,10 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// * `Some(iterator)` if `u` is valid
     /// * `None` otherwise
-    pub fn children<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
+    pub fn children<N: Into<NodeId> + Copy>(
+        &self,
+        u: N,
+    ) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
         self.inner.children(u.into())
     }
 
