@@ -287,7 +287,7 @@ impl<'treeseq> LLTree<'treeseq> {
         handle_tsk_return_value!(code, kc)
     }
 
-    pub fn site_iter<'ts>(&'ts self) -> impl Iterator<Item = crate::SiteRef<'ts>> {
+    pub fn site_iter<'ts>(&'ts self) -> impl DoubleEndedIterator<Item = crate::SiteRef<'ts>> {
         let num_sites = self.as_ll_ref().sites_length;
         assert!(!self.as_ll_ref().sites.is_null());
         let sites =

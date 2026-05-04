@@ -1,3 +1,5 @@
+use crate::sys::new_site_ref;
+
 pub struct SiteRefIterator<'ts> {
     pub sites: &'ts [super::bindings::tsk_site_t],
 }
@@ -20,5 +22,16 @@ impl<'ts> Iterator for SiteRefIterator<'ts> {
             &[]
         };
         self.next()
+    }
+}
+
+impl<'ts> DoubleEndedIterator for SiteRefIterator<'ts> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if let Some((l, r)) = self.sites.split_last() {
+            self.sites = r;
+            Some(new_site_ref(l))
+        } else {
+            None
+        }
     }
 }
