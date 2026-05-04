@@ -493,11 +493,18 @@ impl NodeTable {
     /// of all nodes for which [`crate::NodeFlags::is_sample`]
     /// is `true`.
     pub fn samples_as_vector(&self) -> Vec<NodeId> {
-        self.create_node_id_vector(|row| row.flags().contains(NodeFlags::IS_SAMPLE))
+        self.iter()
+            .filter(|row| row.flags().contains(NodeFlags::IS_SAMPLE))
+            .map(|row| row.id())
+            .collect::<Vec<_>>()
     }
 
     /// Obtain a vector containing the indexes ("ids") of all nodes
     /// satisfying a certain criterion.
+    #[deprecated(
+        since = "0.16.1",
+        note = "Prefer NodeTable::iter and iterator operations"
+    )]
     pub fn create_node_id_vector<'t>(
         &'t self,
         mut f: impl FnMut(&crate::Node<'t>) -> bool,
