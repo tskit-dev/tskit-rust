@@ -939,6 +939,61 @@ fn test_site_iterator_double_ended() {
     assert_eq!(&sites, &[s0, s3, s1, s2])
 }
 
+#[test]
+fn test_subtrees_from_non_root_nodes() {
+    #[cfg(feature = "bindings")]
+    fn compare_preoder_to_c_api(tree: &tskit::Tree, node: NodeId, expected: &[NodeId]) {
+        let mut nodes: Vec<NodeId> = vec![
+            NodeId::NULL;
+            unsafe { tskit::bindings::tsk_tree_get_size_bound(tree.as_ll_ref()) }
+                as usize
+        ];
+        let mut num_nodes: tskit::bindings::tsk_size_t = 0;
+        let ptr = std::ptr::addr_of_mut!(num_nodes);
+        unsafe {
+            tskit::bindings::tsk_tree_preorder_from(
+                tree.as_ll_ref(),
+                node.into(),
+                nodes.as_mut_ptr() as *mut tskit::bindings::tsk_id_t,
+                ptr,
+            );
+        }
+        assert_eq!(num_nodes as usize, expected.len());
+        assert_eq!(expected, &nodes[0..num_nodes as usize]);
+    }
+    let treeseq = treeseq_from_small_table_collection_two_trees();
+    let mut iter = treeseq.tree_iterator(tskit::TreeFlags::default()).unwrap();
+    let tree = iter.next().unwrap();
+    let pre = tree
+        .traverse_nodes_from_root(1.into(), tskit::NodeTraversalOrder::Preorder)
+        .unwrap()
+        .collect::<Vec<_>>();
+    assert_eq!(pre, &[1, 4, 5]);
+
+    #[cfg(feature = "bindings")]
+    compare_preoder_to_c_api(tree, 1.into(), &pre);
+
+    let tree = iter.next().unwrap();
+    let pre = tree
+        .traverse_nodes_from_root(1.into(), tskit::NodeTraversalOrder::Preorder)
+        .unwrap()
+        .collect::<Vec<_>>();
+    let mut expected = vec![1];
+    expected.extend(tree.children(1).map(i32::from));
+    assert_eq!(pre, expected);
+
+    #[cfg(feature = "bindings")]
+    compare_preoder_to_c_api(tree, 1.into(), &pre);
+
+    let pre = tree
+        .traverse_nodes_from_root(3.into(), tskit::NodeTraversalOrder::Preorder)
+        .unwrap()
+        .collect::<Vec<_>>();
+    assert_eq!(pre, &[3]);
+    #[cfg(feature = "bindings")]
+    compare_preoder_to_c_api(tree, 3.into(), &pre);
+}
+
 // The following tests are lifted
 // from another crate that identified
 // the bug in the impl of nth

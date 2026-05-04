@@ -381,9 +381,7 @@ impl<'a> PreorderNodeIterator<'a> {
         if root != NodeId::NULL && root != tree.virtual_root() && root < tree.treeseq.num_samples()
         {
             Ok(PreorderNodeIterator {
-                current_root: tree
-                    .right_child(tree.virtual_root())
-                    .unwrap_or(NodeId::NULL),
+                current_root: NodeId::NULL,
                 node_stack: vec![root],
                 tree,
                 current_node: None,
