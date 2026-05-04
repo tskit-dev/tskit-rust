@@ -151,7 +151,7 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// For a tree with multiple roots, the iteration starts
     /// at the left root.
-    pub fn roots(&self) -> impl Iterator<Item = NodeId> + '_ {
+    pub fn roots(&self) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
         self.inner.roots()
     }
 
