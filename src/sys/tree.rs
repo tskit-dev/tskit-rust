@@ -292,7 +292,7 @@ impl<'treeseq> LLTree<'treeseq> {
         assert!(!self.as_ll_ref().sites.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ll_ref().sites, num_sites as usize) };
-        super::iter::SiteRefIterator { sites, current: 0 }
+        super::iter::SiteRefIterator { sites }
     }
 
     pub fn index(&self) -> i32 {
