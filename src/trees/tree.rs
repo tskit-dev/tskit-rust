@@ -292,13 +292,13 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// # Parameters
     ///
-    /// * `rooit`: the subtree root
+    /// * `root`: the subtree root
     /// * `order`: A value from [`crate::NodeTraversalOrder`] specifying the
     ///   iteration order.
     ///
     /// # Errors
     ///
-    /// * [`TskitError`] if `node` is null or out of bounds.
+    /// * [`TskitError`] if `root` is null or out of bounds.
     pub fn traverse_nodes_from_root(
         &self,
         root: NodeId,
@@ -308,10 +308,6 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     /// Return an [`Iterator`] over the children of node `u`.
-    /// # Returns
-    ///
-    /// * `Some(iterator)` if `u` is valid
-    /// * `None` otherwise
     pub fn children<N: Into<NodeId> + Copy>(
         &self,
         u: N,
@@ -320,10 +316,6 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     /// Return an [`Iterator`] over the parents of node `u`.
-    /// # Returns
-    ///
-    /// * `Some(iterator)` if `u` is valid
-    /// * `None` otherwise
     pub fn parents<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
         self.inner.parents(u.into())
     }
