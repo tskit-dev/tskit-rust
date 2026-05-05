@@ -547,6 +547,11 @@ impl TreeSequence {
     }
 
     /// Return an iterator over the individuals.
+    ///
+    /// # Notes
+    ///
+    /// * [`Iterator::nth`] is specialized for the return value,
+    ///   making `nth` and [`Iterator::skip`] constant-time.
     pub fn individual_iter(&self) -> impl Iterator<Item = crate::Individual<'_>> {
         self.inner.individual_iter()
     }
