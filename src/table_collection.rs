@@ -1577,7 +1577,7 @@ impl TableCollection {
     /// assert_eq!(samples[0], 1);
     /// ```
     #[deprecated(
-        since = "0.16.1",
+        since = "0.16.2",
         note = "Prefer TableCollection::node_iter and iterator operations"
     )]
     pub fn create_node_id_vector<'t>(
