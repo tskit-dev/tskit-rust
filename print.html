@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "light";
-            window.path_to_searchindex_js = "searchindex-c71cb33a.js";
+            window.path_to_searchindex_js = "searchindex-aadc8aec.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-ed68240b.js"></script>
@@ -1109,8 +1109,21 @@ pub use {
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="changelog"><a class="header" href="#changelog">Changelog</a></h1>
 <p>All notable changes to this project will be documented in this file.</p>
-<h2 id="0162---2026-05-05"><a class="header" href="#0162---2026-05-05">[0.16.2] - 2026-05-05</a></h2>
+<h2 id="0163---2026-05-05"><a class="header" href="#0163---2026-05-05">[0.16.3] - 2026-05-05</a></h2>
 <h3 id="bug-fixes"><a class="header" href="#bug-fixes">Bug Fixes</a></h3>
+<ul>
+<li>Node::individual now returns correct value (<a href="https://github.com/tskit-dev/tskit-rust/pull/903">#903</a>)</li>
+</ul>
+<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<ul>
+<li>TreeSequenceFlags::compute_mutation_parents (<a href="https://github.com/tskit-dev/tskit-rust/pull/901">#901</a>)</li>
+</ul>
+<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<ul>
+<li>Extract preorder test code for reuse (<a href="https://github.com/tskit-dev/tskit-rust/pull/902">#902</a>)</li>
+</ul>
+<h2 id="0162---2026-05-05"><a class="header" href="#0162---2026-05-05">[0.16.2] - 2026-05-05</a></h2>
+<h3 id="bug-fixes-1"><a class="header" href="#bug-fixes-1">Bug Fixes</a></h3>
 <ul>
 <li>SiteRef::mutation_iter().rev() now has correct behavior (<a href="https://github.com/tskit-dev/tskit-rust/pull/889">#889</a>)</li>
 <li>Correct bounds check on preorder root node (<a href="https://github.com/tskit-dev/tskit-rust/pull/895">#895</a>)</li>
@@ -1120,7 +1133,7 @@ pub use {
 <li>Update docs for node traversal orders (<a href="https://github.com/tskit-dev/tskit-rust/pull/888">#888</a>)</li>
 <li>Fix some doc errors (<a href="https://github.com/tskit-dev/tskit-rust/pull/898">#898</a>)</li>
 </ul>
-<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
 <ul>
 <li>Tree/treeseq SiteRef iterators are now double ended (<a href="https://github.com/tskit-dev/tskit-rust/pull/891">#891</a>)</li>
 <li>Tree::children now returns DoubleEndedIterator (<a href="https://github.com/tskit-dev/tskit-rust/pull/892">#892</a>)</li>
@@ -1133,16 +1146,16 @@ pub use {
 <li>Deprecate function redundant w/standard iterator ops (<a href="https://github.com/tskit-dev/tskit-rust/pull/897">#897</a>)</li>
 <li>Rewrite constructor for preorder node iterator (<a href="https://github.com/tskit-dev/tskit-rust/pull/899">#899</a>)</li>
 </ul>
-<h3 id="testing"><a class="header" href="#testing">Testing</a></h3>
+<h3 id="testing-1"><a class="header" href="#testing-1">Testing</a></h3>
 <ul>
 <li>Preorder traversal of subtrees (<a href="https://github.com/tskit-dev/tskit-rust/pull/894">#894</a>)</li>
 </ul>
 <h2 id="0161---2026-05-03"><a class="header" href="#0161---2026-05-03">[0.16.1] - 2026-05-03</a></h2>
-<h3 id="bug-fixes-1"><a class="header" href="#bug-fixes-1">Bug Fixes</a></h3>
+<h3 id="bug-fixes-2"><a class="header" href="#bug-fixes-2">Bug Fixes</a></h3>
 <ul>
 <li>Correct implementation of nth for SiteRef/MutationRef iteration (<a href="https://github.com/tskit-dev/tskit-rust/pull/885">#885</a>)</li>
 </ul>
-<h3 id="features-1"><a class="header" href="#features-1">Features</a></h3>
+<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
 <ul>
 <li>SiteRef::mutation_iter now returns a double-ended iterator (<a href="https://github.com/tskit-dev/tskit-rust/pull/884">#884</a>)</li>
 </ul>
@@ -1153,7 +1166,7 @@ pub use {
 <li>Remove mention of lending iters from book (<a href="https://github.com/tskit-dev/tskit-rust/pull/880">#880</a>)</li>
 <li>Crate-level docs on rows and row iteration (<a href="https://github.com/tskit-dev/tskit-rust/pull/879">#879</a>)</li>
 </ul>
-<h3 id="features-2"><a class="header" href="#features-2">Features</a></h3>
+<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
 <ul>
 <li>Site/mutation co-iteration from TreeSequence (<a href="https://github.com/tskit-dev/tskit-rust/pull/847">#847</a>)</li>
 <li>Add/Sub + Assign for row id newtypes (<a href="https://github.com/tskit-dev/tskit-rust/pull/848">#848</a>)</li>
@@ -1186,7 +1199,7 @@ pub use {
 <li>Rename SiteRef fn to return MutationRef iterator (<a href="https://github.com/tskit-dev/tskit-rust/pull/874">#874</a>)</li>
 <li>Remove generic type from row wrapper types (<a href="https://github.com/tskit-dev/tskit-rust/pull/881">#881</a>)</li>
 </ul>
-<h3 id="testing-1"><a class="header" href="#testing-1">Testing</a></h3>
+<h3 id="testing-2"><a class="header" href="#testing-2">Testing</a></h3>
 <ul>
 <li>Low level treeseq is send/sync (<a href="https://github.com/tskit-dev/tskit-rust/pull/869">#869</a>)</li>
 <li>TreeSequence::individual_iter (<a href="https://github.com/tskit-dev/tskit-rust/pull/865">#865</a>)</li>
@@ -1203,13 +1216,13 @@ pub use {
 <li>Fix metadata docs for tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/841">#841</a>)</li>
 <li>Data transfer to Python (<a href="https://github.com/tskit-dev/tskit-rust/pull/843">#843</a>)</li>
 </ul>
-<h3 id="features-3"><a class="header" href="#features-3">Features</a></h3>
+<h3 id="features-4"><a class="header" href="#features-4">Features</a></h3>
 <ul>
 <li>Ergonomic access to site table position column (<a href="https://github.com/tskit-dev/tskit-rust/pull/839">#839</a>)</li>
 <li>Ergonomic column access for remaining tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/840">#840</a>)</li>
 </ul>
 <h2 id="0150-alpha4---2026-04-02"><a class="header" href="#0150-alpha4---2026-04-02">[0.15.0-alpha.4] - 2026-04-02</a></h2>
-<h3 id="features-4"><a class="header" href="#features-4">Features</a></h3>
+<h3 id="features-5"><a class="header" href="#features-5">Features</a></h3>
 <ul>
 <li>Consume TableCollection, returning pointer (<a href="https://github.com/tskit-dev/tskit-rust/pull/830">#830</a>)</li>
 <li>TableCollection.new_from_raw (<a href="https://github.com/tskit-dev/tskit-rust/pull/833">#833</a>)</li>
@@ -1225,13 +1238,13 @@ pub use {
 <li>Static assert sizeof u8 == that of C char (<a href="https://github.com/tskit-dev/tskit-rust/pull/817">#817</a>)</li>
 <li>Minor formatting fixes (<a href="https://github.com/tskit-dev/tskit-rust/pull/828">#828</a>)</li>
 </ul>
-<h3 id="testing-2"><a class="header" href="#testing-2">Testing</a></h3>
+<h3 id="testing-3"><a class="header" href="#testing-3">Testing</a></h3>
 <ul>
 <li>Explicitly test mutation parent requirement for tree sequence creation. (<a href="https://github.com/tskit-dev/tskit-rust/pull/809">#809</a>)</li>
 <li>Add python/zerocopy to test tables, etc., with Python allocator (<a href="https://github.com/tskit-dev/tskit-rust/pull/835">#835</a>)</li>
 </ul>
 <h2 id="0150-alpha3---2026-01-26"><a class="header" href="#0150-alpha3---2026-01-26">[0.15.0-alpha.3] - 2026-01-26</a></h2>
-<h3 id="bug-fixes-2"><a class="header" href="#bug-fixes-2">Bug Fixes</a></h3>
+<h3 id="bug-fixes-3"><a class="header" href="#bug-fixes-3">Bug Fixes</a></h3>
 <ul>
 <li>Use c_char instead of i8 when handling C strings (<a href="https://github.com/tskit-dev/tskit-rust/pull/804">#804</a>)</li>
 </ul>
@@ -1239,7 +1252,7 @@ pub use {
 <ul>
 <li>Update book on metadata + Python (<a href="https://github.com/tskit-dev/tskit-rust/pull/754">#754</a>)</li>
 </ul>
-<h3 id="features-5"><a class="header" href="#features-5">Features</a></h3>
+<h3 id="features-6"><a class="header" href="#features-6">Features</a></h3>
 <ul>
 <li>Add From/TryFrom impls for references types involving newtypes (<a href="https://github.com/tskit-dev/tskit-rust/pull/634">#634</a>)</li>
 <li>Impl PartialOrd for newtypes to reference (<a href="https://github.com/tskit-dev/tskit-rust/pull/725">#725</a>)</li>
@@ -1273,14 +1286,14 @@ pub use {
 <ul>
 <li>Fix doc indentation (<a href="https://github.com/tskit-dev/tskit-rust/pull/742">#742</a>)</li>
 </ul>
-<h3 id="testing-3"><a class="header" href="#testing-3">Testing</a></h3>
+<h3 id="testing-4"><a class="header" href="#testing-4">Testing</a></h3>
 <ul>
 <li>Add tests of Python consuming JSON metadata from rust (<a href="https://github.com/tskit-dev/tskit-rust/pull/749">#749</a>)</li>
 <li>Roundtrip bincode metadata into Python (<a href="https://github.com/tskit-dev/tskit-rust/pull/750">#750</a>)</li>
 <li>Metadata without serde (<a href="https://github.com/tskit-dev/tskit-rust/pull/753">#753</a>)</li>
 </ul>
 <h2 id="0150-alpha2---2025-03-06"><a class="header" href="#0150-alpha2---2025-03-06">[0.15.0-alpha.2] - 2025-03-06</a></h2>
-<h3 id="bug-fixes-3"><a class="header" href="#bug-fixes-3">Bug Fixes</a></h3>
+<h3 id="bug-fixes-4"><a class="header" href="#bug-fixes-4">Bug Fixes</a></h3>
 <ul>
 <li>Error during construction if sequence_length is not finite (<a href="https://github.com/tskit-dev/tskit-rust/pull/707">#707</a>)</li>
 </ul>
@@ -1288,7 +1301,7 @@ pub use {
 <ul>
 <li>Add links to the manual (<a href="https://github.com/tskit-dev/tskit-rust/pull/705">#705</a>)</li>
 </ul>
-<h3 id="features-6"><a class="header" href="#features-6">Features</a></h3>
+<h3 id="features-7"><a class="header" href="#features-7">Features</a></h3>
 <ul>
 <li>TableCollection::compute_mutation_parents (<a href="https://github.com/tskit-dev/tskit-rust/pull/714">#714</a>)</li>
 </ul>
@@ -1306,7 +1319,7 @@ pub use {
 <li>Deny broken intradoc links (<a href="https://github.com/tskit-dev/tskit-rust/pull/718">#718</a>)</li>
 </ul>
 <h2 id="0150-alpha1---2025-01-23"><a class="header" href="#0150-alpha1---2025-01-23">[0.15.0-alpha.1] - 2025-01-23</a></h2>
-<h3 id="features-7"><a class="header" href="#features-7">Features</a></h3>
+<h3 id="features-8"><a class="header" href="#features-8">Features</a></h3>
 <ul>
 <li>Added keep intervals for tables and tree sequences (<a href="https://github.com/tskit-dev/tskit-rust/pull/635">#635</a>)</li>
 <li>Add TreeSequence::tables (<a href="https://github.com/tskit-dev/tskit-rust/pull/648">#648</a>)</li>
@@ -1344,7 +1357,7 @@ pub use {
 <li>Remove visible use of namespace from flags doc tests (<a href="https://github.com/tskit-dev/tskit-rust/pull/618">#618</a>)</li>
 <li>Fix lints from rustdoc (<a href="https://github.com/tskit-dev/tskit-rust/pull/631">#631</a>)</li>
 </ul>
-<h3 id="features-8"><a class="header" href="#features-8">Features</a></h3>
+<h3 id="features-9"><a class="header" href="#features-9">Features</a></h3>
 <ul>
 <li>Allow tree iteration to start at a given position/tree index (<a href="https://github.com/tskit-dev/tskit-rust/pull/613">#613</a>)</li>
 <li>Sys::NodeTable::raw_metadata (<a href="https://github.com/tskit-dev/tskit-rust/pull/628">#628</a>)</li>
@@ -1446,7 +1459,7 @@ pub use {
 <li>Fix lints from rustc 1.77.1 (<a href="https://github.com/tskit-dev/tskit-rust/pull/592">#592</a>)</li>
 <li>Fix lints from rust 1.78 (<a href="https://github.com/tskit-dev/tskit-rust/pull/629">#629</a>)</li>
 </ul>
-<h3 id="testing-4"><a class="header" href="#testing-4">Testing</a></h3>
+<h3 id="testing-5"><a class="header" href="#testing-5">Testing</a></h3>
 <ul>
 <li>Add explicit tests of empty bitflags types (<a href="https://github.com/tskit-dev/tskit-rust/pull/527">#527</a>)</li>
 <li>Rewrite test without proptest (<a href="https://github.com/tskit-dev/tskit-rust/pull/534">#534</a>)</li>
@@ -1454,7 +1467,7 @@ pub use {
 <li>Remove CI pinned to an explicit MSRV (<a href="https://github.com/tskit-dev/tskit-rust/pull/547">#547</a>)</li>
 </ul>
 <h2 id="0141---2023-04-16"><a class="header" href="#0141---2023-04-16">[0.14.1] - 2023-04-16</a></h2>
-<h3 id="bug-fixes-4"><a class="header" href="#bug-fixes-4">Bug Fixes</a></h3>
+<h3 id="bug-fixes-5"><a class="header" href="#bug-fixes-5">Bug Fixes</a></h3>
 <ul>
 <li>Tree now tied to TreeSequence lifetime (<a href="https://github.com/tskit-dev/tskit-rust/pull/497">#497</a>)</li>
 </ul>
@@ -1467,7 +1480,7 @@ pub use {
 <ul>
 <li>Book section on node defaults (<a href="https://github.com/tskit-dev/tskit-rust/pull/491">#491</a>)</li>
 </ul>
-<h3 id="features-9"><a class="header" href="#features-9">Features</a></h3>
+<h3 id="features-10"><a class="header" href="#features-10">Features</a></h3>
 <ul>
 <li>Allow use of bookmark in examples/haploid_wright_fisher (<a href="https://github.com/tskit-dev/tskit-rust/pull/479">#479</a>)</li>
 <li>Impl Default for row id types (<a href="https://github.com/tskit-dev/tskit-rust/pull/484">#484</a>)</li>
@@ -1494,7 +1507,7 @@ pub use {
 <li>Advanced metadata topics in book (<a href="https://github.com/tskit-dev/tskit-rust/pull/407">#407</a>)</li>
 <li>Book chapter on edge differences (<a href="https://github.com/tskit-dev/tskit-rust/pull/417">#417</a>)</li>
 </ul>
-<h3 id="features-10"><a class="header" href="#features-10">Features</a></h3>
+<h3 id="features-11"><a class="header" href="#features-11">Features</a></h3>
 <ul>
 <li>TreeSequence::edge_differences_iter (<a href="https://github.com/tskit-dev/tskit-rust/pull/410">#410</a>)</li>
 <li>Add convience functions to get usize from row ids. (<a href="https://github.com/tskit-dev/tskit-rust/pull/413">#413</a>)</li>
@@ -1531,7 +1544,7 @@ pub use {
 <li>Use fn to get array slices from Trees. (<a href="https://github.com/tskit-dev/tskit-rust/pull/424">#424</a>)</li>
 </ul>
 <h2 id="0120-alpha1---2022-11-09"><a class="header" href="#0120-alpha1---2022-11-09">[0.12.0-alpha.1] - 2022-11-09</a></h2>
-<h3 id="bug-fixes-5"><a class="header" href="#bug-fixes-5">Bug Fixes</a></h3>
+<h3 id="bug-fixes-6"><a class="header" href="#bug-fixes-6">Bug Fixes</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] MetadataError::RoundtripError now requires Send + Sync (<a href="https://github.com/tskit-dev/tskit-rust/pull/396">#396</a>)</li>
 </ul>
@@ -1539,7 +1552,7 @@ pub use {
 <ul>
 <li>Add haploid WF example to book (<a href="https://github.com/tskit-dev/tskit-rust/pull/397">#397</a>)</li>
 </ul>
-<h3 id="features-11"><a class="header" href="#features-11">Features</a></h3>
+<h3 id="features-12"><a class="header" href="#features-12">Features</a></h3>
 <ul>
 <li>Add examples/haploid_wright_fisher.rs (<a href="https://github.com/tskit-dev/tskit-rust/pull/394">#394</a>)</li>
 <li>Add lending iterators over table row “views” (<a href="https://github.com/tskit-dev/tskit-rust/pull/398">#398</a>)</li>
@@ -1583,7 +1596,7 @@ pub use {
 <li>Apply functional style for NodeTable fns (<a href="https://github.com/tskit-dev/tskit-rust/pull/377">#377</a>)</li>
 </ul>
 <h2 id="0110---2022-11-04"><a class="header" href="#0110---2022-11-04">[0.11.0] - 2022-11-04</a></h2>
-<h3 id="bug-fixes-6"><a class="header" href="#bug-fixes-6">Bug Fixes</a></h3>
+<h3 id="bug-fixes-7"><a class="header" href="#bug-fixes-7">Bug Fixes</a></h3>
 <ul>
 <li>Derive Debug for all table row types (<a href="https://github.com/tskit-dev/tskit-rust/pull/361">#361</a>)</li>
 <li>[<strong>breaking</strong>] Update generic bounds on metadata getters (<a href="https://github.com/tskit-dev/tskit-rust/pull/370">#370</a>)</li>
@@ -1593,7 +1606,7 @@ pub use {
 <ul>
 <li>Add migration guide (<a href="https://github.com/tskit-dev/tskit-rust/pull/376">#376</a>)</li>
 </ul>
-<h3 id="features-12"><a class="header" href="#features-12">Features</a></h3>
+<h3 id="features-13"><a class="header" href="#features-13">Features</a></h3>
 <ul>
 <li>[<strong>breaking</strong>] Add TskitError::LibraryError (<a href="https://github.com/tskit-dev/tskit-rust/pull/342">#342</a>)</li>
 </ul>
@@ -1620,7 +1633,7 @@ pub use {
 <li>Fix lints from rust 1.65.0 (<a href="https://github.com/tskit-dev/tskit-rust/pull/374">#374</a>)</li>
 <li>Fix lints from nightly (<a href="https://github.com/tskit-dev/tskit-rust/pull/375">#375</a>)</li>
 </ul>
-<h3 id="testing-5"><a class="header" href="#testing-5">Testing</a></h3>
+<h3 id="testing-6"><a class="header" href="#testing-6">Testing</a></h3>
 <ul>
 <li>Rewrite table API tests (<a href="https://github.com/tskit-dev/tskit-rust/pull/356">#356</a>)</li>
 <li>Add doc tests for node table (<a href="https://github.com/tskit-dev/tskit-rust/pull/359">#359</a>)</li>
@@ -1661,16 +1674,16 @@ pub use {
 <li>Use auto-deref for pointer deref. (<a href="https://github.com/tskit-dev/tskit-rust/pull/325">#325</a>)</li>
 <li>Fix +nightly clippy lints for all targets/features. (<a href="https://github.com/tskit-dev/tskit-rust/pull/326">#326</a>)</li>
 </ul>
-<h3 id="testing-6"><a class="header" href="#testing-6">Testing</a></h3>
+<h3 id="testing-7"><a class="header" href="#testing-7">Testing</a></h3>
 <ul>
 <li>Improve test work flow (<a href="https://github.com/tskit-dev/tskit-rust/pull/331">#331</a>)</li>
 </ul>
 <h2 id="0100-alpha1---2022-07-31"><a class="header" href="#0100-alpha1---2022-07-31">[0.10.0-alpha.1] - 2022-07-31</a></h2>
-<h3 id="bug-fixes-7"><a class="header" href="#bug-fixes-7">Bug Fixes</a></h3>
+<h3 id="bug-fixes-8"><a class="header" href="#bug-fixes-8">Bug Fixes</a></h3>
 <ul>
 <li>Replace crate with $crate in macros (<a href="https://github.com/tskit-dev/tskit-rust/pull/287">#287</a>)</li>
 </ul>
-<h3 id="features-13"><a class="header" href="#features-13">Features</a></h3>
+<h3 id="features-14"><a class="header" href="#features-14">Features</a></h3>
 <ul>
 <li>Add tskit::OwnedMutationTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/281">#281</a>)</li>
 <li>Add tskit::OwnedSiteTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/283">#283</a>)</li>
@@ -1700,7 +1713,7 @@ pub use {
 <li>Remove MBox for tsk_treeseq_t storage (<a href="https://github.com/tskit-dev/tskit-rust/pull/306">#306</a>)</li>
 </ul>
 <h2 id="0100-alpha0---2022-07-19"><a class="header" href="#0100-alpha0---2022-07-19">[0.10.0-alpha.0] - 2022-07-19</a></h2>
-<h3 id="bug-fixes-8"><a class="header" href="#bug-fixes-8">Bug Fixes</a></h3>
+<h3 id="bug-fixes-9"><a class="header" href="#bug-fixes-9">Bug Fixes</a></h3>
 <ul>
 <li>Fix memory leak in TreeSequence::simplify (<a href="https://github.com/tskit-dev/tskit-rust/pull/274">#274</a>)</li>
 <li>Fix leak in TableCollection::deepcopy (<a href="https://github.com/tskit-dev/tskit-rust/pull/275">#275</a>)</li>
@@ -1710,7 +1723,7 @@ pub use {
 <ul>
 <li>Fix warnings from “cargo doc” (<a href="https://github.com/tskit-dev/tskit-rust/pull/255">#255</a>)</li>
 </ul>
-<h3 id="features-14"><a class="header" href="#features-14">Features</a></h3>
+<h3 id="features-15"><a class="header" href="#features-15">Features</a></h3>
 <ul>
 <li>Make load from file generic over AsRef<str> (<a href="https://github.com/tskit-dev/tskit-rust/pull/254">#254</a>)</str></li>
 <li>Add tskit::OwnedPopulationTable (<a href="https://github.com/tskit-dev/tskit-rust/pull/267">#267</a>)</li>
@@ -1729,7 +1742,7 @@ pub use {
 <li>Macro metadata_to_vector intputs changed. (<a href="https://github.com/tskit-dev/tskit-rust/pull/263">#263</a>)</li>
 <li>Add macros to implement owned tables. (<a href="https://github.com/tskit-dev/tskit-rust/pull/269">#269</a>)</li>
 </ul>
-<h3 id="testing-7"><a class="header" href="#testing-7">Testing</a></h3>
+<h3 id="testing-8"><a class="header" href="#testing-8">Testing</a></h3>
 <ul>
 <li>Add another experimental trait idea for metadata. (<a href="https://github.com/tskit-dev/tskit-rust/pull/261">#261</a>)</li>
 <li>Redo doctest: TableCollection::new_from_file (<a href="https://github.com/tskit-dev/tskit-rust/pull/272">#272</a>)</li>
@@ -2053,7 +2066,7 @@ The functionality is replaced with <code>impl fn</code>s.</li>
 <li><code>MetadataError::RoundtripError</code> now requires <code>Send + Sync</code>.</li>
 </ul>
 <h2 id="v0110"><a class="header" href="#v0110">v0.11.0</a></h2>
-<h3 id="bug-fixes-9"><a class="header" href="#bug-fixes-9">Bug fixes</a></h3>
+<h3 id="bug-fixes-10"><a class="header" href="#bug-fixes-10">Bug fixes</a></h3>
 <ul>
 <li>Issue <a href="https://github.com/tskit-dev/tskit-rust/issues/363">363</a>, which was introduced in PR <a href="https://github.com/tskit-dev/tskit-rust/pull/300">300</a>.
 The bug resulted in UB when advancing trees for release builds.</li>
