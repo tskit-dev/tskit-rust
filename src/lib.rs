@@ -131,7 +131,7 @@
 //!
 //! These types are thin wrappers around the `C` types and have the same `sizeof` and alignment.
 //!
-//! For table collections and trees:
+//! For tree sequences and trees:
 //!
 //! * [`SiteRef`] and [`MutationRef`] replace [`Site`] and [`Mutation`], respectively.
 //! * [`SiteRef`] is the output of [`TreeSequence::site_iter`] and [`Tree::site_iter`].
