@@ -786,10 +786,9 @@ fn test_site_mutation_co_iteration_fully_loaded() {
         .unwrap();
     tables.full_sort(0).unwrap();
     tables.build_index().unwrap();
-    tables
-        .compute_mutation_parents(tskit::MutationParentsFlags::default())
+    let ts = tables
+        .tree_sequence(tskit::TreeSequenceFlags::default().compute_mutation_parents())
         .unwrap();
-    let ts = tables.tree_sequence(0).unwrap();
     for site in ts.site_iter() {
         assert!(site.ancestral_state().is_some());
         assert!(site.metadata().is_some());
