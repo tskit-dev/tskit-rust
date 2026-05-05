@@ -570,9 +570,18 @@ impl TreeSequenceFlags {
     make_constant_self!(
     /// If used, then build table indexes if they are not present.
     => BUILD_INDEXES, TSK_TS_INIT_BUILD_INDEXES);
+    make_constant_self!(
+    /// Compute mutation parents during initialization, overwriting pre-existing parents
+    /// in the mutation table
+    => COMPUTE_MUTATION_PARENTS, TSK_TS_INIT_COMPUTE_MUTATION_PARENTS
+    );
     flag_builder_api!(
         /// Set [`BUILD_INDEXES`](crate::TreeSequenceFlags::BUILD_INDEXES)
         => build_indexes, BUILD_INDEXES);
+    flag_builder_api!(
+        /// Set [`COMPUTE_MUTATION_PARENTS`](TreeSequenceFlags::COMPUTE_MUTATION_PARENTS)
+        => compute_mutation_parents, COMPUTE_MUTATION_PARENTS
+    );
     bits!();
     all!();
     contains!();
