@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.2] - 2026-05-05
+
+### Bug Fixes
+
+- SiteRef::mutation_iter().rev() now has correct behavior ([#889](https://github.com/tskit-dev/tskit-rust/pull/889))
+- Correct bounds check on preorder root node ([#895](https://github.com/tskit-dev/tskit-rust/pull/895))
+
+### Documentation
+
+- Update docs for node traversal orders ([#888](https://github.com/tskit-dev/tskit-rust/pull/888))
+- Fix some doc errors ([#898](https://github.com/tskit-dev/tskit-rust/pull/898))
+
+### Features
+
+- Tree/treeseq SiteRef iterators are now double ended ([#891](https://github.com/tskit-dev/tskit-rust/pull/891))
+- Tree::children now returns DoubleEndedIterator ([#892](https://github.com/tskit-dev/tskit-rust/pull/892))
+
+### Refactor
+
+- Deprecate a function redundant with standard iterator operations ([#887](https://github.com/tskit-dev/tskit-rust/pull/887))
+- SiteRef iteration uses only basic slice ops ([#890](https://github.com/tskit-dev/tskit-rust/pull/890))
+- Root iteration is now child iteration with respect to the virtual root ([#893](https://github.com/tskit-dev/tskit-rust/pull/893))
+- Deprecate function redundant w/standard iterator ops ([#897](https://github.com/tskit-dev/tskit-rust/pull/897))
+- Rewrite constructor for preorder node iterator ([#899](https://github.com/tskit-dev/tskit-rust/pull/899))
+
+### Testing
+
+- Preorder traversal of subtrees ([#894](https://github.com/tskit-dev/tskit-rust/pull/894))
+
 ## [0.16.1] - 2026-05-03
 
 ### Bug Fixes
