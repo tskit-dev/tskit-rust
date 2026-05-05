@@ -166,10 +166,9 @@ fn test_iterate_tree_seq_with_one_tree() {
         assert_eq!(tree.parents(-1_i32).count(), 0);
         assert_eq!(tree.children(-1_i32).count(), 0);
 
-        let roots = tree.roots_to_vec();
-        for r in roots.iter() {
+        for r in tree.roots() {
             let mut num_children = 0;
-            for _ in tree.children(*r) {
+            for _ in tree.children(r) {
                 num_children += 1;
             }
             assert_eq!(num_children, 2);

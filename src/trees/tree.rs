@@ -156,6 +156,7 @@ impl<'treeseq> Tree<'treeseq> {
     }
 
     /// Return all roots as a vector.
+    #[deprecated(since = "0.16.2", note = "Use Tree::roots + Iterator::collect")]
     pub fn roots_to_vec(&self) -> Vec<NodeId> {
         self.roots().collect::<Vec<_>>()
     }
