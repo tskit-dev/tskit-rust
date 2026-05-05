@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.3] - 2026-05-05
+
+### Bug Fixes
+
+- Node::individual now returns correct value ([#903](https://github.com/tskit-dev/tskit-rust/pull/903))
+
+### Features
+
+- TreeSequenceFlags::compute_mutation_parents ([#901](https://github.com/tskit-dev/tskit-rust/pull/901))
+
+### Testing
+
+- Extract preorder test code for reuse ([#902](https://github.com/tskit-dev/tskit-rust/pull/902))
+
 ## [0.16.2] - 2026-05-05
 
 ### Bug Fixes
