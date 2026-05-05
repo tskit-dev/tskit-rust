@@ -556,6 +556,25 @@ impl TreeSequence {
         self.inner.individual_iter()
     }
 
+    /// Individual access.
+    ///
+    /// # Returns
+    ///
+    /// * Some([`Individual`](crate::Individual)) if `individual` is valid.
+    /// * None if `individual` is null or out of range.
+    ///
+    /// # Notes
+    ///
+    /// * [`Individual::nodes`](crate::Individual::nodes)
+    ///   is populated if node tables rows
+    ///   are associated with the requested individual.
+    pub fn individual<I: Into<crate::IndividualId>>(
+        &self,
+        individual: I,
+    ) -> Option<crate::Individual<'_>> {
+        self.inner.individual(individual.into().into())
+    }
+
     /// Return an iterator over the nodes.
     pub fn node_iter(&self) -> impl Iterator<Item = crate::Node<'_>> {
         self.nodes().iter()
