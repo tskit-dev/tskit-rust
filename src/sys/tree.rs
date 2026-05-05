@@ -132,9 +132,12 @@ impl<'treeseq> LLTree<'treeseq> {
         order: NodeTraversalOrder,
     ) -> Box<dyn Iterator<Item = NodeId> + '_> {
         match order {
-            NodeTraversalOrder::Preorder => {
-                Box::new(NodeIteratorAdapter(PreorderNodeIterator::new(self)))
-            }
+            // NOTE: the unwrap isn't great but it preserves API.
+            // We "know" that we won't get an Err b/c the virtual
+            // root is always a valid node.
+            NodeTraversalOrder::Preorder => self
+                .traverse_nodes_from_root(self.virtual_root(), order)
+                .unwrap(),
             NodeTraversalOrder::Postorder => {
                 Box::new(NodeIteratorAdapter(PostorderNodeIterator::new(self)))
             }
@@ -148,7 +151,7 @@ impl<'treeseq> LLTree<'treeseq> {
     ) -> Result<Box<dyn Iterator<Item = NodeId> + '_>, TskitError> {
         match order {
             NodeTraversalOrder::Preorder => Ok(Box::new(NodeIteratorAdapter(
-                PreorderNodeIterator::new_from(self, root)?,
+                PreorderNodeIterator::new(self, root)?,
             ))),
             NodeTraversalOrder::Postorder => Ok(Box::new(NodeIteratorAdapter(
                 PostorderNodeIterator::new_from(self, root)?,
@@ -351,47 +354,36 @@ where
 }
 
 struct PreorderNodeIterator<'a> {
-    current_root: NodeId,
     node_stack: Vec<NodeId>,
     tree: &'a LLTree<'a>,
     current_node: Option<NodeId>,
 }
 
 impl<'a> PreorderNodeIterator<'a> {
-    fn new(tree: &'a LLTree) -> Self {
-        debug_assert!(tree.right_child(tree.virtual_root()).is_some());
-        let mut rv = PreorderNodeIterator {
-            current_root: tree
-                .right_child(tree.virtual_root())
-                .unwrap_or(NodeId::NULL),
-            node_stack: vec![],
-            tree,
-            current_node: None,
-        };
-        let mut c = rv.current_root;
-        while c != -1 {
-            rv.node_stack.push(c);
-            debug_assert!(rv.tree.left_sib(c).is_some());
-            c = rv.tree.left_sib(c).unwrap_or(NodeId::NULL);
-        }
-        rv
-    }
-
-    fn new_from(tree: &'a LLTree, root: NodeId) -> Result<Self, TskitError> {
+    fn new(tree: &'a LLTree, root: NodeId) -> Result<Self, TskitError> {
         if root != NodeId::NULL
-            && root != tree.virtual_root()
-            && root.as_usize() < tree.treeseq.num_nodes_raw() as usize
+            && (root == tree.virtual_root()
+                || root.as_usize() < tree.treeseq.num_nodes_raw() as usize)
         {
+            let node_stack = if root == tree.virtual_root() {
+                // Then the subtree roots are the individual
+                // roots of the tree.
+                // We traverse them in reverse order
+                // (right root to left) so that they pop
+                // left to right.
+                Vec::from_iter(tree.children(tree.virtual_root()).rev())
+            } else {
+                vec![root]
+            };
             Ok(PreorderNodeIterator {
-                current_root: NodeId::NULL,
-                node_stack: vec![root],
+                node_stack,
                 tree,
                 current_node: None,
             })
         } else {
             Err(TskitError::ValueError {
                 got: format!("{root:?}"),
-                expected: "valid NodeId and node != virtual root of tree".to_string(),
+                expected: "valid NodeId <= number of nodes in tree sequence".to_string(),
             })
         }
     }
