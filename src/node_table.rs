@@ -502,7 +502,7 @@ impl NodeTable {
     /// Obtain a vector containing the indexes ("ids") of all nodes
     /// satisfying a certain criterion.
     #[deprecated(
-        since = "0.16.1",
+        since = "0.16.2",
         note = "Prefer NodeTable::iter and iterator operations"
     )]
     pub fn create_node_id_vector<'t>(

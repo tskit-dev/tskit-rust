@@ -610,7 +610,7 @@ impl TreeSequence {
     ///
     /// See [`crate::TableCollection::create_node_id_vector`].
     #[deprecated(
-        since = "0.16.1",
+        since = "0.16.2",
         note = "Prefer TreeSequence::node_iter and iterator operations"
     )]
     pub fn create_node_id_vector<'ts>(
