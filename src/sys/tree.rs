@@ -378,7 +378,9 @@ impl<'a> PreorderNodeIterator<'a> {
     }
 
     fn new_from(tree: &'a LLTree, root: NodeId) -> Result<Self, TskitError> {
-        if root != NodeId::NULL && root != tree.virtual_root() && root < tree.treeseq.num_samples()
+        if root != NodeId::NULL
+            && root != tree.virtual_root()
+            && root.as_usize() < tree.treeseq.num_nodes_raw() as usize
         {
             Ok(PreorderNodeIterator {
                 current_root: NodeId::NULL,
