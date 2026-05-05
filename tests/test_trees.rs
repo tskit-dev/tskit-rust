@@ -920,7 +920,8 @@ fn test_treeseq_individual_iter() {
         }
     }
     for (i, ind) in ts.individual_iter().enumerate() {
-        assert_eq!(ts.individual_iter().nth(i).unwrap(), ind)
+        assert_eq!(ts.individual_iter().nth(i).unwrap(), ind);
+        assert_eq!(ts.individual(i32::try_from(i).unwrap()).unwrap(), ind);
     }
 }
 
