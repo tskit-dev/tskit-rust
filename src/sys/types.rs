@@ -609,7 +609,7 @@ impl<'p> Node<'p> {
     /// Node individual
     #[inline(always)]
     pub fn individual(&self) -> super::newtypes::IndividualId {
-        self.row.population.into()
+        self.row.individual.into()
     }
 
     /// Metadata
@@ -811,5 +811,14 @@ mod test_row_type_wrappers {
                 Some(inherited_state.as_slice())
             );
         }
+    }
+
+    #[test]
+    fn test_tsk_node_t_wrappers() {
+        let mut ll_node = unsafe { std::mem::MaybeUninit::<tsk_node_t>::zeroed().assume_init() };
+        set_scalar_field!(ll_node, individual, population ; 33, 101);
+        let node = unsafe { std::mem::transmute::<tsk_node_t, super::Node<'_>>(ll_node) };
+        assert_eq!(node.individual(), 33);
+        assert_eq!(node.population(), 101);
     }
 }
