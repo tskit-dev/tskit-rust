@@ -31,6 +31,12 @@ impl<'ts> Iterator for TreeSeqIndividualIter<'ts> {
         self.current_row += 1;
         self.treeseq.individual(r)
     }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let u = bindings::tsk_id_t::try_from(n).ok()?;
+        self.current_row = u + 1;
+        self.treeseq.individual(u)
+    }
 }
 
 impl TreeSequence {

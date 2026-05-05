@@ -919,6 +919,9 @@ fn test_treeseq_individual_iter() {
             assert_eq!(location, [1., 2.]);
         }
     }
+    for (i, ind) in ts.individual_iter().enumerate() {
+        assert_eq!(ts.individual_iter().nth(i).unwrap(), ind)
+    }
 }
 
 #[test]
