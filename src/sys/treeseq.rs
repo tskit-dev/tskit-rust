@@ -193,7 +193,7 @@ impl TreeSequence {
         assert!(!self.as_ref().tree_sites_mem.is_null());
         let sites =
             unsafe { std::slice::from_raw_parts(self.as_ref().tree_sites_mem, num_sites as usize) };
-        super::iter::SiteRefIterator { sites }
+        super::iter::SiteRefIterator::new(sites)
     }
 
     pub fn individual<'ts>(&'ts self, row: bindings::tsk_id_t) -> Option<crate::Individual<'ts>> {
