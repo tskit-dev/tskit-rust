@@ -508,6 +508,21 @@ impl<'p> std::cmp::PartialEq for Individual<'p> {
     }
 }
 
+#[repr(transparent)]
+struct IndividualNodeIdIterator<'ind>(&'ind [super::newtypes::NodeId]);
+
+impl<'ind> Iterator for IndividualNodeIdIterator<'ind> {
+    type Item = super::newtypes::NodeId;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((l, r)) = self.0.split_first() {
+            self.0 = r;
+            Some(*l)
+        } else {
+            None
+        }
+    }
+}
+
 impl<'p> Individual<'p> {
     /// Row id
     #[inline(always)]
@@ -556,6 +571,31 @@ impl<'p> Individual<'p> {
     /// Individual nodes
     pub fn nodes(&self) -> Option<&[super::newtypes::NodeId]> {
         general_data_body!(self, row, nodes, nodes_length, super::newtypes::NodeId)
+    }
+
+    /// Convert into an iterator over node ids.
+    ///
+    /// One use of this function is to flatten an iterator over individuals
+    /// into an iterator over node ids from those individuals.
+    pub fn into_node_id_iter<'iter>(self) -> impl Iterator<Item = super::newtypes::NodeId> + 'iter
+    where
+        'p: 'iter,
+    {
+        let nodes = if self.row.nodes_length > 0 {
+            assert!(!self.row.nodes.is_null());
+            // SAFETY: the pointer is not null.
+            // The cast works b/c NodeId is a transparent newtype for tsk_id_t.
+            unsafe {
+                std::slice::from_raw_parts(
+                    self.row.nodes.cast::<super::newtypes::NodeId>(),
+                    self.row.nodes_length as usize,
+                )
+            }
+        } else {
+            &[]
+        };
+
+        IndividualNodeIdIterator(nodes)
     }
 }
 
