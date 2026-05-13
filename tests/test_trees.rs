@@ -1160,3 +1160,29 @@ mod from_popgen_oxide {
         assert_eq!(site, ts.sites().num_rows().as_usize())
     }
 }
+
+#[test]
+fn flatten_nodes_from_individuals() {
+    let mut tables = tskit::TableCollection::new(100.).unwrap();
+    let ts = tables.deepcopy().unwrap().tree_sequence(tskit::TreeSequenceFlags::default().build_indexes()).unwrap();
+    let nodes: Vec<tskit::NodeId> = ts
+        .individual_iter()
+        .flat_map(|i| i.into_node_id_iter())
+        .collect::<Vec<_>>();
+    assert!(nodes.is_empty());
+    let _ = tables.add_node(0, 0., -1, 0).unwrap();
+    let _ = tables.add_node(0, 0., -1, 0).unwrap();
+    let _ = tables.add_node(0, 0., -1, 1).unwrap();
+    let _ = tables.add_node(0, 0., -1, 1).unwrap();
+    let _ = tables.add_node(0, 0., -1, 1).unwrap();
+    let _ = tables.add_individual(0, None, None).unwrap();
+    let _ = tables.add_individual(0, None, None).unwrap();
+    let ts = tables
+        .tree_sequence(tskit::TreeSequenceFlags::default().build_indexes())
+        .unwrap();
+    let nodes: Vec<tskit::NodeId> = ts
+        .individual_iter()
+        .flat_map(|i| i.into_node_id_iter())
+        .collect::<Vec<_>>();
+    assert_eq!(nodes, &[0, 1, 2, 3, 4]);
+}
