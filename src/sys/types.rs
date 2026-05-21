@@ -61,7 +61,7 @@ pub(super) fn new_site_ref<'p>(site: &'p super::bindings::tsk_site_t) -> SiteRef
     SiteRef(site)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct MutationRefIterator<'ts>(&'ts [super::bindings::tsk_mutation_t]);
 
@@ -109,7 +109,7 @@ impl<'parent> SiteRef<'parent> {
     /// Iteration order is identical to internal storage order.
     // NOTE: not populated by tsk_site_table_get_row,
     // which leaves the pointer NULL!
-    pub fn mutation_iter(&self) -> impl DoubleEndedIterator<Item = MutationRef<'parent>> {
+    pub fn mutation_iter(&self) -> impl DoubleEndedIterator<Item = MutationRef<'parent>> + Clone {
         assert!(!self.0.mutations.is_null());
         let mslice = unsafe {
             std::slice::from_raw_parts(self.0.mutations, self.0.mutations_length as usize)
