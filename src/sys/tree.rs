@@ -115,7 +115,10 @@ impl<'treeseq> LLTree<'treeseq> {
         safe_tsk_column_access_from_tree!(self, u, NodeId, right_sample)
     }
 
-    pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+    pub fn samples(
+        &self,
+        u: NodeId,
+    ) -> Result<impl Iterator<Item = NodeId> + Clone + '_, TskitError> {
         SamplesIterator::new(self, u)
     }
 
@@ -155,15 +158,15 @@ impl<'treeseq> LLTree<'treeseq> {
         }
     }
 
-    pub fn children(&self, u: NodeId) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
+    pub fn children(&self, u: NodeId) -> impl DoubleEndedIterator<Item = NodeId> + Clone + '_ {
         ChildIterator::new(self, u)
     }
 
-    pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
+    pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + Clone + '_ {
         ParentsIterator::new(self, u)
     }
 
-    pub fn roots(&self) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
+    pub fn roots(&self) -> impl DoubleEndedIterator<Item = NodeId> + Clone + '_ {
         ChildIterator::new(self, self.virtual_root())
     }
 
@@ -457,6 +460,7 @@ impl<'a> Iterator for PostorderNodeIterator<'a> {
     }
 }
 
+#[derive(Clone)]
 struct SamplesIterator<'a> {
     current_node: Option<NodeId>,
     next_sample_index: NodeId,
@@ -535,6 +539,7 @@ pub enum NodeTraversalOrder {
     Postorder,
 }
 
+#[derive(Clone)]
 struct ChildIterator<'a> {
     current_child: Option<NodeId>,
     left_child: NodeId,
@@ -613,6 +618,7 @@ impl<'a> DoubleEndedIterator for ChildIterator<'a> {
     }
 }
 
+#[derive(Clone)]
 struct ParentsIterator<'a> {
     current_node: Option<NodeId>,
     next_node: NodeId,

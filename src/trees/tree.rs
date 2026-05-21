@@ -123,7 +123,7 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn samples<N: Into<NodeId> + Copy>(
         &self,
         u: N,
-    ) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
+    ) -> Result<impl Iterator<Item = NodeId> + Clone + '_, TskitError> {
         self.inner.samples(u.into())
     }
 
@@ -151,7 +151,7 @@ impl<'treeseq> Tree<'treeseq> {
     ///
     /// For a tree with multiple roots, the iteration starts
     /// at the left root.
-    pub fn roots(&self) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
+    pub fn roots(&self) -> impl DoubleEndedIterator<Item = NodeId> + Clone + '_ {
         self.inner.roots()
     }
 
@@ -311,12 +311,15 @@ impl<'treeseq> Tree<'treeseq> {
     pub fn children<N: Into<NodeId> + Copy>(
         &self,
         u: N,
-    ) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
+    ) -> impl DoubleEndedIterator<Item = NodeId> + Clone + '_ {
         self.inner.children(u.into())
     }
 
     /// Return an [`Iterator`] over the parents of node `u`.
-    pub fn parents<N: Into<NodeId> + Copy>(&self, u: N) -> impl Iterator<Item = NodeId> + '_ {
+    pub fn parents<N: Into<NodeId> + Copy>(
+        &self,
+        u: N,
+    ) -> impl Iterator<Item = NodeId> + Clone + '_ {
         self.inner.parents(u.into())
     }
 
