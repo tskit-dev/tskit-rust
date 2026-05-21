@@ -1164,7 +1164,11 @@ mod from_popgen_oxide {
 #[test]
 fn flatten_nodes_from_individuals() {
     let mut tables = tskit::TableCollection::new(100.).unwrap();
-    let ts = tables.deepcopy().unwrap().tree_sequence(tskit::TreeSequenceFlags::default().build_indexes()).unwrap();
+    let ts = tables
+        .deepcopy()
+        .unwrap()
+        .tree_sequence(tskit::TreeSequenceFlags::default().build_indexes())
+        .unwrap();
     let nodes: Vec<tskit::NodeId> = ts
         .individual_iter()
         .flat_map(|i| i.into_node_id_iter())

@@ -186,7 +186,9 @@ impl TreeSequence {
         sites.get(site as usize).map(|s| super::new_site_ref(s))
     }
 
-    pub fn site_iter<'ts>(&'ts self) -> impl DoubleEndedIterator<Item = crate::SiteRef<'ts>> {
+    pub fn site_iter<'ts>(
+        &'ts self,
+    ) -> impl DoubleEndedIterator<Item = crate::SiteRef<'ts>> + Clone {
         assert!(!self.as_ref().tables.is_null());
         // SAFETY: none of the pointers are null
         let num_sites = unsafe { (*(self.as_ref()).tables).sites.num_rows };

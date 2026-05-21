@@ -1,6 +1,6 @@
 use crate::sys::new_site_ref;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[repr(transparent)]
 pub struct SiteRefIterator<'ts>(&'ts [super::bindings::tsk_site_t]);
 
