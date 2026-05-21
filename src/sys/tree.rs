@@ -116,7 +116,7 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 
     pub fn samples(&self, u: NodeId) -> Result<impl Iterator<Item = NodeId> + '_, TskitError> {
-        Ok(NodeIteratorAdapter(SamplesIterator::new(self, u)?))
+        SamplesIterator::new(self, u)
     }
 
     pub fn parent(&self, u: NodeId) -> Option<NodeId> {
@@ -138,9 +138,7 @@ impl<'treeseq> LLTree<'treeseq> {
             NodeTraversalOrder::Preorder => self
                 .traverse_nodes_from_root(self.virtual_root(), order)
                 .unwrap(),
-            NodeTraversalOrder::Postorder => {
-                Box::new(NodeIteratorAdapter(PostorderNodeIterator::new(self)))
-            }
+            NodeTraversalOrder::Postorder => Box::new(PostorderNodeIterator::new(self)),
         }
     }
 
@@ -150,25 +148,23 @@ impl<'treeseq> LLTree<'treeseq> {
         order: NodeTraversalOrder,
     ) -> Result<Box<dyn Iterator<Item = NodeId> + '_>, TskitError> {
         match order {
-            NodeTraversalOrder::Preorder => Ok(Box::new(NodeIteratorAdapter(
-                PreorderNodeIterator::new(self, root)?,
-            ))),
-            NodeTraversalOrder::Postorder => Ok(Box::new(NodeIteratorAdapter(
-                PostorderNodeIterator::new_from(self, root)?,
-            ))),
+            NodeTraversalOrder::Preorder => Ok(Box::new(PreorderNodeIterator::new(self, root)?)),
+            NodeTraversalOrder::Postorder => {
+                Ok(Box::new(PostorderNodeIterator::new_from(self, root)?))
+            }
         }
     }
 
     pub fn children(&self, u: NodeId) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
-        DoubleEndedNodeIteratorAdapter(ChildIterator::new(self, u))
+        ChildIterator::new(self, u)
     }
 
     pub fn parents(&self, u: NodeId) -> impl Iterator<Item = NodeId> + '_ {
-        NodeIteratorAdapter(ParentsIterator::new(self, u))
+        ParentsIterator::new(self, u)
     }
 
     pub fn roots(&self) -> impl DoubleEndedIterator<Item = NodeId> + '_ {
-        DoubleEndedNodeIteratorAdapter(ChildIterator::new(self, self.virtual_root()))
+        ChildIterator::new(self, self.virtual_root())
     }
 
     pub fn parent_array(&self) -> &[NodeId] {
@@ -305,56 +301,6 @@ impl<'treeseq> LLTree<'treeseq> {
     }
 }
 
-// Trait defining iteration over nodes.
-pub trait NodeIterator {
-    fn next_node(&mut self);
-    fn current_node(&mut self) -> Option<NodeId>;
-}
-
-pub trait DoubleEndedNodeIterator: NodeIterator {
-    fn prev_node(&mut self);
-}
-
-#[repr(transparent)]
-struct NodeIteratorAdapter<T: NodeIterator>(T);
-
-impl<T> Iterator for NodeIteratorAdapter<T>
-where
-    T: NodeIterator,
-{
-    type Item = NodeId;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next_node();
-        self.0.current_node()
-    }
-}
-
-#[repr(transparent)]
-struct DoubleEndedNodeIteratorAdapter<T: DoubleEndedNodeIterator>(T);
-
-// NOTE: this is an unfortunate code repetition!
-impl<T> Iterator for DoubleEndedNodeIteratorAdapter<T>
-where
-    T: DoubleEndedNodeIterator,
-{
-    type Item = NodeId;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next_node();
-        self.0.current_node()
-    }
-}
-
-impl<T> DoubleEndedIterator for DoubleEndedNodeIteratorAdapter<T>
-where
-    T: DoubleEndedNodeIterator,
-{
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.0.prev_node();
-        self.0.current_node()
-    }
-}
-
 struct PreorderNodeIterator<'a> {
     node_stack: Vec<NodeId>,
     tree: &'a LLTree<'a>,
@@ -389,9 +335,7 @@ impl<'a> PreorderNodeIterator<'a> {
             })
         }
     }
-}
 
-impl NodeIterator for PreorderNodeIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = self.node_stack.pop();
         if let Some(u) = self.current_node {
@@ -405,6 +349,14 @@ impl NodeIterator for PreorderNodeIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
+    }
+}
+
+impl<'a> Iterator for PreorderNodeIterator<'a> {
+    type Item = NodeId;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_node();
+        self.current_node()
     }
 }
 
@@ -480,9 +432,7 @@ impl<'a> PostorderNodeIterator<'a> {
             }
         )
     }
-}
 
-impl NodeIterator for PostorderNodeIterator<'_> {
     fn next_node(&mut self) {
         match self.current_node_index < self.num_nodes_current_tree {
             true => {
@@ -495,6 +445,15 @@ impl NodeIterator for PostorderNodeIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
+    }
+}
+
+impl<'a> Iterator for PostorderNodeIterator<'a> {
+    type Item = NodeId;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_node();
+        self.current_node()
     }
 }
 
@@ -527,9 +486,7 @@ impl<'a> SamplesIterator<'a> {
             }
         }
     }
-}
 
-impl NodeIterator for SamplesIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_sample_index {
             NodeId::NULL => None,
@@ -555,6 +512,14 @@ impl NodeIterator for SamplesIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
+    }
+}
+
+impl<'a> Iterator for SamplesIterator<'a> {
+    type Item = NodeId;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_node();
+        self.current_node()
     }
 }
 
@@ -588,9 +553,6 @@ impl<'a> ChildIterator<'a> {
             tree,
         }
     }
-}
-
-impl NodeIterator for ChildIterator<'_> {
     fn next_node(&mut self) {
         self.current_child = if !self.finished {
             match self.left_child {
@@ -614,9 +576,7 @@ impl NodeIterator for ChildIterator<'_> {
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_child
     }
-}
 
-impl DoubleEndedNodeIterator for ChildIterator<'_> {
     fn prev_node(&mut self) {
         self.current_child = if !self.finished {
             match self.right_child {
@@ -638,6 +598,21 @@ impl DoubleEndedNodeIterator for ChildIterator<'_> {
     }
 }
 
+impl<'a> Iterator for ChildIterator<'a> {
+    type Item = NodeId;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_node();
+        self.current_node()
+    }
+}
+
+impl<'a> DoubleEndedIterator for ChildIterator<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.prev_node();
+        self.current_node()
+    }
+}
+
 struct ParentsIterator<'a> {
     current_node: Option<NodeId>,
     next_node: NodeId,
@@ -656,9 +631,7 @@ impl<'a> ParentsIterator<'a> {
             tree,
         }
     }
-}
 
-impl NodeIterator for ParentsIterator<'_> {
     fn next_node(&mut self) {
         self.current_node = match self.next_node {
             NodeId::NULL => None,
@@ -673,5 +646,13 @@ impl NodeIterator for ParentsIterator<'_> {
 
     fn current_node(&mut self) -> Option<NodeId> {
         self.current_node
+    }
+}
+
+impl<'a> Iterator for ParentsIterator<'a> {
+    type Item = NodeId;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_node();
+        self.current_node()
     }
 }
