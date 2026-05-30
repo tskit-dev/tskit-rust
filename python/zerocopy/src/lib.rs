@@ -73,3 +73,93 @@ fn treeseq_roundtrip() {
         unsafe { pyo3::ffi::PyMem_Free(tables_ptr.as_ptr().cast::<std::ffi::c_void>()) };
     });
 }
+
+#[test]
+fn test_treeseq_new_from_raw() {
+    use pyo3::prelude::*;
+    Python::attach(|_py| {
+        let mut tables = tskit::TableCollection::new(100.).unwrap();
+        tables.add_node(0, 0.0, -1, -1).unwrap();
+
+        let treeseq = unsafe {
+            pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tskit::bindings::tsk_treeseq_t>())
+        } as *mut tskit::bindings::tsk_treeseq_t;
+        let rv = unsafe {
+            tskit::bindings::tsk_treeseq_init(
+                treeseq,
+                tables.into_mut_ptr().unwrap().as_ptr(),
+                tskit::bindings::TSK_TAKE_OWNERSHIP | tskit::bindings::TSK_TS_INIT_BUILD_INDEXES,
+            )
+        };
+        assert_eq!(rv, 0);
+        let ptr = std::ptr::NonNull::new(treeseq).unwrap();
+        let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
+        assert_eq!(rs_treeseq.nodes().num_rows(), 1);
+        let mut ptr = rs_treeseq.into_mut_ptr().unwrap();
+        let rv = unsafe { tskit::bindings::tsk_treeseq_free(ptr.as_mut()) };
+        assert_eq!(rv, 0);
+        unsafe {
+            pyo3::ffi::PyMem_Free(ptr.as_ptr() as *mut std::ffi::c_void);
+        }
+    });
+}
+
+#[test]
+fn test_treeseq_new_from_raw_tables_also_py_allocated() {
+    use pyo3::prelude::*;
+    use tskit::bindings::tsk_table_collection_init;
+    use tskit::bindings::tsk_table_collection_t;
+
+    Python::attach(|_py| {
+        let tables_ptr = unsafe {
+            pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tsk_table_collection_t>())
+                .cast::<tsk_table_collection_t>()
+        };
+        assert!(!tables_ptr.is_null());
+
+        // SAFETY: ptr is not null
+        let rv = unsafe { tsk_table_collection_init(tables_ptr, 0) };
+        unsafe { (*tables_ptr).sequence_length = 100.0 };
+        assert_eq!(unsafe { *tables_ptr }.sequence_length, 100.);
+        assert_eq!(rv, 0);
+        let tables_ptr = std::ptr::NonNull::new(tables_ptr).unwrap();
+        // Not null and initialized w/o error
+        let mut tables = unsafe { tskit::TableCollection::new_from_raw(tables_ptr) }.unwrap();
+        let _ = tables.add_node(0, 0.0, -1, -1).unwrap();
+        assert_eq!(tables.sequence_length(), 100.);
+
+        let treeseq = unsafe {
+            pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tskit::bindings::tsk_treeseq_t>())
+        } as *mut tskit::bindings::tsk_treeseq_t;
+        let rv = unsafe {
+            tskit::bindings::tsk_treeseq_init(
+                treeseq,
+                tables.into_mut_ptr().unwrap().as_ptr(),
+                tskit::bindings::TSK_TAKE_OWNERSHIP | tskit::bindings::TSK_TS_INIT_BUILD_INDEXES,
+            )
+        };
+        assert_eq!(rv, 0);
+        let ptr = std::ptr::NonNull::new(treeseq).unwrap();
+        let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
+        assert_eq!(rs_treeseq.nodes().num_rows(), 1);
+        let mut ptr = rs_treeseq.into_mut_ptr().unwrap();
+
+        // We allocated the tables via the Python allocator.
+        // Internally, tskit will free it with C's free, which is
+        // UB!
+        // To circumvent UB, we must manually do the steps below.
+        // We know to do these steps b/c we have read the implementation
+        // of tsk_treeseq_free.
+        unsafe {
+            tskit::bindings::tsk_table_collection_free(ptr.as_mut().tables);
+            pyo3::ffi::PyMem_Free(ptr.as_mut().tables as *mut std::ffi::c_void);
+            ptr.as_mut().tables = std::ptr::null_mut();
+        }
+
+        let rv = unsafe { tskit::bindings::tsk_treeseq_free(ptr.as_mut()) };
+        assert_eq!(rv, 0);
+        unsafe {
+            pyo3::ffi::PyMem_Free(ptr.as_ptr() as *mut std::ffi::c_void);
+        }
+    });
+}
