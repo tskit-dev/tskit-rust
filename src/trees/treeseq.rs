@@ -732,6 +732,19 @@ impl TreeSequence {
     ) -> impl crate::TableColumn<crate::EdgeId, crate::EdgeId> + '_ {
         crate::table_column::OpaqueTableColumn(self.edge_removal_order())
     }
+
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_from_raw(
+        ptr: std::ptr::NonNull<ll_bindings::tsk_treeseq_t>,
+    ) -> Result<Self, TskitError> {
+        let tables = unsafe {
+            TableCollection::new_from_ll(sys::TableCollection::new_borrowed(
+                std::ptr::NonNull::new(ptr.as_ref().tables).unwrap(),
+            ))
+        }?;
+        let inner = sys::TreeSequence::new(tables, 0.into())?;
+        Ok(Self{inner, tables })
+    }
 }
 
 impl TryFrom<TableCollection> for TreeSequence {
