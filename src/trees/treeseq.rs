@@ -1,3 +1,4 @@
+use crate::bindings::tsk_treeseq_t;
 use crate::error::TskitError;
 use crate::sys;
 use crate::EdgeTable;
@@ -744,6 +745,10 @@ impl TreeSequence {
         }?;
         let inner = sys::TreeSequence::new_owning_from_nonnull(ptr);
         Ok(Self { inner, tables })
+    }
+
+    pub fn into_mut_ptr(self) -> Option<std::ptr::NonNull<tsk_treeseq_t>> {
+        std::ptr::NonNull::new(self.inner.into_raw())
     }
 }
 

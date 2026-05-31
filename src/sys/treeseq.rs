@@ -46,6 +46,10 @@ impl TreeSequence {
         Ok(Self(tsk))
     }
 
+    pub fn into_raw(self) -> *mut tsk_treeseq_t {
+        self.0.into_raw()
+    }
+
     // # Safety
     //
     // `treeseq` must be an initialized `tsk_treeseq_t_t`
