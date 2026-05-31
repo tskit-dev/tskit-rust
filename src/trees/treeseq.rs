@@ -1,4 +1,3 @@
-use crate::bindings::tsk_treeseq_t;
 use crate::error::TskitError;
 use crate::sys;
 use crate::EdgeTable;
@@ -19,6 +18,7 @@ use crate::TreeFlags;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use sys::bindings as ll_bindings;
+use sys::bindings::tsk_treeseq_t;
 
 #[cfg(feature = "provenance")]
 use std::ffi::c_char;
