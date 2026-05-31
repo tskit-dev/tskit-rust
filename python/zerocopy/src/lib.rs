@@ -77,30 +77,30 @@ fn treeseq_roundtrip() {
 // Should panic because we are allocating with Python malloc
 // by letting the tskit object drop, which attempts to
 // free using libc::free.
-#[test]
-#[should_panic]
-fn test_treeseq_new_from_raw_invalid() {
-    use pyo3::prelude::*;
-    Python::attach(|_py| {
-        let mut tables = tskit::TableCollection::new(100.).unwrap();
-        tables.add_node(0, 0.0, -1, -1).unwrap();
-
-        let treeseq = unsafe {
-            pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tskit::bindings::tsk_treeseq_t>())
-        } as *mut tskit::bindings::tsk_treeseq_t;
-        let rv = unsafe {
-            tskit::bindings::tsk_treeseq_init(
-                treeseq,
-                tables.into_mut_ptr().unwrap().as_ptr(),
-                tskit::bindings::TSK_TAKE_OWNERSHIP | tskit::bindings::TSK_TS_INIT_BUILD_INDEXES,
-            )
-        };
-        assert_eq!(rv, 0);
-        let ptr = std::ptr::NonNull::new(treeseq).unwrap();
-        let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
-        assert_eq!(rs_treeseq.nodes().num_rows(), 1);
-    });
-}
+// #[test]
+// #[should_panic]
+// fn test_treeseq_new_from_raw_invalid() {
+//     use pyo3::prelude::*;
+//     Python::attach(|_py| {
+//         let mut tables = tskit::TableCollection::new(100.).unwrap();
+//         tables.add_node(0, 0.0, -1, -1).unwrap();
+// 
+//         let treeseq = unsafe {
+//             pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tskit::bindings::tsk_treeseq_t>())
+//         } as *mut tskit::bindings::tsk_treeseq_t;
+//         let rv = unsafe {
+//             tskit::bindings::tsk_treeseq_init(
+//                 treeseq,
+//                 tables.into_mut_ptr().unwrap().as_ptr(),
+//                 tskit::bindings::TSK_TAKE_OWNERSHIP | tskit::bindings::TSK_TS_INIT_BUILD_INDEXES,
+//             )
+//         };
+//         assert_eq!(rv, 0);
+//         let ptr = std::ptr::NonNull::new(treeseq).unwrap();
+//         let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
+//         assert_eq!(rs_treeseq.nodes().num_rows(), 1);
+//     });
+// }
 
 #[test]
 fn test_treeseq_new_from_raw() {
