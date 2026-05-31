@@ -737,13 +737,16 @@ impl TreeSequence {
     pub unsafe fn new_from_raw(
         ptr: std::ptr::NonNull<ll_bindings::tsk_treeseq_t>,
     ) -> Result<Self, TskitError> {
+        let ll_tables = sys::TableCollection::new_owning_from_nonnull(
+            std::ptr::NonNull::new(ptr.as_ref().tables).unwrap(),
+        );
         let tables = unsafe {
             TableCollection::new_from_ll(sys::TableCollection::new_borrowed(
                 std::ptr::NonNull::new(ptr.as_ref().tables).unwrap(),
             ))
         }?;
-        let inner = sys::TreeSequence::new(tables, 0.into())?;
-        Ok(Self{inner, tables })
+        let inner = sys::TreeSequence::new(ll_tables, 0.into())?;
+        Ok(Self { inner, tables })
     }
 }
 
