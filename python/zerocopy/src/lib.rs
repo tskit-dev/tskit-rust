@@ -73,3 +73,12 @@ fn treeseq_roundtrip() {
         unsafe { pyo3::ffi::PyMem_Free(tables_ptr.as_ptr().cast::<std::ffi::c_void>()) };
     });
 }
+
+#[test]
+fn test_treeseq_sharing() {
+    use pyo3::prelude::*;
+
+    Python::attach(|_py| {
+        todo!()
+    })
+}
