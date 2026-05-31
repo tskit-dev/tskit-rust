@@ -759,3 +759,24 @@ impl TryFrom<TableCollection> for TreeSequence {
         Self::new(value, TreeSequenceFlags::default())
     }
 }
+
+#[cfg(feature = "unsafe_init")]
+#[test]
+fn test_new_from_raw() {
+    let mut tables = crate::TableCollection::new(100.).unwrap();
+    tables.add_node(0, 0.0, -1, -1).unwrap();
+
+    let treeseq = unsafe { libc::malloc(std::mem::size_of::<sys::bindings::tsk_treeseq_t>()) }
+        as *mut sys::bindings::tsk_treeseq_t;
+    let rv = unsafe {
+        sys::bindings::tsk_treeseq_init(
+            treeseq,
+            tables.into_mut_ptr().unwrap().as_ptr(),
+            sys::bindings::TSK_TAKE_OWNERSHIP | sys::bindings::TSK_TS_INIT_BUILD_INDEXES,
+        )
+    };
+    assert_eq!(rv, 0);
+    let ptr = std::ptr::NonNull::new(treeseq).unwrap();
+    let rs_treeseq = unsafe { TreeSequence::new_from_raw(ptr) }.unwrap();
+    assert_eq!(rs_treeseq.nodes().num_rows(), 1);
+}
