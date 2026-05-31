@@ -103,7 +103,6 @@ fn test_treeseq_new_from_raw_invalid() {
 }
 
 #[test]
-#[should_panic]
 fn test_treeseq_new_from_raw() {
     use pyo3::prelude::*;
     Python::attach(|_py| {
