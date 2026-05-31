@@ -49,9 +49,7 @@ impl TreeSequence {
     // # Safety
     //
     // `tables` must be an initialized `tsk_table_collection_t`
-    pub unsafe fn new_owning_from_nonnull(
-        treeseq: std::ptr::NonNull<tsk_treeseq_t>,
-    ) -> Self {
+    pub unsafe fn new_owning_from_nonnull(treeseq: std::ptr::NonNull<tsk_treeseq_t>) -> Self {
         Self(TskBox::new_init_owning_from_ptr(treeseq))
     }
 
