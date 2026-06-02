@@ -95,7 +95,53 @@ fn test_treeseq_new_from_raw() {
         let ptr = std::ptr::NonNull::new(treeseq).unwrap();
         let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
         assert_eq!(rs_treeseq.nodes().num_rows(), 1);
-        let ptr = rs_treeseq.into_mut_ptr().unwrap();
+        let mut ptr = rs_treeseq.into_mut_ptr().unwrap();
+        let rv = unsafe { tskit::bindings::tsk_treeseq_free(ptr.as_mut()) };
+        assert_eq!(rv, 0);
+        unsafe {
+            pyo3::ffi::PyMem_Free(ptr.as_ptr() as *mut std::ffi::c_void);
+        }
+    });
+}
+
+#[test]
+fn test_treeseq_new_from_raw_tables_also_py_allocated() {
+    use pyo3::prelude::*;
+    use tskit::bindings::tsk_table_collection_init;
+    use tskit::bindings::tsk_table_collection_t;
+
+    Python::attach(|_py| {
+        let tables_ptr = unsafe {
+            pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tsk_table_collection_t>())
+                .cast::<tsk_table_collection_t>()
+        };
+        assert!(!tables_ptr.is_null());
+
+        // SAFETY: ptr is not null
+        let rv = unsafe { tsk_table_collection_init(tables_ptr, 0) };
+        assert_eq!(rv, 0);
+        let tables_ptr = std::ptr::NonNull::new(tables_ptr).unwrap();
+        // Not null and initialized w/o error
+        let mut tables = unsafe { tskit::TableCollection::new_from_raw(tables_ptr) }.unwrap();
+        let _ = tables.add_node(0, 0.0, -1, -1).unwrap();
+
+        let treeseq = unsafe {
+            pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tskit::bindings::tsk_treeseq_t>())
+        } as *mut tskit::bindings::tsk_treeseq_t;
+        let rv = unsafe {
+            tskit::bindings::tsk_treeseq_init(
+                treeseq,
+                tables.into_mut_ptr().unwrap().as_ptr(),
+                tskit::bindings::TSK_TAKE_OWNERSHIP | tskit::bindings::TSK_TS_INIT_BUILD_INDEXES,
+            )
+        };
+        assert_eq!(rv, 0);
+        let ptr = std::ptr::NonNull::new(treeseq).unwrap();
+        let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
+        assert_eq!(rs_treeseq.nodes().num_rows(), 1);
+        let mut ptr = rs_treeseq.into_mut_ptr().unwrap();
+        let rv = unsafe { tskit::bindings::tsk_treeseq_free(ptr.as_mut()) };
+        assert_eq!(rv, 0);
         unsafe {
             pyo3::ffi::PyMem_Free(ptr.as_ptr() as *mut std::ffi::c_void);
         }
