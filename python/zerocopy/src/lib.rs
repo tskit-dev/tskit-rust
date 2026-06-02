@@ -147,7 +147,9 @@ fn test_treeseq_new_from_raw_tables_also_py_allocated() {
         // We allocated the tables via the Python allocator.
         // Interally, tskit will free it with C's free, which is
         // UB!
-        // To circumvent UB, we must manually do these steps:
+        // To circumvent UB, we must manually do the steps below.
+        // We know to do these steps b/c we have read the implementation
+        // of tsk_treeseq_free.
         unsafe {
             tskit::bindings::tsk_table_collection_free(ptr.as_mut().tables);
             pyo3::ffi::PyMem_Free(ptr.as_mut().tables as *mut std::ffi::c_void);
