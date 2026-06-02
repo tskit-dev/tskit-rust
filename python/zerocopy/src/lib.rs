@@ -119,11 +119,14 @@ fn test_treeseq_new_from_raw_tables_also_py_allocated() {
 
         // SAFETY: ptr is not null
         let rv = unsafe { tsk_table_collection_init(tables_ptr, 0) };
+        unsafe { (*tables_ptr).sequence_length = 100.0 };
+        assert_eq!(unsafe { *tables_ptr }.sequence_length, 100.);
         assert_eq!(rv, 0);
         let tables_ptr = std::ptr::NonNull::new(tables_ptr).unwrap();
         // Not null and initialized w/o error
         let mut tables = unsafe { tskit::TableCollection::new_from_raw(tables_ptr) }.unwrap();
         let _ = tables.add_node(0, 0.0, -1, -1).unwrap();
+        assert_eq!(tables.sequence_length(), 100.);
 
         let treeseq = unsafe {
             pyo3::ffi::PyMem_Malloc(std::mem::size_of::<tskit::bindings::tsk_treeseq_t>())
