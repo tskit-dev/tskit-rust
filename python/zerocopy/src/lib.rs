@@ -143,6 +143,17 @@ fn test_treeseq_new_from_raw_tables_also_py_allocated() {
         let rs_treeseq = unsafe { tskit::TreeSequence::new_from_raw(ptr) }.unwrap();
         assert_eq!(rs_treeseq.nodes().num_rows(), 1);
         let mut ptr = rs_treeseq.into_mut_ptr().unwrap();
+
+        // We allocated the tables via the Python allocator.
+        // Interally, tskit will free it with C's free, which is
+        // UB!
+        // To circumvent UB, we must manually do these steps:
+        unsafe {
+            tskit::bindings::tsk_table_collection_free(ptr.as_mut().tables);
+            pyo3::ffi::PyMem_Free(ptr.as_mut().tables as *mut std::ffi::c_void);
+            ptr.as_mut().tables = std::ptr::null_mut();
+        }
+
         let rv = unsafe { tskit::bindings::tsk_treeseq_free(ptr.as_mut()) };
         assert_eq!(rv, 0);
         unsafe {
