@@ -18,6 +18,7 @@ use crate::TreeFlags;
 use crate::TreeSequenceFlags;
 use crate::TskReturnValue;
 use sys::bindings as ll_bindings;
+use sys::bindings::tsk_treeseq_t;
 
 #[cfg(feature = "provenance")]
 use std::ffi::c_char;
@@ -732,6 +733,23 @@ impl TreeSequence {
     ) -> impl crate::TableColumn<crate::EdgeId, crate::EdgeId> + '_ {
         crate::table_column::OpaqueTableColumn(self.edge_removal_order())
     }
+
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_from_raw(
+        ptr: std::ptr::NonNull<ll_bindings::tsk_treeseq_t>,
+    ) -> Result<Self, TskitError> {
+        let tables = unsafe {
+            TableCollection::new_from_ll(sys::TableCollection::new_borrowed(
+                std::ptr::NonNull::new(ptr.as_ref().tables).unwrap(),
+            ))
+        }?;
+        let inner = sys::TreeSequence::new_owning_from_nonnull(ptr);
+        Ok(Self { inner, tables })
+    }
+
+    pub fn into_mut_ptr(self) -> Option<std::ptr::NonNull<tsk_treeseq_t>> {
+        std::ptr::NonNull::new(self.inner.into_raw())
+    }
 }
 
 impl TryFrom<TableCollection> for TreeSequence {
@@ -740,4 +758,25 @@ impl TryFrom<TableCollection> for TreeSequence {
     fn try_from(value: TableCollection) -> Result<Self, Self::Error> {
         Self::new(value, TreeSequenceFlags::default())
     }
+}
+
+#[cfg(feature = "unsafe_init")]
+#[test]
+fn test_new_from_raw() {
+    let mut tables = crate::TableCollection::new(100.).unwrap();
+    tables.add_node(0, 0.0, -1, -1).unwrap();
+
+    let treeseq = unsafe { libc::malloc(std::mem::size_of::<sys::bindings::tsk_treeseq_t>()) }
+        as *mut sys::bindings::tsk_treeseq_t;
+    let rv = unsafe {
+        sys::bindings::tsk_treeseq_init(
+            treeseq,
+            tables.into_mut_ptr().unwrap().as_ptr(),
+            sys::bindings::TSK_TAKE_OWNERSHIP | sys::bindings::TSK_TS_INIT_BUILD_INDEXES,
+        )
+    };
+    assert_eq!(rv, 0);
+    let ptr = std::ptr::NonNull::new(treeseq).unwrap();
+    let rs_treeseq = unsafe { TreeSequence::new_from_raw(ptr) }.unwrap();
+    assert_eq!(rs_treeseq.nodes().num_rows(), 1);
 }
