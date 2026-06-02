@@ -145,7 +145,7 @@ fn test_treeseq_new_from_raw_tables_also_py_allocated() {
         let mut ptr = rs_treeseq.into_mut_ptr().unwrap();
 
         // We allocated the tables via the Python allocator.
-        // Interally, tskit will free it with C's free, which is
+        // Internally, tskit will free it with C's free, which is
         // UB!
         // To circumvent UB, we must manually do the steps below.
         // We know to do these steps b/c we have read the implementation
