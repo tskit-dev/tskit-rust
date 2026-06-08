@@ -64,25 +64,33 @@ fn impl_metadata_roundtrip_macro(ast: &syn::DeriveInput) -> Result<TokenStream, 
             } else if &serializer == "bincode" {
                 return Ok(impl_serde_bincode_roundtrip(name));
             } else {
-                proc_macro_error2::abort!(serializer, "is not a supported protocol.");
+                return Err(syn::Error::new_spanned(
+                    attr,
+                    "unsupported serializer protocol",
+                ));
             }
         } else {
-            proc_macro_error2::abort!(attr.path(), "is not a supported attribute.");
+            return Err(syn::Error::new_spanned(
+                attr,
+                "missing [serializer(...)] attribute",
+            ));
         }
     }
 
-    proc_macro_error2::abort_call_site!("missing [serializer(...)] attribute")
+    Err(syn::Error::new_spanned(
+        ast,
+        "missing [serializer(...)] attribute",
+    ))
 }
 
 macro_rules! make_derive_metadata_tag {
     ($function: ident, $metadatatag: ident) => {
-        #[proc_macro_error2::proc_macro_error]
         #[proc_macro_derive($metadatatag, attributes(serializer))]
         /// Register a type as metadata.
         pub fn $function(input: TokenStream) -> TokenStream {
             let ast: syn::DeriveInput = match syn::parse(input) {
                 Ok(ast) => ast,
-                Err(err) => proc_macro_error2::abort_call_site!(err),
+                Err(err) => return syn::Error::new_spanned("",format!("parse error: {err:?}")).to_compile_error().into()
             };
             let mut roundtrip = impl_metadata_roundtrip_macro(&ast).unwrap();
             let name = &ast.ident;
