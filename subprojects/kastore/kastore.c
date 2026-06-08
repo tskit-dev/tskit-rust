@@ -266,7 +266,7 @@ kastore_read_descriptors(kastore_t *self)
     if (size + KAS_HEADER_SIZE > self->file_size) {
         goto out;
     }
-    read_buffer = (char *) malloc(size);
+    read_buffer = (char *) calloc(self->num_items, KAS_ITEM_DESCRIPTOR_SIZE);
     if (read_buffer == NULL) {
         ret = KAS_ERR_NO_MEMORY;
         goto out;
@@ -503,6 +503,10 @@ kastore_read(kastore_t *self)
         goto out;
     }
     if (self->num_items > 0) {
+        if (self->num_items > SIZE_MAX / sizeof(*self->items)) {
+            ret = KAS_ERR_NO_MEMORY;
+            goto out;
+        }
         self->items = (kaitem_t *) calloc(self->num_items, sizeof(*self->items));
         if (self->items == NULL) {
             ret = KAS_ERR_NO_MEMORY;
