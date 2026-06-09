@@ -186,6 +186,7 @@ mod newtypes;
 mod node_table;
 mod population_table;
 pub mod prelude;
+mod rsalgo;
 mod site_table;
 mod sys;
 mod table_collection;
