@@ -88,10 +88,7 @@ macro_rules! make_derive_metadata_tag {
         #[proc_macro_derive($metadatatag, attributes(serializer))]
         /// Register a type as metadata.
         pub fn $function(input: TokenStream) -> TokenStream {
-            let ast: syn::DeriveInput = match syn::parse(input) {
-                Ok(ast) => ast,
-                Err(err) => return syn::Error::new_spanned("",format!("parse error: {err:?}")).to_compile_error().into()
-            };
+            let ast: syn::DeriveInput = syn::parse(input).unwrap();
             let mut roundtrip = impl_metadata_roundtrip_macro(&ast).unwrap();
             let name = &ast.ident;
             let gen: proc_macro::TokenStream = quote::quote!(
