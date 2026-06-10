@@ -261,8 +261,9 @@ where
         if node_id == NodeId::NULL {
             return Err(StatsError::InvalidNode(node_id));
         }
-        // Should be an Err condition!
-        assert!(node_id.as_usize() < num_nodes);
+        if node_id.as_usize() >= num_nodes {
+            return Err(StatsError::InvalidNode(node_id));
+        }
         if let Some(value) = td.num_sample_descendants.get_mut(node_id.as_usize()) {
             *value += 1;
         } else {
