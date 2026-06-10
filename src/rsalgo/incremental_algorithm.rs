@@ -89,6 +89,56 @@ pub(crate) fn incremental_algorithm<I: IncrementalAlgorithm>(
     }
 }
 
+#[allow(dead_code)]
+struct IncrementalAlgorithmFnMut<
+    I: FnMut(NodeId, NodeId),
+    O: FnMut(NodeId, NodeId),
+    P: FnMut(Position, Position),
+> {
+    process_input_edge_fn: I,
+    process_output_edge_fn: O,
+    process_interval_fn: P,
+}
+
+impl<I: FnMut(NodeId, NodeId), O: FnMut(NodeId, NodeId), P: FnMut(Position, Position)>
+    IncrementalAlgorithm for IncrementalAlgorithmFnMut<I, O, P>
+{
+    #[inline(always)]
+    fn process_input_edge(&mut self, parent: NodeId, child: NodeId) {
+        (self.process_input_edge_fn)(parent, child)
+    }
+
+    #[inline(always)]
+    fn process_output_edge(&mut self, parent: NodeId, child: NodeId) {
+        (self.process_output_edge_fn)(parent, child)
+    }
+
+    #[inline(always)]
+    fn process_interval(&mut self, left: Position, right: Position) {
+        (self.process_interval_fn)(left, right)
+    }
+}
+
+#[allow(dead_code)]
+pub(crate) fn incremental_algorithm_fnmut<
+    I: FnMut(NodeId, NodeId),
+    O: FnMut(NodeId, NodeId),
+    P: FnMut(Position, Position),
+>(
+    ts: &TreeSequence,
+    options: IncrementalAlgorithmOptions,
+    process_input_edge_fn: I,
+    process_output_edge_fn: O,
+    process_interval_fn: P,
+) {
+    let mut wrapper = IncrementalAlgorithmFnMut {
+        process_input_edge_fn,
+        process_output_edge_fn,
+        process_interval_fn,
+    };
+    incremental_algorithm(ts, options, &mut wrapper);
+}
+
 #[cfg(test)]
 // NOTE: copied from tests/test_trees.rs
 pub fn make_small_table_collection_two_trees() -> crate::TableCollection {
@@ -210,6 +260,35 @@ fn test_number_processed_edges() {
 }
 
 #[test]
+fn test_number_processed_edges_fnmut() {
+    let ts = treeseq_from_small_table_collection_two_trees();
+    let mut input = 0_usize;
+    let mut output = 0_usize;
+    let process_input_edge = |_p, _c| {
+        input += 1;
+    };
+    let process_output_edge = |_p, _c| {
+        output += 1;
+    };
+    let process_range = |l, r| assert_ne!(l, r);
+    incremental_algorithm_fnmut(
+        &ts,
+        IncrementalAlgorithmOptions::default(),
+        process_input_edge,
+        process_output_edge,
+        process_range,
+    );
+    assert_eq!(input, ts.edges().num_rows().as_usize());
+    assert_eq!(
+        output,
+        ts.edges()
+            .iter()
+            .filter(|e| e.right() != ts.tables().sequence_length())
+            .count()
+    );
+}
+
+#[test]
 fn test_number_processed_edges_including_final_outgoing() {
     let ts = treeseq_from_small_table_collection_two_trees();
     let mut ec = EdgeCounter::default();
@@ -222,4 +301,29 @@ fn test_number_processed_edges_including_final_outgoing() {
     );
     assert_eq!(ec.input, ts.edges().num_rows().as_usize());
     assert_eq!(ec.output, ts.edges().num_rows().as_usize());
+}
+
+#[test]
+fn test_number_processed_edges_fnmut_including_final_outgoing() {
+    let ts = treeseq_from_small_table_collection_two_trees();
+    let mut input = 0_usize;
+    let mut output = 0_usize;
+    let process_input_edge = |_p, _c| {
+        input += 1;
+    };
+    let process_output_edge = |_p, _c| {
+        output += 1;
+    };
+    let process_range = |l, r| assert_ne!(l, r);
+    incremental_algorithm_fnmut(
+        &ts,
+        IncrementalAlgorithmOptions {
+            process_remaining_edges: true,
+        },
+        process_input_edge,
+        process_output_edge,
+        process_range,
+    );
+    assert_eq!(input, ts.edges().num_rows().as_usize());
+    assert_eq!(output, ts.edges().num_rows().as_usize());
 }
