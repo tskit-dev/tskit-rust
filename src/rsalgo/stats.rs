@@ -202,8 +202,7 @@ impl<'s> SampleSets<'s> for SingleSampleSet<'s> {
             .count()
             > 1
         {
-            self.counts
-                .add_site_from_counts(&self.allele_counts, self.num_sampled_genomes as i32)?;
+            todo!()
         }
         Ok(())
     }
