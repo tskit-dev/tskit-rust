@@ -220,6 +220,22 @@ impl TreeSequence {
             current_row: 0,
         }
     }
+
+    pub fn breakpoints(&self) -> &[super::newtypes::Position] {
+        assert!(!self.as_ref().breakpoints.is_null());
+        let size = 1 + usize::try_from(self.num_trees()).unwrap();
+
+        // SAFETY: pointer is not NULL, the size is correct,
+        // and Position is a simple newtype for f64
+        unsafe {
+            std::slice::from_raw_parts(
+                self.as_ref()
+                    .breakpoints
+                    .cast::<super::newtypes::Position>(),
+                size,
+            )
+        }
+    }
 }
 
 #[test]
