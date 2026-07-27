@@ -1190,3 +1190,26 @@ fn flatten_nodes_from_individuals() {
         .collect::<Vec<_>>();
     assert_eq!(nodes, &[0, 1, 2, 3, 4]);
 }
+
+#[test]
+fn test_breakpoints() {
+    let ts = treeseq_from_small_table_collection_two_trees();
+    let bp = ts.breakpoints();
+    assert_eq!(bp.len(), usize::try_from(ts.num_trees()).unwrap() + 1);
+    let mut tbp = vec![];
+    let mut tree_iterator = ts.tree_iterator(0).unwrap();
+    while let Some(tree) = tree_iterator.next() {
+        let l: f64 = tree.interval().0.into();
+        let r: f64 = tree.interval().1.into();
+        tbp.push(ordered_float::NotNan::new(l).unwrap());
+        tbp.push(ordered_float::NotNan::new(r).unwrap());
+    }
+    tbp.sort_unstable();
+    tbp.dedup();
+    assert_eq!(bp.len(), tbp.len());
+    for (i, j) in bp.iter().zip(tbp.iter()) {
+        let l = f64::from(i);
+        let r = f64::from(*j);
+        assert_eq!(l, r)
+    }
+}

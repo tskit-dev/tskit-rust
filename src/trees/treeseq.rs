@@ -769,6 +769,11 @@ impl TreeSequence {
     pub fn into_mut_ptr(self) -> Option<std::ptr::NonNull<tsk_treeseq_t>> {
         std::ptr::NonNull::new(self.inner.into_raw())
     }
+
+    /// Breakpoint positions, including 0.0 and the sequence length
+    pub fn breakpoints(&self) -> &[Position] {
+        self.inner.breakpoints()
+    }
 }
 
 impl TryFrom<TableCollection> for TreeSequence {
