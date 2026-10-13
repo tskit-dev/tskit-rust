@@ -714,9 +714,11 @@ fn test_site_mutation_co_iteration() {
         })
         .collect::<Vec<_>>();
     assert_eq!(contents.len(), 1, "{contents:?}");
-    for t in [(s1, m2)] {
-        assert!(contents.contains(&t), "{contents:?} does not contain {t:?}")
-    }
+    assert!(
+        contents.contains(&(s1, m2)),
+        "{contents:?} does not contain {:?}",
+        (s1, m2)
+    );
 
     for site in ts.site_iter() {
         assert!(site.ancestral_state().is_none());

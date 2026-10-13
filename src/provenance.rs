@@ -186,7 +186,7 @@ mod test_provenances {
         assert!(tables.provenances().row(0).unwrap() == tables.provenances().row(0).unwrap());
         assert!(tables.provenances().row(0).unwrap() != tables.provenances().row(1).unwrap());
 
-        for (row, i) in tables.provenances().iter().zip([0, 1].into_iter()) {
+        for (row, i) in tables.provenances().iter().zip([0, 1]) {
             assert_eq!(row.record(), &records[i]);
             let owned_row = tables.provenances().row(i as i32).unwrap();
             assert_eq!(row, owned_row);
