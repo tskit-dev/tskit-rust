@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.4-alpha.0] - 2026-11-11
+
+### Documentation
+
+- Fix error in crate-level docs ([#907](https://github.com/tskit-dev/tskit-rust/pull/907))
+
+### Features
+
+- TreeSequence::individual() ([#906](https://github.com/tskit-dev/tskit-rust/pull/906))
+- Individual::into_node_id_iter ([#910](https://github.com/tskit-dev/tskit-rust/pull/910))
+- Clone for iterators over MutationRef and SiteRef ([#911](https://github.com/tskit-dev/tskit-rust/pull/911))
+- More node iterators now impl Clone ([#913](https://github.com/tskit-dev/tskit-rust/pull/913))
+- Create tree sequence from a raw pointer ([#915](https://github.com/tskit-dev/tskit-rust/pull/915))
+- TreeSequence::breakpoints ([#927](https://github.com/tskit-dev/tskit-rust/pull/927))
+
+### Miscellaneous Tasks
+
+- Bump pyo3 in python example crates ([#925](https://github.com/tskit-dev/tskit-rust/pull/925))
+
+### Performance
+
+- Specialize nth for tree sequence individual iterator ([#905](https://github.com/tskit-dev/tskit-rust/pull/905))
+
+### Refactor
+
+- Mutation/site ref iterators are now newtypes ([#908](https://github.com/tskit-dev/tskit-rust/pull/908))
+- Remove internal traits related to node iteration ([#912](https://github.com/tskit-dev/tskit-rust/pull/912))
+- TreeSequence manages low level data via TskBox ([#914](https://github.com/tskit-dev/tskit-rust/pull/914))
+- Remove use of the proc-macro-error2 crate ([#919](https://github.com/tskit-dev/tskit-rust/pull/919))
+- Remove match on results of parse macro ([#924](https://github.com/tskit-dev/tskit-rust/pull/924))
+
+### Styling
+
+- Lints from rustc 1.99 ([#930](https://github.com/tskit-dev/tskit-rust/pull/930))
+
 ## [0.16.3] - 2026-05-05
 
 ### Bug Fixes
