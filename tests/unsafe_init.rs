@@ -2,8 +2,7 @@ use tskit::bindings::tsk_table_collection_free;
 use tskit::bindings::tsk_table_collection_init;
 use tskit::bindings::tsk_table_collection_t;
 
-#[test]
-fn owning_tables() {
+fn setup_empty_tables() -> std::ptr::NonNull<tsk_table_collection_t> {
     let ll = unsafe {
         libc::malloc(std::mem::size_of::<tsk_table_collection_t>()) as *mut tsk_table_collection_t
     };
@@ -11,19 +10,19 @@ fn owning_tables() {
     assert_eq!(code, 0);
     let mut nn = std::ptr::NonNull::new(ll).unwrap();
     unsafe { nn.as_mut() }.sequence_length = 100.0;
+    nn
+}
+
+#[test]
+fn owning_tables() {
+    let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
 }
 
 #[test]
 fn owning_tables_manual_teardown() {
-    let ll = unsafe {
-        libc::malloc(std::mem::size_of::<tsk_table_collection_t>()) as *mut tsk_table_collection_t
-    };
-    let code = unsafe { tsk_table_collection_init(ll, 0) };
-    assert_eq!(code, 0);
-    let mut nn = std::ptr::NonNull::new(ll).unwrap();
-    unsafe { nn.as_mut() }.sequence_length = 100.0;
+    let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
     let mut nn = tables.into_mut_ptr().unwrap();
@@ -34,13 +33,7 @@ fn owning_tables_manual_teardown() {
 
 #[test]
 fn owning_tables_manual_teardown_via_ptr() {
-    let ll = unsafe {
-        libc::malloc(std::mem::size_of::<tsk_table_collection_t>()) as *mut tsk_table_collection_t
-    };
-    let code = unsafe { tsk_table_collection_init(ll, 0) };
-    assert_eq!(code, 0);
-    let mut nn = std::ptr::NonNull::new(ll).unwrap();
-    unsafe { nn.as_mut() }.sequence_length = 100.0;
+    let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
@@ -51,13 +44,7 @@ fn owning_tables_manual_teardown_via_ptr() {
 
 #[test]
 fn nonowning_tables() {
-    let ll = unsafe {
-        libc::malloc(std::mem::size_of::<tsk_table_collection_t>()) as *mut tsk_table_collection_t
-    };
-    let code = unsafe { tsk_table_collection_init(ll, 0) };
-    assert_eq!(code, 0);
-    let mut nn = std::ptr::NonNull::new(ll).unwrap();
-    unsafe { nn.as_mut() }.sequence_length = 100.0;
+    let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_borrowed_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
     let mut nn = tables.into_mut_ptr().unwrap();
@@ -68,13 +55,7 @@ fn nonowning_tables() {
 
 #[test]
 fn nonowning_tables_teardown_via_ptr() {
-    let ll = unsafe {
-        libc::malloc(std::mem::size_of::<tsk_table_collection_t>()) as *mut tsk_table_collection_t
-    };
-    let code = unsafe { tsk_table_collection_init(ll, 0) };
-    assert_eq!(code, 0);
-    let mut nn = std::ptr::NonNull::new(ll).unwrap();
-    unsafe { nn.as_mut() }.sequence_length = 100.0;
+    let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_borrowed_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
