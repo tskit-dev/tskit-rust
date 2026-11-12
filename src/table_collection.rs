@@ -1911,4 +1911,11 @@ impl TableCollection {
     ) -> Result<Self, TskitError> {
         Self::new_from_ll(LLTableCollection::new_owning_from_nonnull(ptr))
     }
+
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_borrowed_from_raw(
+        ptr: std::ptr::NonNull<ll_bindings::tsk_table_collection_t>,
+    ) -> Result<Self, TskitError> {
+        Self::new_from_ll(LLTableCollection::new_borrowed(ptr))
+    }
 }
