@@ -22,6 +22,14 @@ fn setup_empty_tables() -> std::ptr::NonNull<tsk_table_collection_t> {
     nn
 }
 
+fn touch_tables(tables: &tskit::TableCollection) {
+    let _ = tables.nodes();
+    let _ = tables.edges();
+    let _ = tables.sites();
+    let _ = tables.mutations();
+    let _ = tables.individuals();
+}
+
 #[test]
 fn owning_tables() {
     let nn = setup_empty_tables();
@@ -30,6 +38,7 @@ fn owning_tables() {
     // to let tables drop "naturally" out of scope.
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
+    touch_tables(&tables);
 }
 
 #[test]
@@ -39,6 +48,7 @@ fn owning_tables_manual_teardown() {
     let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
+    touch_tables(&tables);
     // If the underlying pointer was allocated by anything other than malloc,
     // then we need to get access to the raw pointer...
     let mut nn = tables.into_mut_ptr().unwrap();
@@ -56,6 +66,7 @@ fn owning_tables_manual_teardown_via_ptr() {
     let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
+    touch_tables(&tables);
     // Note that we can access the pointer w/o consuming tables as the
     // above examples do!
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
@@ -72,6 +83,7 @@ fn nonowning_tables() {
     // Here, tables does NOT OWN the pointer!
     // Therefore we need to do manual work to teardown data structures and free memory!
     assert_eq!(tables.sequence_length(), 100.);
+    touch_tables(&tables);
     let mut nn = tables.into_mut_ptr().unwrap();
     let code = unsafe { tsk_table_collection_free(nn.as_mut()) };
     assert_eq!(code, 0);
@@ -85,6 +97,7 @@ fn nonowning_tables_teardown_via_ptr() {
     // Here, tables does NOT OWN the pointer!
     // Therefore we need to do manual work to teardown data structures and free memory!
     assert_eq!(tables.sequence_length(), 100.);
+    touch_tables(&tables);
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
     assert_eq!(code, 0);
     unsafe { libc::free(tables.as_mut_ptr() as *mut libc::c_void) }
