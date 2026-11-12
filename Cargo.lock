@@ -624,7 +624,10 @@ dependencies = [
 name = "tskit-derive"
 version = "0.2.1"
 dependencies = [
+ "bincode",
  "quote",
+ "serde",
+ "serde_json",
  "syn",
 ]
 
