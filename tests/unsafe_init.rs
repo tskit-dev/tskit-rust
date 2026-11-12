@@ -6,6 +6,7 @@ fn setup_empty_tables() -> std::ptr::NonNull<tsk_table_collection_t> {
     let ll = unsafe {
         libc::malloc(std::mem::size_of::<tsk_table_collection_t>()) as *mut tsk_table_collection_t
     };
+    assert!(!ll.is_null());
     let code = unsafe { tsk_table_collection_init(ll, 0) };
     assert_eq!(code, 0);
     let mut nn = std::ptr::NonNull::new(ll).unwrap();
