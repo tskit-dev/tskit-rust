@@ -94,6 +94,7 @@ fn nonowning_tables() {
 fn nonowning_tables_teardown_via_ptr() {
     let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_borrowed_from_raw(nn).unwrap() };
+    tables.add_edge(0., 1., 0, 1).unwrap();
     // Here, tables does NOT OWN the pointer!
     // Therefore we need to do manual work to teardown data structures and free memory!
     assert_eq!(tables.sequence_length(), 100.);
