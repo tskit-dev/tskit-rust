@@ -1,3 +1,11 @@
+//! This file tests the unsafe_init cargo feature,
+//! which allows one to make table collections
+//! and tree sequences from raw pointers.
+//! This kind of thing is quite unsafe.
+//!
+//! The tests here attempt to illustrate what it takes
+//! to uphold rust's expectations of memory safety.
+
 use tskit::bindings::tsk_table_collection_free;
 use tskit::bindings::tsk_table_collection_init;
 use tskit::bindings::tsk_table_collection_t;
@@ -26,6 +34,8 @@ fn owning_tables() {
 
 #[test]
 fn owning_tables_manual_teardown() {
+    // For this test, pretend that nn contains a pointer allocated by something
+    // like PyMem_Malloc (or really any allocator other than the system malloc).
     let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
@@ -41,6 +51,8 @@ fn owning_tables_manual_teardown() {
 
 #[test]
 fn owning_tables_manual_teardown_via_ptr() {
+    // For this test, pretend that nn contains a pointer allocated by something
+    // like PyMem_Malloc (or really any allocator other than the system malloc).
     let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
@@ -57,6 +69,8 @@ fn owning_tables_manual_teardown_via_ptr() {
 fn nonowning_tables() {
     let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_borrowed_from_raw(nn).unwrap() };
+    // Here, tables does NOT OWN the pointer!
+    // Therefore we need to do manual work to teardown data structures and free memory!
     assert_eq!(tables.sequence_length(), 100.);
     let mut nn = tables.into_mut_ptr().unwrap();
     let code = unsafe { tsk_table_collection_free(nn.as_mut()) };
@@ -68,6 +82,8 @@ fn nonowning_tables() {
 fn nonowning_tables_teardown_via_ptr() {
     let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_borrowed_from_raw(nn).unwrap() };
+    // Here, tables does NOT OWN the pointer!
+    // Therefore we need to do manual work to teardown data structures and free memory!
     assert_eq!(tables.sequence_length(), 100.);
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
     assert_eq!(code, 0);
