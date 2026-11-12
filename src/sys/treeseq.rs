@@ -58,6 +58,11 @@ impl TreeSequence {
         Self(TskBox::new_init_owning_from_ptr(treeseq))
     }
 
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_borrowed_from_nonnull(treeseq: std::ptr::NonNull<tsk_treeseq_t>) -> Self {
+        Self(TskBox::new_init_from_ptr(treeseq))
+    }
+
     pub fn as_ref(&self) -> &bindings::tsk_treeseq_t {
         self.0.as_ref()
     }
