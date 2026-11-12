@@ -77,7 +77,6 @@ macro_rules! build_table_column_slice_mut_getter {
 
 #[cfg(test)]
 mod test {
-    use crate::error::TskitError;
     use crate::TskReturnValue;
 
     #[test]
@@ -91,11 +90,11 @@ mod test {
     }
 
     fn must_not_error(x: TskReturnValue) -> bool {
-        x.map_or_else(|_: TskitError| false, |_| true)
+        x.is_ok()
     }
 
     fn must_error(x: TskReturnValue) -> bool {
-        x.map_or_else(|_: TskitError| true, |_| false)
+        x.is_err()
     }
 
     #[test]
