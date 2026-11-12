@@ -17,6 +17,9 @@ fn setup_empty_tables() -> std::ptr::NonNull<tsk_table_collection_t> {
 #[test]
 fn owning_tables() {
     let nn = setup_empty_tables();
+    // This TableCollection assumes ownership of the pointer.
+    // Since the pointer was allocated by malloc, it is valid
+    // to let tables drop "naturally" out of scope.
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
 }
@@ -26,9 +29,13 @@ fn owning_tables_manual_teardown() {
     let nn = setup_empty_tables();
     let tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
+    // If the underlying pointer was allocated by anything other than malloc,
+    // then we need to get access to the raw pointer...
     let mut nn = tables.into_mut_ptr().unwrap();
+    // ...then tear it down using the tskit C API...
     let code = unsafe { tsk_table_collection_free(nn.as_mut()) };
     assert_eq!(code, 0);
+    // ... and finally return the memory to the system
     unsafe { libc::free(nn.as_ptr() as *mut libc::c_void) }
 }
 
@@ -37,9 +44,12 @@ fn owning_tables_manual_teardown_via_ptr() {
     let nn = setup_empty_tables();
     let mut tables = unsafe { tskit::TableCollection::new_from_raw(nn).unwrap() };
     assert_eq!(tables.sequence_length(), 100.);
+    // Note that we can access the pointer w/o consuming tables as the
+    // above examples do!
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
     assert_eq!(code, 0);
     // We MUST not do the next command, as it results in a double free
+    // then tables drops out of scope!!!
     // unsafe { libc::free(tables.as_mut_ptr() as *mut libc::c_void) }
 }
 
