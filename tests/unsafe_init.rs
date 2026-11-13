@@ -9,6 +9,8 @@
 use tskit::bindings::tsk_table_collection_free;
 use tskit::bindings::tsk_table_collection_init;
 use tskit::bindings::tsk_table_collection_t;
+use tskit::bindings::tsk_treeseq_init;
+use tskit::bindings::tsk_treeseq_t;
 
 fn setup_empty_tables() -> std::ptr::NonNull<tsk_table_collection_t> {
     let ll = unsafe {
@@ -20,6 +22,17 @@ fn setup_empty_tables() -> std::ptr::NonNull<tsk_table_collection_t> {
     let mut nn = std::ptr::NonNull::new(ll).unwrap();
     unsafe { nn.as_mut() }.sequence_length = 100.0;
     nn
+}
+
+fn setup_empty_treeseq_owning_tables() -> std::ptr::NonNull<tsk_treeseq_t> {
+    let tables = setup_empty_tables();
+    let ll = unsafe { libc::malloc(std::mem::size_of::<tsk_treeseq_t>()) as *mut tsk_treeseq_t };
+    assert!(!ll.is_null());
+    let tptr = unsafe { tables.as_ref() as *const tsk_table_collection_t };
+    let code =
+        unsafe { tsk_treeseq_init(ll, tptr.cast_mut(), tskit::bindings::TSK_TAKE_OWNERSHIP) };
+    assert_eq!(code, 0);
+    std::ptr::NonNull::new(ll).unwrap()
 }
 
 fn touch_tables(tables: &tskit::TableCollection) {
@@ -102,4 +115,11 @@ fn nonowning_tables_teardown_via_ptr() {
     let code = unsafe { tsk_table_collection_free(tables.as_mut_ptr()) };
     assert_eq!(code, 0);
     unsafe { libc::free(tables.as_mut_ptr() as *mut libc::c_void) }
+}
+
+#[test]
+fn owning_treeseq() {
+    assert!(false);
+    let nn = setup_empty_treeseq_owning_tables();
+    let _ = unsafe { tskit::TreeSequence::new_from_raw(nn) }.unwrap();
 }
