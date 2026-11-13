@@ -9,6 +9,7 @@
 use tskit::bindings::tsk_table_collection_free;
 use tskit::bindings::tsk_table_collection_init;
 use tskit::bindings::tsk_table_collection_t;
+use tskit::bindings::tsk_treeseq_free;
 use tskit::bindings::tsk_treeseq_init;
 use tskit::bindings::tsk_treeseq_t;
 
@@ -125,5 +126,16 @@ fn nonowning_tables_teardown_via_ptr() {
 #[test]
 fn owning_treeseq() {
     let nn = setup_empty_treeseq_owning_tables();
+    // Allocated w/malloc, therefore can drop on its own
     let _ = unsafe { tskit::TreeSequence::new_from_raw(nn) }.unwrap();
+}
+
+#[test]
+fn owning_treeseq_manual_teardown() {
+    let nn = setup_empty_treeseq_owning_tables();
+    let ts = unsafe { tskit::TreeSequence::new_from_raw(nn) }.unwrap();
+    let mut ptr = ts.into_mut_ptr().unwrap();
+    let code = unsafe { tsk_treeseq_free(ptr.as_mut()) };
+    assert_eq!(code, 0);
+    unsafe { libc::free(ptr.as_ptr() as *mut libc::c_void) };
 }
