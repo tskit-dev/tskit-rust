@@ -139,3 +139,8 @@ fn owning_treeseq_manual_teardown() {
     assert_eq!(code, 0);
     unsafe { libc::free(ptr.as_ptr() as *mut libc::c_void) };
 }
+
+#[test]
+fn nonowning_treeseq() {
+    todo!()
+}
