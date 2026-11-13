@@ -29,8 +29,13 @@ fn setup_empty_treeseq_owning_tables() -> std::ptr::NonNull<tsk_treeseq_t> {
     let ll = unsafe { libc::malloc(std::mem::size_of::<tsk_treeseq_t>()) as *mut tsk_treeseq_t };
     assert!(!ll.is_null());
     let tptr = unsafe { tables.as_ref() as *const tsk_table_collection_t };
-    let code =
-        unsafe { tsk_treeseq_init(ll, tptr.cast_mut(), tskit::bindings::TSK_TAKE_OWNERSHIP) };
+    let code = unsafe {
+        tsk_treeseq_init(
+            ll,
+            tptr.cast_mut(),
+            tskit::bindings::TSK_TAKE_OWNERSHIP | tskit::bindings::TSK_TS_INIT_BUILD_INDEXES,
+        )
+    };
     assert_eq!(code, 0);
     std::ptr::NonNull::new(ll).unwrap()
 }
@@ -119,7 +124,6 @@ fn nonowning_tables_teardown_via_ptr() {
 
 #[test]
 fn owning_treeseq() {
-    assert!(false);
     let nn = setup_empty_treeseq_owning_tables();
     let _ = unsafe { tskit::TreeSequence::new_from_raw(nn) }.unwrap();
 }
