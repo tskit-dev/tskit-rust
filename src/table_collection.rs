@@ -1911,4 +1911,19 @@ impl TableCollection {
     ) -> Result<Self, TskitError> {
         Self::new_from_ll(LLTableCollection::new_owning_from_nonnull(ptr))
     }
+
+    /// # Safety
+    ///
+    /// * The pointee must be initialized via the tskit-C API.
+    /// * If the pointer to [`crate::bindings::tsk_table_collection_t`] was not allocated by malloc,
+    ///   then the instance of `self` must not be allowed to drop on its own.
+    ///   Instead, the instance must be converted to a raw pointer via [`TableCollection::into_mut_ptr`]
+    ///   and the resulting pointer be used for teardown ([`crate::bindings::tsk_table_collection_free`])
+    ///   and returning memory to the system using the appropriate "free" function.
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_borrowed_from_raw(
+        ptr: std::ptr::NonNull<ll_bindings::tsk_table_collection_t>,
+    ) -> Result<Self, TskitError> {
+        Self::new_from_ll(LLTableCollection::new_borrowed(ptr))
+    }
 }

@@ -766,6 +766,32 @@ impl TreeSequence {
         Ok(Self { inner, tables })
     }
 
+    /// # Safety
+    ///
+    /// * The pointee must be initialized via the tskit-C API.
+    /// * If the pointer to [`crate::bindings::tsk_treeseq_t`] was not allocated by malloc,
+    ///   then the instance of `self` must not be allowed to drop on its own.
+    ///   Instead, the instance must be converted to a raw pointer via [`TreeSequence::into_mut_ptr`]
+    ///   and the resulting pointer be used for teardown ([`crate::bindings::tsk_treeseq_free`])
+    ///   and returning memory to the system using the appropriate "free" function.
+    /// * If the pointer to [`crate::bindings::tsk_treeseq_t`] was initialized in a manner such
+    ///   that it owns its underling table collection AND the table collection was not allocated
+    ///   with malloc, then that table collection must be torn down, its memory free'd using
+    ///   the appropriate function, and the tree sequence table pointer must be set to NULL
+    ///   prior to calling [`crate::bindings::tsk_treeseq_free`].
+    #[cfg(feature = "unsafe_init")]
+    pub unsafe fn new_borrowed_from_raw(
+        ptr: std::ptr::NonNull<ll_bindings::tsk_treeseq_t>,
+    ) -> Result<Self, TskitError> {
+        let tables = unsafe {
+            TableCollection::new_from_ll(sys::TableCollection::new_borrowed(
+                std::ptr::NonNull::new(ptr.as_ref().tables).unwrap(),
+            ))
+        }?;
+        let inner = sys::TreeSequence::new_borrowed_from_nonnull(ptr);
+        Ok(Self { inner, tables })
+    }
+
     pub fn into_mut_ptr(self) -> Option<std::ptr::NonNull<tsk_treeseq_t>> {
         std::ptr::NonNull::new(self.inner.into_raw())
     }
