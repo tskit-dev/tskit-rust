@@ -9,7 +9,7 @@ def setup_ts_without_schema():
 
 def setup_ts_with_schema():
     ts = setup_ts_without_schema()
-    tables = ts.tables
+    tables = ts.dump_tables()
     tables.individuals.metadata_schema = tskit.metadata.MetadataSchema(
         {
             "codec": "json",
