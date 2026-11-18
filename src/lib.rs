@@ -210,7 +210,7 @@ pub use sys::NodeTraversalOrder;
 pub use table_collection::TableCollection;
 pub use traits::IndividualLocation;
 pub use traits::IndividualParents;
-pub use traits::TableColumn;
+pub use traits::{IterableTableColumn, TableColumn};
 pub use trees::{Tree, TreeSequence};
 
 pub use sys::Edge;

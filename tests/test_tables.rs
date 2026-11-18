@@ -1,3 +1,4 @@
+use tskit::IterableTableColumn;
 use tskit::TableColumn;
 
 #[test]
