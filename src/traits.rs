@@ -183,15 +183,6 @@ pub trait TableColumn<I, T>:
         self.as_slice().get(usize::try_from(at).ok()?)
     }
 
-    /// Iterator over the data.
-    fn iter<'a, 'b>(&'a self) -> impl Iterator<Item = &'b T>
-    where
-        'a: 'b,
-        T: 'b,
-    {
-        self.as_slice().iter()
-    }
-
     /// Column length
     fn len(&self) -> usize {
         self.as_slice().len()
@@ -202,6 +193,19 @@ pub trait TableColumn<I, T>:
         self.as_slice().is_empty()
     }
 }
+
+pub trait IterableTableColumn<I, T>: TableColumn<I, T> {
+    /// Iterator over the data.
+    fn iter<'a, 'b>(&'a self) -> impl Iterator<Item = &'b T>
+    where
+        'a: 'b,
+        T: 'b,
+    {
+        self.as_slice().iter()
+    }
+}
+
+impl<I, T, U: TableColumn<I, T>> IterableTableColumn<I, T> for U {}
 
 impl<T> private::TableColumnMarker for crate::table_column::OpaqueTableColumn<'_, T> {}
 
@@ -226,4 +230,14 @@ where
     fn get_with_id(&self, at: I) -> Option<&T> {
         self.0.get(at.try_into().ok()?)
     }
+}
+
+#[test]
+fn test_dyn_compatibility() {
+    fn is_dyn(t: &dyn TableColumn<crate::NodeId, crate::IndividualId>) -> u64 {
+        t.as_slice().iter().count() as u64
+    }
+
+    let n = crate::NodeTable::default();
+    assert_eq!(n.num_rows(), is_dyn(&n.individual_column()));
 }
