@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.4] - 2026-11-18
+
+### Features
+
+- Non-owning table collections and tree sequences ([#933](https://github.com/tskit-dev/tskit-rust/pull/933))
+
+### Styling
+
+- [**breaking**] Lints from rustc 1.100 ([#932](https://github.com/tskit-dev/tskit-rust/pull/932))
+
+### Testing
+
+- Bump python locked requirements file ([#934](https://github.com/tskit-dev/tskit-rust/pull/934))
+
 ## [0.16.4-alpha.0] - 2026-11-11
 
 ### Documentation
