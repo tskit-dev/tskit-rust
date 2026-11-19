@@ -577,8 +577,8 @@ fn test_edge_table_column_access() {
         let column = table.parent_column();
         assert_eq!(column[edge], 1);
         assert_eq!(column[edge], tskit::NodeId::from(1));
-        let _: Vec<tskit::NodeId> = table.parent_column().iter().cloned().collect::<Vec<_>>();
-        let _ = table.parent_column().iter().cloned().collect::<Vec<_>>();
+        let _: Vec<tskit::NodeId> = table.parent_column().as_slice().to_vec();
+        let _ = table.parent_column().as_slice().to_vec();
     }
 
     {

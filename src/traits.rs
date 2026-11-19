@@ -184,6 +184,7 @@ pub trait TableColumn<I, T>:
     }
 
     /// Iterator over the data.
+    #[deprecated(since = "0.16.5", note = "use as_slice().iter()")]
     fn iter<'a, 'b>(&'a self) -> impl Iterator<Item = &'b T>
     where
         'a: 'b,
