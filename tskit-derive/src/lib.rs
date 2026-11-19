@@ -63,7 +63,10 @@ fn impl_metadata_roundtrip_macro(ast: &syn::DeriveInput) -> Result<TokenStream, 
 
     if let Some(attr) = attrs.first() {
         if attr.path().is_ident("serializer") {
-            let lit: syn::LitStr = attr.parse_args().unwrap();
+            let lit: syn::LitStr = match attr.parse_args() {
+                Ok(val) => val,
+                Err(e) => return Err(syn::Error::new_spanned(attr, e)),
+            };
             let serializer = lit.value();
 
             if &serializer == "serde_json" {
