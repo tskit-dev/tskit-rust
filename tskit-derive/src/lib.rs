@@ -54,7 +54,14 @@ fn impl_metadata_roundtrip_macro(ast: &syn::DeriveInput) -> Result<TokenStream, 
     let name = &ast.ident;
     let attrs = &ast.attrs;
 
-    for attr in attrs.iter() {
+    if attrs.len() > 1 {
+        return Err(syn::Error::new_spanned(
+            ast,
+            "more than [serializer(...)] found",
+        ));
+    }
+
+    if let Some(attr) = attrs.first() {
         if attr.path().is_ident("serializer") {
             let lit: syn::LitStr = attr.parse_args().unwrap();
             let serializer = lit.value();
